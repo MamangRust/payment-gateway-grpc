@@ -736,7 +736,9 @@ func (h *transferHandleApi) FindByTrashedTransfer(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponsePaginationTransferDeleteAt(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Create a transfer

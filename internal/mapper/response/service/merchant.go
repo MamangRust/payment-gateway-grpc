@@ -40,7 +40,12 @@ func (s *merchantResponseMapper) ToMerchantResponseDeleteAt(merchant *record.Mer
 		ApiKey:    merchant.ApiKey,
 		CreatedAt: merchant.CreatedAt,
 		UpdatedAt: merchant.UpdatedAt,
-		DeletedAt: *merchant.DeletedAt,
+		DeletedAt: func() string {
+			if merchant.DeletedAt != nil {
+				return *merchant.DeletedAt
+			}
+			return ""
+		}(),
 	}
 }
 

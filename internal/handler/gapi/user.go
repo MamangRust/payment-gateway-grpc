@@ -141,7 +141,7 @@ func (s *userHandleGrpc) FindByTrashed(ctx context.Context, request *pb.FindAllU
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
 		TotalPages:   int32(totalPages),
-		TotalRecords: int32(0),
+		TotalRecords: int32(totalPages),
 	}
 
 	so := s.mapping.ToProtoResponsePaginationUserDeleteAt(paginationMeta, "success", "Successfully fetched trashed users", users)

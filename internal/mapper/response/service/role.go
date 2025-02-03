@@ -37,7 +37,12 @@ func (s *roleResponseMapper) ToRoleResponseDeleteAt(role *record.RoleRecord) *re
 		Name:      role.Name,
 		CreatedAt: role.CreatedAt,
 		UpdatedAt: role.UpdatedAt,
-		DeletedAt: *role.DeletedAt,
+		DeletedAt: func() string {
+			if role.DeletedAt != nil {
+				return *role.DeletedAt
+			}
+			return ""
+		}(),
 	}
 }
 

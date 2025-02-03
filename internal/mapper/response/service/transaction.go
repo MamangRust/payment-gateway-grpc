@@ -45,6 +45,12 @@ func (s *transactionResponseMapper) ToTransactionResponseDeleteAt(transaction *r
 		TransactionTime: transaction.TransactionTime,
 		CreatedAt:       transaction.CreatedAt,
 		UpdatedAt:       transaction.UpdatedAt,
+		DeletedAt: func() string {
+			if transaction.DeletedAt != nil {
+				return *transaction.DeletedAt
+			}
+			return ""
+		}(),
 	}
 }
 

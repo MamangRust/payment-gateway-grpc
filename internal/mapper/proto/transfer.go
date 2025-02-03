@@ -3,6 +3,7 @@ package protomapper
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
+	"fmt"
 )
 
 type transferProtoMapper struct{}
@@ -131,6 +132,8 @@ func (t *transferProtoMapper) mapResponsesTransfer(transfers []*response.Transfe
 }
 
 func (t *transferProtoMapper) mapResponseTransferDeleteAt(transfer *response.TransferResponseDeleteAt) *pb.TransferResponseDeleteAt {
+	fmt.Println("transfer proto:", transfer)
+
 	return &pb.TransferResponseDeleteAt{
 		Id:             int32(transfer.ID),
 		TransferNo:     transfer.TransferNo,

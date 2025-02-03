@@ -215,6 +215,7 @@ func (h *userHandleApi) FindByTrashed(c echo.Context) error {
 			Message: "Failed to retrieve user data: ",
 		})
 	}
+
 	return c.JSON(http.StatusOK, res)
 }
 

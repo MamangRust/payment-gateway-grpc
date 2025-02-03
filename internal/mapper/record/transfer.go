@@ -93,6 +93,11 @@ func (s *transferRecordMapper) ToTransfersRecordActive(transfers []*db.GetActive
 func (t *transferRecordMapper) ToTransferRecordTrashed(transfer *db.GetTrashedTransfersRow) *record.TransferRecord {
 	var deletedAt *string
 
+	if transfer.DeletedAt.Valid {
+		formatedDeletedAt := transfer.DeletedAt.Time.Format("2006-01-02")
+		deletedAt = &formatedDeletedAt
+	}
+
 	return &record.TransferRecord{
 		ID:             int(transfer.TransferID),
 		TransferNo:     transfer.TransferNo.String(),
