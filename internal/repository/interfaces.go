@@ -111,26 +111,30 @@ type CardRepository interface {
 type MerchantRepository interface {
 	FindAllMerchants(search string, page, pageSize int) ([]*record.MerchantRecord, int, error)
 	FindById(merchant_id int) (*record.MerchantRecord, error)
+	GetMonthlyTotalAmountMerchant(year int) ([]*record.MerchantMonthlyTotalAmount, error)
+	GetYearlyTotalAmountMerchant(year int) ([]*record.MerchantYearlyTotalAmount, error)
 
 	FindAllTransactions(search string, page, pageSize int) ([]*record.MerchantTransactionsRecord, int, error)
-	FindAllTransactionsByMerchant(merchant_id int, search string, page, pageSize int) ([]*record.MerchantTransactionsRecord, int, error)
-
 	GetMonthlyPaymentMethodsMerchant(year int) ([]*record.MerchantMonthlyPaymentMethod, error)
 	GetYearlyPaymentMethodMerchant(year int) ([]*record.MerchantYearlyPaymentMethod, error)
 	GetMonthlyAmountMerchant(year int) ([]*record.MerchantMonthlyAmount, error)
 	GetYearlyAmountMerchant(year int) ([]*record.MerchantYearlyAmount, error)
 
-	GetMonthlyTotalAmountMerchant(year int) ([]*record.MerchantMonthlyTotalAmount, error)
-	GetYearlyTotalAmountMerchant(year int) ([]*record.MerchantYearlyTotalAmount, error)
-
+	FindAllTransactionsByMerchant(merchant_id int, search string, page, pageSize int) ([]*record.MerchantTransactionsRecord, int, error)
 	GetMonthlyPaymentMethodByMerchants(merchantID int, year int) ([]*record.MerchantMonthlyPaymentMethod, error)
 	GetYearlyPaymentMethodByMerchants(merchantID int, year int) ([]*record.MerchantYearlyPaymentMethod, error)
-
 	GetMonthlyAmountByMerchants(merchantID int, year int) ([]*record.MerchantMonthlyAmount, error)
 	GetYearlyAmountByMerchants(merchantID int, year int) ([]*record.MerchantYearlyAmount, error)
-
 	GetMonthlyTotalAmountByMerchants(merchantID int, year int) ([]*record.MerchantMonthlyTotalAmount, error)
 	GetYearlyTotalAmountByMerchants(merchantID int, year int) ([]*record.MerchantYearlyTotalAmount, error)
+
+	FindAllTransactionsByApikey(api_key string, search string, page, pageSize int) ([]*record.MerchantTransactionsRecord, int, error)
+	GetMonthlyPaymentMethodByApikey(api_key string, year int) ([]*record.MerchantMonthlyPaymentMethod, error)
+	GetYearlyPaymentMethodByApikey(api_key string, year int) ([]*record.MerchantYearlyPaymentMethod, error)
+	GetMonthlyAmountByApikey(api_key string, year int) ([]*record.MerchantMonthlyAmount, error)
+	GetYearlyAmountByApikey(api_key string, year int) ([]*record.MerchantYearlyAmount, error)
+	GetMonthlyTotalAmountByApikey(api_key string, year int) ([]*record.MerchantMonthlyTotalAmount, error)
+	GetYearlyTotalAmountByApikey(api_key string, year int) ([]*record.MerchantYearlyTotalAmount, error)
 
 	FindByActive(search string, page, pageSize int) ([]*record.MerchantRecord, int, error)
 	FindByTrashed(search string, page, pageSize int) ([]*record.MerchantRecord, int, error)

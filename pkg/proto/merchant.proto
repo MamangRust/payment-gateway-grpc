@@ -182,6 +182,13 @@ message FindAllMerchantTransaction{
     int32 merchant_id = 4;
 }
 
+message FindAllMerchantApikey{
+    int32 page = 1;
+    int32 page_size = 2;
+    string search = 3;
+    string api_key = 4;
+}
+
 message FindByIdMerchantRequest {
     int32 merchant_id = 1;
 }
@@ -212,29 +219,44 @@ message FindYearMerchantById{
     int32 merchant_id = 2;
 }
 
+message FindYearMerchantByApikey{
+    int32 year  = 1;
+    string api_key = 2;
+}
+
 service MerchantService {
     rpc FindAllMerchant (FindAllMerchantRequest) returns (ApiResponsePaginationMerchant) {}
     rpc FindByIdMerchant (FindByIdMerchantRequest) returns (ApiResponseMerchant) {}
     rpc FindByApiKey (FindByApiKeyRequest) returns (ApiResponseMerchant) {}
 
     rpc FindAllTransactionMerchant(FindAllMerchantRequest) returns(ApiResponsePaginationMerchantTransaction){}
-    rpc FindAllTransactionByMerchant(FindAllMerchantTransaction) returns(ApiResponsePaginationMerchantTransaction){}
-
+    
     rpc FindMonthlyPaymentMethodsMerchant(FindYearMerchant) returns(ApiResponseMerchantMonthlyPaymentMethod){}
     rpc FindYearlyPaymentMethodMerchant(FindYearMerchant) returns(ApiResponseMerchantYearlyPaymentMethod){}
     rpc FindMonthlyAmountMerchant(FindYearMerchant) returns(ApiResponseMerchantMonthlyAmount){}
     rpc FindYearlyAmountMerchant(FindYearMerchant) returns(ApiResponseMerchantYearlyAmount){}
-
+    
     rpc FindMonthlyTotalAmountMerchant(FindYearMerchant) returns(ApiResponseMerchantMonthlyTotalAmount){}
     rpc FindYearlyTotalAmountMerchant(FindYearMerchant) returns(ApiResponseMerchantYearlyTotalAmount){}
-
+    
+    rpc FindAllTransactionByMerchant(FindAllMerchantTransaction) returns(ApiResponsePaginationMerchantTransaction){}
     rpc FindMonthlyPaymentMethodByMerchants(FindYearMerchantById) returns(ApiResponseMerchantMonthlyPaymentMethod){}
     rpc FindYearlyPaymentMethodByMerchants(FindYearMerchantById)returns(ApiResponseMerchantYearlyPaymentMethod){}
     rpc FindMonthlyAmountByMerchants(FindYearMerchantById)returns(ApiResponseMerchantMonthlyAmount){}
     rpc FindYearlyAmountByMerchants(FindYearMerchantById)returns(ApiResponseMerchantYearlyAmount){}
-
     rpc FindMonthlyTotalAmountByMerchants(FindYearMerchantById)returns(ApiResponseMerchantMonthlyTotalAmount){}
     rpc FindYearlyTotalAmountByMerchants(FindYearMerchantById)returns(ApiResponseMerchantYearlyTotalAmount){}
+
+
+    rpc FindAllTransactionByApikey(FindAllMerchantApikey) returns(ApiResponsePaginationMerchantTransaction){}
+    rpc FindMonthlyPaymentMethodByApikey(FindYearMerchantByApikey) returns(ApiResponseMerchantMonthlyPaymentMethod){}
+    rpc FindYearlyPaymentMethodByApikey(FindYearMerchantByApikey)returns(ApiResponseMerchantYearlyPaymentMethod){}
+    rpc FindMonthlyAmountByApikey(FindYearMerchantByApikey)returns(ApiResponseMerchantMonthlyAmount){}
+    rpc FindYearlyAmountByApikey(FindYearMerchantByApikey)returns(ApiResponseMerchantYearlyAmount){}
+    rpc FindMonthlyTotalAmountByApikey(FindYearMerchantByApikey)returns(ApiResponseMerchantMonthlyTotalAmount){}
+    rpc FindYearlyTotalAmountByApikey(FindYearMerchantByApikey)returns(ApiResponseMerchantYearlyTotalAmount){}
+
+
 
     rpc FindByMerchantUserId (FindByMerchantUserIdRequest) returns (ApiResponsesMerchant) {}
     rpc FindByActive (FindAllMerchantRequest) returns (ApiResponsePaginationMerchantDeleteAt) {}

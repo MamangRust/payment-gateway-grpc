@@ -47,9 +47,15 @@ func NewHandlerMerchant(merchant pb.MerchantServiceClient, router *echo.Echo, lo
 	routerMerchant.GET("/yearly-payment-methods-by-merchant", merchantHandler.FindYearlyPaymentMethodByMerchants)
 	routerMerchant.GET("/monthly-amount-by-merchant", merchantHandler.FindMonthlyAmountByMerchants)
 	routerMerchant.GET("/yearly-amount-by-merchant", merchantHandler.FindYearlyAmountByMerchants)
-
 	routerMerchant.GET("/monthly-totalamount-by-merchant", merchantHandler.FindMonthlyAmountByMerchants)
 	routerMerchant.GET("/yearly-totalamount-by-merchant", merchantHandler.FindYearlyAmountByMerchants)
+
+	routerMerchant.GET("/monthly-payment-methods-by-apikey", merchantHandler.FindMonthlyPaymentMethodByApikeys)
+	routerMerchant.GET("/yearly-payment-methods-by-apikey", merchantHandler.FindYearlyPaymentMethodByApikeys)
+	routerMerchant.GET("/monthly-amount-by-apikey", merchantHandler.FindMonthlyAmountByApikeys)
+	routerMerchant.GET("/yearly-amount-by-apikey", merchantHandler.FindYearlyAmountByApikeys)
+	routerMerchant.GET("/monthly-totalamount-by-apikey", merchantHandler.FindMonthlyAmountByApikeys)
+	routerMerchant.GET("/yearly-totalamount-by-apikey", merchantHandler.FindYearlyAmountByApikeys)
 
 	routerMerchant.GET("/api-key", merchantHandler.FindByApiKey)
 	routerMerchant.GET("/merchant-user", merchantHandler.FindByMerchantUserId)
@@ -121,7 +127,7 @@ func (h *merchantHandleApi) FindAll(c echo.Context) error {
 
 // FindAllTransactions godoc
 // @Summary Find all transactions
-// @Tags Transaction
+// @Tags Merchant
 // @Security Bearer
 // @Description Retrieve a list of all transactions
 // @Accept json
@@ -170,7 +176,7 @@ func (h *merchantHandleApi) FindAllTransactions(c echo.Context) error {
 
 // FindAllTransactionByMerchant godoc
 // @Summary Find all transactions by merchant ID
-// @Tags Transaction
+// @Tags Merchant
 // @Security Bearer
 // @Description Retrieve a list of transactions for a specific merchant
 // @Accept json
@@ -833,6 +839,331 @@ func (h *merchantHandleApi) FindYearlyTotalAmountByMerchants(c echo.Context) err
 
 	return c.JSON(http.StatusOK, so)
 }
+
+// FindAllTransactionByApikey godoc
+// @Summary Find all transactions by api_key
+// @Tags Merchant
+// @Security Bearer
+// @Description Retrieve a list of transactions for a specific merchant
+// @Accept json
+// @Produce json
+// @Param api_key path string true "Api key"
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Number of items per page" default(10)
+// @Param search query string false "Search query"
+// @Success 200 {object} pb.ApiResponsePaginationTransaction "List of transactions"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
+// @Router /api/merchants/transactions/:merchant_id [get]
+func (h *merchantHandleApi) FindAllTransactionByApikey(c echo.Context) error {
+	api_key := c.Param("api_key")
+
+	page, err := strconv.Atoi(c.QueryParam("page"))
+	if err != nil || page <= 0 {
+		page = 1
+	}
+
+	pageSize, err := strconv.Atoi(c.QueryParam("page_size"))
+	if err != nil || pageSize <= 0 {
+		pageSize = 10
+	}
+
+	search := c.QueryParam("search")
+
+	ctx := c.Request().Context()
+
+	req := &pb.FindAllMerchantApikey{
+		ApiKey:   api_key,
+		Page:     int32(page),
+		PageSize: int32(pageSize),
+		Search:   search,
+	}
+
+	res, err := h.merchant.FindAllTransactionByApikey(ctx, req)
+
+	if err != nil {
+		h.logger.Debug("Failed to retrieve transaction data", zap.Error(err))
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve transaction data: ",
+		})
+	}
+
+	so := h.mapping.ToApiResponseMerchantsTransactionResponse(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindMonthlyPaymentMethodByApikeys godoc.
+// @Summary Find monthly payment methods for a specific merchant
+// @Tags Merchant
+// @Security Bearer
+// @Description Retrieve monthly payment methods for a specific merchant by year.
+// @Accept json
+// @Produce json
+// @Param merchant_id query int true "Merchant ID"
+// @Param year query int true "Year"
+// @Success 200 {object} pb.ApiResponseMerchantMonthlyPaymentMethod "Monthly payment methods"
+// @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly payment methods"
+// @Router /api/merchants/monthly-payment-methods-by-apikey [get]
+func (h *merchantHandleApi) FindMonthlyPaymentMethodByApikeys(c echo.Context) error {
+	api_key := c.QueryParam("api_key")
+	yearStr := c.QueryParam("year")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil || year <= 0 {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Invalid year",
+		})
+	}
+
+	ctx := c.Request().Context()
+	req := &pb.FindYearMerchantByApikey{
+		ApiKey: api_key,
+		Year:   int32(year),
+	}
+
+	res, err := h.merchant.FindMonthlyPaymentMethodByApikey(ctx, req)
+	if err != nil {
+		h.logger.Debug("Failed to find monthly payment methods by merchant", zap.Error(err))
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to find monthly payment methods by merchant: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseMonthlyPaymentMethods(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindYearlyPaymentMethodByApikeys godoc.
+// @Summary Find yearly payment methods for a specific merchant
+// @Tags Merchant
+// @Security Bearer
+// @Description Retrieve yearly payment methods for a specific merchant by year.
+// @Accept json
+// @Produce json
+// @Param merchant_id query int true "Merchant ID"
+// @Param year query int true "Year"
+// @Success 200 {object} pb.ApiResponseMerchantYearlyPaymentMethod "Yearly payment methods"
+// @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly payment methods"
+// @Router /api/merchants/yearly-payment-methods-by-apikey [get]
+func (h *merchantHandleApi) FindYearlyPaymentMethodByApikeys(c echo.Context) error {
+	api_key := c.QueryParam("api_key")
+	yearStr := c.QueryParam("year")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil || year <= 0 {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Invalid year",
+		})
+	}
+
+	ctx := c.Request().Context()
+	req := &pb.FindYearMerchantByApikey{
+		ApiKey: api_key,
+		Year:   int32(year),
+	}
+
+	res, err := h.merchant.FindYearlyPaymentMethodByApikey(ctx, req)
+	if err != nil {
+		h.logger.Debug("Failed to find yearly payment methods by merchant", zap.Error(err))
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to find yearly payment methods by merchant: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseYearlyPaymentMethods(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindMonthlyAmountByApikeys godoc.
+// @Summary Find monthly transaction amounts for a specific merchant
+// @Tags Merchant
+// @Security Bearer
+// @Description Retrieve monthly transaction amounts for a specific merchant by year.
+// @Accept json
+// @Produce json
+// @Param merchant_id query int true "Merchant ID"
+// @Param year query int true "Year"
+// @Success 200 {object} pb.ApiResponseMerchantMonthlyAmount "Monthly transaction amounts"
+// @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
+// @Router /api/merchants/monthly-amount-by-apikey [get]
+func (h *merchantHandleApi) FindMonthlyAmountByApikeys(c echo.Context) error {
+	api_key := c.QueryParam("api_key")
+	yearStr := c.QueryParam("year")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil || year <= 0 {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Invalid year",
+		})
+	}
+
+	ctx := c.Request().Context()
+	req := &pb.FindYearMerchantByApikey{
+		ApiKey: api_key,
+		Year:   int32(year),
+	}
+
+	res, err := h.merchant.FindMonthlyAmountByApikey(ctx, req)
+	if err != nil {
+		h.logger.Debug("Failed to find monthly amount by merchant", zap.Error(err))
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to find monthly amount by merchant: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseMonthlyAmounts(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindYearlyAmountByApikeys godoc.
+// @Summary Find yearly transaction amounts for a specific merchant
+// @Tags Merchant
+// @Security Bearer
+// @Description Retrieve yearly transaction amounts for a specific merchant by year.
+// @Accept json
+// @Produce json
+// @Param merchant_id query int true "Merchant ID"
+// @Param year query int true "Year"
+// @Success 200 {object} pb.ApiResponseMerchantYearlyAmount "Yearly transaction amounts"
+// @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
+// @Router /api/merchants/yearly-amount-by-apikey [get]
+func (h *merchantHandleApi) FindYearlyAmountByApikeys(c echo.Context) error {
+	api_key := c.QueryParam("api_key")
+	yearStr := c.QueryParam("year")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil || year <= 0 {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Invalid year",
+		})
+	}
+
+	ctx := c.Request().Context()
+	req := &pb.FindYearMerchantByApikey{
+		ApiKey: api_key,
+		Year:   int32(year),
+	}
+
+	res, err := h.merchant.FindYearlyAmountByApikey(ctx, req)
+	if err != nil {
+		h.logger.Debug("Failed to find yearly amount by merchant", zap.Error(err))
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to find yearly amount by merchant: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseYearlyAmounts(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindMonthlyAmountByApikeys godoc.
+// @Summary Find monthly transaction amounts for a specific merchant
+// @Tags Merchant
+// @Security Bearer
+// @Description Retrieve monthly transaction amounts for a specific merchant by year.
+// @Accept json
+// @Produce json
+// @Param merchant_id query int true "Merchant ID"
+// @Param year query int true "Year"
+// @Success 200 {object} pb.ApiResponseMerchantMonthlyAmount "Monthly transaction amounts"
+// @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
+// @Router /api/merchants/monthly-totalamount-by-apikey [get]
+func (h *merchantHandleApi) FindMonthlyTotalAmountByApikeys(c echo.Context) error {
+	api_key := c.QueryParam("api_key")
+	yearStr := c.QueryParam("year")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil || year <= 0 {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Invalid year",
+		})
+	}
+
+	ctx := c.Request().Context()
+	req := &pb.FindYearMerchantByApikey{
+		ApiKey: api_key,
+		Year:   int32(year),
+	}
+
+	res, err := h.merchant.FindMonthlyTotalAmountByApikey(ctx, req)
+	if err != nil {
+		h.logger.Debug("Failed to find monthly amount by merchant", zap.Error(err))
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to find monthly amount by merchant: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseMonthlyTotalAmounts(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindYearlyAmountByApikeys godoc.
+// @Summary Find yearly transaction amounts for a specific merchant
+// @Tags Merchant
+// @Security Bearer
+// @Description Retrieve yearly transaction amounts for a specific merchant by year.
+// @Accept json
+// @Produce json
+// @Param merchant_id query int true "Merchant ID"
+// @Param year query int true "Year"
+// @Success 200 {object} pb.ApiResponseMerchantYearlyAmount "Yearly transaction amounts"
+// @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
+// @Router /api/merchants/yearly-totalamount-by-apikey [get]
+func (h *merchantHandleApi) FindYearlyTotalAmountByApikeys(c echo.Context) error {
+	api_key := c.QueryParam("api_key")
+	yearStr := c.QueryParam("year")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil || year <= 0 {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Invalid year",
+		})
+	}
+
+	ctx := c.Request().Context()
+	req := &pb.FindYearMerchantByApikey{
+		ApiKey: api_key,
+		Year:   int32(year),
+	}
+
+	res, err := h.merchant.FindYearlyTotalAmountByApikey(ctx, req)
+	if err != nil {
+		h.logger.Debug("Failed to find yearly amount by merchant", zap.Error(err))
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to find yearly amount by merchant: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseYearlyTotalAmounts(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+//
 
 // FindByApiKey godoc
 // @Summary Find a merchant by API key

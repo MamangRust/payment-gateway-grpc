@@ -89,41 +89,6 @@ func (s *merchantHandleGrpc) FindAllTransactionMerchant(ctx context.Context, req
 	return so, nil
 }
 
-func (s *merchantHandleGrpc) FindAllTransactionByMerchant(ctx context.Context, req *pb.FindAllMerchantTransaction) (*pb.ApiResponsePaginationMerchantTransaction, error) {
-	merchant_id := int(req.MerchantId)
-	page := int(req.GetPage())
-	pageSize := int(req.GetPageSize())
-	search := req.GetSearch()
-
-	if page <= 0 {
-		page = 1
-	}
-	if pageSize <= 0 {
-		pageSize = 10
-	}
-
-	merchants, totalRecords, err := s.merchantService.FindAllTransactionsByMerchant(merchant_id, page, pageSize, search)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch card records: " + err.Message,
-		})
-	}
-
-	totalPages := int(math.Ceil(float64(totalRecords) / float64(pageSize)))
-
-	paginationMeta := &pb.PaginationMeta{
-		CurrentPage:  int32(page),
-		PageSize:     int32(pageSize),
-		TotalPages:   int32(totalPages),
-		TotalRecords: int32(totalRecords),
-	}
-
-	so := s.mapping.ToProtoResponsePaginationMerchantTransaction(paginationMeta, "success", "Successfully fetched merchant record", merchants)
-
-	return so, nil
-}
-
 func (s *merchantHandleGrpc) FindByIdMerchant(ctx context.Context, req *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchant, error) {
 	if req.GetMerchantId() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
@@ -272,6 +237,41 @@ func (s *merchantHandleGrpc) FindYearlyTotalAmountMerchant(ctx context.Context, 
 	return so, nil
 }
 
+func (s *merchantHandleGrpc) FindAllTransactionByMerchant(ctx context.Context, req *pb.FindAllMerchantTransaction) (*pb.ApiResponsePaginationMerchantTransaction, error) {
+	merchant_id := int(req.MerchantId)
+	page := int(req.GetPage())
+	pageSize := int(req.GetPageSize())
+	search := req.GetSearch()
+
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	merchants, totalRecords, err := s.merchantService.FindAllTransactionsByMerchant(merchant_id, page, pageSize, search)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch card records: " + err.Message,
+		})
+	}
+
+	totalPages := int(math.Ceil(float64(totalRecords) / float64(pageSize)))
+
+	paginationMeta := &pb.PaginationMeta{
+		CurrentPage:  int32(page),
+		PageSize:     int32(pageSize),
+		TotalPages:   int32(totalPages),
+		TotalRecords: int32(totalRecords),
+	}
+
+	so := s.mapping.ToProtoResponsePaginationMerchantTransaction(paginationMeta, "success", "Successfully fetched merchant record", merchants)
+
+	return so, nil
+}
+
 func (s *merchantHandleGrpc) FindMonthlyPaymentMethodByMerchants(ctx context.Context, req *pb.FindYearMerchantById) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
 	if req.GetMerchantId() <= 0 || req.GetYear() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
@@ -355,6 +355,127 @@ func (s *merchantHandleGrpc) FindYearlyAmountByMerchants(ctx context.Context, re
 
 	return so, nil
 }
+
+func (s *merchantHandleGrpc) FindAllTransactionByApikey(ctx context.Context, req *pb.FindAllMerchantApikey) (*pb.ApiResponsePaginationMerchantTransaction, error) {
+	api_key := req.GetApiKey()
+	page := int(req.GetPage())
+	pageSize := int(req.GetPageSize())
+	search := req.GetSearch()
+
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	merchants, totalRecords, err := s.merchantService.FindAllTransactionsByApikey(api_key, page, pageSize, search)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch card records: " + err.Message,
+		})
+	}
+
+	totalPages := int(math.Ceil(float64(totalRecords) / float64(pageSize)))
+
+	paginationMeta := &pb.PaginationMeta{
+		CurrentPage:  int32(page),
+		PageSize:     int32(pageSize),
+		TotalPages:   int32(totalPages),
+		TotalRecords: int32(totalRecords),
+	}
+
+	so := s.mapping.ToProtoResponsePaginationMerchantTransaction(paginationMeta, "success", "Successfully fetched merchant record", merchants)
+
+	return so, nil
+}
+
+func (s *merchantHandleGrpc) FindMonthlyPaymentMethodByApikeys(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
+	if req.GetApiKey() == "" || req.GetYear() <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Invalid merchant ID or year",
+		})
+	}
+
+	res, err := s.merchantService.FindMonthlyPaymentMethodByApikeys(req.GetApiKey(), int(req.GetYear()))
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to find monthly payment methods by merchant: " + err.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseMonthlyPaymentMethods("success", "Successfully fetched monthly payment methods by merchant", res)
+
+	return so, nil
+}
+
+func (s *merchantHandleGrpc) FindYearlyPaymentMethodByApikeys(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantYearlyPaymentMethod, error) {
+	if req.GetApiKey() == "" || req.GetYear() <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Invalid merchant ID or year",
+		})
+	}
+
+	res, err := s.merchantService.FindYearlyPaymentMethodByApikeys(req.GetApiKey(), int(req.GetYear()))
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to find yearly payment methods by merchant: " + err.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseYearlyPaymentMethods("success", "Successfully fetched yearly payment methods by merchant", res)
+
+	return so, nil
+}
+
+func (s *merchantHandleGrpc) FindMonthlyAmountByApikeys(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantMonthlyAmount, error) {
+	if req.GetApiKey() == "" || req.GetYear() <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Invalid merchant ID or year",
+		})
+	}
+
+	res, err := s.merchantService.FindMonthlyAmountByApikeys(req.GetApiKey(), int(req.GetYear()))
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to find monthly amount by merchant: " + err.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Successfully fetched monthly amount by merchant", res)
+
+	return so, nil
+}
+
+func (s *merchantHandleGrpc) FindYearlyAmountByApikeys(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantYearlyAmount, error) {
+	if req.GetApiKey() == "" || req.GetYear() <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Invalid merchant ID or year",
+		})
+	}
+
+	res, err := s.merchantService.FindYearlyAmountByApikeys(req.GetApiKey(), int(req.GetYear()))
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to find yearly amount by merchant: " + err.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Successfully fetched yearly amount by merchant", res)
+
+	return so, nil
+}
+
+//
 
 func (s *merchantHandleGrpc) FindByApiKey(ctx context.Context, req *pb.FindByApiKeyRequest) (*pb.ApiResponseMerchant, error) {
 	merchant, err := s.merchantService.FindByApiKey(req.ApiKey)

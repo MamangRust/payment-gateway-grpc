@@ -11,8 +11,6 @@ func NewMerchantProtoMapper() *merchantProtoMapper {
 	return &merchantProtoMapper{}
 }
 
-// func
-
 func (m *merchantProtoMapper) ToProtoResponsePaginationMerchant(pagination *pb.PaginationMeta, status string, message string, merchants []*response.MerchantResponse) *pb.ApiResponsePaginationMerchant {
 	return &pb.ApiResponsePaginationMerchant{
 		Status:     status,

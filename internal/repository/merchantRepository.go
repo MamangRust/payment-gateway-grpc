@@ -204,7 +204,7 @@ func (r *merchantRepository) GetYearlyAmountByMerchants(merchantID int, year int
 		return nil, fmt.Errorf("failed to get yearly amount for merchant %d: %w", merchantID, err)
 	}
 
-	return r.mapping.ToMerchantYearlyAmountsMerchant(res), nil
+	return r.mapping.ToMerchantYearlyAmountsByMerchant(res), nil
 }
 
 func (r *merchantRepository) GetMonthlyTotalAmountByMerchants(merchantID int, year int) ([]*record.MerchantMonthlyTotalAmount, error) {
@@ -229,7 +229,7 @@ func (r *merchantRepository) GetYearlyTotalAmountByMerchants(merchantID int, yea
 		return nil, fmt.Errorf("failed to get yearly amount for merchant %d: %w", merchantID, err)
 	}
 
-	return r.mapping.ToMerchantYearlyTotalAmountsMerchant(res), nil
+	return r.mapping.ToMerchantYearlyTotalAmountsByMerchant(res), nil
 }
 
 func (r *merchantRepository) FindAllTransactionsByMerchant(merchant_id int, search string, page, pageSize int) ([]*record.MerchantTransactionsRecord, int, error) {
@@ -255,6 +255,106 @@ func (r *merchantRepository) FindAllTransactionsByMerchant(merchant_id int, sear
 		totalCount = 0
 	}
 	return r.mapping.ToMerchantsTransactionByMerchantRecord(merchant), totalCount, nil
+}
+
+///
+
+func (r *merchantRepository) GetMonthlyPaymentMethodByApikey(api_key string, year int) ([]*record.MerchantMonthlyPaymentMethod, error) {
+	yearStart := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
+	res, err := r.db.GetMonthlyPaymentMethodByApikey(r.ctx, db.GetMonthlyPaymentMethodByApikeyParams{
+		ApiKey:  api_key,
+		Column1: yearStart,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get monthly payment methods for merchant %s: %w", api_key, err)
+	}
+	return r.mapping.ToMerchantMonthlyPaymentMethodsByApikey(res), nil
+}
+
+func (r *merchantRepository) GetYearlyPaymentMethodByApikey(api_key string, year int) ([]*record.MerchantYearlyPaymentMethod, error) {
+	res, err := r.db.GetYearlyPaymentMethodByApikey(r.ctx, db.GetYearlyPaymentMethodByApikeyParams{
+		ApiKey:  api_key,
+		Column2: year,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get yearly payment methods for merchant %s: %w", api_key, err)
+	}
+	return r.mapping.ToMerchantYearlyPaymentMethodsByApikey(res), nil
+}
+
+func (r *merchantRepository) GetMonthlyAmountByApikey(api_key string, year int) ([]*record.MerchantMonthlyAmount, error) {
+	yearStart := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
+	res, err := r.db.GetMonthlyAmountByApikey(r.ctx, db.GetMonthlyAmountByApikeyParams{
+		ApiKey:  api_key,
+		Column1: yearStart,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get monthly amount for merchant %s: %w", api_key, err)
+	}
+	return r.mapping.ToMerchantMonthlyAmountsByApikey(res), nil
+}
+
+func (r *merchantRepository) GetYearlyAmountByApikey(api_key string, year int) ([]*record.MerchantYearlyAmount, error) {
+	res, err := r.db.GetYearlyAmountByApikey(r.ctx, db.GetYearlyAmountByApikeyParams{
+		ApiKey:  api_key,
+		Column2: year,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get yearly amount for merchant %s: %w", api_key, err)
+	}
+
+	return r.mapping.ToMerchantYearlyAmountsByApikey(res), nil
+}
+
+func (r *merchantRepository) GetMonthlyTotalAmountByApikey(api_key string, year int) ([]*record.MerchantMonthlyTotalAmount, error) {
+	yearStart := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
+	res, err := r.db.GetMonthlyTotalAmountByApikey(r.ctx, db.GetMonthlyTotalAmountByApikeyParams{
+		ApiKey:  api_key,
+		Column1: yearStart,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get monthly amount for merchant %s: %w", api_key, err)
+	}
+	return r.mapping.ToMerchantMonthlyTotalAmountsByApikey(res), nil
+}
+
+func (r *merchantRepository) GetYearlyTotalAmountByApikey(api_key string, year int) ([]*record.MerchantYearlyTotalAmount, error) {
+	res, err := r.db.GetYearlyTotalAmountByApikey(r.ctx, db.GetYearlyTotalAmountByApikeyParams{
+		ApiKey:  api_key,
+		Column1: int32(year),
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get yearly amount for merchant %s: %w", api_key, err)
+	}
+
+	return r.mapping.ToMerchantYearlyTotalAmountsByApikey(res), nil
+}
+
+func (r *merchantRepository) FindAllTransactionsByApikey(api_key string, search string, page, pageSize int) ([]*record.MerchantTransactionsRecord, int, error) {
+	offset := (page - 1) * pageSize
+
+	req := db.FindAllTransactionsByApikeyParams{
+		ApiKey:  api_key,
+		Column2: search,
+		Limit:   int32(pageSize),
+		Offset:  int32(offset),
+	}
+
+	merchant, err := r.db.FindAllTransactionsByApikey(r.ctx, req)
+
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to find merchantFindAllTransactionsByMerchantRows: %w", err)
+	}
+
+	var totalCount int
+	if len(merchant) > 0 {
+		totalCount = int(merchant[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+	return r.mapping.ToMerchantsTransactionByApikeyRecord(merchant), totalCount, nil
 }
 
 func (r *merchantRepository) FindByMerchantUserId(user_id int) ([]*record.MerchantRecord, error) {

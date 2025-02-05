@@ -165,6 +165,93 @@ func (q *Queries) FindAllTransactions(ctx context.Context, arg FindAllTransactio
 	return items, nil
 }
 
+const findAllTransactionsByApikey = `-- name: FindAllTransactionsByApikey :many
+SELECT
+    t.transaction_id,
+    t.card_number,
+    t.amount,
+    t.payment_method,
+    t.merchant_id,
+    m.name AS merchant_name,
+    t.transaction_time,
+    t.created_at,
+    t.updated_at,
+    t.deleted_at,
+    COUNT(*) OVER() AS total_count
+FROM
+    transactions t
+JOIN
+    merchants m ON t.merchant_id = m.merchant_id
+WHERE
+    t.deleted_at IS NULL
+    AND m.api_key = $1
+    AND ($2::TEXT IS NULL OR t.card_number ILIKE '%' || $2 || '%' OR t.payment_method ILIKE '%' || $2 || '%')
+ORDER BY
+    t.transaction_time DESC
+LIMIT $3 OFFSET $4
+`
+
+type FindAllTransactionsByApikeyParams struct {
+	ApiKey  string `json:"api_key"`
+	Column2 string `json:"column_2"`
+	Limit   int32  `json:"limit"`
+	Offset  int32  `json:"offset"`
+}
+
+type FindAllTransactionsByApikeyRow struct {
+	TransactionID   int32        `json:"transaction_id"`
+	CardNumber      string       `json:"card_number"`
+	Amount          int32        `json:"amount"`
+	PaymentMethod   string       `json:"payment_method"`
+	MerchantID      int32        `json:"merchant_id"`
+	MerchantName    string       `json:"merchant_name"`
+	TransactionTime time.Time    `json:"transaction_time"`
+	CreatedAt       sql.NullTime `json:"created_at"`
+	UpdatedAt       sql.NullTime `json:"updated_at"`
+	DeletedAt       sql.NullTime `json:"deleted_at"`
+	TotalCount      int64        `json:"total_count"`
+}
+
+func (q *Queries) FindAllTransactionsByApikey(ctx context.Context, arg FindAllTransactionsByApikeyParams) ([]*FindAllTransactionsByApikeyRow, error) {
+	rows, err := q.db.QueryContext(ctx, findAllTransactionsByApikey,
+		arg.ApiKey,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*FindAllTransactionsByApikeyRow
+	for rows.Next() {
+		var i FindAllTransactionsByApikeyRow
+		if err := rows.Scan(
+			&i.TransactionID,
+			&i.CardNumber,
+			&i.Amount,
+			&i.PaymentMethod,
+			&i.MerchantID,
+			&i.MerchantName,
+			&i.TransactionTime,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.TotalCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const findAllTransactionsByMerchant = `-- name: FindAllTransactionsByMerchant :many
 SELECT
     t.transaction_id,
@@ -488,6 +575,66 @@ func (q *Queries) GetMerchantsByUserID(ctx context.Context, userID int32) ([]*Me
 	return items, nil
 }
 
+const getMonthlyAmountByApikey = `-- name: GetMonthlyAmountByApikey :many
+WITH months AS (
+    SELECT generate_series(
+        date_trunc('year', $1::timestamp),
+        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
+        interval '1 month'
+    ) AS month
+)
+SELECT
+    TO_CHAR(m.month, 'Mon') AS month,
+    COALESCE(SUM(t.amount), 0)::int AS total_amount
+FROM
+    months m
+LEFT JOIN
+    transactions t ON EXTRACT(MONTH FROM t.transaction_time) = EXTRACT(MONTH FROM m.month)
+    AND EXTRACT(YEAR FROM t.transaction_time) = EXTRACT(YEAR FROM m.month)
+    AND t.deleted_at IS NULL
+LEFT JOIN
+    merchants mch ON t.merchant_id = mch.merchant_id
+    AND mch.deleted_at IS NULL
+    AND mch.api_key = $2
+GROUP BY
+    m.month
+ORDER BY
+    m.month
+`
+
+type GetMonthlyAmountByApikeyParams struct {
+	Column1 time.Time `json:"column_1"`
+	ApiKey  string    `json:"api_key"`
+}
+
+type GetMonthlyAmountByApikeyRow struct {
+	Month       string `json:"month"`
+	TotalAmount int32  `json:"total_amount"`
+}
+
+func (q *Queries) GetMonthlyAmountByApikey(ctx context.Context, arg GetMonthlyAmountByApikeyParams) ([]*GetMonthlyAmountByApikeyRow, error) {
+	rows, err := q.db.QueryContext(ctx, getMonthlyAmountByApikey, arg.Column1, arg.ApiKey)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetMonthlyAmountByApikeyRow
+	for rows.Next() {
+		var i GetMonthlyAmountByApikeyRow
+		if err := rows.Scan(&i.Month, &i.TotalAmount); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getMonthlyAmountByMerchants = `-- name: GetMonthlyAmountByMerchants :many
 WITH months AS (
     SELECT generate_series(
@@ -589,6 +736,78 @@ func (q *Queries) GetMonthlyAmountMerchant(ctx context.Context, dollar_1 time.Ti
 	for rows.Next() {
 		var i GetMonthlyAmountMerchantRow
 		if err := rows.Scan(&i.Month, &i.TotalAmount); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getMonthlyPaymentMethodByApikey = `-- name: GetMonthlyPaymentMethodByApikey :many
+WITH months AS (
+    SELECT generate_series(
+        date_trunc('year', $1::timestamp),
+        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
+        interval '1 month'
+    ) AS month
+),
+payment_methods AS (
+    SELECT DISTINCT payment_method
+    FROM transactions
+    WHERE deleted_at IS NULL
+)
+SELECT
+    TO_CHAR(m.month, 'Mon') AS month,
+    pm.payment_method,
+    COALESCE(SUM(t.amount), 0)::int AS total_amount
+FROM
+    months m
+CROSS JOIN
+    payment_methods pm
+LEFT JOIN
+    transactions t ON EXTRACT(MONTH FROM t.transaction_time) = EXTRACT(MONTH FROM m.month)
+    AND EXTRACT(YEAR FROM t.transaction_time) = EXTRACT(YEAR FROM m.month)
+    AND t.payment_method = pm.payment_method
+    AND t.deleted_at IS NULL
+LEFT JOIN
+    merchants mch ON t.merchant_id = mch.merchant_id
+    AND mch.deleted_at IS NULL
+    AND mch.api_key = $2
+GROUP BY
+    m.month,
+    pm.payment_method
+ORDER BY
+    m.month,
+    pm.payment_method
+`
+
+type GetMonthlyPaymentMethodByApikeyParams struct {
+	Column1 time.Time `json:"column_1"`
+	ApiKey  string    `json:"api_key"`
+}
+
+type GetMonthlyPaymentMethodByApikeyRow struct {
+	Month         string `json:"month"`
+	PaymentMethod string `json:"payment_method"`
+	TotalAmount   int32  `json:"total_amount"`
+}
+
+func (q *Queries) GetMonthlyPaymentMethodByApikey(ctx context.Context, arg GetMonthlyPaymentMethodByApikeyParams) ([]*GetMonthlyPaymentMethodByApikeyRow, error) {
+	rows, err := q.db.QueryContext(ctx, getMonthlyPaymentMethodByApikey, arg.Column1, arg.ApiKey)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetMonthlyPaymentMethodByApikeyRow
+	for rows.Next() {
+		var i GetMonthlyPaymentMethodByApikeyRow
+		if err := rows.Scan(&i.Month, &i.PaymentMethod, &i.TotalAmount); err != nil {
 			return nil, err
 		}
 		items = append(items, &i)
@@ -740,6 +959,88 @@ func (q *Queries) GetMonthlyPaymentMethodsMerchant(ctx context.Context, dollar_1
 	return items, nil
 }
 
+const getMonthlyTotalAmountByApikey = `-- name: GetMonthlyTotalAmountByApikey :many
+WITH monthly_data AS (
+    SELECT
+        EXTRACT(YEAR FROM t.transaction_time)::integer AS year,
+        EXTRACT(MONTH FROM t.transaction_time)::integer AS month,
+        COALESCE(SUM(t.amount), 0)::integer AS total_amount
+    FROM
+        transactions t
+    INNER JOIN
+        merchants m ON t.merchant_id = m.merchant_id
+    WHERE
+        t.deleted_at IS NULL
+        AND m.deleted_at IS NULL
+        AND EXTRACT(YEAR FROM t.transaction_time) = EXTRACT(YEAR FROM $1::timestamp)
+        AND m.api_key = $2
+    GROUP BY
+        EXTRACT(YEAR FROM t.transaction_time),
+        EXTRACT(MONTH FROM t.transaction_time)
+), formatted_data AS (
+    SELECT
+        year::text,
+        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
+        total_amount
+    FROM
+        monthly_data
+    UNION ALL
+
+    SELECT
+        EXTRACT(YEAR FROM gs.month)::text AS year,
+        TO_CHAR(gs.month, 'Mon') AS month,
+        0::integer AS total_amount
+    FROM generate_series(
+        date_trunc('year', $1::timestamp),
+        date_trunc('year', $1::timestamp) + interval '11 month',
+        interval '1 month'
+    ) AS gs(month)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM monthly_data md
+        WHERE md.year = EXTRACT(YEAR FROM gs.month)::integer
+        AND md.month = EXTRACT(MONTH FROM gs.month)::integer
+    )
+)
+SELECT year, month, total_amount FROM formatted_data
+ORDER BY
+    year DESC,
+    TO_DATE(month, 'Mon') DESC
+`
+
+type GetMonthlyTotalAmountByApikeyParams struct {
+	Column1 time.Time `json:"column_1"`
+	ApiKey  string    `json:"api_key"`
+}
+
+type GetMonthlyTotalAmountByApikeyRow struct {
+	Year        string `json:"year"`
+	Month       string `json:"month"`
+	TotalAmount int32  `json:"total_amount"`
+}
+
+func (q *Queries) GetMonthlyTotalAmountByApikey(ctx context.Context, arg GetMonthlyTotalAmountByApikeyParams) ([]*GetMonthlyTotalAmountByApikeyRow, error) {
+	rows, err := q.db.QueryContext(ctx, getMonthlyTotalAmountByApikey, arg.Column1, arg.ApiKey)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetMonthlyTotalAmountByApikeyRow
+	for rows.Next() {
+		var i GetMonthlyTotalAmountByApikeyRow
+		if err := rows.Scan(&i.Year, &i.Month, &i.TotalAmount); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getMonthlyTotalAmountByMerchant = `-- name: GetMonthlyTotalAmountByMerchant :many
 WITH monthly_data AS (
     SELECT
@@ -843,7 +1144,6 @@ WITH monthly_data AS (
         EXTRACT(YEAR FROM t.transaction_time),
         TO_CHAR(t.transaction_time, 'Mon')
 ), missing_months AS (
-    -- Current month if no data
     SELECT
         EXTRACT(YEAR FROM $1::timestamp)::text AS year,
         TO_CHAR($1::timestamp, 'Mon') AS month,
@@ -855,7 +1155,6 @@ WITH monthly_data AS (
         AND month = TO_CHAR($1::timestamp, 'Mon')
     )
     UNION ALL
-    -- Previous month if no data
     SELECT
         EXTRACT(YEAR FROM date_trunc('month', $1::timestamp) - interval '1 month')::text AS year,
         TO_CHAR(date_trunc('month', $1::timestamp) - interval '1 month', 'Mon') AS month,
@@ -997,6 +1296,66 @@ func (q *Queries) GetTrashedMerchants(ctx context.Context, arg GetTrashedMerchan
 	return items, nil
 }
 
+const getYearlyAmountByApikey = `-- name: GetYearlyAmountByApikey :many
+WITH last_five_years AS (
+    SELECT
+        EXTRACT(YEAR FROM t.transaction_time) AS year,
+        SUM(t.amount) AS total_amount
+    FROM
+        transactions t
+    JOIN
+        merchants m ON t.merchant_id = m.merchant_id
+    WHERE
+        t.deleted_at IS NULL
+        AND m.deleted_at IS NULL
+        AND m.api_key = $1
+        AND EXTRACT(YEAR FROM t.transaction_time) >= $2 - 4
+        AND EXTRACT(YEAR FROM t.transaction_time) <= $2
+    GROUP BY
+        EXTRACT(YEAR FROM t.transaction_time)
+)
+SELECT
+    year,
+    total_amount
+FROM
+    last_five_years
+ORDER BY
+    year
+`
+
+type GetYearlyAmountByApikeyParams struct {
+	ApiKey  string      `json:"api_key"`
+	Column2 interface{} `json:"column_2"`
+}
+
+type GetYearlyAmountByApikeyRow struct {
+	Year        string `json:"year"`
+	TotalAmount int64  `json:"total_amount"`
+}
+
+func (q *Queries) GetYearlyAmountByApikey(ctx context.Context, arg GetYearlyAmountByApikeyParams) ([]*GetYearlyAmountByApikeyRow, error) {
+	rows, err := q.db.QueryContext(ctx, getYearlyAmountByApikey, arg.ApiKey, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetYearlyAmountByApikeyRow
+	for rows.Next() {
+		var i GetYearlyAmountByApikeyRow
+		if err := rows.Scan(&i.Year, &i.TotalAmount); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getYearlyAmountByMerchants = `-- name: GetYearlyAmountByMerchants :many
 WITH last_five_years AS (
     SELECT
@@ -1097,6 +1456,70 @@ func (q *Queries) GetYearlyAmountMerchant(ctx context.Context, dollar_1 interfac
 	for rows.Next() {
 		var i GetYearlyAmountMerchantRow
 		if err := rows.Scan(&i.Year, &i.TotalAmount); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getYearlyPaymentMethodByApikey = `-- name: GetYearlyPaymentMethodByApikey :many
+WITH last_five_years AS (
+    SELECT
+        EXTRACT(YEAR FROM t.transaction_time) AS year,
+        t.payment_method,
+        SUM(t.amount) AS total_amount
+    FROM
+        transactions t
+    JOIN
+        merchants m ON t.merchant_id = m.merchant_id
+    WHERE
+        t.deleted_at IS NULL
+        AND m.deleted_at IS NULL
+        AND m.api_key = $1
+        AND EXTRACT(YEAR FROM t.transaction_time) >= $2 - 4
+        AND EXTRACT(YEAR FROM t.transaction_time) <= $2
+    GROUP BY
+        EXTRACT(YEAR FROM t.transaction_time),
+        t.payment_method
+)
+SELECT
+    year,
+    payment_method,
+    total_amount
+FROM
+    last_five_years
+ORDER BY
+    year
+`
+
+type GetYearlyPaymentMethodByApikeyParams struct {
+	ApiKey  string      `json:"api_key"`
+	Column2 interface{} `json:"column_2"`
+}
+
+type GetYearlyPaymentMethodByApikeyRow struct {
+	Year          string `json:"year"`
+	PaymentMethod string `json:"payment_method"`
+	TotalAmount   int64  `json:"total_amount"`
+}
+
+func (q *Queries) GetYearlyPaymentMethodByApikey(ctx context.Context, arg GetYearlyPaymentMethodByApikeyParams) ([]*GetYearlyPaymentMethodByApikeyRow, error) {
+	rows, err := q.db.QueryContext(ctx, getYearlyPaymentMethodByApikey, arg.ApiKey, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetYearlyPaymentMethodByApikeyRow
+	for rows.Next() {
+		var i GetYearlyPaymentMethodByApikeyRow
+		if err := rows.Scan(&i.Year, &i.PaymentMethod, &i.TotalAmount); err != nil {
 			return nil, err
 		}
 		items = append(items, &i)
@@ -1218,6 +1641,78 @@ func (q *Queries) GetYearlyPaymentMethodMerchant(ctx context.Context, dollar_1 i
 	for rows.Next() {
 		var i GetYearlyPaymentMethodMerchantRow
 		if err := rows.Scan(&i.Year, &i.PaymentMethod, &i.TotalAmount); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getYearlyTotalAmountByApikey = `-- name: GetYearlyTotalAmountByApikey :many
+WITH yearly_data AS (
+    SELECT
+        EXTRACT(YEAR FROM t.transaction_time)::integer AS year,
+        COALESCE(SUM(t.amount), 0)::integer AS total_amount
+    FROM
+        transactions t
+    INNER JOIN
+        merchants m ON t.merchant_id = m.merchant_id
+    WHERE
+        t.deleted_at IS NULL
+        AND m.deleted_at IS NULL
+        AND EXTRACT(YEAR FROM t.transaction_time) >= $1::integer - 4
+        AND EXTRACT(YEAR FROM t.transaction_time) <= $1::integer
+        AND m.api_key = $2
+    GROUP BY
+        EXTRACT(YEAR FROM t.transaction_time)
+), formatted_data AS (
+    SELECT
+        year::text,
+        total_amount
+    FROM
+        yearly_data
+    UNION ALL
+
+    SELECT
+        y::text AS year,
+        0::integer AS total_amount
+    FROM generate_series($1::integer - 4, $1::integer) AS y
+    WHERE NOT EXISTS (
+        SELECT 1 FROM yearly_data yd
+        WHERE yd.year = y
+    )
+)
+SELECT year, total_amount FROM formatted_data
+ORDER BY
+    year DESC
+`
+
+type GetYearlyTotalAmountByApikeyParams struct {
+	Column1 int32  `json:"column_1"`
+	ApiKey  string `json:"api_key"`
+}
+
+type GetYearlyTotalAmountByApikeyRow struct {
+	Year        string `json:"year"`
+	TotalAmount int32  `json:"total_amount"`
+}
+
+func (q *Queries) GetYearlyTotalAmountByApikey(ctx context.Context, arg GetYearlyTotalAmountByApikeyParams) ([]*GetYearlyTotalAmountByApikeyRow, error) {
+	rows, err := q.db.QueryContext(ctx, getYearlyTotalAmountByApikey, arg.Column1, arg.ApiKey)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetYearlyTotalAmountByApikeyRow
+	for rows.Next() {
+		var i GetYearlyTotalAmountByApikeyRow
+		if err := rows.Scan(&i.Year, &i.TotalAmount); err != nil {
 			return nil, err
 		}
 		items = append(items, &i)

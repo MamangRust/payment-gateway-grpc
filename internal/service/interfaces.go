@@ -81,7 +81,6 @@ type MerchantService interface {
 	FindById(merchant_id int) (*response.MerchantResponse, *response.ErrorResponse)
 
 	FindAllTransactions(page int, pageSize int, search string) ([]*response.MerchantTransactionResponse, int, *response.ErrorResponse)
-	FindAllTransactionsByMerchant(merchant_id int, page int, pageSize int, search string) ([]*response.MerchantTransactionResponse, int, *response.ErrorResponse)
 
 	FindMonthlyPaymentMethodsMerchant(year int) ([]*response.MerchantResponseMonthlyPaymentMethod, *response.ErrorResponse)
 	FindYearlyPaymentMethodMerchant(year int) ([]*response.MerchantResponseYearlyPaymentMethod, *response.ErrorResponse)
@@ -91,12 +90,21 @@ type MerchantService interface {
 	FindMonthlyTotalAmountMerchant(year int) ([]*response.MerchantResponseMonthlyTotalAmount, *response.ErrorResponse)
 	FindYearlyTotalAmountMerchant(year int) ([]*response.MerchantResponseYearlyTotalAmount, *response.ErrorResponse)
 
+	FindAllTransactionsByMerchant(merchant_id int, page int, pageSize int, search string) ([]*response.MerchantTransactionResponse, int, *response.ErrorResponse)
 	FindMonthlyPaymentMethodByMerchants(merchantID int, year int) ([]*response.MerchantResponseMonthlyPaymentMethod, *response.ErrorResponse)
 	FindYearlyPaymentMethodByMerchants(merchantID int, year int) ([]*response.MerchantResponseYearlyPaymentMethod, *response.ErrorResponse)
 	FindMonthlyAmountByMerchants(merchantID int, year int) ([]*response.MerchantResponseMonthlyAmount, *response.ErrorResponse)
 	FindYearlyAmountByMerchants(merchantID int, year int) ([]*response.MerchantResponseYearlyAmount, *response.ErrorResponse)
 	FindMonthlyTotalAmountByMerchants(merchantID int, year int) ([]*response.MerchantResponseMonthlyTotalAmount, *response.ErrorResponse)
 	FindYearlyTotalAmountByMerchants(merchantID int, year int) ([]*response.MerchantResponseYearlyTotalAmount, *response.ErrorResponse)
+
+	FindAllTransactionsByApikey(api_key string, page int, pageSize int, search string) ([]*response.MerchantTransactionResponse, int, *response.ErrorResponse)
+	FindMonthlyPaymentMethodByApikeys(api_key string, year int) ([]*response.MerchantResponseMonthlyPaymentMethod, *response.ErrorResponse)
+	FindYearlyPaymentMethodByApikeys(api_key string, year int) ([]*response.MerchantResponseYearlyPaymentMethod, *response.ErrorResponse)
+	FindMonthlyAmountByApikeys(api_key string, year int) ([]*response.MerchantResponseMonthlyAmount, *response.ErrorResponse)
+	FindYearlyAmountByApikeys(api_key string, year int) ([]*response.MerchantResponseYearlyAmount, *response.ErrorResponse)
+	FindMonthlyTotalAmountByApikeys(api_key string, year int) ([]*response.MerchantResponseMonthlyTotalAmount, *response.ErrorResponse)
+	FindYearlyTotalAmountByApikeys(api_key string, year int) ([]*response.MerchantResponseYearlyTotalAmount, *response.ErrorResponse)
 
 	FindByActive(page int, pageSize int, search string) ([]*response.MerchantResponseDeleteAt, int, *response.ErrorResponse)
 	FindByTrashed(page int, pageSize int, search string) ([]*response.MerchantResponseDeleteAt, int, *response.ErrorResponse)
