@@ -128,6 +128,7 @@ func (s *Server) Run() {
 
 	pb.RegisterAuthServiceServer(grpcServer, s.Handlers.Auth)
 	pb.RegisterUserServiceServer(grpcServer, s.Handlers.User)
+	pb.RegisterRoleServiceServer(grpcServer, s.Handlers.Role)
 	pb.RegisterCardServiceServer(grpcServer, s.Handlers.Card)
 	pb.RegisterMerchantServiceServer(grpcServer, s.Handlers.Merchant)
 	pb.RegisterSaldoServiceServer(grpcServer, s.Handlers.Saldo)

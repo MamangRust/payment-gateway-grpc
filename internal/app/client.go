@@ -44,6 +44,7 @@ func RunClient() {
 	flag.Parse()
 
 	logger, err := logger.NewLogger()
+	limiter := middlewares.NewRateLimiter(5, 10)
 
 	if err != nil {
 		logger.Fatal("Failed to create logger", zap.Error(err))
@@ -65,6 +66,7 @@ func RunClient() {
 
 	e.Use(middleware.Recover())
 	e.Use(middleware.Logger())
+	e.Use(limiter.Limit)
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"http://localhost:1420"},
