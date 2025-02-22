@@ -77,7 +77,7 @@ func NewHandlerTransaction(transaction pb.TransactionServiceClient, merchant pb.
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Number of items per page" default(10)
 // @Param search query string false "Search query"
-// @Success 200 {object} pb.ApiResponsePaginationTransaction "List of transactions"
+// @Success 200 {object} response.ApiResponsePaginationTransaction "List of transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/transactions [get]
 func (h *transactionHandler) FindAll(c echo.Context) error {
@@ -127,7 +127,7 @@ func (h *transactionHandler) FindAll(c echo.Context) error {
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Number of items per page" default(10)
 // @Param search query string false "Search query"
-// @Success 200 {object} pb.ApiResponsePaginationTransaction "List of transactions"
+// @Success 200 {object} response.ApiResponsePaginationTransaction "List of transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/transactions/card/{card_number} [get]
 func (h *transactionHandler) FindAllTransactionByCardNumber(c echo.Context) error {
@@ -183,7 +183,7 @@ func (h *transactionHandler) FindAllTransactionByCardNumber(c echo.Context) erro
 // @Accept json
 // @Produce json
 // @Param id path string true "Transaction ID"
-// @Success 200 {object} pb.ApiResponseTransaction "Transaction data"
+// @Success 200 {object} response.ApiResponseTransaction "Transaction data"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/transactions/{id} [get]
@@ -230,7 +230,7 @@ func (h *transactionHandler) FindById(c echo.Context) error {
 // @Produce json
 // @Param year query int true "Year"
 // @Param month query int true "Month"
-// @Success 200 {object} pb.ApiResponseTransactionMonthStatusSuccess "Monthly transaction status for successful transactions"
+// @Success 200 {object} response.ApiResponseTransactionMonthStatusSuccess "Monthly transaction status for successful transactions"
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction status for successful transactions"
 // @Router /api/transactions/monthly-success [get]
@@ -283,7 +283,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusSuccess(c echo.Context)
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTransactionYearStatusSuccess "Yearly transaction status for successful transactions"
+// @Success 200 {object} response.ApiResponseTransactionYearStatusSuccess "Yearly transaction status for successful transactions"
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction status for successful transactions"
 // @Router /api/transactions/yearly-success [get]
@@ -327,7 +327,7 @@ func (h *transactionHandler) FindYearlyTransactionStatusSuccess(c echo.Context) 
 // @Produce json
 // @Param year query int true "Year"
 // @Param month query int true "Month"
-// @Success 200 {object} pb.ApiResponseTransactionMonthStatusFailed "Monthly transaction status for failed transactions"
+// @Success 200 {object} response.ApiResponseTransactionMonthStatusFailed "Monthly transaction status for failed transactions"
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction status for failed transactions"
 // @Router /api/transactions/monthly-failed [get]
@@ -380,7 +380,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusFailed(c echo.Context) 
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTransactionYearStatusFailed "Yearly transaction status for failed transactions"
+// @Success 200 {object} response.ApiResponseTransactionYearStatusFailed "Yearly transaction status for failed transactions"
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction status for failed transactions"
 // @Router /api/transactions/yearly-failed [get]
@@ -423,7 +423,7 @@ func (h *transactionHandler) FindYearlyTransactionStatusFailed(c echo.Context) e
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTransactionMonthMethod "Monthly payment methods"
+// @Success 200 {object} response.ApiResponseTransactionMonthMethod "Monthly payment methods"
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly payment methods"
 // @Router /api/transactions/monthly-payment-methods [get]
@@ -464,7 +464,7 @@ func (h *transactionHandler) FindMonthlyPaymentMethods(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTransactionYearMethod "Yearly payment methods"
+// @Success 200 {object} response.ApiResponseTransactionYearMethod "Yearly payment methods"
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly payment methods"
 // @Router /api/transactions/yearly-payment-methods [get]
@@ -505,7 +505,7 @@ func (h *transactionHandler) FindYearlyPaymentMethods(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTransactionMonthAmount "Monthly transaction amounts"
+// @Success 200 {object} response.ApiResponseTransactionMonthAmount "Monthly transaction amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
 // @Router /api/transactions/monthly-amounts [get]
@@ -546,7 +546,7 @@ func (h *transactionHandler) FindMonthlyAmounts(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTransactionYearAmount "Yearly transaction amounts"
+// @Success 200 {object} response.ApiResponseTransactionYearAmount "Yearly transaction amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
 // @Router /api/transactions/yearly-amounts [get]
@@ -588,7 +588,7 @@ func (h *transactionHandler) FindYearlyAmounts(c echo.Context) error {
 // @Produce json
 // @Param card_number query string true "Card Number"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTransactionMonthMethod "Monthly payment methods by card number"
+// @Success 200 {object} response.ApiResponseTransactionMonthMethod "Monthly payment methods by card number"
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly payment methods by card number"
 // @Router /api/transactions/monthly-payment-methods-by-card [get]
@@ -633,7 +633,7 @@ func (h *transactionHandler) FindMonthlyPaymentMethodsByCardNumber(c echo.Contex
 // @Produce json
 // @Param card_number query string true "Card Number"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTransactionYearMethod "Yearly payment methods by card number"
+// @Success 200 {object} response.ApiResponseTransactionYearMethod "Yearly payment methods by card number"
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly payment methods by card number"
 // @Router /api/transactions/yearly-payment-methods-by-card [get]
@@ -677,7 +677,7 @@ func (h *transactionHandler) FindYearlyPaymentMethodsByCardNumber(c echo.Context
 // @Produce json
 // @Param card_number query string true "Card Number"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTransactionMonthAmount "Monthly transaction amounts by card number"
+// @Success 200 {object} response.ApiResponseTransactionMonthAmount "Monthly transaction amounts by card number"
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts by card number"
 // @Router /api/transactions/monthly-amounts-by-card [get]
@@ -721,7 +721,7 @@ func (h *transactionHandler) FindMonthlyAmountsByCardNumber(c echo.Context) erro
 // @Produce json
 // @Param card_number query string true "Card Number"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTransactionYearAmount "Yearly transaction amounts by card number"
+// @Success 200 {object} response.ApiResponseTransactionYearAmount "Yearly transaction amounts by card number"
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts by card number"
 // @Router /api/transactions/yearly-amounts-by-card [get]
@@ -763,7 +763,7 @@ func (h *transactionHandler) FindYearlyAmountsByCardNumber(c echo.Context) error
 // @Accept json
 // @Produce json
 // @Param merchant_id query string true "Merchant ID"
-// @Success 200 {object} pb.ApiResponseTransactions "Transaction data"
+// @Success 200 {object} response.ApiResponseTransactions "Transaction data"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/transactions/merchant/{merchant_id} [get]
@@ -807,7 +807,10 @@ func (h *transactionHandler) FindByTransactionMerchantId(c echo.Context) error {
 // @Description Retrieve a list of active transactions
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponseTransactions "List of active transactions"
+// @Param page query int false "Page number (default: 1)"
+// @Param page_size query int false "Number of items per page (default: 10)"
+// @Param search query string false "Search keyword"
+// @Success 200 {object} response.ApiResponseTransactions "List of active transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/transactions/active [get]
 func (h *transactionHandler) FindByActiveTransaction(c echo.Context) error {
@@ -853,7 +856,10 @@ func (h *transactionHandler) FindByActiveTransaction(c echo.Context) error {
 // @Description Retrieve a list of trashed transactions
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponseTransactions "List of trashed transactions"
+// @Param page query int false "Page number (default: 1)"
+// @Param page_size query int false "Number of items per page (default: 10)"
+// @Param search query string false "Search keyword"
+// @Success 200 {object} response.ApiResponseTransactions "List of trashed transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/transactions/trashed [get]
 func (h *transactionHandler) FindByTrashedTransaction(c echo.Context) error {
@@ -900,7 +906,7 @@ func (h *transactionHandler) FindByTrashedTransaction(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param CreateTransactionRequest body requests.CreateTransactionRequest true "Create Transaction Request"
-// @Success 200 {object} pb.ApiResponseTransaction "Successfully created transaction record"
+// @Success 200 {object} response.ApiResponseTransaction "Successfully created transaction record"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to create transaction"
 // @Router /api/transactions/create [post]
@@ -959,7 +965,7 @@ func (h *transactionHandler) Create(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param transaction body requests.UpdateTransactionRequest true "Transaction data"
-// @Success 200 {object} pb.ApiResponseTransaction "Updated transaction data"
+// @Success 200 {object} response.ApiResponseTransaction "Updated transaction data"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to update transaction"
 // @Router /api/transactions/update [post]
@@ -1036,7 +1042,7 @@ func (h *transactionHandler) Update(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Transaction ID"
-// @Success 200 {object} pb.ApiResponseTransaction "Successfully trashed transaction record"
+// @Success 200 {object} response.ApiResponseTransaction "Successfully trashed transaction record"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to trashed transaction"
 // @Router /api/transactions/trashed/{id} [post]
@@ -1080,7 +1086,7 @@ func (h *transactionHandler) TrashedTransaction(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Transaction ID"
-// @Success 200 {object} pb.ApiResponseTransaction "Successfully restored transaction record"
+// @Success 200 {object} response.ApiResponseTransaction "Successfully restored transaction record"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore transaction:"
 // @Router /api/transactions/restore/{id} [post]
@@ -1125,7 +1131,7 @@ func (h *transactionHandler) RestoreTransaction(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Transaction ID"
-// @Success 200 {object} pb.ApiResponseTransactionDelete "Successfully deleted transaction record"
+// @Success 200 {object} response.ApiResponseTransactionDelete "Successfully deleted transaction record"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete transaction:"
 // @Router /api/transactions/permanent/{id} [delete]
@@ -1169,7 +1175,7 @@ func (h *transactionHandler) DeletePermanent(c echo.Context) error {
 // @Description Restore a trashed transaction all.
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponseTransactionAll "Successfully restored transaction record"
+// @Success 200 {object} response.ApiResponseTransactionAll "Successfully restored transaction record"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore transaction:"
 // @Router /api/transactions/restore/all [post]
@@ -1199,7 +1205,7 @@ func (h *transactionHandler) RestoreAllTransaction(c echo.Context) error {
 // @Description Permanently delete a transaction all.
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponseTransactionAll "Successfully deleted transaction record"
+// @Success 200 {object} response.ApiResponseTransactionAll "Successfully deleted transaction record"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete transaction:"
 // @Router /api/transactions/delete/all [post]

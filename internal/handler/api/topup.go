@@ -57,6 +57,9 @@ func NewHandlerTopup(client pb.TopupServiceClient, router *echo.Echo, logger log
 	routerTopup.POST("/restore/:id", topupHandler.RestoreTopup)
 	routerTopup.DELETE("/permanent/:id", topupHandler.DeleteTopupPermanent)
 
+	routerTopup.POST("/trashed/all", topupHandler.DeleteAllTopupPermanent)
+	routerTopup.POST("/restore/all", topupHandler.RestoreAllTopup)
+
 	return topupHandler
 
 }
@@ -69,7 +72,7 @@ func NewHandlerTopup(client pb.TopupServiceClient, router *echo.Echo, logger log
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Page size" default(10)
 // @Param search query string false "Search query"
-// @Success 200 {object} pb.ApiResponsePaginationTopup "List of topup data"
+// @Success 200 {object} response.ApiResponsePaginationTopup "List of topup data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve topup data"
 // @Router /api/topups [get]
 func (h topupHandleApi) FindAll(c echo.Context) error {
@@ -119,7 +122,7 @@ func (h topupHandleApi) FindAll(c echo.Context) error {
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Number of items per page" default(10)
 // @Param search query string false "Search query"
-// @Success 200 {object} pb.ApiResponsePaginationTopup "List of topups"
+// @Success 200 {object} response.ApiResponsePaginationTopup "List of topups"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve topups data"
 // @Router /api/topups/{card_number} [get]
 func (h *topupHandleApi) FindAllByCardNumber(c echo.Context) error {
@@ -175,7 +178,7 @@ func (h *topupHandleApi) FindAllByCardNumber(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Topup ID"
-// @Success 200 {object} pb.ApiResponseTopup "Topup data"
+// @Success 200 {object} response.ApiResponseTopup "Topup data"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve topup data"
 // @Router /api/topups/{id} [get]
@@ -220,7 +223,7 @@ func (h topupHandleApi) FindById(c echo.Context) error {
 // @Produce json
 // @Param year query int true "Year"
 // @Param month query int true "Month"
-// @Success 200 {object} pb.ApiResponseTopupMonthStatusSuccess "Monthly top-up status for successful transactions"
+// @Success 200 {object} response.ApiResponseTopupMonthStatusSuccess "Monthly top-up status for successful transactions"
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up status for successful transactions"
 // @Router /api/topups/monthly-success [get]
@@ -273,7 +276,7 @@ func (h *topupHandleApi) FindMonthlyTopupStatusSuccess(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTopupYearStatusSuccess "Yearly top-up status for successful transactions"
+// @Success 200 {object} response.ApiResponseTopupYearStatusSuccess "Yearly top-up status for successful transactions"
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up status for successful transactions"
 // @Router /api/topups/yearly-success [get]
@@ -317,7 +320,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusSuccess(c echo.Context) error {
 // @Produce json
 // @Param year query int true "Year"
 // @Param month query int true "Month"
-// @Success 200 {object} pb.ApiResponseTopupMonthStatusFailed "Monthly top-up status for failed transactions"
+// @Success 200 {object} response.ApiResponseTopupMonthStatusFailed "Monthly top-up status for failed transactions"
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up status for failed transactions"
 // @Router /api/topups/monthly-failed [get]
@@ -370,7 +373,7 @@ func (h *topupHandleApi) FindMonthlyTopupStatusFailed(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTopupYearStatusFailed "Yearly top-up status for failed transactions"
+// @Success 200 {object} response.ApiResponseTopupYearStatusFailed "Yearly top-up status for failed transactions"
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up status for failed transactions"
 // @Router /api/topups/yearly-failed [get]
@@ -413,7 +416,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusFailed(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTopupMonthMethod "Monthly top-up methods"
+// @Success 200 {object} response.ApiResponseTopupMonthMethod "Monthly top-up methods"
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up methods"
 // @Router /api/topups/monthly-methods [get]
@@ -454,7 +457,7 @@ func (h *topupHandleApi) FindMonthlyTopupMethods(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTopupYearMethod "Yearly top-up methods"
+// @Success 200 {object} response.ApiResponseTopupYearMethod "Yearly top-up methods"
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up methods"
 // @Router /api/topups/yearly-methods [get]
@@ -495,7 +498,7 @@ func (h *topupHandleApi) FindYearlyTopupMethods(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTopupMonthAmount "Monthly top-up amounts"
+// @Success 200 {object} response.ApiResponseTopupMonthAmount "Monthly top-up amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up amounts"
 // @Router /api/topup/monthly-amounts [get]
@@ -536,7 +539,7 @@ func (h *topupHandleApi) FindMonthlyTopupAmounts(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTopupYearAmount "Yearly top-up amounts"
+// @Success 200 {object} response.ApiResponseTopupYearAmount "Yearly top-up amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up amounts"
 // @Router /api/topups/yearly-amounts [get]
@@ -578,7 +581,7 @@ func (h *topupHandleApi) FindYearlyTopupAmounts(c echo.Context) error {
 // @Produce json
 // @Param card_number query string true "Card Number"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTopupMonthMethod "Monthly top-up methods by card number"
+// @Success 200 {object} response.ApiResponseTopupMonthMethod "Monthly top-up methods by card number"
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up methods by card number"
 // @Router /api/topups/monthly-methods-by-card [get]
@@ -622,7 +625,7 @@ func (h *topupHandleApi) FindMonthlyTopupMethodsByCardNumber(c echo.Context) err
 // @Produce json
 // @Param card_number query string true "Card Number"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTopupYearMethod "Yearly top-up methods by card number"
+// @Success 200 {object} response.ApiResponseTopupYearMethod "Yearly top-up methods by card number"
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up methods by card number"
 // @Router /api/topups/yearly-methods-by-card [get]
@@ -666,7 +669,7 @@ func (h *topupHandleApi) FindYearlyTopupMethodsByCardNumber(c echo.Context) erro
 // @Produce json
 // @Param card_number query string true "Card Number"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTopupMonthAmount "Monthly top-up amounts by card number"
+// @Success 200 {object} response.ApiResponseTopupMonthAmount "Monthly top-up amounts by card number"
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up amounts by card number"
 // @Router /api/topups/monthly-amounts-by-card [get]
@@ -710,7 +713,7 @@ func (h *topupHandleApi) FindMonthlyTopupAmountsByCardNumber(c echo.Context) err
 // @Produce json
 // @Param card_number query string true "Card Number"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseTopupYearAmount "Yearly top-up amounts by card number"
+// @Success 200 {object} response.ApiResponseTopupYearAmount "Yearly top-up amounts by card number"
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up amounts by card number"
 // @Router /api/topups/yearly-amounts-by-card [get]
@@ -751,7 +754,10 @@ func (h *topupHandleApi) FindYearlyTopupAmountsByCardNumber(c echo.Context) erro
 // @Description Retrieve a list of active topup records
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponsesTopup "Active topup data"
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Page size" default(10)
+// @Param search query string false "Search query"
+// @Success 200 {object} response.ApiResponsesTopup "Active topup data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve topup data"
 // @Router /api/topups/active [get]
 func (h *topupHandleApi) FindByActive(c echo.Context) error {
@@ -797,7 +803,10 @@ func (h *topupHandleApi) FindByActive(c echo.Context) error {
 // @Description Retrieve a list of trashed topup records
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponsesTopup "List of trashed topup data"
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Page size" default(10)
+// @Param search query string false "Search query"
+// @Success 200 {object} response.ApiResponsesTopup "List of trashed topup data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve topup data"
 // @Router /api/topups/trashed [get]
 func (h *topupHandleApi) FindByTrashed(c echo.Context) error {
@@ -844,7 +853,7 @@ func (h *topupHandleApi) FindByTrashed(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param CreateTopupRequest body requests.CreateTopupRequest true "Create topup request"
-// @Success 200 {object} pb.ApiResponseTopup "Created topup data"
+// @Success 200 {object} response.ApiResponseTopup "Created topup data"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: "
 // @Failure 500 {object} response.ErrorResponse "Failed to create topup: "
 // @Router /api/topups/create [post]
@@ -899,7 +908,7 @@ func (h *topupHandleApi) Create(c echo.Context) error {
 // @Produce json
 // @Param id path int true "Topup ID"
 // @Param UpdateTopupRequest body requests.UpdateTopupRequest true "Update topup request"
-// @Success 200 {object} pb.ApiResponseTopup "Updated topup data"
+// @Success 200 {object} response.ApiResponseTopup "Updated topup data"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid input data"
 // @Failure 500 {object} response.ErrorResponse "Failed to update topup: "
 // @Router /api/topups/update/{id} [post]
@@ -967,7 +976,7 @@ func (h *topupHandleApi) Update(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Topup ID"
-// @Success 200 {object} pb.ApiResponseTopup "Successfully trashed topup record"
+// @Success 200 {object} response.ApiResponseTopup "Successfully trashed topup record"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to trash topup:"
 // @Router /api/topups/trash/{id} [post]
@@ -1010,7 +1019,7 @@ func (h *topupHandleApi) TrashTopup(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Topup ID"
-// @Success 200 {object} pb.ApiResponseTopup "Successfully restored topup record"
+// @Success 200 {object} response.ApiResponseTopup "Successfully restored topup record"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore topup:"
 // @Router /api/topups/restore/{id} [post]
@@ -1055,7 +1064,7 @@ func (h *topupHandleApi) RestoreTopup(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Topup ID"
-// @Success 200 {object} pb.ApiResponseTopupDelete "Successfully deleted topup record permanently"
+// @Success 200 {object} response.ApiResponseTopupDelete "Successfully deleted topup record permanently"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete topup:"
 // @Router /api/topups/permanent/{id} [delete]
@@ -1099,7 +1108,7 @@ func (h *topupHandleApi) DeleteTopupPermanent(c echo.Context) error {
 // @Description Restore all topup records that were previously deleted.
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponseTopupAll "Successfully restored all topup records"
+// @Success 200 {object} response.ApiResponseTopupAll "Successfully restored all topup records"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore all topup records"
 // @Router /api/topups/restore/all [post]
 func (h *topupHandleApi) RestoreAllTopup(c echo.Context) error {
@@ -1128,9 +1137,9 @@ func (h *topupHandleApi) RestoreAllTopup(c echo.Context) error {
 // @Description Permanently delete all topup records from the database.
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponseTopupAll "Successfully deleted all topup records permanently"
+// @Success 200 {object} response.ApiResponseTopupAll "Successfully deleted all topup records permanently"
 // @Failure 500 {object} response.ErrorResponse "Failed to permanently delete all topup records"
-// @Router /api/topups/permanent/all [delete]
+// @Router /api/topups/permanent/all [post]
 func (h *topupHandleApi) DeleteAllTopupPermanent(c echo.Context) error {
 	ctx := c.Request().Context()
 

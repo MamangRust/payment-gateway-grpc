@@ -43,7 +43,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Success",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseLogin"
+                            "$ref": "#/definitions/response.ApiResponseLogin"
                         }
                     },
                     "400": {
@@ -83,7 +83,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Success",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseGetMe"
+                            "$ref": "#/definitions/response.ApiResponseGetMe"
                         }
                     },
                     "401": {
@@ -134,7 +134,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Success",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseRefreshToken"
+                            "$ref": "#/definitions/response.ApiResponseRefreshToken"
                         }
                     },
                     "400": {
@@ -180,7 +180,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Success",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseRegister"
+                            "$ref": "#/definitions/response.ApiResponseRegister"
                         }
                     },
                     "400": {
@@ -240,7 +240,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Card data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsePaginationCard"
+                            "$ref": "#/definitions/response.ApiResponsePaginationCard"
                         }
                     },
                     "500": {
@@ -325,7 +325,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Created card",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseCard"
+                            "$ref": "#/definitions/response.ApiResponseCard"
                         }
                     },
                     "400": {
@@ -362,7 +362,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseDashboardCard"
+                            "$ref": "#/definitions/response.ApiResponseDashboardCard"
                         }
                     },
                     "500": {
@@ -402,7 +402,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseDashboardCardNumber"
+                            "$ref": "#/definitions/response.ApiResponseDashboardCardNumber"
                         }
                     },
                     "400": {
@@ -448,7 +448,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMonthlyBalance"
+                            "$ref": "#/definitions/response.ApiResponseMonthlyBalance"
                         }
                     },
                     "400": {
@@ -501,7 +501,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMonthlyBalance"
+                            "$ref": "#/definitions/response.ApiResponseMonthlyBalance"
                         }
                     },
                     "400": {
@@ -547,7 +547,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMonthlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseMonthlyAmount"
                         }
                     },
                     "400": {
@@ -600,7 +600,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMonthlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseMonthlyAmount"
                         }
                     },
                     "400": {
@@ -646,7 +646,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMonthlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseMonthlyAmount"
                         }
                     },
                     "400": {
@@ -699,7 +699,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMonthlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseMonthlyAmount"
                         }
                     },
                     "400": {
@@ -745,7 +745,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMonthlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseMonthlyAmount"
                         }
                     },
                     "400": {
@@ -801,7 +801,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseYearlyAmount"
                         }
                     },
                     "400": {
@@ -847,7 +847,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMonthlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseMonthlyAmount"
                         }
                     },
                     "400": {
@@ -900,7 +900,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMonthlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseMonthlyAmount"
                         }
                     },
                     "400": {
@@ -946,7 +946,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMonthlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseMonthlyAmount"
                         }
                     },
                     "400": {
@@ -999,7 +999,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMonthlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseMonthlyAmount"
                         }
                     },
                     "400": {
@@ -1039,7 +1039,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully deleted all card records permanently",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseCardAll"
+                            "$ref": "#/definitions/response.ApiResponseCardAll"
                         }
                     },
                     "500": {
@@ -1082,7 +1082,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Deleted card",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseCardDelete"
+                            "$ref": "#/definitions/response.ApiResponseCardDelete"
                         }
                     },
                     "400": {
@@ -1122,7 +1122,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully restored all card records",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseCardAll"
+                            "$ref": "#/definitions/response.ApiResponseCardAll"
                         }
                     },
                     "500": {
@@ -1165,7 +1165,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Restored card",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseCard"
+                            "$ref": "#/definitions/response.ApiResponseCard"
                         }
                     },
                     "400": {
@@ -1201,11 +1201,31 @@ const docTemplate = `{
                     "Card"
                 ],
                 "summary": "Retrieve trashed cards",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 10)",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search keyword",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Card data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsePaginationCardDeleteAt"
+                            "$ref": "#/definitions/response.ApiResponsePaginationCardDeleteAt"
                         }
                     },
                     "500": {
@@ -1248,7 +1268,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Trashed card",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseCard"
+                            "$ref": "#/definitions/response.ApiResponseCard"
                         }
                     },
                     "400": {
@@ -1306,7 +1326,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Updated card",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseCard"
+                            "$ref": "#/definitions/response.ApiResponseCard"
                         }
                     },
                     "400": {
@@ -1346,7 +1366,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Card data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseCard"
+                            "$ref": "#/definitions/response.ApiResponseCard"
                         }
                     },
                     "400": {
@@ -1392,7 +1412,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearlyBalance"
+                            "$ref": "#/definitions/response.ApiResponseYearlyBalance"
                         }
                     },
                     "400": {
@@ -1445,7 +1465,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearlyBalance"
+                            "$ref": "#/definitions/response.ApiResponseYearlyBalance"
                         }
                     },
                     "400": {
@@ -1498,7 +1518,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseYearlyAmount"
                         }
                     },
                     "400": {
@@ -1544,7 +1564,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseYearlyAmount"
                         }
                     },
                     "400": {
@@ -1597,7 +1617,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseYearlyAmount"
                         }
                     },
                     "400": {
@@ -1643,7 +1663,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseYearlyAmount"
                         }
                     },
                     "400": {
@@ -1699,7 +1719,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseYearlyAmount"
                         }
                     },
                     "400": {
@@ -1755,7 +1775,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseYearlyAmount"
                         }
                     },
                     "400": {
@@ -1801,7 +1821,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseYearlyAmount"
                         }
                     },
                     "400": {
@@ -1854,7 +1874,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseYearlyAmount"
                         }
                     },
                     "400": {
@@ -1903,7 +1923,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Card data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseCard"
+                            "$ref": "#/definitions/response.ApiResponseCard"
                         }
                     },
                     "500": {
@@ -1946,7 +1966,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Card data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseCard"
+                            "$ref": "#/definitions/response.ApiResponseCard"
                         }
                     },
                     "400": {
@@ -1964,7 +1984,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant": {
+        "/api/merchants": {
             "get": {
                 "security": [
                     {
@@ -2008,7 +2028,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of merchants",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsePaginationMerchant"
+                            "$ref": "#/definitions/response.ApiResponsePaginationMerchant"
                         }
                     },
                     "500": {
@@ -2020,7 +2040,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/active": {
+        "/api/merchants/active": {
             "get": {
                 "security": [
                     {
@@ -2038,11 +2058,33 @@ const docTemplate = `{
                     "Merchant"
                 ],
                 "summary": "Find active merchants",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Number of items per page",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of active merchants",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsesMerchant"
+                            "$ref": "#/definitions/response.ApiResponsesMerchant"
                         }
                     },
                     "500": {
@@ -2054,7 +2096,199 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/amount/monthly/by-merchant": {
+        "/api/merchants/api-key": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve a merchant by its API key",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Find a merchant by API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API key",
+                        "name": "api_key",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Merchant data",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponseMerchant"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve merchant data",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/create": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Create a new merchant with the given name and user ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Create a new merchant",
+                "parameters": [
+                    {
+                        "description": "Create merchant request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.CreateMerchantRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Created merchant",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponseMerchant"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request or validation error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to create merchant",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/merchant-user": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve a merchant by its user ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Find a merchant by user ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Merchant data",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponsesMerchant"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid merchant ID",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve merchant data",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/monthly-amount": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve monthly transaction amounts for a merchant by year.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Find monthly transaction amounts for a merchant",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Year",
+                        "name": "year",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Monthly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponseMerchantMonthlyAmount"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid year",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve monthly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/monthly-amount-by-apikey": {
             "get": {
                 "security": [
                     {
@@ -2092,7 +2326,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly transaction amounts",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchantMonthlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseMerchantMonthlyAmount"
                         }
                     },
                     "400": {
@@ -2110,14 +2344,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/api-key": {
+        "/api/merchants/monthly-amount-by-merchant": {
             "get": {
                 "security": [
                     {
                         "Bearer": []
                     }
                 ],
-                "description": "Retrieve a merchant by its API key",
+                "description": "Retrieve monthly transaction amounts for a specific merchant by year.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2127,151 +2361,15 @@ const docTemplate = `{
                 "tags": [
                     "Merchant"
                 ],
-                "summary": "Find a merchant by API key",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "API key",
-                        "name": "api_key",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Merchant data",
-                        "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchant"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to retrieve merchant data",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/merchant/create": {
-            "post": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Create a new merchant with the given name and user ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Merchant"
-                ],
-                "summary": "Create a new merchant",
-                "parameters": [
-                    {
-                        "description": "Create merchant request",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/requests.CreateMerchantRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Created merchant",
-                        "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchant"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request or validation error",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to create merchant",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/merchant/merchant-user": {
-            "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Retrieve a merchant by its user ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Merchant"
-                ],
-                "summary": "Find a merchant by user ID",
+                "summary": "Find monthly transaction amounts for a specific merchant",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
+                        "description": "Merchant ID",
+                        "name": "merchant_id",
+                        "in": "query",
                         "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Merchant data",
-                        "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsesMerchant"
-                        }
                     },
-                    "400": {
-                        "description": "Invalid merchant ID",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to retrieve merchant data",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/merchant/monthly-amount": {
-            "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Retrieve monthly transaction amounts for a merchant by year.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Merchant"
-                ],
-                "summary": "Find monthly transaction amounts for a merchant",
-                "parameters": [
                     {
                         "type": "integer",
                         "description": "Year",
@@ -2284,11 +2382,11 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly transaction amounts",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchantMonthlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseMerchantMonthlyAmount"
                         }
                     },
                     "400": {
-                        "description": "Invalid year",
+                        "description": "Invalid merchant ID or year",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -2302,7 +2400,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/monthly-payment-methods": {
+        "/api/merchants/monthly-payment-methods": {
             "get": {
                 "security": [
                     {
@@ -2333,7 +2431,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly payment methods",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchantMonthlyPaymentMethod"
+                            "$ref": "#/definitions/response.ApiResponseMerchantMonthlyPaymentMethod"
                         }
                     },
                     "400": {
@@ -2351,7 +2449,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/monthly-payment-methods-by-merchant": {
+        "/api/merchants/monthly-payment-methods-by-apikey": {
             "get": {
                 "security": [
                     {
@@ -2389,7 +2487,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly payment methods",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchantMonthlyPaymentMethod"
+                            "$ref": "#/definitions/response.ApiResponseMerchantMonthlyPaymentMethod"
                         }
                     },
                     "400": {
@@ -2407,14 +2505,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/payment-methods/yearly/by-merchant": {
+        "/api/merchants/monthly-payment-methods-by-merchant": {
             "get": {
                 "security": [
                     {
                         "Bearer": []
                     }
                 ],
-                "description": "Retrieve yearly payment methods for a specific merchant by year.",
+                "description": "Retrieve monthly payment methods for a specific merchant by year.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2424,7 +2522,7 @@ const docTemplate = `{
                 "tags": [
                     "Merchant"
                 ],
-                "summary": "Find yearly payment methods for a specific merchant",
+                "summary": "Find monthly payment methods for a specific merchant",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2443,9 +2541,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Yearly payment methods",
+                        "description": "Monthly payment methods",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchantYearlyPaymentMethod"
+                            "$ref": "#/definitions/response.ApiResponseMerchantMonthlyPaymentMethod"
                         }
                     },
                     "400": {
@@ -2455,7 +2553,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to retrieve yearly payment methods",
+                        "description": "Failed to retrieve monthly payment methods",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -2463,8 +2561,169 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/permanent/all": {
-            "delete": {
+        "/api/merchants/monthly-total-amount": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve monthly transaction amounts for a merchant by year.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Find monthly transaction amounts for a merchant",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Year",
+                        "name": "year",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Monthly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponseMerchantMonthlyAmount"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid year",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve monthly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/monthly-totalamount-by-apikey": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve monthly transaction amounts for a specific merchant by year.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Find monthly transaction amounts for a specific merchant",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Merchant ID",
+                        "name": "merchant_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Year",
+                        "name": "year",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Monthly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponseMerchantMonthlyAmount"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid merchant ID or year",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve monthly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/monthly-totalamount-by-merchant": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve monthly transaction amounts for a specific merchant by year.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Find monthly transaction amounts for a specific merchant",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Merchant ID",
+                        "name": "merchant_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Year",
+                        "name": "year",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Monthly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponseMerchantMonthlyAmount"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid merchant ID or year",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve monthly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/permanent/all": {
+            "post": {
                 "security": [
                     {
                         "Bearer": []
@@ -2485,7 +2744,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully deleted all merchant records permanently",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchantAll"
+                            "$ref": "#/definitions/response.ApiResponseMerchantAll"
                         }
                     },
                     "500": {
@@ -2497,7 +2756,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/restore/all": {
+        "/api/merchants/restore/all": {
             "post": {
                 "security": [
                     {
@@ -2519,7 +2778,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully restored all merchant records",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchantAll"
+                            "$ref": "#/definitions/response.ApiResponseMerchantAll"
                         }
                     },
                     "500": {
@@ -2531,7 +2790,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/restore/{id}": {
+        "/api/merchants/restore/{id}": {
             "post": {
                 "security": [
                     {
@@ -2562,7 +2821,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Restored merchant",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchant"
+                            "$ref": "#/definitions/response.ApiResponseMerchant"
                         }
                     },
                     "400": {
@@ -2580,7 +2839,126 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/trashed": {
+        "/api/merchants/transaction": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve a list of all transactions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Find all transactions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Number of items per page",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of transactions",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponsePaginationTransaction"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve transaction data",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/transactions/:merchant_id": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve a list of transactions for a specific merchant",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Find all transactions by api_key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Api key",
+                        "name": "api_key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Number of items per page",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of transactions",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponsePaginationTransaction"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve transaction data",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/trashed": {
             "get": {
                 "security": [
                     {
@@ -2598,11 +2976,33 @@ const docTemplate = `{
                     "Merchant"
                 ],
                 "summary": "Find trashed merchants",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Number of items per page",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of trashed merchants",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsesMerchant"
+                            "$ref": "#/definitions/response.ApiResponsesMerchant"
                         }
                     },
                     "500": {
@@ -2614,7 +3014,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/trashed/{id}": {
+        "/api/merchants/trashed/{id}": {
             "post": {
                 "security": [
                     {
@@ -2645,7 +3045,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Trashed merchant",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchant"
+                            "$ref": "#/definitions/response.ApiResponseMerchant"
                         }
                     },
                     "400": {
@@ -2663,7 +3063,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/update/{id}": {
+        "/api/merchants/update/{id}": {
             "post": {
                 "security": [
                     {
@@ -2696,7 +3096,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Updated merchant",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchant"
+                            "$ref": "#/definitions/response.ApiResponseMerchant"
                         }
                     },
                     "400": {
@@ -2714,7 +3114,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/yearly-amount": {
+        "/api/merchants/yearly-amount": {
             "get": {
                 "security": [
                     {
@@ -2745,7 +3145,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly transaction amounts",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseYearlyAmount"
                         }
                     },
                     "400": {
@@ -2763,7 +3163,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/yearly-payment-methods-by-merchant": {
+        "/api/merchants/yearly-amount-by-apikey": {
             "get": {
                 "security": [
                     {
@@ -2801,7 +3201,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly transaction amounts",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchantYearlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseMerchantYearlyAmount"
                         }
                     },
                     "400": {
@@ -2819,7 +3219,336 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/merchant/{id}": {
+        "/api/merchants/yearly-amount-by-merchant": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve yearly transaction amounts for a specific merchant by year.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Find yearly transaction amounts for a specific merchant",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Merchant ID",
+                        "name": "merchant_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Year",
+                        "name": "year",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Yearly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponseMerchantYearlyAmount"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid merchant ID or year",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve yearly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/yearly-payment-methods-by-apikey": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve yearly payment methods for a specific merchant by year.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Find yearly payment methods for a specific merchant",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Merchant ID",
+                        "name": "merchant_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Year",
+                        "name": "year",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Yearly payment methods",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponseMerchantYearlyPaymentMethod"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid merchant ID or year",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve yearly payment methods",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/yearly-payment-methods-by-merchant": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve yearly payment methods for a specific merchant by year.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Find yearly payment methods for a specific merchant",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Merchant ID",
+                        "name": "merchant_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Year",
+                        "name": "year",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Yearly payment methods",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponseMerchantYearlyPaymentMethod"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid merchant ID or year",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve yearly payment methods",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/yearly-total-amount": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve yearly transaction amounts for a merchant by year.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Find yearly transaction amounts for a merchant",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Year",
+                        "name": "year",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Yearly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponseYearlyAmount"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid year",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve yearly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/yearly-totalamount-by-apikey": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve yearly transaction amounts for a specific merchant by year.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Find yearly transaction amounts for a specific merchant",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Merchant ID",
+                        "name": "merchant_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Year",
+                        "name": "year",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Yearly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponseMerchantYearlyAmount"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid merchant ID or year",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve yearly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/yearly-totalamount-by-merchant": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve yearly transaction amounts for a specific merchant by year.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Merchant"
+                ],
+                "summary": "Find yearly transaction amounts for a specific merchant",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Merchant ID",
+                        "name": "merchant_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Year",
+                        "name": "year",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Yearly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponseMerchantYearlyAmount"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid merchant ID or year",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve yearly transaction amounts",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/merchants/{id}": {
             "get": {
                 "security": [
                     {
@@ -2850,7 +3579,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Merchant data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchant"
+                            "$ref": "#/definitions/response.ApiResponseMerchant"
                         }
                     },
                     "400": {
@@ -2897,7 +3626,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Deleted merchant",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMerchantDelete"
+                            "$ref": "#/definitions/response.ApiResponseMerchantDelete"
                         }
                     },
                     "400": {
@@ -2957,7 +3686,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of roles",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsePaginationRole"
+                            "$ref": "#/definitions/response.ApiResponsePaginationRole"
                         }
                     },
                     "400": {
@@ -2998,7 +3727,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pb.CreateRoleRequest"
+                            "$ref": "#/definitions/requests.CreateRoleRequest"
                         }
                     }
                 ],
@@ -3006,7 +3735,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Created role data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseRole"
+                            "$ref": "#/definitions/response.ApiResponseRole"
                         }
                     },
                     "400": {
@@ -3066,7 +3795,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of active roles",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsePaginationRoleDeleteAt"
+                            "$ref": "#/definitions/response.ApiResponsePaginationRoleDeleteAt"
                         }
                     },
                     "400": {
@@ -3085,7 +3814,7 @@ const docTemplate = `{
             }
         },
         "/api/role/permanent-all": {
-            "delete": {
+            "post": {
                 "security": [
                     {
                         "Bearer": []
@@ -3106,7 +3835,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Permanently deleted roles data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseRoleAll"
+                            "$ref": "#/definitions/response.ApiResponseRoleAll"
                         }
                     },
                     "500": {
@@ -3149,7 +3878,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Permanently deleted role data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseRole"
+                            "$ref": "#/definitions/response.ApiResponseRole"
                         }
                     },
                     "400": {
@@ -3168,7 +3897,7 @@ const docTemplate = `{
             }
         },
         "/api/role/restore-all": {
-            "put": {
+            "post": {
                 "security": [
                     {
                         "Bearer": []
@@ -3189,7 +3918,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Restored roles data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseRoleAll"
+                            "$ref": "#/definitions/response.ApiResponseRoleAll"
                         }
                     },
                     "500": {
@@ -3232,7 +3961,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Restored role data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseRole"
+                            "$ref": "#/definitions/response.ApiResponseRole"
                         }
                     },
                     "400": {
@@ -3292,7 +4021,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of trashed roles",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsePaginationRoleDeleteAt"
+                            "$ref": "#/definitions/response.ApiResponsePaginationRoleDeleteAt"
                         }
                     },
                     "400": {
@@ -3341,7 +4070,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Role data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseRole"
+                            "$ref": "#/definitions/response.ApiResponseRole"
                         }
                     },
                     "400": {
@@ -3390,7 +4119,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Role data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseRole"
+                            "$ref": "#/definitions/response.ApiResponseRole"
                         }
                     },
                     "400": {
@@ -3438,7 +4167,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pb.UpdateRoleRequest"
+                            "$ref": "#/definitions/requests.UpdateRoleRequest"
                         }
                     }
                 ],
@@ -3446,7 +4175,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Updated role data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseRole"
+                            "$ref": "#/definitions/response.ApiResponseRole"
                         }
                     },
                     "400": {
@@ -3493,7 +4222,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Soft-deleted role data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseRole"
+                            "$ref": "#/definitions/response.ApiResponseRole"
                         }
                     },
                     "400": {
@@ -3542,7 +4271,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly saldo balances",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearSaldoBalances"
+                            "$ref": "#/definitions/response.ApiResponseYearSaldoBalances"
                         }
                     },
                     "400": {
@@ -3604,7 +4333,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of saldo data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsePaginationSaldo"
+                            "$ref": "#/definitions/response.ApiResponsePaginationSaldo"
                         }
                     },
                     "500": {
@@ -3634,11 +4363,33 @@ const docTemplate = `{
                     "Saldo"
                 ],
                 "summary": "Retrieve all active saldo data",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of saldo data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsesSaldo"
+                            "$ref": "#/definitions/response.ApiResponsesSaldo"
                         }
                     },
                     "500": {
@@ -3681,7 +4432,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Saldo data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseSaldo"
+                            "$ref": "#/definitions/response.ApiResponseSaldo"
                         }
                     },
                     "500": {
@@ -3726,7 +4477,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully created saldo record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseSaldo"
+                            "$ref": "#/definitions/response.ApiResponseSaldo"
                         }
                     },
                     "400": {
@@ -3775,7 +4526,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly saldo balances",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMonthSaldoBalances"
+                            "$ref": "#/definitions/response.ApiResponseMonthSaldoBalances"
                         }
                     },
                     "400": {
@@ -3831,7 +4582,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly total saldo balance",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseMonthTotalSaldo"
+                            "$ref": "#/definitions/response.ApiResponseMonthTotalSaldo"
                         }
                     },
                     "400": {
@@ -3871,7 +4622,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully deleted all saldo records permanently",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseSaldoAll"
+                            "$ref": "#/definitions/response.ApiResponseSaldoAll"
                         }
                     },
                     "500": {
@@ -3914,7 +4665,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully deleted saldo record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseSaldoDelete"
+                            "$ref": "#/definitions/response.ApiResponseSaldoDelete"
                         }
                     },
                     "400": {
@@ -3954,7 +4705,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully restored all saldo records",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseSaldoAll"
+                            "$ref": "#/definitions/response.ApiResponseSaldoAll"
                         }
                     },
                     "500": {
@@ -3997,7 +4748,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully restored saldo record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseSaldo"
+                            "$ref": "#/definitions/response.ApiResponseSaldo"
                         }
                     },
                     "400": {
@@ -4033,11 +4784,33 @@ const docTemplate = `{
                     "Saldo"
                 ],
                 "summary": "Retrieve trashed saldo data",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of trashed saldo data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsesSaldo"
+                            "$ref": "#/definitions/response.ApiResponsesSaldo"
                         }
                     },
                     "500": {
@@ -4080,7 +4853,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully trashed saldo record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseSaldo"
+                            "$ref": "#/definitions/response.ApiResponseSaldo"
                         }
                     },
                     "400": {
@@ -4138,7 +4911,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully updated saldo record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseSaldo"
+                            "$ref": "#/definitions/response.ApiResponseSaldo"
                         }
                     },
                     "400": {
@@ -4187,7 +4960,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly total saldo balance",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearTotalSaldo"
+                            "$ref": "#/definitions/response.ApiResponseYearTotalSaldo"
                         }
                     },
                     "400": {
@@ -4236,7 +5009,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Saldo data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseSaldo"
+                            "$ref": "#/definitions/response.ApiResponseSaldo"
                         }
                     },
                     "400": {
@@ -4285,7 +5058,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly top-up amounts",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupMonthAmount"
+                            "$ref": "#/definitions/response.ApiResponseTopupMonthAmount"
                         }
                     },
                     "400": {
@@ -4331,7 +5104,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseYearlyAmount"
                         }
                     },
                     "400": {
@@ -4392,7 +5165,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of topup data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsePaginationTopup"
+                            "$ref": "#/definitions/response.ApiResponsePaginationTopup"
                         }
                     },
                     "500": {
@@ -4422,54 +5195,33 @@ const docTemplate = `{
                     "Topup"
                 ],
                 "summary": "Find active topups",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Active topup data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsesTopup"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to retrieve topup data",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/topups/card_number/{card_number}": {
-            "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Retrieve a topup record using its card number",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Topup"
-                ],
-                "summary": "Find a topup by its card number",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Card number",
-                        "name": "card_number",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Topup data",
-                        "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsesTopup"
+                            "$ref": "#/definitions/response.ApiResponsesTopup"
                         }
                     },
                     "500": {
@@ -4514,7 +5266,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Created topup data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopup"
+                            "$ref": "#/definitions/response.ApiResponseTopup"
                         }
                     },
                     "400": {
@@ -4570,7 +5322,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly top-up amounts by card number",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupMonthAmount"
+                            "$ref": "#/definitions/response.ApiResponseTopupMonthAmount"
                         }
                     },
                     "400": {
@@ -4626,7 +5378,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly top-up status for failed transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupMonthStatusFailed"
+                            "$ref": "#/definitions/response.ApiResponseTopupMonthStatusFailed"
                         }
                     },
                     "400": {
@@ -4675,7 +5427,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly top-up methods",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupMonthMethod"
+                            "$ref": "#/definitions/response.ApiResponseTopupMonthMethod"
                         }
                     },
                     "400": {
@@ -4731,7 +5483,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly top-up methods by card number",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupMonthMethod"
+                            "$ref": "#/definitions/response.ApiResponseTopupMonthMethod"
                         }
                     },
                     "400": {
@@ -4787,7 +5539,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly top-up status for successful transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupMonthStatusSuccess"
+                            "$ref": "#/definitions/response.ApiResponseTopupMonthStatusSuccess"
                         }
                     },
                     "400": {
@@ -4806,7 +5558,7 @@ const docTemplate = `{
             }
         },
         "/api/topups/permanent/all": {
-            "delete": {
+            "post": {
                 "security": [
                     {
                         "Bearer": []
@@ -4827,7 +5579,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully deleted all topup records permanently",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupAll"
+                            "$ref": "#/definitions/response.ApiResponseTopupAll"
                         }
                     },
                     "500": {
@@ -4870,7 +5622,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully deleted topup record permanently",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupDelete"
+                            "$ref": "#/definitions/response.ApiResponseTopupDelete"
                         }
                     },
                     "400": {
@@ -4910,7 +5662,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully restored all topup records",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupAll"
+                            "$ref": "#/definitions/response.ApiResponseTopupAll"
                         }
                     },
                     "500": {
@@ -4953,7 +5705,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully restored topup record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopup"
+                            "$ref": "#/definitions/response.ApiResponseTopup"
                         }
                     },
                     "400": {
@@ -5002,7 +5754,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully trashed topup record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopup"
+                            "$ref": "#/definitions/response.ApiResponseTopup"
                         }
                     },
                     "400": {
@@ -5038,11 +5790,33 @@ const docTemplate = `{
                     "Topup"
                 ],
                 "summary": "Retrieve trashed topups",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of trashed topup data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsesTopup"
+                            "$ref": "#/definitions/response.ApiResponsesTopup"
                         }
                     },
                     "500": {
@@ -5094,7 +5868,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Updated topup data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopup"
+                            "$ref": "#/definitions/response.ApiResponseTopup"
                         }
                     },
                     "400": {
@@ -5143,7 +5917,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly top-up amounts",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupYearAmount"
+                            "$ref": "#/definitions/response.ApiResponseTopupYearAmount"
                         }
                     },
                     "400": {
@@ -5199,7 +5973,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly top-up amounts by card number",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupYearAmount"
+                            "$ref": "#/definitions/response.ApiResponseTopupYearAmount"
                         }
                     },
                     "400": {
@@ -5248,7 +6022,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly top-up status for failed transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupYearStatusFailed"
+                            "$ref": "#/definitions/response.ApiResponseTopupYearStatusFailed"
                         }
                     },
                     "400": {
@@ -5297,7 +6071,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly top-up methods",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupYearMethod"
+                            "$ref": "#/definitions/response.ApiResponseTopupYearMethod"
                         }
                     },
                     "400": {
@@ -5353,7 +6127,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly top-up methods by card number",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupYearMethod"
+                            "$ref": "#/definitions/response.ApiResponseTopupYearMethod"
                         }
                     },
                     "400": {
@@ -5402,7 +6176,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly top-up status for successful transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopupYearStatusSuccess"
+                            "$ref": "#/definitions/response.ApiResponseTopupYearStatusSuccess"
                         }
                     },
                     "400": {
@@ -5413,6 +6187,69 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to retrieve yearly top-up status for successful transactions",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/topups/{card_number}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve a list of transactions for a specific card number",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Find all topup by card number",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Card Number",
+                        "name": "card_number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Number of items per page",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of topups",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponsePaginationTopup"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve topups data",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -5451,7 +6288,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Topup data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTopup"
+                            "$ref": "#/definitions/response.ApiResponseTopup"
                         }
                     },
                     "400": {
@@ -5513,7 +6350,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsePaginationTransaction"
+                            "$ref": "#/definitions/response.ApiResponsePaginationTransaction"
                         }
                     },
                     "500": {
@@ -5543,11 +6380,94 @@ const docTemplate = `{
                     "Transaction"
                 ],
                 "summary": "Find active transactions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 10)",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search keyword",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of active transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactions"
+                            "$ref": "#/definitions/response.ApiResponseTransactions"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve transaction data",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transactions/card/{card_number}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve a list of transactions for a specific card number",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Find all transactions by card number",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Card Number",
+                        "name": "card_number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Number of items per page",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of transactions",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponsePaginationTransaction"
                         }
                     },
                     "500": {
@@ -5592,7 +6512,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully created transaction record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransaction"
+                            "$ref": "#/definitions/response.ApiResponseTransaction"
                         }
                     },
                     "400": {
@@ -5632,56 +6552,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully deleted transaction record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionAll"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request: Invalid ID",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to delete transaction:",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/transactions/delete/{id}": {
-            "delete": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Permanently delete a transaction record by its ID.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Transaction"
-                ],
-                "summary": "Permanently delete a transaction",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Transaction ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully deleted transaction record",
-                        "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionDelete"
+                            "$ref": "#/definitions/response.ApiResponseTransactionAll"
                         }
                     },
                     "400": {
@@ -5730,7 +6601,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Transaction data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactions"
+                            "$ref": "#/definitions/response.ApiResponseTransactions"
                         }
                     },
                     "400": {
@@ -5779,7 +6650,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly transaction amounts",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionMonthAmount"
+                            "$ref": "#/definitions/response.ApiResponseTransactionMonthAmount"
                         }
                     },
                     "400": {
@@ -5835,7 +6706,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly transaction amounts by card number",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionMonthAmount"
+                            "$ref": "#/definitions/response.ApiResponseTransactionMonthAmount"
                         }
                     },
                     "400": {
@@ -5891,7 +6762,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly transaction status for failed transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionMonthStatusFailed"
+                            "$ref": "#/definitions/response.ApiResponseTransactionMonthStatusFailed"
                         }
                     },
                     "400": {
@@ -5940,7 +6811,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly payment methods",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionMonthMethod"
+                            "$ref": "#/definitions/response.ApiResponseTransactionMonthMethod"
                         }
                     },
                     "400": {
@@ -5996,7 +6867,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly payment methods by card number",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionMonthMethod"
+                            "$ref": "#/definitions/response.ApiResponseTransactionMonthMethod"
                         }
                     },
                     "400": {
@@ -6052,7 +6923,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly transaction status for successful transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionMonthStatusSuccess"
+                            "$ref": "#/definitions/response.ApiResponseTransactionMonthStatusSuccess"
                         }
                     },
                     "400": {
@@ -6063,6 +6934,55 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to retrieve monthly transaction status for successful transactions",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transactions/permanent/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Permanently delete a transaction record by its ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Permanently delete a transaction",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Transaction ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully deleted transaction record",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponseTransactionDelete"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request: Invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete transaction:",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -6092,7 +7012,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully restored transaction record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionAll"
+                            "$ref": "#/definitions/response.ApiResponseTransactionAll"
                         }
                     },
                     "400": {
@@ -6141,7 +7061,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully restored transaction record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransaction"
+                            "$ref": "#/definitions/response.ApiResponseTransaction"
                         }
                     },
                     "400": {
@@ -6177,11 +7097,31 @@ const docTemplate = `{
                     "Transaction"
                 ],
                 "summary": "Retrieve trashed transactions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 10)",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search keyword",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of trashed transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactions"
+                            "$ref": "#/definitions/response.ApiResponseTransactions"
                         }
                     },
                     "500": {
@@ -6224,7 +7164,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully trashed transaction record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransaction"
+                            "$ref": "#/definitions/response.ApiResponseTransaction"
                         }
                     },
                     "400": {
@@ -6275,7 +7215,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Updated transaction data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransaction"
+                            "$ref": "#/definitions/response.ApiResponseTransaction"
                         }
                     },
                     "400": {
@@ -6324,7 +7264,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly transaction amounts",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionYearAmount"
+                            "$ref": "#/definitions/response.ApiResponseTransactionYearAmount"
                         }
                     },
                     "400": {
@@ -6380,7 +7320,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly transaction amounts by card number",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionYearAmount"
+                            "$ref": "#/definitions/response.ApiResponseTransactionYearAmount"
                         }
                     },
                     "400": {
@@ -6429,7 +7369,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly transaction status for failed transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionYearStatusFailed"
+                            "$ref": "#/definitions/response.ApiResponseTransactionYearStatusFailed"
                         }
                     },
                     "400": {
@@ -6478,7 +7418,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly payment methods",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionYearMethod"
+                            "$ref": "#/definitions/response.ApiResponseTransactionYearMethod"
                         }
                     },
                     "400": {
@@ -6534,7 +7474,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly payment methods by card number",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionYearMethod"
+                            "$ref": "#/definitions/response.ApiResponseTransactionYearMethod"
                         }
                     },
                     "400": {
@@ -6583,7 +7523,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly transaction status for successful transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactionYearStatusSuccess"
+                            "$ref": "#/definitions/response.ApiResponseTransactionYearStatusSuccess"
                         }
                     },
                     "400": {
@@ -6594,49 +7534,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to retrieve yearly transaction status for successful transactions",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/transactions/{card_number}": {
-            "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Retrieve a transaction record using its card number",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Transaction"
-                ],
-                "summary": "Find a transaction by card number",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Card number",
-                        "name": "card_number",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Transaction data",
-                        "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransactions"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to retrieve transaction data",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -6675,7 +7572,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Transaction data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransaction"
+                            "$ref": "#/definitions/response.ApiResponseTransaction"
                         }
                     },
                     "400": {
@@ -6737,7 +7634,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of transfer records",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsePaginationTransfer"
+                            "$ref": "#/definitions/response.ApiResponsePaginationTransfer"
                         }
                     },
                     "500": {
@@ -6782,7 +7679,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Transfer data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransfer"
+                            "$ref": "#/definitions/response.ApiResponseTransfer"
                         }
                     },
                     "400": {
@@ -6800,8 +7697,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/transfer/permanent/{id}": {
-            "delete": {
+        "/api/transfer/permanent/all": {
+            "post": {
                 "security": [
                     {
                         "Bearer": []
@@ -6831,7 +7728,56 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully deleted transfer all",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransferAll"
+                            "$ref": "#/definitions/response.ApiResponseTransferAll"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request: Invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete transfer:",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transfer/permanent/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Permanently delete a transfer record by its ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transfer"
+                ],
+                "summary": "Permanently delete a transfer",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Transfer ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully deleted transfer record permanently",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponseTransferDelete"
                         }
                     },
                     "400": {
@@ -6871,7 +7817,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully restored transfer record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransferAll"
+                            "$ref": "#/definitions/response.ApiResponseTransferAll"
                         }
                     },
                     "400": {
@@ -6920,7 +7866,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully restored transfer record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransfer"
+                            "$ref": "#/definitions/response.ApiResponseTransfer"
                         }
                     },
                     "400": {
@@ -6969,7 +7915,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Transfer data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransfers"
+                            "$ref": "#/definitions/response.ApiResponseTransfers"
                         }
                     },
                     "500": {
@@ -7012,7 +7958,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Transfer data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransfers"
+                            "$ref": "#/definitions/response.ApiResponseTransfers"
                         }
                     },
                     "500": {
@@ -7055,7 +8001,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully trashed transfer record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransfer"
+                            "$ref": "#/definitions/response.ApiResponseTransfer"
                         }
                     },
                     "400": {
@@ -7091,11 +8037,31 @@ const docTemplate = `{
                     "Transfer"
                 ],
                 "summary": "Retrieve trashed transfers",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 10)",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search keyword",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of trashed transfer records",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransfers"
+                            "$ref": "#/definitions/response.ApiResponseTransfers"
                         }
                     },
                     "500": {
@@ -7147,7 +8113,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Transfer data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransfer"
+                            "$ref": "#/definitions/response.ApiResponseTransfer"
                         }
                     },
                     "400": {
@@ -7193,7 +8159,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseYearlyAmount"
+                            "$ref": "#/definitions/response.ApiResponseYearlyAmount"
                         }
                     },
                     "400": {
@@ -7242,7 +8208,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Transfer data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransfer"
+                            "$ref": "#/definitions/response.ApiResponseTransfer"
                         }
                     },
                     "400": {
@@ -7291,7 +8257,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly transfer amounts",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransferMonthAmount"
+                            "$ref": "#/definitions/response.ApiResponseTransferMonthAmount"
                         }
                     },
                     "400": {
@@ -7347,7 +8313,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly transfer amounts by receiver card number",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransferMonthAmount"
+                            "$ref": "#/definitions/response.ApiResponseTransferMonthAmount"
                         }
                     },
                     "400": {
@@ -7403,7 +8369,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly transfer amounts by sender card number",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransferMonthAmount"
+                            "$ref": "#/definitions/response.ApiResponseTransferMonthAmount"
                         }
                     },
                     "400": {
@@ -7459,7 +8425,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly transfer status for failed transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransferMonthStatusFailed"
+                            "$ref": "#/definitions/response.ApiResponseTransferMonthStatusFailed"
                         }
                     },
                     "400": {
@@ -7515,7 +8481,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly transfer status for successful transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransferMonthStatusSuccess"
+                            "$ref": "#/definitions/response.ApiResponseTransferMonthStatusSuccess"
                         }
                     },
                     "400": {
@@ -7564,7 +8530,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly transfer amounts",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransferYearAmount"
+                            "$ref": "#/definitions/response.ApiResponseTransferYearAmount"
                         }
                     },
                     "400": {
@@ -7620,7 +8586,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly transfer amounts by receiver card number",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransferYearAmount"
+                            "$ref": "#/definitions/response.ApiResponseTransferYearAmount"
                         }
                     },
                     "400": {
@@ -7676,7 +8642,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly transfer amounts by sender card number",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransferYearAmount"
+                            "$ref": "#/definitions/response.ApiResponseTransferYearAmount"
                         }
                     },
                     "400": {
@@ -7725,7 +8691,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly transfer status for failed transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransferYearStatusFailed"
+                            "$ref": "#/definitions/response.ApiResponseTransferYearStatusFailed"
                         }
                     },
                     "400": {
@@ -7774,7 +8740,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly transfer status for successful transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseTransferYearStatusSuccess"
+                            "$ref": "#/definitions/response.ApiResponseTransferYearStatusSuccess"
                         }
                     },
                     "400": {
@@ -7836,7 +8802,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of users",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsePaginationUser"
+                            "$ref": "#/definitions/response.ApiResponsePaginationUser"
                         }
                     },
                     "500": {
@@ -7866,11 +8832,33 @@ const docTemplate = `{
                     "User"
                 ],
                 "summary": "Retrieve active users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Number of items per page",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of active users",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsesUser"
+                            "$ref": "#/definitions/response.ApiResponsesUser"
                         }
                     },
                     "500": {
@@ -7915,7 +8903,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully created user",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseUser"
+                            "$ref": "#/definitions/response.ApiResponseUser"
                         }
                     },
                     "400": {
@@ -7964,7 +8952,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully deleted user record permanently",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseUserDelete"
+                            "$ref": "#/definitions/response.ApiResponseUserDelete"
                         }
                     },
                     "400": {
@@ -8013,7 +9001,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully deleted user record permanently",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseUserDelete"
+                            "$ref": "#/definitions/response.ApiResponseUserDelete"
                         }
                     },
                     "400": {
@@ -8062,7 +9050,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully restored user all",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseUserAll"
+                            "$ref": "#/definitions/response.ApiResponseUserAll"
                         }
                     },
                     "400": {
@@ -8111,7 +9099,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully restored user",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseUser"
+                            "$ref": "#/definitions/response.ApiResponseUser"
                         }
                     },
                     "400": {
@@ -8147,11 +9135,33 @@ const docTemplate = `{
                     "User"
                 ],
                 "summary": "Retrieve trashed users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Number of items per page",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of trashed user data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsesUser"
+                            "$ref": "#/definitions/response.ApiResponsesUser"
                         }
                     },
                     "500": {
@@ -8164,7 +9174,7 @@ const docTemplate = `{
             }
         },
         "/api/user/trashed/{id}": {
-            "get": {
+            "post": {
                 "security": [
                     {
                         "Bearer": []
@@ -8194,7 +9204,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully retrieved trashed user",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseUser"
+                            "$ref": "#/definitions/response.ApiResponseUser"
                         }
                     },
                     "400": {
@@ -8245,7 +9255,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully updated user",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseUser"
+                            "$ref": "#/definitions/response.ApiResponseUser"
                         }
                     },
                     "400": {
@@ -8294,7 +9304,7 @@ const docTemplate = `{
                     "200": {
                         "description": "User data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseUser"
+                            "$ref": "#/definitions/response.ApiResponseUser"
                         }
                     },
                     "400": {
@@ -8356,7 +9366,70 @@ const docTemplate = `{
                     "200": {
                         "description": "List of withdraw records",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsePaginationWithdraw"
+                            "$ref": "#/definitions/response.ApiResponsePaginationWithdraw"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve withdraw data",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/withdraw/card/{card_number}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve a list of withdraw records for a specific card number with pagination and search",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Withdraw"
+                ],
+                "summary": "Find all withdraw records by card number",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Card Number",
+                        "name": "card_number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of withdraw records",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponsePaginationWithdraw"
                         }
                     },
                     "500": {
@@ -8399,7 +9472,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Withdraw data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdraw"
+                            "$ref": "#/definitions/response.ApiResponseWithdraw"
                         }
                     },
                     "400": {
@@ -8439,7 +9512,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of withdraw data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsesWithdraw"
+                            "$ref": "#/definitions/response.ApiResponsesWithdraw"
                         }
                     },
                     "500": {
@@ -8482,7 +9555,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Withdraw data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsesWithdraw"
+                            "$ref": "#/definitions/response.ApiResponsesWithdraw"
                         }
                     },
                     "400": {
@@ -8533,7 +9606,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully created withdraw record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdraw"
+                            "$ref": "#/definitions/response.ApiResponseWithdraw"
                         }
                     },
                     "400": {
@@ -8582,7 +9655,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly withdraws",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdrawMonthAmount"
+                            "$ref": "#/definitions/response.ApiResponseWithdrawMonthAmount"
                         }
                     },
                     "400": {
@@ -8638,7 +9711,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly withdraws by card number",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdrawMonthAmount"
+                            "$ref": "#/definitions/response.ApiResponseWithdrawMonthAmount"
                         }
                     },
                     "400": {
@@ -8694,7 +9767,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly withdraw status for failed transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdrawMonthStatusFailed"
+                            "$ref": "#/definitions/response.ApiResponseWithdrawMonthStatusFailed"
                         }
                     },
                     "400": {
@@ -8750,7 +9823,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Monthly withdraw status for successful transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdrawMonthStatusSuccess"
+                            "$ref": "#/definitions/response.ApiResponseWithdrawMonthStatusSuccess"
                         }
                     },
                     "400": {
@@ -8790,7 +9863,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully deleted withdraw permanently",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdrawAll"
+                            "$ref": "#/definitions/response.ApiResponseWithdrawAll"
                         }
                     },
                     "400": {
@@ -8839,7 +9912,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully deleted withdraw permanently",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdrawDelete"
+                            "$ref": "#/definitions/response.ApiResponseWithdrawDelete"
                         }
                     },
                     "400": {
@@ -8879,7 +9952,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Withdraw data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdrawAll"
+                            "$ref": "#/definitions/response.ApiResponseWithdrawAll"
                         }
                     },
                     "400": {
@@ -8928,7 +10001,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Withdraw data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdraw"
+                            "$ref": "#/definitions/response.ApiResponseWithdraw"
                         }
                     },
                     "400": {
@@ -8968,7 +10041,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of trashed withdraw data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponsesWithdraw"
+                            "$ref": "#/definitions/response.ApiResponsesWithdraw"
                         }
                     },
                     "500": {
@@ -9011,7 +10084,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Withdaw data",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdraw"
+                            "$ref": "#/definitions/response.ApiResponseWithdraw"
                         }
                     },
                     "400": {
@@ -9069,7 +10142,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully updated withdraw record",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdraw"
+                            "$ref": "#/definitions/response.ApiResponseWithdraw"
                         }
                     },
                     "400": {
@@ -9118,7 +10191,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly withdraws",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdrawYearAmount"
+                            "$ref": "#/definitions/response.ApiResponseWithdrawYearAmount"
                         }
                     },
                     "400": {
@@ -9174,7 +10247,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly withdraws by card number",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdrawYearAmount"
+                            "$ref": "#/definitions/response.ApiResponseWithdrawYearAmount"
                         }
                     },
                     "400": {
@@ -9223,7 +10296,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly withdraw status for failed transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdrawYearStatusSuccess"
+                            "$ref": "#/definitions/response.ApiResponseWithdrawYearStatusSuccess"
                         }
                     },
                     "400": {
@@ -9272,7 +10345,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Yearly withdraw status for successful transactions",
                         "schema": {
-                            "$ref": "#/definitions/pb.ApiResponseWithdrawYearStatusSuccess"
+                            "$ref": "#/definitions/response.ApiResponseWithdrawYearStatusSuccess"
                         }
                     },
                     "400": {
@@ -9312,290 +10385,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "pb.ApiResponseCard": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.CardResponse"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseCardAll": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseCardDelete": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseDashboardCard": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.CardResponseDashboard"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseDashboardCardNumber": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.CardResponseDashboardCardNumber"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseGetMe": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.UserResponse"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseLogin": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.TokenResponse"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseMerchant": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.MerchantResponse"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseMerchantAll": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseMerchantDelete": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseMerchantMonthlyAmount": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.MerchantResponseMonthlyAmount"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseMerchantMonthlyPaymentMethod": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.MerchantResponseMonthlyPaymentMethod"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseMerchantYearlyAmount": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.MerchantResponseYearlyAmount"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseMerchantYearlyPaymentMethod": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.MerchantResponseYearlyPaymentMethod"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseMonthSaldoBalances": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.SaldoMonthBalanceResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseMonthTotalSaldo": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.SaldoMonthTotalBalanceResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseMonthlyAmount": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.CardResponseMonthlyAmount"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseMonthlyBalance": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.CardResponseMonthlyBalance"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsePaginationCard": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.CardResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "pagination": {
-                    "$ref": "#/definitions/pb.PaginationMeta"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
         "pb.ApiResponsePaginationCardDeleteAt": {
             "type": "object",
             "properties": {
@@ -9613,1176 +10402,6 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsePaginationMerchant": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.MerchantResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "pagination": {
-                    "$ref": "#/definitions/pb.PaginationMeta"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsePaginationRole": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.RoleResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "pagination": {
-                    "$ref": "#/definitions/pb.PaginationMeta"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsePaginationRoleDeleteAt": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.RoleResponseDeleteAt"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "pagination": {
-                    "$ref": "#/definitions/pb.PaginationMeta"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsePaginationSaldo": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.SaldoResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "pagination": {
-                    "$ref": "#/definitions/pb.PaginationMeta"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsePaginationTopup": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TopupResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "pagination": {
-                    "$ref": "#/definitions/pb.PaginationMeta"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsePaginationTransaction": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransactionResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "pagination": {
-                    "$ref": "#/definitions/pb.PaginationMeta"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsePaginationTransfer": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransferResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "pagination": {
-                    "$ref": "#/definitions/pb.PaginationMeta"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsePaginationUser": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.UserResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "pagination": {
-                    "$ref": "#/definitions/pb.PaginationMeta"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsePaginationWithdraw": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.WithdrawResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "pagination": {
-                    "$ref": "#/definitions/pb.PaginationMeta"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseRefreshToken": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.TokenResponse"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseRegister": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.UserResponse"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseRole": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.RoleResponse"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseRoleAll": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseSaldo": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.SaldoResponse"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseSaldoAll": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseSaldoDelete": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTopup": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.TopupResponse"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTopupAll": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTopupDelete": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTopupMonthAmount": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TopupMonthAmountResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTopupMonthMethod": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TopupMonthMethodResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTopupMonthStatusFailed": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TopupMonthStatusFailedResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTopupMonthStatusSuccess": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TopupMonthStatusSuccessResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTopupYearAmount": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TopupYearlyAmountResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTopupYearMethod": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TopupYearlyMethodResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTopupYearStatusFailed": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TopupYearStatusFailedResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTopupYearStatusSuccess": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TopupYearStatusSuccessResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransaction": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.TransactionResponse"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransactionAll": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransactionDelete": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransactionMonthAmount": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransactionMonthAmountResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransactionMonthMethod": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransactionMonthMethodResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransactionMonthStatusFailed": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransactionMonthStatusFailedResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransactionMonthStatusSuccess": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransactionMonthStatusSuccessResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransactionYearAmount": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransactionYearlyAmountResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransactionYearMethod": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransactionYearMethodResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransactionYearStatusFailed": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransactionYearStatusFailedResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransactionYearStatusSuccess": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransactionYearStatusSuccessResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransactions": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransactionResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransfer": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.TransferResponse"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransferAll": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransferDelete": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransferMonthAmount": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransferMonthAmountResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransferMonthStatusFailed": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransferMonthStatusFailedResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransferMonthStatusSuccess": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransferMonthStatusSuccessResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransferYearAmount": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransferYearAmountResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransferYearStatusFailed": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransferYearStatusFailedResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransferYearStatusSuccess": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransferYearStatusSuccessResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseTransfers": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TransferResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseUser": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.UserResponse"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseUserAll": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseUserDelete": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseWithdraw": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/pb.WithdrawResponse"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseWithdrawAll": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseWithdrawDelete": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseWithdrawMonthAmount": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.WithdrawMonthlyAmountResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseWithdrawMonthStatusFailed": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.WithdrawMonthStatusFailedResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseWithdrawMonthStatusSuccess": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.WithdrawMonthStatusSuccessResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseWithdrawYearAmount": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.WithdrawYearlyAmountResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseWithdrawYearStatusSuccess": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.WithdrawYearStatusSuccessResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseYearSaldoBalances": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.SaldoYearBalanceResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseYearTotalSaldo": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.SaldoYearTotalBalanceResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseYearlyAmount": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.CardResponseYearlyAmount"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponseYearlyBalance": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.CardResponseYearlyBalance"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsesMerchant": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.MerchantResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsesSaldo": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.SaldoResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsesTopup": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.TopupResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsesUser": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.UserResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.ApiResponsesWithdraw": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pb.WithdrawResponse"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.CardResponse": {
-            "type": "object",
-            "properties": {
-                "card_number": {
-                    "type": "string"
-                },
-                "card_provider": {
-                    "type": "string"
-                },
-                "card_type": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "cvv": {
-                    "type": "string"
-                },
-                "expire_date": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "pb.CardResponseDashboard": {
-            "type": "object",
-            "properties": {
-                "total_balance": {
-                    "type": "integer"
-                },
-                "total_topup": {
-                    "type": "integer"
-                },
-                "total_transaction": {
-                    "type": "integer"
-                },
-                "total_transfer": {
-                    "type": "integer"
-                },
-                "total_withdraw": {
-                    "type": "integer"
-                }
-            }
-        },
-        "pb.CardResponseDashboardCardNumber": {
-            "type": "object",
-            "properties": {
-                "total_balance": {
-                    "type": "integer"
-                },
-                "total_topup": {
-                    "type": "integer"
-                },
-                "total_transaction": {
-                    "type": "integer"
-                },
-                "total_transfer_receiver": {
-                    "type": "integer"
-                },
-                "total_transfer_send": {
-                    "type": "integer"
-                },
-                "total_withdraw": {
-                    "type": "integer"
                 }
             }
         },
@@ -10821,131 +10440,6 @@ const docTemplate = `{
                 }
             }
         },
-        "pb.CardResponseMonthlyAmount": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                }
-            }
-        },
-        "pb.CardResponseMonthlyBalance": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_balance": {
-                    "type": "integer"
-                }
-            }
-        },
-        "pb.CardResponseYearlyAmount": {
-            "type": "object",
-            "properties": {
-                "total_amount": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.CardResponseYearlyBalance": {
-            "type": "object",
-            "properties": {
-                "total_balance": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.CreateRoleRequest": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.MerchantResponse": {
-            "type": "object",
-            "properties": {
-                "api_key": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.MerchantResponseMonthlyAmount": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                }
-            }
-        },
-        "pb.MerchantResponseMonthlyPaymentMethod": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "payment_method": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                }
-            }
-        },
-        "pb.MerchantResponseYearlyAmount": {
-            "type": "object",
-            "properties": {
-                "total_amount": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.MerchantResponseYearlyPaymentMethod": {
-            "type": "object",
-            "properties": {
-                "payment_method": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
         "pb.PaginationMeta": {
             "type": "object",
             "properties": {
@@ -10960,667 +10454,6 @@ const docTemplate = `{
                 },
                 "total_records": {
                     "type": "integer"
-                }
-            }
-        },
-        "pb.RoleResponse": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.RoleResponseDeleteAt": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.SaldoMonthBalanceResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_balance": {
-                    "type": "integer"
-                }
-            }
-        },
-        "pb.SaldoMonthTotalBalanceResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_balance": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.SaldoResponse": {
-            "type": "object",
-            "properties": {
-                "card_number": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "saldo_id": {
-                    "type": "integer"
-                },
-                "total_balance": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "withdraw_amount": {
-                    "type": "integer"
-                },
-                "withdraw_time": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.SaldoYearBalanceResponse": {
-            "type": "object",
-            "properties": {
-                "total_balance": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.SaldoYearTotalBalanceResponse": {
-            "type": "object",
-            "properties": {
-                "total_balance": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TokenResponse": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "refresh_token": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TopupMonthAmountResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                }
-            }
-        },
-        "pb.TopupMonthMethodResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "topup_method": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_topups": {
-                    "type": "integer"
-                }
-            }
-        },
-        "pb.TopupMonthStatusFailedResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_failed": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TopupMonthStatusSuccessResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_success": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TopupResponse": {
-            "type": "object",
-            "properties": {
-                "card_number": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "topup_amount": {
-                    "type": "integer"
-                },
-                "topup_method": {
-                    "type": "string"
-                },
-                "topup_no": {
-                    "type": "string"
-                },
-                "topup_time": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TopupYearStatusFailedResponse": {
-            "type": "object",
-            "properties": {
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_failed": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TopupYearStatusSuccessResponse": {
-            "type": "object",
-            "properties": {
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_success": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TopupYearlyAmountResponse": {
-            "type": "object",
-            "properties": {
-                "total_amount": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TopupYearlyMethodResponse": {
-            "type": "object",
-            "properties": {
-                "topup_method": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_topups": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TransactionMonthAmountResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                }
-            }
-        },
-        "pb.TransactionMonthMethodResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "payment_method": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_transactions": {
-                    "type": "integer"
-                }
-            }
-        },
-        "pb.TransactionMonthStatusFailedResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_failed": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TransactionMonthStatusSuccessResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_success": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TransactionResponse": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "type": "integer"
-                },
-                "card_number": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "merchant_id": {
-                    "type": "integer"
-                },
-                "payment_method": {
-                    "type": "string"
-                },
-                "transaction_no": {
-                    "type": "string"
-                },
-                "transaction_time": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TransactionYearMethodResponse": {
-            "type": "object",
-            "properties": {
-                "payment_method": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_transactions": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TransactionYearStatusFailedResponse": {
-            "type": "object",
-            "properties": {
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_failed": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TransactionYearStatusSuccessResponse": {
-            "type": "object",
-            "properties": {
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_success": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TransactionYearlyAmountResponse": {
-            "type": "object",
-            "properties": {
-                "total_amount": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TransferMonthAmountResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                }
-            }
-        },
-        "pb.TransferMonthStatusFailedResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_failed": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TransferMonthStatusSuccessResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_success": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TransferResponse": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "transfer_amount": {
-                    "type": "integer"
-                },
-                "transfer_from": {
-                    "type": "string"
-                },
-                "transfer_no": {
-                    "type": "string"
-                },
-                "transfer_time": {
-                    "type": "string"
-                },
-                "transfer_to": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TransferYearAmountResponse": {
-            "type": "object",
-            "properties": {
-                "total_amount": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TransferYearStatusFailedResponse": {
-            "type": "object",
-            "properties": {
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_failed": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.TransferYearStatusSuccessResponse": {
-            "type": "object",
-            "properties": {
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_success": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.UpdateRoleRequest": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.UserResponse": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "firstname": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "lastname": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.WithdrawMonthStatusFailedResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_failed": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.WithdrawMonthStatusSuccessResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_success": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.WithdrawMonthlyAmountResponse": {
-            "type": "object",
-            "properties": {
-                "month": {
-                    "type": "string"
-                },
-                "total_amount": {
-                    "type": "integer"
-                }
-            }
-        },
-        "pb.WithdrawResponse": {
-            "type": "object",
-            "properties": {
-                "card_number": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "withdraw_amount": {
-                    "type": "integer"
-                },
-                "withdraw_id": {
-                    "type": "integer"
-                },
-                "withdraw_no": {
-                    "type": "string"
-                },
-                "withdraw_time": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.WithdrawYearStatusSuccessResponse": {
-            "type": "object",
-            "properties": {
-                "total_amount": {
-                    "type": "integer"
-                },
-                "total_success": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "pb.WithdrawYearlyAmountResponse": {
-            "type": "object",
-            "properties": {
-                "total_amount": {
-                    "type": "integer"
-                },
-                "year": {
-                    "type": "string"
                 }
             }
         },
@@ -11681,6 +10514,17 @@ const docTemplate = `{
                 "user_id": {
                     "type": "integer",
                     "minimum": 1
+                }
+            }
+        },
+        "requests.CreateRoleRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
                 }
             }
         },
@@ -11890,6 +10734,22 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.UpdateRoleRequest": {
+            "type": "object",
+            "required": [
+                "id",
+                "name"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "requests.UpdateSaldoRequest": {
             "type": "object",
             "required": [
@@ -12055,6 +10915,1559 @@ const docTemplate = `{
                 }
             }
         },
+        "response.ApiResponseCard": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.CardResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseCardAll": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseCardDelete": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseDashboardCard": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.DashboardCard"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseDashboardCardNumber": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.DashboardCardCardNumber"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseGetMe": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.UserResponse"
+                },
+                "messsage": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseLogin": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.TokenResponse"
+                },
+                "messsage": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseMerchant": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.MerchantResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseMerchantAll": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseMerchantDelete": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseMerchantMonthlyAmount": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.MerchantResponseMonthlyAmount"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseMerchantMonthlyPaymentMethod": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.MerchantResponseMonthlyPaymentMethod"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseMerchantYearlyAmount": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.MerchantResponseYearlyAmount"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseMerchantYearlyPaymentMethod": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.MerchantResponseYearlyPaymentMethod"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseMonthSaldoBalances": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SaldoMonthBalanceResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseMonthTotalSaldo": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SaldoMonthTotalBalanceResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseMonthlyAmount": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.CardResponseMonthAmount"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseMonthlyBalance": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.CardResponseMonthBalance"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsePaginationCard": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.CardResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.PaginationMeta"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsePaginationCardDeleteAt": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.CardResponseDeleteAt"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.PaginationMeta"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsePaginationMerchant": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.MerchantResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.PaginationMeta"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsePaginationRole": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.RoleResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.PaginationMeta"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsePaginationRoleDeleteAt": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.RoleResponseDeleteAt"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.PaginationMeta"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsePaginationSaldo": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SaldoResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.PaginationMeta"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsePaginationTopup": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TopupResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.PaginationMeta"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsePaginationTransaction": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.PaginationMeta"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsePaginationTransfer": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransferResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.PaginationMeta"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsePaginationUser": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.UserResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.PaginationMeta"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsePaginationWithdraw": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.WithdrawResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.PaginationMeta"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseRefreshToken": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.TokenResponse"
+                },
+                "messsage": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseRegister": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.UserResponse"
+                },
+                "messsage": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseRole": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.RoleResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseRoleAll": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseSaldo": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.SaldoResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseSaldoAll": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseSaldoDelete": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTopup": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.TopupResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTopupAll": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTopupDelete": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTopupMonthAmount": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TopupMonthAmountResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTopupMonthMethod": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TopupMonthMethodResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTopupMonthStatusFailed": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TopupResponseMonthStatusFailed"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTopupMonthStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TopupResponseMonthStatusSuccess"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTopupYearAmount": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TopupYearlyAmountResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTopupYearMethod": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TopupYearlyMethodResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTopupYearStatusFailed": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TopupResponseYearStatusFailed"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTopupYearStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TopupResponseYearStatusSuccess"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransaction": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.TransactionResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransactionAll": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransactionDelete": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransactionMonthAmount": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionMonthAmountResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransactionMonthMethod": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionMonthMethodResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransactionMonthStatusFailed": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionResponseMonthStatusFailed"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransactionMonthStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionResponseMonthStatusSuccess"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransactionYearAmount": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionYearlyAmountResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransactionYearMethod": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionYearMethodResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransactionYearStatusFailed": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionResponseYearStatusFailed"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransactionYearStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionResponseYearStatusSuccess"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransactions": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransactionResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransfer": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.TransferResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransferAll": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransferDelete": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransferMonthAmount": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransferMonthAmountResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransferMonthStatusFailed": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransferResponseMonthStatusFailed"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransferMonthStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransferResponseMonthStatusSuccess"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransferYearAmount": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransferYearAmountResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransferYearStatusFailed": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransferResponseYearStatusFailed"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransferYearStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransferResponseYearStatusSuccess"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseTransfers": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TransferResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseUser": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.UserResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseUserAll": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseUserDelete": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseWithdraw": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/response.WithdrawResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseWithdrawAll": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseWithdrawDelete": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseWithdrawMonthAmount": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.WithdrawMonthlyAmountResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseWithdrawMonthStatusFailed": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.WithdrawResponseMonthStatusFailed"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseWithdrawMonthStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.WithdrawResponseMonthStatusSuccess"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseWithdrawYearAmount": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.WithdrawYearlyAmountResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseWithdrawYearStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.WithdrawResponseYearStatusSuccess"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseYearSaldoBalances": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SaldoYearBalanceResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseYearTotalSaldo": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SaldoYearTotalBalanceResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseYearlyAmount": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.CardResponseYearAmount"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponseYearlyBalance": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.CardResponseYearlyBalance"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsesMerchant": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.MerchantResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsesSaldo": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SaldoResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsesTopup": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TopupResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsesUser": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.UserResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ApiResponsesWithdraw": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.WithdrawResponse"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.CardResponse": {
+            "type": "object",
+            "properties": {
+                "card_number": {
+                    "type": "string"
+                },
+                "card_provider": {
+                    "type": "string"
+                },
+                "card_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "cvv": {
+                    "type": "string"
+                },
+                "expire_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.CardResponseDeleteAt": {
+            "type": "object",
+            "properties": {
+                "card_number": {
+                    "type": "string"
+                },
+                "card_provider": {
+                    "type": "string"
+                },
+                "card_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "cvv": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "expire_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.CardResponseMonthAmount": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.CardResponseMonthBalance": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_balance": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.CardResponseYearAmount": {
+            "type": "object",
+            "properties": {
+                "total_amount": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.CardResponseYearlyBalance": {
+            "type": "object",
+            "properties": {
+                "total_balance": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.DashboardCard": {
+            "type": "object",
+            "properties": {
+                "total_balance": {
+                    "type": "integer"
+                },
+                "total_topup": {
+                    "type": "integer"
+                },
+                "total_transaction": {
+                    "type": "integer"
+                },
+                "total_transfer": {
+                    "type": "integer"
+                },
+                "total_withdraw": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.DashboardCardCardNumber": {
+            "type": "object",
+            "properties": {
+                "total_balance": {
+                    "type": "integer"
+                },
+                "total_topup": {
+                    "type": "integer"
+                },
+                "total_transaction": {
+                    "type": "integer"
+                },
+                "total_transfer_receiver": {
+                    "type": "integer"
+                },
+                "total_transfer_send": {
+                    "type": "integer"
+                },
+                "total_withdraw": {
+                    "type": "integer"
+                }
+            }
+        },
         "response.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -12062,6 +12475,749 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.MerchantResponse": {
+            "type": "object",
+            "properties": {
+                "api_key": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.MerchantResponseMonthlyAmount": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.MerchantResponseMonthlyPaymentMethod": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "payment_method": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.MerchantResponseYearlyAmount": {
+            "type": "object",
+            "properties": {
+                "total_amount": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.MerchantResponseYearlyPaymentMethod": {
+            "type": "object",
+            "properties": {
+                "payment_method": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.PaginationMeta": {
+            "type": "object",
+            "properties": {
+                "current_page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                },
+                "total_records": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.RoleResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.RoleResponseDeleteAt": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.SaldoMonthBalanceResponse": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_balance": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.SaldoMonthTotalBalanceResponse": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_balance": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.SaldoResponse": {
+            "type": "object",
+            "properties": {
+                "card_number": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "total_balance": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "withdraw_amount": {
+                    "type": "integer"
+                },
+                "withdraw_time": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.SaldoYearBalanceResponse": {
+            "type": "object",
+            "properties": {
+                "total_balance": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.SaldoYearTotalBalanceResponse": {
+            "type": "object",
+            "properties": {
+                "total_balance": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TopupMonthAmountResponse": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.TopupMonthMethodResponse": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "topup_method": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_topups": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.TopupResponse": {
+            "type": "object",
+            "properties": {
+                "card_number": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "topup_amount": {
+                    "type": "integer"
+                },
+                "topup_method": {
+                    "type": "string"
+                },
+                "topup_no": {
+                    "type": "string"
+                },
+                "topup_time": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TopupResponseMonthStatusFailed": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_failed": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TopupResponseMonthStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_success": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TopupResponseYearStatusFailed": {
+            "type": "object",
+            "properties": {
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_failed": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TopupResponseYearStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_success": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TopupYearlyAmountResponse": {
+            "type": "object",
+            "properties": {
+                "total_amount": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TopupYearlyMethodResponse": {
+            "type": "object",
+            "properties": {
+                "topup_method": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_topups": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionMonthAmountResponse": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.TransactionMonthMethodResponse": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "payment_method": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_transactions": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.TransactionResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "card_number": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "merchant_id": {
+                    "type": "integer"
+                },
+                "payment_method": {
+                    "type": "string"
+                },
+                "transaction_no": {
+                    "type": "string"
+                },
+                "transaction_time": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionResponseMonthStatusFailed": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_failed": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionResponseMonthStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_success": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionResponseYearStatusFailed": {
+            "type": "object",
+            "properties": {
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_failed": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionResponseYearStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_success": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionYearMethodResponse": {
+            "type": "object",
+            "properties": {
+                "payment_method": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_transactions": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransactionYearlyAmountResponse": {
+            "type": "object",
+            "properties": {
+                "total_amount": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransferMonthAmountResponse": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.TransferResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "transfer_amount": {
+                    "type": "integer"
+                },
+                "transfer_from": {
+                    "type": "string"
+                },
+                "transfer_no": {
+                    "type": "string"
+                },
+                "transfer_time": {
+                    "type": "string"
+                },
+                "transfer_to": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransferResponseMonthStatusFailed": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_failed": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransferResponseMonthStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_success": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransferResponseYearStatusFailed": {
+            "type": "object",
+            "properties": {
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_failed": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransferResponseYearStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_success": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TransferYearAmountResponse": {
+            "type": "object",
+            "properties": {
+                "total_amount": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.UserResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "firstname": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lastname": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.WithdrawMonthlyAmountResponse": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.WithdrawResponse": {
+            "type": "object",
+            "properties": {
+                "card_number": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "withdraw_amount": {
+                    "type": "integer"
+                },
+                "withdraw_no": {
+                    "type": "string"
+                },
+                "withdraw_time": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.WithdrawResponseMonthStatusFailed": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_failed": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.WithdrawResponseMonthStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_success": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.WithdrawResponseYearStatusSuccess": {
+            "type": "object",
+            "properties": {
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_success": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.WithdrawYearlyAmountResponse": {
+            "type": "object",
+            "properties": {
+                "total_amount": {
+                    "type": "integer"
+                },
+                "year": {
                     "type": "string"
                 }
             }

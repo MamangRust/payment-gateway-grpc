@@ -85,7 +85,7 @@ func NewHandlerMerchant(merchant pb.MerchantServiceClient, router *echo.Echo, lo
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Number of items per page" default(10)
 // @Param search query string false "Search query"
-// @Success 200 {object} pb.ApiResponsePaginationMerchant "List of merchants"
+// @Success 200 {object} response.ApiResponsePaginationMerchant "List of merchants"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve merchant data"
 // @Router /api/merchants [get]
 func (h *merchantHandleApi) FindAll(c echo.Context) error {
@@ -135,7 +135,7 @@ func (h *merchantHandleApi) FindAll(c echo.Context) error {
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Number of items per page" default(10)
 // @Param search query string false "Search query"
-// @Success 200 {object} pb.ApiResponsePaginationTransaction "List of transactions"
+// @Success 200 {object} response.ApiResponsePaginationTransaction "List of transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/merchants/transaction [get]
 func (h *merchantHandleApi) FindAllTransactions(c echo.Context) error {
@@ -185,7 +185,7 @@ func (h *merchantHandleApi) FindAllTransactions(c echo.Context) error {
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Number of items per page" default(10)
 // @Param search query string false "Search query"
-// @Success 200 {object} pb.ApiResponsePaginationTransaction "List of transactions"
+// @Success 200 {object} response.ApiResponsePaginationTransaction "List of transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/merchants/transactions/:merchant_id [get]
 func (h *merchantHandleApi) FindAllTransactionByMerchant(c echo.Context) error {
@@ -241,7 +241,7 @@ func (h *merchantHandleApi) FindAllTransactionByMerchant(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Merchant ID"
-// @Success 200 {object} pb.ApiResponseMerchant "Merchant data"
+// @Success 200 {object} response.ApiResponseMerchant "Merchant data"
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve merchant data"
 // @Router /api/merchants/{id} [get]
@@ -284,7 +284,7 @@ func (h *merchantHandleApi) FindById(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantMonthlyPaymentMethod "Monthly payment methods"
+// @Success 200 {object} response.ApiResponseMerchantMonthlyPaymentMethod "Monthly payment methods"
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly payment methods"
 // @Router /api/merchants/monthly-payment-methods [get]
@@ -325,7 +325,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodsMerchant(c echo.Context) er
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantYearlyPaymentMethod "Yearly payment methods"
+// @Success 200 {object} response.ApiResponseMerchantYearlyPaymentMethod "Yearly payment methods"
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly payment methods"
 // @Router /api/merchants/monthly-amount [get]
@@ -366,7 +366,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodMerchant(c echo.Context) erro
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantMonthlyAmount "Monthly transaction amounts"
+// @Success 200 {object} response.ApiResponseMerchantMonthlyAmount "Monthly transaction amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
 // @Router /api/merchants/monthly-amount [get]
@@ -407,7 +407,7 @@ func (h *merchantHandleApi) FindMonthlyAmountMerchant(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseYearlyAmount "Yearly transaction amounts"
+// @Success 200 {object} response.ApiResponseYearlyAmount "Yearly transaction amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
 // @Router /api/merchants/yearly-amount [get]
@@ -448,7 +448,7 @@ func (h *merchantHandleApi) FindYearlyAmountMerchant(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantMonthlyAmount "Monthly transaction amounts"
+// @Success 200 {object} response.ApiResponseMerchantMonthlyAmount "Monthly transaction amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
 // @Router /api/merchants/monthly-total-amount [get]
@@ -489,7 +489,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountMerchant(c echo.Context) error
 // @Accept json
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseYearlyAmount "Yearly transaction amounts"
+// @Success 200 {object} response.ApiResponseYearlyAmount "Yearly transaction amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
 // @Router /api/merchants/yearly-total-amount [get]
@@ -531,7 +531,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountMerchant(c echo.Context) error 
 // @Produce json
 // @Param merchant_id query int true "Merchant ID"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantMonthlyPaymentMethod "Monthly payment methods"
+// @Success 200 {object} response.ApiResponseMerchantMonthlyPaymentMethod "Monthly payment methods"
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly payment methods"
 // @Router /api/merchants/monthly-payment-methods-by-merchant [get]
@@ -584,7 +584,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodByMerchants(c echo.Context) 
 // @Produce json
 // @Param merchant_id query int true "Merchant ID"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantYearlyPaymentMethod "Yearly payment methods"
+// @Success 200 {object} response.ApiResponseMerchantYearlyPaymentMethod "Yearly payment methods"
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly payment methods"
 // @Router /api/merchants/yearly-payment-methods-by-merchant [get]
@@ -637,7 +637,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodByMerchants(c echo.Context) e
 // @Produce json
 // @Param merchant_id query int true "Merchant ID"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantMonthlyAmount "Monthly transaction amounts"
+// @Success 200 {object} response.ApiResponseMerchantMonthlyAmount "Monthly transaction amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
 // @Router /api/merchants/monthly-amount-by-merchant [get]
@@ -690,7 +690,7 @@ func (h *merchantHandleApi) FindMonthlyAmountByMerchants(c echo.Context) error {
 // @Produce json
 // @Param merchant_id query int true "Merchant ID"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantYearlyAmount "Yearly transaction amounts"
+// @Success 200 {object} response.ApiResponseMerchantYearlyAmount "Yearly transaction amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
 // @Router /api/merchants/yearly-amount-by-merchant [get]
@@ -743,7 +743,7 @@ func (h *merchantHandleApi) FindYearlyAmountByMerchants(c echo.Context) error {
 // @Produce json
 // @Param merchant_id query int true "Merchant ID"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantMonthlyAmount "Monthly transaction amounts"
+// @Success 200 {object} response.ApiResponseMerchantMonthlyAmount "Monthly transaction amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
 // @Router /api/merchants/monthly-totalamount-by-merchant [get]
@@ -796,7 +796,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountByMerchants(c echo.Context) er
 // @Produce json
 // @Param merchant_id query int true "Merchant ID"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantYearlyAmount "Yearly transaction amounts"
+// @Success 200 {object} response.ApiResponseMerchantYearlyAmount "Yearly transaction amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
 // @Router /api/merchants/yearly-totalamount-by-merchant [get]
@@ -851,7 +851,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountByMerchants(c echo.Context) err
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Number of items per page" default(10)
 // @Param search query string false "Search query"
-// @Success 200 {object} pb.ApiResponsePaginationTransaction "List of transactions"
+// @Success 200 {object} response.ApiResponsePaginationTransaction "List of transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/merchants/transactions/:merchant_id [get]
 func (h *merchantHandleApi) FindAllTransactionByApikey(c echo.Context) error {
@@ -902,7 +902,7 @@ func (h *merchantHandleApi) FindAllTransactionByApikey(c echo.Context) error {
 // @Produce json
 // @Param merchant_id query int true "Merchant ID"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantMonthlyPaymentMethod "Monthly payment methods"
+// @Success 200 {object} response.ApiResponseMerchantMonthlyPaymentMethod "Monthly payment methods"
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly payment methods"
 // @Router /api/merchants/monthly-payment-methods-by-apikey [get]
@@ -947,7 +947,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodByApikeys(c echo.Context) er
 // @Produce json
 // @Param merchant_id query int true "Merchant ID"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantYearlyPaymentMethod "Yearly payment methods"
+// @Success 200 {object} response.ApiResponseMerchantYearlyPaymentMethod "Yearly payment methods"
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly payment methods"
 // @Router /api/merchants/yearly-payment-methods-by-apikey [get]
@@ -992,7 +992,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodByApikeys(c echo.Context) err
 // @Produce json
 // @Param merchant_id query int true "Merchant ID"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantMonthlyAmount "Monthly transaction amounts"
+// @Success 200 {object} response.ApiResponseMerchantMonthlyAmount "Monthly transaction amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
 // @Router /api/merchants/monthly-amount-by-apikey [get]
@@ -1037,7 +1037,7 @@ func (h *merchantHandleApi) FindMonthlyAmountByApikeys(c echo.Context) error {
 // @Produce json
 // @Param merchant_id query int true "Merchant ID"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantYearlyAmount "Yearly transaction amounts"
+// @Success 200 {object} response.ApiResponseMerchantYearlyAmount "Yearly transaction amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
 // @Router /api/merchants/yearly-amount-by-apikey [get]
@@ -1082,7 +1082,7 @@ func (h *merchantHandleApi) FindYearlyAmountByApikeys(c echo.Context) error {
 // @Produce json
 // @Param merchant_id query int true "Merchant ID"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantMonthlyAmount "Monthly transaction amounts"
+// @Success 200 {object} response.ApiResponseMerchantMonthlyAmount "Monthly transaction amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
 // @Router /api/merchants/monthly-totalamount-by-apikey [get]
@@ -1127,7 +1127,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountByApikeys(c echo.Context) erro
 // @Produce json
 // @Param merchant_id query int true "Merchant ID"
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMerchantYearlyAmount "Yearly transaction amounts"
+// @Success 200 {object} response.ApiResponseMerchantYearlyAmount "Yearly transaction amounts"
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
 // @Router /api/merchants/yearly-totalamount-by-apikey [get]
@@ -1173,7 +1173,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountByApikeys(c echo.Context) error
 // @Accept json
 // @Produce json
 // @Param api_key query string true "API key"
-// @Success 200 {object} pb.ApiResponseMerchant "Merchant data"
+// @Success 200 {object} response.ApiResponseMerchant "Merchant data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve merchant data"
 // @Router /api/merchants/api-key [get]
 func (h *merchantHandleApi) FindByApiKey(c echo.Context) error {
@@ -1208,7 +1208,7 @@ func (h *merchantHandleApi) FindByApiKey(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "User ID"
-// @Success 200 {object} pb.ApiResponsesMerchant "Merchant data"
+// @Success 200 {object} response.ApiResponsesMerchant "Merchant data"
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve merchant data"
 // @Router /api/merchants/merchant-user [get]
@@ -1250,7 +1250,10 @@ func (h *merchantHandleApi) FindByMerchantUserId(c echo.Context) error {
 // @Description Retrieve a list of active merchants
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponsesMerchant "List of active merchants"
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Number of items per page" default(10)
+// @Param search query string false "Search query"
+// @Success 200 {object} response.ApiResponsesMerchant "List of active merchants"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve merchant data"
 // @Router /api/merchants/active [get]
 func (h *merchantHandleApi) FindByActive(c echo.Context) error {
@@ -1296,7 +1299,10 @@ func (h *merchantHandleApi) FindByActive(c echo.Context) error {
 // @Description Retrieve a list of trashed merchants
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponsesMerchant "List of trashed merchants"
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Number of items per page" default(10)
+// @Param search query string false "Search query"
+// @Success 200 {object} response.ApiResponsesMerchant "List of trashed merchants"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve merchant data"
 // @Router /api/merchants/trashed [get]
 func (h *merchantHandleApi) FindByTrashed(c echo.Context) error {
@@ -1344,7 +1350,7 @@ func (h *merchantHandleApi) FindByTrashed(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param body body requests.CreateMerchantRequest true "Create merchant request"
-// @Success 200 {object} pb.ApiResponseMerchant "Created merchant"
+// @Success 200 {object} response.ApiResponseMerchant "Created merchant"
 // @Failure 400 {object} response.ErrorResponse "Bad request or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to create merchant"
 // @Router /api/merchants/create [post]
@@ -1397,7 +1403,7 @@ func (h *merchantHandleApi) Create(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param body body requests.UpdateMerchantRequest true "Update merchant request"
-// @Success 200 {object} pb.ApiResponseMerchant "Updated merchant"
+// @Success 200 {object} response.ApiResponseMerchant "Updated merchant"
 // @Failure 400 {object} response.ErrorResponse "Bad request or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to update merchant"
 // @Router /api/merchants/update/{id} [post]
@@ -1462,7 +1468,7 @@ func (h *merchantHandleApi) Update(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Merchant ID"
-// @Success 200 {object} pb.ApiResponseMerchant "Trashed merchant"
+// @Success 200 {object} response.ApiResponseMerchant "Trashed merchant"
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to trashed merchant"
 // @Router /api/merchants/trashed/{id} [post]
@@ -1508,7 +1514,7 @@ func (h *merchantHandleApi) TrashedMerchant(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Merchant ID"
-// @Success 200 {object} pb.ApiResponseMerchant "Restored merchant"
+// @Success 200 {object} response.ApiResponseMerchant "Restored merchant"
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore merchant"
 // @Router /api/merchants/restore/{id} [post]
@@ -1554,7 +1560,7 @@ func (h *merchantHandleApi) RestoreMerchant(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Merchant ID"
-// @Success 200 {object} pb.ApiResponseMerchantDelete "Deleted merchant"
+// @Success 200 {object} response.ApiResponseMerchantDelete "Deleted merchant"
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete merchant"
 // @Router /api/merchants/{id} [delete]
@@ -1597,7 +1603,7 @@ func (h *merchantHandleApi) Delete(c echo.Context) error {
 // @Description Restore all merchant records that were previously deleted.
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponseMerchantAll "Successfully restored all merchant records"
+// @Success 200 {object} response.ApiResponseMerchantAll "Successfully restored all merchant records"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore all merchant records"
 // @Router /api/merchants/restore/all [post]
 func (h *merchantHandleApi) RestoreAllMerchant(c echo.Context) error {
@@ -1627,9 +1633,9 @@ func (h *merchantHandleApi) RestoreAllMerchant(c echo.Context) error {
 // @Description Permanently delete all merchant records from the database.
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponseMerchantAll "Successfully deleted all merchant records permanently"
+// @Success 200 {object} response.ApiResponseMerchantAll "Successfully deleted all merchant records permanently"
 // @Failure 500 {object} response.ErrorResponse "Failed to permanently delete all merchant records"
-// @Router /api/merchants/permanent/all [delete]
+// @Router /api/merchants/permanent/all [post]
 func (h *merchantHandleApi) DeleteAllMerchantPermanent(c echo.Context) error {
 	ctx := c.Request().Context()
 

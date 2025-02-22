@@ -54,7 +54,7 @@ func (h *authHandleApi) HandleHello(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param request body requests.CreateUserRequest true "User registration data"
-// @Success 200 {object} pb.ApiResponseRegister "Success"
+// @Success 200 {object} response.ApiResponseRegister "Success"
 // @Failure 400 {object} response.ErrorResponse "Bad Request"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
 // @Router /api/auth/register [post]
@@ -109,7 +109,7 @@ func (h *authHandleApi) Register(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param request body requests.AuthRequest true "User login credentials"
-// @Success 200 {object} pb.ApiResponseLogin "Success"
+// @Success 200 {object} response.ApiResponseLogin "Success"
 // @Failure 400 {object} response.ErrorResponse "Bad Request"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
 // @Router /api/auth/login [post]
@@ -163,7 +163,7 @@ func (h *authHandleApi) Login(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param request body requests.RefreshTokenRequest true "Refresh token data"
-// @Success 200 {object} pb.ApiResponseRefreshToken "Success"
+// @Success 200 {object} response.ApiResponseRefreshToken "Success"
 // @Failure 400 {object} response.ErrorResponse "Bad Request"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
 // @Router /api/auth/refresh-token [post]
@@ -210,7 +210,7 @@ func (h *authHandleApi) RefreshToken(c echo.Context) error {
 // @Description Retrieves the current user's information using a valid access token from the Authorization header.
 // @Produce json
 // @Security BearerToken
-// @Success 200 {object} pb.ApiResponseGetMe "Success"
+// @Success 200 {object} response.ApiResponseGetMe "Success"
 // @Failure 401 {object} response.ErrorResponse "Unauthorized"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
 // @Router /api/auth/me [get]

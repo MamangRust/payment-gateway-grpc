@@ -95,7 +95,7 @@ func NewHandlerCard(card pb.CardServiceClient, router *echo.Echo, logger logger.
 // @Param page query int false "Page number"
 // @Param page_size query int false "Number of data per page"
 // @Param search query string false "Search keyword"
-// @Success 200 {object} pb.ApiResponsePaginationCard "Card data"
+// @Success 200 {object} response.ApiResponsePaginationCard "Card data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card data"
 // @Router /api/card [get]
 func (h *cardHandleApi) FindAll(c echo.Context) error {
@@ -148,7 +148,7 @@ func (h *cardHandleApi) FindAll(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Card ID"
-// @Success 200 {object} pb.ApiResponseCard "Card data"
+// @Success 200 {object} response.ApiResponseCard "Card data"
 // @Failure 400 {object} response.ErrorResponse "Invalid card ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/{id} [get]
@@ -190,7 +190,7 @@ func (h *cardHandleApi) FindById(c echo.Context) error {
 // @Description Retrieve a list of cards associated with a user by their ID
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponseCard "Card data"
+// @Success 200 {object} response.ApiResponseCard "Card data"
 // @Failure 400 {object} response.ErrorResponse "Invalid user ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/user [get]
@@ -230,7 +230,7 @@ func (h *cardHandleApi) FindByUserID(c echo.Context) error {
 // @Tags Card
 // @Security Bearer
 // @Produce json
-// @Success 200 {object} pb.ApiResponseDashboardCard
+// @Success 200 {object} response.ApiResponseDashboardCard
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/dashboard [get]
 func (h *cardHandleApi) DashboardCard(c echo.Context) error {
@@ -256,7 +256,7 @@ func (h *cardHandleApi) DashboardCard(c echo.Context) error {
 // @Security Bearer
 // @Produce json
 // @Param cardNumber path string true "Card Number"
-// @Success 200 {object} pb.ApiResponseDashboardCardNumber
+// @Success 200 {object} response.ApiResponseDashboardCardNumber
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/dashboard/{cardNumber} [get]
@@ -296,7 +296,7 @@ func (h *cardHandleApi) DashboardCardCardNumber(c echo.Context) error {
 // @Security Bearer
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMonthlyBalance
+// @Success 200 {object} response.ApiResponseMonthlyBalance
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-balance [get]
@@ -338,7 +338,7 @@ func (h *cardHandleApi) FindMonthlyBalance(c echo.Context) error {
 // @Security Bearer
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseYearlyBalance
+// @Success 200 {object} response.ApiResponseYearlyBalance
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-balance [get]
@@ -381,7 +381,7 @@ func (h *cardHandleApi) FindYearlyBalance(c echo.Context) error {
 // @Security Bearer
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMonthlyAmount
+// @Success 200 {object} response.ApiResponseMonthlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-topup-amount [get]
@@ -423,7 +423,7 @@ func (h *cardHandleApi) FindMonthlyTopupAmount(c echo.Context) error {
 // @Security Bearer
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseYearlyAmount
+// @Success 200 {object} response.ApiResponseYearlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/topup/yearly-topup-amount [get]
@@ -465,7 +465,7 @@ func (h *cardHandleApi) FindYearlyTopupAmount(c echo.Context) error {
 // @Security Bearer
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMonthlyAmount
+// @Success 200 {object} response.ApiResponseMonthlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-withdraw-amount [get]
@@ -507,7 +507,7 @@ func (h *cardHandleApi) FindMonthlyWithdrawAmount(c echo.Context) error {
 // @Security Bearer
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseYearlyAmount
+// @Success 200 {object} response.ApiResponseYearlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-withdraw-amount [get]
@@ -549,7 +549,7 @@ func (h *cardHandleApi) FindYearlyWithdrawAmount(c echo.Context) error {
 // @Security Bearer
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMonthlyAmount
+// @Success 200 {object} response.ApiResponseMonthlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transaction-amount [get]
@@ -591,7 +591,7 @@ func (h *cardHandleApi) FindMonthlyTransactionAmount(c echo.Context) error {
 // @Security Bearer
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseYearlyAmount
+// @Success 200 {object} response.ApiResponseYearlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transaction-amount [get]
@@ -633,7 +633,7 @@ func (h *cardHandleApi) FindYearlyTransactionAmount(c echo.Context) error {
 // @Security Bearer
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMonthlyAmount
+// @Success 200 {object} response.ApiResponseMonthlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transfer-sender-amount [get]
@@ -675,7 +675,7 @@ func (h *cardHandleApi) FindMonthlyTransferSenderAmount(c echo.Context) error {
 // @Security Bearer
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseYearlyAmount
+// @Success 200 {object} response.ApiResponseYearlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/transfer/yearly-transfer-sender-amount [get]
@@ -717,7 +717,7 @@ func (h *cardHandleApi) FindYearlyTransferSenderAmount(c echo.Context) error {
 // @Security Bearer
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseMonthlyAmount
+// @Success 200 {object} response.ApiResponseMonthlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transfer-receiver-amount [get]
@@ -759,7 +759,7 @@ func (h *cardHandleApi) FindMonthlyTransferReceiverAmount(c echo.Context) error 
 // @Security Bearer
 // @Produce json
 // @Param year query int true "Year"
-// @Success 200 {object} pb.ApiResponseYearlyAmount
+// @Success 200 {object} response.ApiResponseYearlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transfer-receiver-amount [get]
@@ -802,7 +802,7 @@ func (h *cardHandleApi) FindYearlyTransferReceiverAmount(c echo.Context) error {
 // @Produce json
 // @Param year query int true "Year"
 // @Param card_number query string true "Card Number"
-// @Success 200 {object} pb.ApiResponseMonthlyBalance
+// @Success 200 {object} response.ApiResponseMonthlyBalance
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-balance-by-card [get]
@@ -854,7 +854,7 @@ func (h *cardHandleApi) FindMonthlyBalanceByCardNumber(c echo.Context) error {
 // @Produce json
 // @Param year query int true "Year"
 // @Param card_number query string true "Card Number"
-// @Success 200 {object} pb.ApiResponseYearlyBalance
+// @Success 200 {object} response.ApiResponseYearlyBalance
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-balance-by-card [get]
@@ -906,7 +906,7 @@ func (h *cardHandleApi) FindYearlyBalanceByCardNumber(c echo.Context) error {
 // @Produce json
 // @Param year query int true "Year"
 // @Param card_number query string true "Card Number"
-// @Success 200 {object} pb.ApiResponseMonthlyAmount
+// @Success 200 {object} response.ApiResponseMonthlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-topup-amount-by-card [get]
@@ -958,7 +958,7 @@ func (h *cardHandleApi) FindMonthlyTopupAmountByCardNumber(c echo.Context) error
 // @Produce json
 // @Param year query int true "Year"
 // @Param card_number query string true "Card Number"
-// @Success 200 {object} pb.ApiResponseYearlyAmount
+// @Success 200 {object} response.ApiResponseYearlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-topup-amount-by-card [get]
@@ -1011,7 +1011,7 @@ func (h *cardHandleApi) FindYearlyTopupAmountByCardNumber(c echo.Context) error 
 // @Produce json
 // @Param year query int true "Year"
 // @Param card_number query string true "Card Number"
-// @Success 200 {object} pb.ApiResponseMonthlyAmount
+// @Success 200 {object} response.ApiResponseMonthlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-withdraw-amount-by-card [get]
@@ -1062,7 +1062,7 @@ func (h *cardHandleApi) FindMonthlyWithdrawAmountByCardNumber(c echo.Context) er
 // @Produce json
 // @Param year query int true "Year"
 // @Param card_number query string true "Card Number"
-// @Success 200 {object} pb.ApiResponseYearlyAmount
+// @Success 200 {object} response.ApiResponseYearlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-withdraw-amount-by-card [get]
@@ -1116,7 +1116,7 @@ func (h *cardHandleApi) FindYearlyWithdrawAmountByCardNumber(c echo.Context) err
 // @Produce json
 // @Param year query int true "Year"
 // @Param card_number query string true "Card Number"
-// @Success 200 {object} pb.ApiResponseMonthlyAmount
+// @Success 200 {object} response.ApiResponseMonthlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transaction-amount-by-card [get]
@@ -1169,7 +1169,7 @@ func (h *cardHandleApi) FindMonthlyTransactionAmountByCardNumber(c echo.Context)
 // @Produce json
 // @Param year query int true "Year"
 // @Param card_number query string true "Card Number"
-// @Success 200 {object} pb.ApiResponseYearlyAmount
+// @Success 200 {object} response.ApiResponseYearlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transaction-amount-by-card [get]
@@ -1222,7 +1222,7 @@ func (h *cardHandleApi) FindYearlyTransactionAmountByCardNumber(c echo.Context) 
 // @Produce json
 // @Param year query int true "Year"
 // @Param card_number query string true "Card Number"
-// @Success 200 {object} pb.ApiResponseMonthlyAmount
+// @Success 200 {object} response.ApiResponseMonthlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transfer-sender-amount-by-card [get]
@@ -1275,7 +1275,7 @@ func (h *cardHandleApi) FindMonthlyTransferSenderAmountByCardNumber(c echo.Conte
 // @Produce json
 // @Param year query int true "Year for which the data is requested"
 // @Param card_number query string true "Card number for which the data is requested"
-// @Success 200 {object} pb.ApiResponseYearlyAmount
+// @Success 200 {object} response.ApiResponseYearlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transfer-sender-amount-by-card [get]
@@ -1328,7 +1328,7 @@ func (h *cardHandleApi) FindYearlyTransferSenderAmountByCardNumber(c echo.Contex
 // @Produce json
 // @Param year query int true "Year for which the data is requested"
 // @Param card_number query string true "Card number for which the data is requested"
-// @Success 200 {object} pb.ApiResponseYearlyAmount
+// @Success 200 {object} response.ApiResponseYearlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transfer-receiver-amount-by-card [get]
@@ -1382,7 +1382,7 @@ func (h *cardHandleApi) FindMonthlyTransferReceiverAmountByCardNumber(c echo.Con
 // @Produce json
 // @Param year query int true "Year for which the data is requested"
 // @Param card_number query string true "Card number for which the data is requested"
-// @Success 200 {object} pb.ApiResponseYearlyAmount
+// @Success 200 {object} response.ApiResponseYearlyAmount
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transfer-receiver-amount-by-card [get]
@@ -1479,7 +1479,10 @@ func (h *cardHandleApi) FindByActive(c echo.Context) error {
 // @Description Retrieve a list of trashed cards
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponsePaginationCardDeleteAt "Card data"
+// @Param page query int false "Page number (default: 1)"
+// @Param page_size query int false "Number of items per page (default: 10)"
+// @Param search query string false "Search keyword"
+// @Success 200 {object} response.ApiResponsePaginationCardDeleteAt "Card data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/trashed [get]
 func (h *cardHandleApi) FindByTrashed(c echo.Context) error {
@@ -1525,7 +1528,7 @@ func (h *cardHandleApi) FindByTrashed(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param card_number path string true "Card number"
-// @Success 200 {object} pb.ApiResponseCard "Card data"
+// @Success 200 {object} response.ApiResponseCard "Card data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/{card_number} [get]
 func (h *cardHandleApi) FindByCardNumber(c echo.Context) error {
@@ -1559,7 +1562,7 @@ func (h *cardHandleApi) FindByCardNumber(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param CreateCardRequest body requests.CreateCardRequest true "Create card request"
-// @Success 200 {object} pb.ApiResponseCard "Created card"
+// @Success 200 {object} response.ApiResponseCard "Created card"
 // @Failure 400 {object} response.ErrorResponse "Bad request or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to create card"
 // @Router /api/card/create [post]
@@ -1615,11 +1618,23 @@ func (h *cardHandleApi) CreateCard(c echo.Context) error {
 // @Produce json
 // @Param id path int true "Card ID"
 // @Param UpdateCardRequest body requests.UpdateCardRequest true "Update card request"
-// @Success 200 {object} pb.ApiResponseCard "Updated card"
+// @Success 200 {object} response.ApiResponseCard "Updated card"
 // @Failure 400 {object} response.ErrorResponse "Bad request or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to update card"
 // @Router /api/card/update/{id} [post]
 func (h *cardHandleApi) UpdateCard(c echo.Context) error {
+	id := c.Param("id")
+
+	idInt, err := strconv.Atoi(id)
+
+	if err != nil {
+		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid ID",
+		})
+	}
+
 	var body requests.UpdateCardRequest
 
 	if err := c.Bind(&body); err != nil {
@@ -1641,7 +1656,7 @@ func (h *cardHandleApi) UpdateCard(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	req := &pb.UpdateCardRequest{
-		CardId:       int32(body.CardID),
+		CardId:       int32(idInt),
 		UserId:       int32(body.UserID),
 		CardType:     body.CardType,
 		ExpireDate:   timestamppb.New(body.ExpireDate),
@@ -1671,7 +1686,7 @@ func (h *cardHandleApi) UpdateCard(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Card ID"
-// @Success 200 {object} pb.ApiResponseCard "Trashed card"
+// @Success 200 {object} response.ApiResponseCard "Trashed card"
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to trashed card"
 // @Router /api/card/trashed/{id} [post]
@@ -1716,12 +1731,11 @@ func (h *cardHandleApi) TrashedCard(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Card ID"
-// @Success 200 {object} pb.ApiResponseCard "Restored card"
+// @Success 200 {object} response.ApiResponseCard "Restored card"
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore card"
 // @Router /api/card/restore/{id} [post]
 func (h *cardHandleApi) RestoreCard(c echo.Context) error {
-
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1762,7 +1776,7 @@ func (h *cardHandleApi) RestoreCard(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Card ID"
-// @Success 200 {object} pb.ApiResponseCardDelete "Deleted card"
+// @Success 200 {object} response.ApiResponseCardDelete "Deleted card"
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete card"
 // @Router /api/card/permanent/{id} [delete]
@@ -1806,7 +1820,7 @@ func (h *cardHandleApi) DeleteCardPermanent(c echo.Context) error {
 // @Description Restore all card records that were previously deleted.
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponseCardAll "Successfully restored all card records"
+// @Success 200 {object} response.ApiResponseCardAll "Successfully restored all card records"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore all card records"
 // @Router /api/card/restore/all [post]
 func (h *cardHandleApi) RestoreAllCard(c echo.Context) error {
@@ -1834,7 +1848,7 @@ func (h *cardHandleApi) RestoreAllCard(c echo.Context) error {
 // @Description Permanently delete all card records from the database.
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponseCardAll "Successfully deleted all card records permanently"
+// @Success 200 {object} response.ApiResponseCardAll "Successfully deleted all card records permanently"
 // @Failure 500 {object} response.ErrorResponse "Failed to permanently delete all card records"
 // @Router /api/card/permanent/all [post]
 func (h *cardHandleApi) DeleteAllCardPermanent(c echo.Context) error {

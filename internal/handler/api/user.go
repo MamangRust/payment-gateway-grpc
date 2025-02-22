@@ -55,7 +55,7 @@ func NewHandlerUser(client pb.UserServiceClient, router *echo.Echo, logger logge
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Number of items per page" default(10)
 // @Param search query string false "Search query"
-// @Success 200 {object} pb.ApiResponsePaginationUser "List of users"
+// @Success 200 {object} response.ApiResponsePaginationUser "List of users"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve user data"
 // @Router /api/user [get]
 func (h *userHandleApi) FindAllUser(c echo.Context) error {
@@ -99,7 +99,7 @@ func (h *userHandleApi) FindAllUser(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "User ID"
-// @Success 200 {object} pb.ApiResponseUser "User data"
+// @Success 200 {object} response.ApiResponseUser "User data"
 // @Failure 400 {object} response.ErrorResponse "Invalid user ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve user data"
 // @Router /api/user/{id} [get]
@@ -139,7 +139,10 @@ func (h *userHandleApi) FindById(c echo.Context) error {
 // @Description Retrieve a list of active users
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponsesUser "List of active users"
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Number of items per page" default(10)
+// @Param search query string false "Search query"
+// @Success 200 {object} response.ApiResponsesUser "List of active users"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve user data"
 // @Router /api/user/active [get]
 func (h *userHandleApi) FindByActive(c echo.Context) error {
@@ -182,7 +185,10 @@ func (h *userHandleApi) FindByActive(c echo.Context) error {
 // @Description Retrieve a list of trashed user records
 // @Accept json
 // @Produce json
-// @Success 200 {object} pb.ApiResponsesUser "List of trashed user data"
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Number of items per page" default(10)
+// @Param search query string false "Search query"
+// @Success 200 {object} response.ApiResponsesUser "List of trashed user data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve user data"
 // @Router /api/user/trashed [get]
 func (h *userHandleApi) FindByTrashed(c echo.Context) error {
@@ -227,7 +233,7 @@ func (h *userHandleApi) FindByTrashed(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param request body requests.CreateUserRequest true "Create user request"
-// @Success 200 {object} pb.ApiResponseUser "Successfully created user"
+// @Success 200 {object} response.ApiResponseUser "Successfully created user"
 // @Failure 400 {object} response.ErrorResponse "Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to create user"
 // @Router /api/user/create [post]
@@ -281,7 +287,7 @@ func (h *userHandleApi) Create(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param UpdateUserRequest body requests.UpdateUserRequest true "Update user request"
-// @Success 200 {object} pb.ApiResponseUser "Successfully updated user"
+// @Success 200 {object} response.ApiResponseUser "Successfully updated user"
 // @Failure 400 {object} response.ErrorResponse "Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to update user"
 // @Router /api/user/update/{id} [post]
@@ -336,10 +342,10 @@ func (h *userHandleApi) Update(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "User ID"
-// @Success 200 {object} pb.ApiResponseUser "Successfully retrieved trashed user"
+// @Success 200 {object} response.ApiResponseUser "Successfully retrieved trashed user"
 // @Failure 400 {object} response.ErrorResponse "Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve trashed user"
-// @Router /api/user/trashed/{id} [get]
+// @Router /api/user/trashed/{id} [post]
 func (h *userHandleApi) TrashedUser(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
@@ -378,7 +384,7 @@ func (h *userHandleApi) TrashedUser(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "User ID"
-// @Success 200 {object} pb.ApiResponseUser "Successfully restored user"
+// @Success 200 {object} response.ApiResponseUser "Successfully restored user"
 // @Failure 400 {object} response.ErrorResponse "Invalid user ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore user"
 // @Router /api/user/restore/{id} [post]
@@ -420,7 +426,7 @@ func (h *userHandleApi) RestoreUser(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "User ID"
-// @Success 200 {object} pb.ApiResponseUserDelete "Successfully deleted user record permanently"
+// @Success 200 {object} response.ApiResponseUserDelete "Successfully deleted user record permanently"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete user:"
 // @Router /api/user/delete/{id} [delete]
@@ -462,7 +468,7 @@ func (h *userHandleApi) DeleteUserPermanent(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "User ID"
-// @Success 200 {object} pb.ApiResponseUserAll "Successfully restored user all"
+// @Success 200 {object} response.ApiResponseUserAll "Successfully restored user all"
 // @Failure 400 {object} response.ErrorResponse "Invalid user ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore user"
 // @Router /api/user/restore/all [post]
@@ -492,7 +498,7 @@ func (h *userHandleApi) RestoreAllUser(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "User ID"
-// @Success 200 {object} pb.ApiResponseUserDelete "Successfully deleted user record permanently"
+// @Success 200 {object} response.ApiResponseUserDelete "Successfully deleted user record permanently"
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete user:"
 // @Router /api/user/delete/all [post]
