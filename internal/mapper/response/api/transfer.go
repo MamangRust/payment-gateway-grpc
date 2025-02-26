@@ -75,8 +75,8 @@ func (m *transferResponseMapper) ToApiResponseTransfers(pbResponse *pb.ApiRespon
 	}
 }
 
-func (m *transferResponseMapper) ToApiResponseTransferDelete(pbResponse *pb.ApiResponseTransferYearAmount) *response.ApiResponseTransferYearAmount {
-	return &response.ApiResponseTransferYearAmount{
+func (m *transferResponseMapper) ToApiResponseTransferDelete(pbResponse *pb.ApiResponseTransferDelete) *response.ApiResponseTransferDelete {
+	return &response.ApiResponseTransferDelete{
 		Status:  pbResponse.Status,
 		Message: pbResponse.Message,
 	}

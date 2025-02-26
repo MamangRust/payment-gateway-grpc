@@ -235,6 +235,80 @@ func (t *withdrawRecordMapper) ToWithdrawRecordsYearStatusFailed(Withdraws []*db
 	return WithdrawRecords
 }
 
+func (t *withdrawRecordMapper) ToWithdrawRecordMonthStatusSuccessCardNumber(s *db.GetMonthWithdrawStatusSuccessCardNumberRow) *record.WithdrawRecordMonthStatusSuccess {
+	return &record.WithdrawRecordMonthStatusSuccess{
+		Year:         s.Year,
+		Month:        s.Month,
+		TotalSuccess: int(s.TotalSuccess),
+		TotalAmount:  int(s.TotalAmount),
+	}
+}
+
+func (t *withdrawRecordMapper) ToWithdrawRecordsMonthStatusSuccessCardNumber(Withdraws []*db.GetMonthWithdrawStatusSuccessCardNumberRow) []*record.WithdrawRecordMonthStatusSuccess {
+	var WithdrawRecords []*record.WithdrawRecordMonthStatusSuccess
+
+	for _, Withdraw := range Withdraws {
+		WithdrawRecords = append(WithdrawRecords, t.ToWithdrawRecordMonthStatusSuccessCardNumber(Withdraw))
+	}
+
+	return WithdrawRecords
+}
+
+func (t *withdrawRecordMapper) ToWithdrawRecordYearStatusSuccessCardNumber(s *db.GetYearlyWithdrawStatusSuccessCardNumberRow) *record.WithdrawRecordYearStatusSuccess {
+	return &record.WithdrawRecordYearStatusSuccess{
+		Year:         s.Year,
+		TotalSuccess: int(s.TotalSuccess),
+		TotalAmount:  int(s.TotalAmount),
+	}
+}
+
+func (t *withdrawRecordMapper) ToWithdrawRecordsYearStatusSuccessCardNumber(Withdraws []*db.GetYearlyWithdrawStatusSuccessCardNumberRow) []*record.WithdrawRecordYearStatusSuccess {
+	var WithdrawRecords []*record.WithdrawRecordYearStatusSuccess
+
+	for _, Withdraw := range Withdraws {
+		WithdrawRecords = append(WithdrawRecords, t.ToWithdrawRecordYearStatusSuccessCardNumber(Withdraw))
+	}
+
+	return WithdrawRecords
+}
+
+func (t *withdrawRecordMapper) ToWithdrawRecordMonthStatusFailedCardNumber(s *db.GetMonthWithdrawStatusFailedCardNumberRow) *record.WithdrawRecordMonthStatusFailed {
+	return &record.WithdrawRecordMonthStatusFailed{
+		Year:        s.Year,
+		Month:       s.Month,
+		TotalFailed: int(s.TotalFailed),
+		TotalAmount: int(s.TotalAmount),
+	}
+}
+
+func (t *withdrawRecordMapper) ToWithdrawRecordsMonthStatusFailedCardNumber(Withdraws []*db.GetMonthWithdrawStatusFailedCardNumberRow) []*record.WithdrawRecordMonthStatusFailed {
+	var WithdrawRecords []*record.WithdrawRecordMonthStatusFailed
+
+	for _, Withdraw := range Withdraws {
+		WithdrawRecords = append(WithdrawRecords, t.ToWithdrawRecordMonthStatusFailedCardNumber(Withdraw))
+	}
+
+	return WithdrawRecords
+}
+
+func (t *withdrawRecordMapper) ToWithdrawRecordYearStatusFailedCardNumber(s *db.GetYearlyWithdrawStatusFailedCardNumberRow) *record.WithdrawRecordYearStatusFailed {
+	return &record.WithdrawRecordYearStatusFailed{
+		Year:        s.Year,
+		TotalFailed: int(s.TotalFailed),
+		TotalAmount: int(s.TotalAmount),
+	}
+}
+
+func (t *withdrawRecordMapper) ToWithdrawRecordsYearStatusFailedCardNumber(Withdraws []*db.GetYearlyWithdrawStatusFailedCardNumberRow) []*record.WithdrawRecordYearStatusFailed {
+	var WithdrawRecords []*record.WithdrawRecordYearStatusFailed
+
+	for _, Withdraw := range Withdraws {
+		WithdrawRecords = append(WithdrawRecords, t.ToWithdrawRecordYearStatusFailedCardNumber(Withdraw))
+	}
+
+	return WithdrawRecords
+}
+
 func (r *withdrawRecordMapper) ToWithdrawAmountMonthly(ss *db.GetMonthlyWithdrawsRow) *record.WithdrawMonthlyAmount {
 	return &record.WithdrawMonthlyAmount{
 		Month:       ss.Month,

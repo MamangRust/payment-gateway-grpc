@@ -195,6 +195,80 @@ func (t *transferRecordMapper) ToTransferRecordsYearStatusFailed(Transfers []*db
 	return TransferRecords
 }
 
+func (t *transferRecordMapper) ToTransferRecordMonthStatusSuccessCardNumber(s *db.GetMonthTransferStatusSuccessCardNumberRow) *record.TransferRecordMonthStatusSuccess {
+	return &record.TransferRecordMonthStatusSuccess{
+		Year:         s.Year,
+		Month:        s.Month,
+		TotalSuccess: int(s.TotalSuccess),
+		TotalAmount:  int(s.TotalAmount),
+	}
+}
+
+func (t *transferRecordMapper) ToTransferRecordsMonthStatusSuccessCardNumber(Transfers []*db.GetMonthTransferStatusSuccessCardNumberRow) []*record.TransferRecordMonthStatusSuccess {
+	var TransferRecords []*record.TransferRecordMonthStatusSuccess
+
+	for _, Transfer := range Transfers {
+		TransferRecords = append(TransferRecords, t.ToTransferRecordMonthStatusSuccessCardNumber(Transfer))
+	}
+
+	return TransferRecords
+}
+
+func (t *transferRecordMapper) ToTransferRecordYearStatusSuccessCardNumber(s *db.GetYearlyTransferStatusSuccessCardNumberRow) *record.TransferRecordYearStatusSuccess {
+	return &record.TransferRecordYearStatusSuccess{
+		Year:         s.Year,
+		TotalSuccess: int(s.TotalSuccess),
+		TotalAmount:  int(s.TotalAmount),
+	}
+}
+
+func (t *transferRecordMapper) ToTransferRecordsYearStatusSuccessCardNumber(Transfers []*db.GetYearlyTransferStatusSuccessCardNumberRow) []*record.TransferRecordYearStatusSuccess {
+	var TransferRecords []*record.TransferRecordYearStatusSuccess
+
+	for _, Transfer := range Transfers {
+		TransferRecords = append(TransferRecords, t.ToTransferRecordYearStatusSuccessCardNumber(Transfer))
+	}
+
+	return TransferRecords
+}
+
+func (t *transferRecordMapper) ToTransferRecordMonthStatusFailedCardNumber(s *db.GetMonthTransferStatusFailedCardNumberRow) *record.TransferRecordMonthStatusFailed {
+	return &record.TransferRecordMonthStatusFailed{
+		Year:        s.Year,
+		Month:       s.Month,
+		TotalFailed: int(s.TotalFailed),
+		TotalAmount: int(s.TotalAmount),
+	}
+}
+
+func (t *transferRecordMapper) ToTransferRecordsMonthStatusFailedCardNumber(Transfers []*db.GetMonthTransferStatusFailedCardNumberRow) []*record.TransferRecordMonthStatusFailed {
+	var TransferRecords []*record.TransferRecordMonthStatusFailed
+
+	for _, Transfer := range Transfers {
+		TransferRecords = append(TransferRecords, t.ToTransferRecordMonthStatusFailedCardNumber(Transfer))
+	}
+
+	return TransferRecords
+}
+
+func (t *transferRecordMapper) ToTransferRecordYearStatusFailedCardNumber(s *db.GetYearlyTransferStatusFailedCardNumberRow) *record.TransferRecordYearStatusFailed {
+	return &record.TransferRecordYearStatusFailed{
+		Year:        s.Year,
+		TotalFailed: int(s.TotalFailed),
+		TotalAmount: int(s.TotalAmount),
+	}
+}
+
+func (t *transferRecordMapper) ToTransferRecordsYearStatusFailedCardNumber(Transfers []*db.GetYearlyTransferStatusFailedCardNumberRow) []*record.TransferRecordYearStatusFailed {
+	var TransferRecords []*record.TransferRecordYearStatusFailed
+
+	for _, Transfer := range Transfers {
+		TransferRecords = append(TransferRecords, t.ToTransferRecordYearStatusFailedCardNumber(Transfer))
+	}
+
+	return TransferRecords
+}
+
 func (s *transferRecordMapper) ToTransferMonthAmount(ss *db.GetMonthlyTransferAmountsRow) *record.TransferMonthAmount {
 	return &record.TransferMonthAmount{
 		Month:       ss.Month,

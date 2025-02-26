@@ -155,6 +155,84 @@ func (r *topupRepository) GetYearlyTopupStatusFailed(year int) ([]*record.TopupR
 	return so, nil
 }
 
+func (r *topupRepository) GetMonthTopupStatusSuccessByCardNumber(card_number string, year int, month int) ([]*record.TopupRecordMonthStatusSuccess, error) {
+	currentDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	prevDate := currentDate.AddDate(0, -1, 0)
+
+	lastDayCurrentMonth := currentDate.AddDate(0, 1, -1)
+	lastDayPrevMonth := prevDate.AddDate(0, 1, -1)
+
+	res, err := r.db.GetMonthTopupStatusSuccessCardNumber(r.ctx, db.GetMonthTopupStatusSuccessCardNumberParams{
+		CardNumber: card_number,
+		Column2:    currentDate,
+		Column3:    lastDayCurrentMonth,
+		Column4:    prevDate,
+		Column5:    lastDayPrevMonth,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get month top-up status success for year %d and month %d: %w", year, month, err)
+	}
+
+	so := r.mapping.ToTopupRecordsMonthStatusSuccessByCardNumber(res)
+
+	return so, nil
+}
+
+func (r *topupRepository) GetYearlyTopupStatusSuccessByCardNumber(card_number string, year int) ([]*record.TopupRecordYearStatusSuccess, error) {
+	res, err := r.db.GetYearlyTopupStatusSuccessCardNumber(r.ctx, db.GetYearlyTopupStatusSuccessCardNumberParams{
+		CardNumber: card_number,
+		Column2:    int32(year),
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get yearly top-up status success for year %d: %w", year, err)
+	}
+
+	so := r.mapping.ToTopupRecordsYearStatusSuccessByCardNumber(res)
+
+	return so, nil
+}
+
+func (r *topupRepository) GetMonthTopupStatusFailedByCardNumber(card_number string, year int, month int) ([]*record.TopupRecordMonthStatusFailed, error) {
+	currentDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	prevDate := currentDate.AddDate(0, -1, 0)
+
+	lastDayCurrentMonth := currentDate.AddDate(0, 1, -1)
+	lastDayPrevMonth := prevDate.AddDate(0, 1, -1)
+
+	res, err := r.db.GetMonthTopupStatusFailedCardNumber(r.ctx, db.GetMonthTopupStatusFailedCardNumberParams{
+		CardNumber: card_number,
+		Column2:    currentDate,
+		Column3:    lastDayCurrentMonth,
+		Column4:    prevDate,
+		Column5:    lastDayPrevMonth,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get month top-up status failed for year %d and month %d: %w", year, month, err)
+	}
+
+	so := r.mapping.ToTopupRecordsMonthStatusFailedByCardNumber(res)
+
+	return so, nil
+}
+
+func (r *topupRepository) GetYearlyTopupStatusFailedByCardNumber(card_number string, year int) ([]*record.TopupRecordYearStatusFailed, error) {
+	res, err := r.db.GetYearlyTopupStatusFailedCardNumber(r.ctx, db.GetYearlyTopupStatusFailedCardNumberParams{
+		CardNumber: card_number,
+		Column2:    int32(year),
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get yearly top-up status failed for year %d: %w", year, err)
+	}
+
+	so := r.mapping.ToTopupRecordsYearStatusFailedByCardNumber(res)
+
+	return so, nil
+}
+
 func (r *topupRepository) GetMonthlyTopupMethods(year int) ([]*record.TopupMonthMethod, error) {
 	yearStart := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
 

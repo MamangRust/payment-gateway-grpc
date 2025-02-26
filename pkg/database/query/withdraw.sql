@@ -7,10 +7,16 @@ FROM
     withdraws
 WHERE
     deleted_at IS NULL
-    AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%')
+    AND ($1::TEXT IS NULL
+        OR card_number ILIKE '%' || $1 || '%'
+        OR withdraw_amount::TEXT ILIKE '%' || $1 || '%'
+        OR withdraw_time::TEXT ILIKE '%' || $1 || '%'
+        OR status ILIKE '%' || $1 || '%'
+    )
 ORDER BY
     withdraw_time DESC
 LIMIT $2 OFFSET $3;
+
 
 
 -- Get Withdraw by ID
@@ -30,7 +36,12 @@ FROM
     withdraws
 WHERE
     deleted_at IS NULL
-    AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%')
+    AND ($1::TEXT IS NULL
+        OR card_number ILIKE '%' || $1 || '%'
+        OR withdraw_amount::TEXT ILIKE '%' || $1 || '%'
+        OR withdraw_time::TEXT ILIKE '%' || $1 || '%'
+        OR status ILIKE '%' || $1 || '%'
+    )
 ORDER BY
     withdraw_time DESC
 LIMIT $2 OFFSET $3;
@@ -45,7 +56,12 @@ FROM
     withdraws
 WHERE
     deleted_at IS NOT NULL
-    AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%')
+    AND ($1::TEXT IS NULL
+        OR card_number ILIKE '%' || $1 || '%'
+        OR withdraw_amount::TEXT ILIKE '%' || $1 || '%'
+        OR withdraw_time::TEXT ILIKE '%' || $1 || '%'
+        OR status ILIKE '%' || $1 || '%'
+    )
 ORDER BY
     withdraw_time DESC
 LIMIT $2 OFFSET $3;
@@ -63,6 +79,8 @@ WHERE
     AND card_number = $1
     AND (
         $2::TEXT IS NULL
+        OR CAST(withdraw_amount AS TEXT) ILIKE '%' || $2 || '%'
+        OR TO_CHAR(withdraw_time, 'YYYY-MM-DD HH24:MI:SS') ILIKE '%' || $2 || '%'
         OR status ILIKE '%' || $2 || '%'
     )
 ORDER BY
@@ -333,6 +351,245 @@ SELECT * FROM formatted_data
 ORDER BY
     year DESC;
 
+
+
+-- name: GetMonthWithdrawStatusSuccessCardNumber :many
+WITH monthly_data AS (
+    SELECT
+        EXTRACT(YEAR FROM t.withdraw_time)::integer AS year,
+        EXTRACT(MONTH FROM t.withdraw_time)::integer AS month,
+        COUNT(*) AS total_success,
+        COALESCE(SUM(t.withdraw_amount), 0)::integer AS total_amount
+    FROM
+        withdraws t
+    WHERE
+        t.deleted_at IS NULL
+        AND t.status = 'success'
+        AND t.card_number = $1
+        AND (
+            (t.withdraw_time >= $2::timestamp AND t.withdraw_time <= $3::timestamp)
+            OR (t.withdraw_time >= $4::timestamp AND t.withdraw_time <= $5::timestamp)
+        )
+    GROUP BY
+        EXTRACT(YEAR FROM t.withdraw_time),
+        EXTRACT(MONTH FROM t.withdraw_time)
+), formatted_data AS (
+    SELECT
+        year::text,
+        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
+        total_success,
+        total_amount
+    FROM
+        monthly_data
+
+    UNION ALL
+
+    SELECT
+        EXTRACT(YEAR FROM $2::timestamp)::text AS year,
+        TO_CHAR($2::timestamp, 'Mon') AS month,
+        0 AS total_success,
+        0 AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM monthly_data
+        WHERE year = EXTRACT(YEAR FROM $2::timestamp)::integer
+        AND month = EXTRACT(MONTH FROM $2::timestamp)::integer
+    )
+
+    UNION ALL
+
+    SELECT
+        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
+        TO_CHAR($3::timestamp, 'Mon') AS month,
+        0 AS total_success,
+        0 AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM monthly_data
+        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
+        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
+    )
+)
+SELECT * FROM formatted_data
+ORDER BY
+    year DESC,
+    TO_DATE(month, 'Mon') DESC;
+
+
+
+-- name: GetYearlyWithdrawStatusSuccessCardNumber :many
+WITH yearly_data AS (
+    SELECT
+        EXTRACT(YEAR FROM t.withdraw_time)::integer AS year,
+        COUNT(*) AS total_success,
+        COALESCE(SUM(t.withdraw_amount), 0)::integer AS total_amount
+    FROM
+        withdraws t
+    WHERE
+        t.deleted_at IS NULL
+        AND t.status = 'success'
+        AND t.card_number = $1
+        AND (
+            EXTRACT(YEAR FROM t.withdraw_time) = $2::integer
+            OR EXTRACT(YEAR FROM t.withdraw_time) = $2::integer - 1
+        )
+    GROUP BY
+        EXTRACT(YEAR FROM t.withdraw_time)
+), formatted_data AS (
+    SELECT
+        year::text,
+        total_success::integer,
+        total_amount::integer
+    FROM
+        yearly_data
+
+    UNION ALL
+
+    SELECT
+        $2::text AS year,
+        0::integer AS total_success,
+        0::integer AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM yearly_data
+        WHERE year = $2::integer
+    )
+
+    UNION ALL
+
+    SELECT
+        ($2::integer - 1)::text AS year,
+        0::integer AS total_success,
+        0::integer AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM yearly_data
+        WHERE year = $2::integer - 1
+    )
+)
+SELECT * FROM formatted_data
+ORDER BY
+    year DESC;
+
+
+
+-- name: GetMonthWithdrawStatusFailedCardNumber :many
+WITH monthly_data AS (
+    SELECT
+        EXTRACT(YEAR FROM t.withdraw_time)::integer AS year,
+        EXTRACT(MONTH FROM t.withdraw_time)::integer AS month,
+        COUNT(*) AS total_failed,
+        COALESCE(SUM(t.withdraw_amount), 0)::integer AS total_amount
+    FROM
+        withdraws t
+    WHERE
+        t.deleted_at IS NULL
+        AND t.status = 'failed'
+        AND t.card_number = $1
+        AND (
+            (t.withdraw_time >= $2::timestamp AND t.withdraw_time <= $3::timestamp)
+            OR (t.withdraw_time >= $4::timestamp AND t.withdraw_time <= $5::timestamp)
+        )
+    GROUP BY
+        EXTRACT(YEAR FROM t.withdraw_time),
+        EXTRACT(MONTH FROM t.withdraw_time)
+), formatted_data AS (
+    SELECT
+        year::text,
+        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
+        total_failed,
+        total_amount
+    FROM
+        monthly_data
+
+    UNION ALL
+
+    SELECT
+        EXTRACT(YEAR FROM $2::timestamp)::text AS year,
+        TO_CHAR($2::timestamp, 'Mon') AS month,
+        0 AS total_failed,
+        0 AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM monthly_data
+        WHERE year = EXTRACT(YEAR FROM $2::timestamp)::integer
+        AND month = EXTRACT(MONTH FROM $2::timestamp)::integer
+    )
+
+    UNION ALL
+
+    SELECT
+        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
+        TO_CHAR($3::timestamp, 'Mon') AS month,
+        0 AS total_failed,
+        0 AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM monthly_data
+        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
+        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
+    )
+)
+SELECT * FROM formatted_data
+ORDER BY
+    year DESC,
+    TO_DATE(month, 'Mon') DESC;
+
+
+
+-- name: GetYearlyWithdrawStatusFailedCardNumber :many
+WITH yearly_data AS (
+    SELECT
+        EXTRACT(YEAR FROM t.withdraw_time)::integer AS year,
+        COUNT(*) AS total_failed,
+        COALESCE(SUM(t.withdraw_amount), 0)::integer AS total_amount
+    FROM
+        withdraws t
+    WHERE
+        t.deleted_at IS NULL
+        AND t.status = 'failed'
+        AND t.card_number = $1
+        AND (
+            EXTRACT(YEAR FROM t.withdraw_time) = $2::integer
+            OR EXTRACT(YEAR FROM t.withdraw_time) = $2::integer - 1
+        )
+    GROUP BY
+        EXTRACT(YEAR FROM t.withdraw_time)
+), formatted_data AS (
+    SELECT
+        year::text,
+        total_failed::integer,
+        total_amount::integer
+    FROM
+        yearly_data
+
+    UNION ALL
+
+    SELECT
+        $2::text AS year,
+        0::integer AS total_failed,
+        0::integer AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM yearly_data
+        WHERE year = $2::integer
+    )
+
+    UNION ALL
+
+    SELECT
+        ($2::integer - 1)::text AS year,
+        0::integer AS total_failed,
+        0::integer AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM yearly_data
+        WHERE year = $2::integer - 1
+    )
+)
+SELECT * FROM formatted_data
+ORDER BY
+    year DESC;
 
 
 

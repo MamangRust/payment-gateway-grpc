@@ -20,31 +20,35 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TopupService_FindAllTopup_FullMethodName                        = "/pb.TopupService/FindAllTopup"
-	TopupService_FindAllTopupByCardNumber_FullMethodName            = "/pb.TopupService/FindAllTopupByCardNumber"
-	TopupService_FindByIdTopup_FullMethodName                       = "/pb.TopupService/FindByIdTopup"
-	TopupService_FindMonthlyTopupStatusSuccess_FullMethodName       = "/pb.TopupService/FindMonthlyTopupStatusSuccess"
-	TopupService_FindYearlyTopupStatusSuccess_FullMethodName        = "/pb.TopupService/FindYearlyTopupStatusSuccess"
-	TopupService_FindMonthlyTopupStatusFailed_FullMethodName        = "/pb.TopupService/FindMonthlyTopupStatusFailed"
-	TopupService_FindYearlyTopupStatusFailed_FullMethodName         = "/pb.TopupService/FindYearlyTopupStatusFailed"
-	TopupService_FindMonthlyTopupMethods_FullMethodName             = "/pb.TopupService/FindMonthlyTopupMethods"
-	TopupService_FindYearlyTopupMethods_FullMethodName              = "/pb.TopupService/FindYearlyTopupMethods"
-	TopupService_FindMonthlyTopupAmounts_FullMethodName             = "/pb.TopupService/FindMonthlyTopupAmounts"
-	TopupService_FindYearlyTopupAmounts_FullMethodName              = "/pb.TopupService/FindYearlyTopupAmounts"
-	TopupService_FindMonthlyTopupMethodsByCardNumber_FullMethodName = "/pb.TopupService/FindMonthlyTopupMethodsByCardNumber"
-	TopupService_FindYearlyTopupMethodsByCardNumber_FullMethodName  = "/pb.TopupService/FindYearlyTopupMethodsByCardNumber"
-	TopupService_FindMonthlyTopupAmountsByCardNumber_FullMethodName = "/pb.TopupService/FindMonthlyTopupAmountsByCardNumber"
-	TopupService_FindYearlyTopupAmountsByCardNumber_FullMethodName  = "/pb.TopupService/FindYearlyTopupAmountsByCardNumber"
-	TopupService_FindByCardNumberTopup_FullMethodName               = "/pb.TopupService/FindByCardNumberTopup"
-	TopupService_FindByActive_FullMethodName                        = "/pb.TopupService/FindByActive"
-	TopupService_FindByTrashed_FullMethodName                       = "/pb.TopupService/FindByTrashed"
-	TopupService_CreateTopup_FullMethodName                         = "/pb.TopupService/CreateTopup"
-	TopupService_UpdateTopup_FullMethodName                         = "/pb.TopupService/UpdateTopup"
-	TopupService_TrashedTopup_FullMethodName                        = "/pb.TopupService/TrashedTopup"
-	TopupService_RestoreTopup_FullMethodName                        = "/pb.TopupService/RestoreTopup"
-	TopupService_DeleteTopupPermanent_FullMethodName                = "/pb.TopupService/DeleteTopupPermanent"
-	TopupService_RestoreAllTopup_FullMethodName                     = "/pb.TopupService/RestoreAllTopup"
-	TopupService_DeleteAllTopupPermanent_FullMethodName             = "/pb.TopupService/DeleteAllTopupPermanent"
+	TopupService_FindAllTopup_FullMethodName                              = "/pb.TopupService/FindAllTopup"
+	TopupService_FindAllTopupByCardNumber_FullMethodName                  = "/pb.TopupService/FindAllTopupByCardNumber"
+	TopupService_FindByIdTopup_FullMethodName                             = "/pb.TopupService/FindByIdTopup"
+	TopupService_FindMonthlyTopupStatusSuccess_FullMethodName             = "/pb.TopupService/FindMonthlyTopupStatusSuccess"
+	TopupService_FindYearlyTopupStatusSuccess_FullMethodName              = "/pb.TopupService/FindYearlyTopupStatusSuccess"
+	TopupService_FindMonthlyTopupStatusFailed_FullMethodName              = "/pb.TopupService/FindMonthlyTopupStatusFailed"
+	TopupService_FindYearlyTopupStatusFailed_FullMethodName               = "/pb.TopupService/FindYearlyTopupStatusFailed"
+	TopupService_FindMonthlyTopupStatusSuccessByCardNumber_FullMethodName = "/pb.TopupService/FindMonthlyTopupStatusSuccessByCardNumber"
+	TopupService_FindYearlyTopupStatusSuccessByCardNumber_FullMethodName  = "/pb.TopupService/FindYearlyTopupStatusSuccessByCardNumber"
+	TopupService_FindMonthlyTopupStatusFailedByCardNumber_FullMethodName  = "/pb.TopupService/FindMonthlyTopupStatusFailedByCardNumber"
+	TopupService_FindYearlyTopupStatusFailedByCardNumber_FullMethodName   = "/pb.TopupService/FindYearlyTopupStatusFailedByCardNumber"
+	TopupService_FindMonthlyTopupMethods_FullMethodName                   = "/pb.TopupService/FindMonthlyTopupMethods"
+	TopupService_FindYearlyTopupMethods_FullMethodName                    = "/pb.TopupService/FindYearlyTopupMethods"
+	TopupService_FindMonthlyTopupAmounts_FullMethodName                   = "/pb.TopupService/FindMonthlyTopupAmounts"
+	TopupService_FindYearlyTopupAmounts_FullMethodName                    = "/pb.TopupService/FindYearlyTopupAmounts"
+	TopupService_FindMonthlyTopupMethodsByCardNumber_FullMethodName       = "/pb.TopupService/FindMonthlyTopupMethodsByCardNumber"
+	TopupService_FindYearlyTopupMethodsByCardNumber_FullMethodName        = "/pb.TopupService/FindYearlyTopupMethodsByCardNumber"
+	TopupService_FindMonthlyTopupAmountsByCardNumber_FullMethodName       = "/pb.TopupService/FindMonthlyTopupAmountsByCardNumber"
+	TopupService_FindYearlyTopupAmountsByCardNumber_FullMethodName        = "/pb.TopupService/FindYearlyTopupAmountsByCardNumber"
+	TopupService_FindByCardNumberTopup_FullMethodName                     = "/pb.TopupService/FindByCardNumberTopup"
+	TopupService_FindByActive_FullMethodName                              = "/pb.TopupService/FindByActive"
+	TopupService_FindByTrashed_FullMethodName                             = "/pb.TopupService/FindByTrashed"
+	TopupService_CreateTopup_FullMethodName                               = "/pb.TopupService/CreateTopup"
+	TopupService_UpdateTopup_FullMethodName                               = "/pb.TopupService/UpdateTopup"
+	TopupService_TrashedTopup_FullMethodName                              = "/pb.TopupService/TrashedTopup"
+	TopupService_RestoreTopup_FullMethodName                              = "/pb.TopupService/RestoreTopup"
+	TopupService_DeleteTopupPermanent_FullMethodName                      = "/pb.TopupService/DeleteTopupPermanent"
+	TopupService_RestoreAllTopup_FullMethodName                           = "/pb.TopupService/RestoreAllTopup"
+	TopupService_DeleteAllTopupPermanent_FullMethodName                   = "/pb.TopupService/DeleteAllTopupPermanent"
 )
 
 // TopupServiceClient is the client API for TopupService service.
@@ -55,13 +59,17 @@ type TopupServiceClient interface {
 	FindAllTopupByCardNumber(ctx context.Context, in *FindAllTopupByCardNumberRequest, opts ...grpc.CallOption) (*ApiResponsePaginationTopup, error)
 	FindByIdTopup(ctx context.Context, in *FindByIdTopupRequest, opts ...grpc.CallOption) (*ApiResponseTopup, error)
 	FindMonthlyTopupStatusSuccess(ctx context.Context, in *FindMonthlyTopupStatus, opts ...grpc.CallOption) (*ApiResponseTopupMonthStatusSuccess, error)
-	FindYearlyTopupStatusSuccess(ctx context.Context, in *FindYearTopup, opts ...grpc.CallOption) (*ApiResponseTopupYearStatusSuccess, error)
+	FindYearlyTopupStatusSuccess(ctx context.Context, in *FindYearTopupStatus, opts ...grpc.CallOption) (*ApiResponseTopupYearStatusSuccess, error)
 	FindMonthlyTopupStatusFailed(ctx context.Context, in *FindMonthlyTopupStatus, opts ...grpc.CallOption) (*ApiResponseTopupMonthStatusFailed, error)
-	FindYearlyTopupStatusFailed(ctx context.Context, in *FindYearTopup, opts ...grpc.CallOption) (*ApiResponseTopupYearStatusFailed, error)
-	FindMonthlyTopupMethods(ctx context.Context, in *FindYearTopup, opts ...grpc.CallOption) (*ApiResponseTopupMonthMethod, error)
-	FindYearlyTopupMethods(ctx context.Context, in *FindYearTopup, opts ...grpc.CallOption) (*ApiResponseTopupYearMethod, error)
-	FindMonthlyTopupAmounts(ctx context.Context, in *FindYearTopup, opts ...grpc.CallOption) (*ApiResponseTopupMonthAmount, error)
-	FindYearlyTopupAmounts(ctx context.Context, in *FindYearTopup, opts ...grpc.CallOption) (*ApiResponseTopupYearAmount, error)
+	FindYearlyTopupStatusFailed(ctx context.Context, in *FindYearTopupStatus, opts ...grpc.CallOption) (*ApiResponseTopupYearStatusFailed, error)
+	FindMonthlyTopupStatusSuccessByCardNumber(ctx context.Context, in *FindMonthlyTopupStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTopupMonthStatusSuccess, error)
+	FindYearlyTopupStatusSuccessByCardNumber(ctx context.Context, in *FindYearTopupStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTopupYearStatusSuccess, error)
+	FindMonthlyTopupStatusFailedByCardNumber(ctx context.Context, in *FindMonthlyTopupStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTopupMonthStatusFailed, error)
+	FindYearlyTopupStatusFailedByCardNumber(ctx context.Context, in *FindYearTopupStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTopupYearStatusFailed, error)
+	FindMonthlyTopupMethods(ctx context.Context, in *FindYearTopupStatus, opts ...grpc.CallOption) (*ApiResponseTopupMonthMethod, error)
+	FindYearlyTopupMethods(ctx context.Context, in *FindYearTopupStatus, opts ...grpc.CallOption) (*ApiResponseTopupYearMethod, error)
+	FindMonthlyTopupAmounts(ctx context.Context, in *FindYearTopupStatus, opts ...grpc.CallOption) (*ApiResponseTopupMonthAmount, error)
+	FindYearlyTopupAmounts(ctx context.Context, in *FindYearTopupStatus, opts ...grpc.CallOption) (*ApiResponseTopupYearAmount, error)
 	FindMonthlyTopupMethodsByCardNumber(ctx context.Context, in *FindYearTopupCardNumber, opts ...grpc.CallOption) (*ApiResponseTopupMonthMethod, error)
 	FindYearlyTopupMethodsByCardNumber(ctx context.Context, in *FindYearTopupCardNumber, opts ...grpc.CallOption) (*ApiResponseTopupYearMethod, error)
 	FindMonthlyTopupAmountsByCardNumber(ctx context.Context, in *FindYearTopupCardNumber, opts ...grpc.CallOption) (*ApiResponseTopupMonthAmount, error)
@@ -126,7 +134,7 @@ func (c *topupServiceClient) FindMonthlyTopupStatusSuccess(ctx context.Context, 
 	return out, nil
 }
 
-func (c *topupServiceClient) FindYearlyTopupStatusSuccess(ctx context.Context, in *FindYearTopup, opts ...grpc.CallOption) (*ApiResponseTopupYearStatusSuccess, error) {
+func (c *topupServiceClient) FindYearlyTopupStatusSuccess(ctx context.Context, in *FindYearTopupStatus, opts ...grpc.CallOption) (*ApiResponseTopupYearStatusSuccess, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTopupYearStatusSuccess)
 	err := c.cc.Invoke(ctx, TopupService_FindYearlyTopupStatusSuccess_FullMethodName, in, out, cOpts...)
@@ -146,7 +154,7 @@ func (c *topupServiceClient) FindMonthlyTopupStatusFailed(ctx context.Context, i
 	return out, nil
 }
 
-func (c *topupServiceClient) FindYearlyTopupStatusFailed(ctx context.Context, in *FindYearTopup, opts ...grpc.CallOption) (*ApiResponseTopupYearStatusFailed, error) {
+func (c *topupServiceClient) FindYearlyTopupStatusFailed(ctx context.Context, in *FindYearTopupStatus, opts ...grpc.CallOption) (*ApiResponseTopupYearStatusFailed, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTopupYearStatusFailed)
 	err := c.cc.Invoke(ctx, TopupService_FindYearlyTopupStatusFailed_FullMethodName, in, out, cOpts...)
@@ -156,7 +164,47 @@ func (c *topupServiceClient) FindYearlyTopupStatusFailed(ctx context.Context, in
 	return out, nil
 }
 
-func (c *topupServiceClient) FindMonthlyTopupMethods(ctx context.Context, in *FindYearTopup, opts ...grpc.CallOption) (*ApiResponseTopupMonthMethod, error) {
+func (c *topupServiceClient) FindMonthlyTopupStatusSuccessByCardNumber(ctx context.Context, in *FindMonthlyTopupStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTopupMonthStatusSuccess, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseTopupMonthStatusSuccess)
+	err := c.cc.Invoke(ctx, TopupService_FindMonthlyTopupStatusSuccessByCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *topupServiceClient) FindYearlyTopupStatusSuccessByCardNumber(ctx context.Context, in *FindYearTopupStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTopupYearStatusSuccess, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseTopupYearStatusSuccess)
+	err := c.cc.Invoke(ctx, TopupService_FindYearlyTopupStatusSuccessByCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *topupServiceClient) FindMonthlyTopupStatusFailedByCardNumber(ctx context.Context, in *FindMonthlyTopupStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTopupMonthStatusFailed, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseTopupMonthStatusFailed)
+	err := c.cc.Invoke(ctx, TopupService_FindMonthlyTopupStatusFailedByCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *topupServiceClient) FindYearlyTopupStatusFailedByCardNumber(ctx context.Context, in *FindYearTopupStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTopupYearStatusFailed, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseTopupYearStatusFailed)
+	err := c.cc.Invoke(ctx, TopupService_FindYearlyTopupStatusFailedByCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *topupServiceClient) FindMonthlyTopupMethods(ctx context.Context, in *FindYearTopupStatus, opts ...grpc.CallOption) (*ApiResponseTopupMonthMethod, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTopupMonthMethod)
 	err := c.cc.Invoke(ctx, TopupService_FindMonthlyTopupMethods_FullMethodName, in, out, cOpts...)
@@ -166,7 +214,7 @@ func (c *topupServiceClient) FindMonthlyTopupMethods(ctx context.Context, in *Fi
 	return out, nil
 }
 
-func (c *topupServiceClient) FindYearlyTopupMethods(ctx context.Context, in *FindYearTopup, opts ...grpc.CallOption) (*ApiResponseTopupYearMethod, error) {
+func (c *topupServiceClient) FindYearlyTopupMethods(ctx context.Context, in *FindYearTopupStatus, opts ...grpc.CallOption) (*ApiResponseTopupYearMethod, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTopupYearMethod)
 	err := c.cc.Invoke(ctx, TopupService_FindYearlyTopupMethods_FullMethodName, in, out, cOpts...)
@@ -176,7 +224,7 @@ func (c *topupServiceClient) FindYearlyTopupMethods(ctx context.Context, in *Fin
 	return out, nil
 }
 
-func (c *topupServiceClient) FindMonthlyTopupAmounts(ctx context.Context, in *FindYearTopup, opts ...grpc.CallOption) (*ApiResponseTopupMonthAmount, error) {
+func (c *topupServiceClient) FindMonthlyTopupAmounts(ctx context.Context, in *FindYearTopupStatus, opts ...grpc.CallOption) (*ApiResponseTopupMonthAmount, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTopupMonthAmount)
 	err := c.cc.Invoke(ctx, TopupService_FindMonthlyTopupAmounts_FullMethodName, in, out, cOpts...)
@@ -186,7 +234,7 @@ func (c *topupServiceClient) FindMonthlyTopupAmounts(ctx context.Context, in *Fi
 	return out, nil
 }
 
-func (c *topupServiceClient) FindYearlyTopupAmounts(ctx context.Context, in *FindYearTopup, opts ...grpc.CallOption) (*ApiResponseTopupYearAmount, error) {
+func (c *topupServiceClient) FindYearlyTopupAmounts(ctx context.Context, in *FindYearTopupStatus, opts ...grpc.CallOption) (*ApiResponseTopupYearAmount, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTopupYearAmount)
 	err := c.cc.Invoke(ctx, TopupService_FindYearlyTopupAmounts_FullMethodName, in, out, cOpts...)
@@ -344,13 +392,17 @@ type TopupServiceServer interface {
 	FindAllTopupByCardNumber(context.Context, *FindAllTopupByCardNumberRequest) (*ApiResponsePaginationTopup, error)
 	FindByIdTopup(context.Context, *FindByIdTopupRequest) (*ApiResponseTopup, error)
 	FindMonthlyTopupStatusSuccess(context.Context, *FindMonthlyTopupStatus) (*ApiResponseTopupMonthStatusSuccess, error)
-	FindYearlyTopupStatusSuccess(context.Context, *FindYearTopup) (*ApiResponseTopupYearStatusSuccess, error)
+	FindYearlyTopupStatusSuccess(context.Context, *FindYearTopupStatus) (*ApiResponseTopupYearStatusSuccess, error)
 	FindMonthlyTopupStatusFailed(context.Context, *FindMonthlyTopupStatus) (*ApiResponseTopupMonthStatusFailed, error)
-	FindYearlyTopupStatusFailed(context.Context, *FindYearTopup) (*ApiResponseTopupYearStatusFailed, error)
-	FindMonthlyTopupMethods(context.Context, *FindYearTopup) (*ApiResponseTopupMonthMethod, error)
-	FindYearlyTopupMethods(context.Context, *FindYearTopup) (*ApiResponseTopupYearMethod, error)
-	FindMonthlyTopupAmounts(context.Context, *FindYearTopup) (*ApiResponseTopupMonthAmount, error)
-	FindYearlyTopupAmounts(context.Context, *FindYearTopup) (*ApiResponseTopupYearAmount, error)
+	FindYearlyTopupStatusFailed(context.Context, *FindYearTopupStatus) (*ApiResponseTopupYearStatusFailed, error)
+	FindMonthlyTopupStatusSuccessByCardNumber(context.Context, *FindMonthlyTopupStatusCardNumber) (*ApiResponseTopupMonthStatusSuccess, error)
+	FindYearlyTopupStatusSuccessByCardNumber(context.Context, *FindYearTopupStatusCardNumber) (*ApiResponseTopupYearStatusSuccess, error)
+	FindMonthlyTopupStatusFailedByCardNumber(context.Context, *FindMonthlyTopupStatusCardNumber) (*ApiResponseTopupMonthStatusFailed, error)
+	FindYearlyTopupStatusFailedByCardNumber(context.Context, *FindYearTopupStatusCardNumber) (*ApiResponseTopupYearStatusFailed, error)
+	FindMonthlyTopupMethods(context.Context, *FindYearTopupStatus) (*ApiResponseTopupMonthMethod, error)
+	FindYearlyTopupMethods(context.Context, *FindYearTopupStatus) (*ApiResponseTopupYearMethod, error)
+	FindMonthlyTopupAmounts(context.Context, *FindYearTopupStatus) (*ApiResponseTopupMonthAmount, error)
+	FindYearlyTopupAmounts(context.Context, *FindYearTopupStatus) (*ApiResponseTopupYearAmount, error)
 	FindMonthlyTopupMethodsByCardNumber(context.Context, *FindYearTopupCardNumber) (*ApiResponseTopupMonthMethod, error)
 	FindYearlyTopupMethodsByCardNumber(context.Context, *FindYearTopupCardNumber) (*ApiResponseTopupYearMethod, error)
 	FindMonthlyTopupAmountsByCardNumber(context.Context, *FindYearTopupCardNumber) (*ApiResponseTopupMonthAmount, error)
@@ -387,25 +439,37 @@ func (UnimplementedTopupServiceServer) FindByIdTopup(context.Context, *FindByIdT
 func (UnimplementedTopupServiceServer) FindMonthlyTopupStatusSuccess(context.Context, *FindMonthlyTopupStatus) (*ApiResponseTopupMonthStatusSuccess, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTopupStatusSuccess not implemented")
 }
-func (UnimplementedTopupServiceServer) FindYearlyTopupStatusSuccess(context.Context, *FindYearTopup) (*ApiResponseTopupYearStatusSuccess, error) {
+func (UnimplementedTopupServiceServer) FindYearlyTopupStatusSuccess(context.Context, *FindYearTopupStatus) (*ApiResponseTopupYearStatusSuccess, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTopupStatusSuccess not implemented")
 }
 func (UnimplementedTopupServiceServer) FindMonthlyTopupStatusFailed(context.Context, *FindMonthlyTopupStatus) (*ApiResponseTopupMonthStatusFailed, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTopupStatusFailed not implemented")
 }
-func (UnimplementedTopupServiceServer) FindYearlyTopupStatusFailed(context.Context, *FindYearTopup) (*ApiResponseTopupYearStatusFailed, error) {
+func (UnimplementedTopupServiceServer) FindYearlyTopupStatusFailed(context.Context, *FindYearTopupStatus) (*ApiResponseTopupYearStatusFailed, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTopupStatusFailed not implemented")
 }
-func (UnimplementedTopupServiceServer) FindMonthlyTopupMethods(context.Context, *FindYearTopup) (*ApiResponseTopupMonthMethod, error) {
+func (UnimplementedTopupServiceServer) FindMonthlyTopupStatusSuccessByCardNumber(context.Context, *FindMonthlyTopupStatusCardNumber) (*ApiResponseTopupMonthStatusSuccess, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTopupStatusSuccessByCardNumber not implemented")
+}
+func (UnimplementedTopupServiceServer) FindYearlyTopupStatusSuccessByCardNumber(context.Context, *FindYearTopupStatusCardNumber) (*ApiResponseTopupYearStatusSuccess, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTopupStatusSuccessByCardNumber not implemented")
+}
+func (UnimplementedTopupServiceServer) FindMonthlyTopupStatusFailedByCardNumber(context.Context, *FindMonthlyTopupStatusCardNumber) (*ApiResponseTopupMonthStatusFailed, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTopupStatusFailedByCardNumber not implemented")
+}
+func (UnimplementedTopupServiceServer) FindYearlyTopupStatusFailedByCardNumber(context.Context, *FindYearTopupStatusCardNumber) (*ApiResponseTopupYearStatusFailed, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTopupStatusFailedByCardNumber not implemented")
+}
+func (UnimplementedTopupServiceServer) FindMonthlyTopupMethods(context.Context, *FindYearTopupStatus) (*ApiResponseTopupMonthMethod, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTopupMethods not implemented")
 }
-func (UnimplementedTopupServiceServer) FindYearlyTopupMethods(context.Context, *FindYearTopup) (*ApiResponseTopupYearMethod, error) {
+func (UnimplementedTopupServiceServer) FindYearlyTopupMethods(context.Context, *FindYearTopupStatus) (*ApiResponseTopupYearMethod, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTopupMethods not implemented")
 }
-func (UnimplementedTopupServiceServer) FindMonthlyTopupAmounts(context.Context, *FindYearTopup) (*ApiResponseTopupMonthAmount, error) {
+func (UnimplementedTopupServiceServer) FindMonthlyTopupAmounts(context.Context, *FindYearTopupStatus) (*ApiResponseTopupMonthAmount, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTopupAmounts not implemented")
 }
-func (UnimplementedTopupServiceServer) FindYearlyTopupAmounts(context.Context, *FindYearTopup) (*ApiResponseTopupYearAmount, error) {
+func (UnimplementedTopupServiceServer) FindYearlyTopupAmounts(context.Context, *FindYearTopupStatus) (*ApiResponseTopupYearAmount, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTopupAmounts not implemented")
 }
 func (UnimplementedTopupServiceServer) FindMonthlyTopupMethodsByCardNumber(context.Context, *FindYearTopupCardNumber) (*ApiResponseTopupMonthMethod, error) {
@@ -544,7 +608,7 @@ func _TopupService_FindMonthlyTopupStatusSuccess_Handler(srv interface{}, ctx co
 }
 
 func _TopupService_FindYearlyTopupStatusSuccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTopup)
+	in := new(FindYearTopupStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -556,7 +620,7 @@ func _TopupService_FindYearlyTopupStatusSuccess_Handler(srv interface{}, ctx con
 		FullMethod: TopupService_FindYearlyTopupStatusSuccess_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TopupServiceServer).FindYearlyTopupStatusSuccess(ctx, req.(*FindYearTopup))
+		return srv.(TopupServiceServer).FindYearlyTopupStatusSuccess(ctx, req.(*FindYearTopupStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -580,7 +644,7 @@ func _TopupService_FindMonthlyTopupStatusFailed_Handler(srv interface{}, ctx con
 }
 
 func _TopupService_FindYearlyTopupStatusFailed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTopup)
+	in := new(FindYearTopupStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -592,13 +656,85 @@ func _TopupService_FindYearlyTopupStatusFailed_Handler(srv interface{}, ctx cont
 		FullMethod: TopupService_FindYearlyTopupStatusFailed_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TopupServiceServer).FindYearlyTopupStatusFailed(ctx, req.(*FindYearTopup))
+		return srv.(TopupServiceServer).FindYearlyTopupStatusFailed(ctx, req.(*FindYearTopupStatus))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TopupService_FindMonthlyTopupStatusSuccessByCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindMonthlyTopupStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TopupServiceServer).FindMonthlyTopupStatusSuccessByCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TopupService_FindMonthlyTopupStatusSuccessByCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TopupServiceServer).FindMonthlyTopupStatusSuccessByCardNumber(ctx, req.(*FindMonthlyTopupStatusCardNumber))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TopupService_FindYearlyTopupStatusSuccessByCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindYearTopupStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TopupServiceServer).FindYearlyTopupStatusSuccessByCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TopupService_FindYearlyTopupStatusSuccessByCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TopupServiceServer).FindYearlyTopupStatusSuccessByCardNumber(ctx, req.(*FindYearTopupStatusCardNumber))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TopupService_FindMonthlyTopupStatusFailedByCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindMonthlyTopupStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TopupServiceServer).FindMonthlyTopupStatusFailedByCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TopupService_FindMonthlyTopupStatusFailedByCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TopupServiceServer).FindMonthlyTopupStatusFailedByCardNumber(ctx, req.(*FindMonthlyTopupStatusCardNumber))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TopupService_FindYearlyTopupStatusFailedByCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindYearTopupStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TopupServiceServer).FindYearlyTopupStatusFailedByCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TopupService_FindYearlyTopupStatusFailedByCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TopupServiceServer).FindYearlyTopupStatusFailedByCardNumber(ctx, req.(*FindYearTopupStatusCardNumber))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _TopupService_FindMonthlyTopupMethods_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTopup)
+	in := new(FindYearTopupStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -610,13 +746,13 @@ func _TopupService_FindMonthlyTopupMethods_Handler(srv interface{}, ctx context.
 		FullMethod: TopupService_FindMonthlyTopupMethods_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TopupServiceServer).FindMonthlyTopupMethods(ctx, req.(*FindYearTopup))
+		return srv.(TopupServiceServer).FindMonthlyTopupMethods(ctx, req.(*FindYearTopupStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _TopupService_FindYearlyTopupMethods_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTopup)
+	in := new(FindYearTopupStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -628,13 +764,13 @@ func _TopupService_FindYearlyTopupMethods_Handler(srv interface{}, ctx context.C
 		FullMethod: TopupService_FindYearlyTopupMethods_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TopupServiceServer).FindYearlyTopupMethods(ctx, req.(*FindYearTopup))
+		return srv.(TopupServiceServer).FindYearlyTopupMethods(ctx, req.(*FindYearTopupStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _TopupService_FindMonthlyTopupAmounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTopup)
+	in := new(FindYearTopupStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -646,13 +782,13 @@ func _TopupService_FindMonthlyTopupAmounts_Handler(srv interface{}, ctx context.
 		FullMethod: TopupService_FindMonthlyTopupAmounts_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TopupServiceServer).FindMonthlyTopupAmounts(ctx, req.(*FindYearTopup))
+		return srv.(TopupServiceServer).FindMonthlyTopupAmounts(ctx, req.(*FindYearTopupStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _TopupService_FindYearlyTopupAmounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTopup)
+	in := new(FindYearTopupStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -664,7 +800,7 @@ func _TopupService_FindYearlyTopupAmounts_Handler(srv interface{}, ctx context.C
 		FullMethod: TopupService_FindYearlyTopupAmounts_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TopupServiceServer).FindYearlyTopupAmounts(ctx, req.(*FindYearTopup))
+		return srv.(TopupServiceServer).FindYearlyTopupAmounts(ctx, req.(*FindYearTopupStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -955,6 +1091,22 @@ var TopupService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FindYearlyTopupStatusFailed",
 			Handler:    _TopupService_FindYearlyTopupStatusFailed_Handler,
+		},
+		{
+			MethodName: "FindMonthlyTopupStatusSuccessByCardNumber",
+			Handler:    _TopupService_FindMonthlyTopupStatusSuccessByCardNumber_Handler,
+		},
+		{
+			MethodName: "FindYearlyTopupStatusSuccessByCardNumber",
+			Handler:    _TopupService_FindYearlyTopupStatusSuccessByCardNumber_Handler,
+		},
+		{
+			MethodName: "FindMonthlyTopupStatusFailedByCardNumber",
+			Handler:    _TopupService_FindMonthlyTopupStatusFailedByCardNumber_Handler,
+		},
+		{
+			MethodName: "FindYearlyTopupStatusFailedByCardNumber",
+			Handler:    _TopupService_FindYearlyTopupStatusFailedByCardNumber_Handler,
 		},
 		{
 			MethodName: "FindMonthlyTopupMethods",

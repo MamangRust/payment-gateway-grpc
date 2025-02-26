@@ -20,31 +20,35 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TransactionService_FindAllTransaction_FullMethodName                    = "/pb.TransactionService/FindAllTransaction"
-	TransactionService_FindAllTransactionByCardNumber_FullMethodName        = "/pb.TransactionService/FindAllTransactionByCardNumber"
-	TransactionService_FindByIdTransaction_FullMethodName                   = "/pb.TransactionService/FindByIdTransaction"
-	TransactionService_FindMonthlyTransactionStatusSuccess_FullMethodName   = "/pb.TransactionService/FindMonthlyTransactionStatusSuccess"
-	TransactionService_FindYearlyTransactionStatusSuccess_FullMethodName    = "/pb.TransactionService/FindYearlyTransactionStatusSuccess"
-	TransactionService_FindMonthlyTransactionStatusFailed_FullMethodName    = "/pb.TransactionService/FindMonthlyTransactionStatusFailed"
-	TransactionService_FindYearlyTransactionStatusFailed_FullMethodName     = "/pb.TransactionService/FindYearlyTransactionStatusFailed"
-	TransactionService_FindMonthlyPaymentMethods_FullMethodName             = "/pb.TransactionService/FindMonthlyPaymentMethods"
-	TransactionService_FindYearlyPaymentMethods_FullMethodName              = "/pb.TransactionService/FindYearlyPaymentMethods"
-	TransactionService_FindMonthlyAmounts_FullMethodName                    = "/pb.TransactionService/FindMonthlyAmounts"
-	TransactionService_FindYearlyAmounts_FullMethodName                     = "/pb.TransactionService/FindYearlyAmounts"
-	TransactionService_FindMonthlyPaymentMethodsByCardNumber_FullMethodName = "/pb.TransactionService/FindMonthlyPaymentMethodsByCardNumber"
-	TransactionService_FindYearlyPaymentMethodsByCardNumber_FullMethodName  = "/pb.TransactionService/FindYearlyPaymentMethodsByCardNumber"
-	TransactionService_FindMonthlyAmountsByCardNumber_FullMethodName        = "/pb.TransactionService/FindMonthlyAmountsByCardNumber"
-	TransactionService_FindYearlyAmountsByCardNumber_FullMethodName         = "/pb.TransactionService/FindYearlyAmountsByCardNumber"
-	TransactionService_FindTransactionByMerchantId_FullMethodName           = "/pb.TransactionService/FindTransactionByMerchantId"
-	TransactionService_FindByActiveTransaction_FullMethodName               = "/pb.TransactionService/FindByActiveTransaction"
-	TransactionService_FindByTrashedTransaction_FullMethodName              = "/pb.TransactionService/FindByTrashedTransaction"
-	TransactionService_CreateTransaction_FullMethodName                     = "/pb.TransactionService/CreateTransaction"
-	TransactionService_UpdateTransaction_FullMethodName                     = "/pb.TransactionService/UpdateTransaction"
-	TransactionService_TrashedTransaction_FullMethodName                    = "/pb.TransactionService/TrashedTransaction"
-	TransactionService_RestoreTransaction_FullMethodName                    = "/pb.TransactionService/RestoreTransaction"
-	TransactionService_DeleteTransactionPermanent_FullMethodName            = "/pb.TransactionService/DeleteTransactionPermanent"
-	TransactionService_RestoreAllTransaction_FullMethodName                 = "/pb.TransactionService/RestoreAllTransaction"
-	TransactionService_DeleteAllTransactionPermanent_FullMethodName         = "/pb.TransactionService/DeleteAllTransactionPermanent"
+	TransactionService_FindAllTransaction_FullMethodName                              = "/pb.TransactionService/FindAllTransaction"
+	TransactionService_FindAllTransactionByCardNumber_FullMethodName                  = "/pb.TransactionService/FindAllTransactionByCardNumber"
+	TransactionService_FindByIdTransaction_FullMethodName                             = "/pb.TransactionService/FindByIdTransaction"
+	TransactionService_FindMonthlyTransactionStatusSuccess_FullMethodName             = "/pb.TransactionService/FindMonthlyTransactionStatusSuccess"
+	TransactionService_FindYearlyTransactionStatusSuccess_FullMethodName              = "/pb.TransactionService/FindYearlyTransactionStatusSuccess"
+	TransactionService_FindMonthlyTransactionStatusFailed_FullMethodName              = "/pb.TransactionService/FindMonthlyTransactionStatusFailed"
+	TransactionService_FindYearlyTransactionStatusFailed_FullMethodName               = "/pb.TransactionService/FindYearlyTransactionStatusFailed"
+	TransactionService_FindMonthlyTransactionStatusSuccessByCardNumber_FullMethodName = "/pb.TransactionService/FindMonthlyTransactionStatusSuccessByCardNumber"
+	TransactionService_FindYearlyTransactionStatusSuccessByCardNumber_FullMethodName  = "/pb.TransactionService/FindYearlyTransactionStatusSuccessByCardNumber"
+	TransactionService_FindMonthlyTransactionStatusFailedByCardNumber_FullMethodName  = "/pb.TransactionService/FindMonthlyTransactionStatusFailedByCardNumber"
+	TransactionService_FindYearlyTransactionStatusFailedByCardNumber_FullMethodName   = "/pb.TransactionService/FindYearlyTransactionStatusFailedByCardNumber"
+	TransactionService_FindMonthlyPaymentMethods_FullMethodName                       = "/pb.TransactionService/FindMonthlyPaymentMethods"
+	TransactionService_FindYearlyPaymentMethods_FullMethodName                        = "/pb.TransactionService/FindYearlyPaymentMethods"
+	TransactionService_FindMonthlyAmounts_FullMethodName                              = "/pb.TransactionService/FindMonthlyAmounts"
+	TransactionService_FindYearlyAmounts_FullMethodName                               = "/pb.TransactionService/FindYearlyAmounts"
+	TransactionService_FindMonthlyPaymentMethodsByCardNumber_FullMethodName           = "/pb.TransactionService/FindMonthlyPaymentMethodsByCardNumber"
+	TransactionService_FindYearlyPaymentMethodsByCardNumber_FullMethodName            = "/pb.TransactionService/FindYearlyPaymentMethodsByCardNumber"
+	TransactionService_FindMonthlyAmountsByCardNumber_FullMethodName                  = "/pb.TransactionService/FindMonthlyAmountsByCardNumber"
+	TransactionService_FindYearlyAmountsByCardNumber_FullMethodName                   = "/pb.TransactionService/FindYearlyAmountsByCardNumber"
+	TransactionService_FindTransactionByMerchantId_FullMethodName                     = "/pb.TransactionService/FindTransactionByMerchantId"
+	TransactionService_FindByActiveTransaction_FullMethodName                         = "/pb.TransactionService/FindByActiveTransaction"
+	TransactionService_FindByTrashedTransaction_FullMethodName                        = "/pb.TransactionService/FindByTrashedTransaction"
+	TransactionService_CreateTransaction_FullMethodName                               = "/pb.TransactionService/CreateTransaction"
+	TransactionService_UpdateTransaction_FullMethodName                               = "/pb.TransactionService/UpdateTransaction"
+	TransactionService_TrashedTransaction_FullMethodName                              = "/pb.TransactionService/TrashedTransaction"
+	TransactionService_RestoreTransaction_FullMethodName                              = "/pb.TransactionService/RestoreTransaction"
+	TransactionService_DeleteTransactionPermanent_FullMethodName                      = "/pb.TransactionService/DeleteTransactionPermanent"
+	TransactionService_RestoreAllTransaction_FullMethodName                           = "/pb.TransactionService/RestoreAllTransaction"
+	TransactionService_DeleteAllTransactionPermanent_FullMethodName                   = "/pb.TransactionService/DeleteAllTransactionPermanent"
 )
 
 // TransactionServiceClient is the client API for TransactionService service.
@@ -55,13 +59,17 @@ type TransactionServiceClient interface {
 	FindAllTransactionByCardNumber(ctx context.Context, in *FindAllTransactionCardNumberRequest, opts ...grpc.CallOption) (*ApiResponsePaginationTransaction, error)
 	FindByIdTransaction(ctx context.Context, in *FindByIdTransactionRequest, opts ...grpc.CallOption) (*ApiResponseTransaction, error)
 	FindMonthlyTransactionStatusSuccess(ctx context.Context, in *FindMonthlyTransactionStatus, opts ...grpc.CallOption) (*ApiResponseTransactionMonthStatusSuccess, error)
-	FindYearlyTransactionStatusSuccess(ctx context.Context, in *FindYearTransaction, opts ...grpc.CallOption) (*ApiResponseTransactionYearStatusSuccess, error)
+	FindYearlyTransactionStatusSuccess(ctx context.Context, in *FindYearTransactionStatus, opts ...grpc.CallOption) (*ApiResponseTransactionYearStatusSuccess, error)
 	FindMonthlyTransactionStatusFailed(ctx context.Context, in *FindMonthlyTransactionStatus, opts ...grpc.CallOption) (*ApiResponseTransactionMonthStatusFailed, error)
-	FindYearlyTransactionStatusFailed(ctx context.Context, in *FindYearTransaction, opts ...grpc.CallOption) (*ApiResponseTransactionYearStatusFailed, error)
-	FindMonthlyPaymentMethods(ctx context.Context, in *FindYearTransaction, opts ...grpc.CallOption) (*ApiResponseTransactionMonthMethod, error)
-	FindYearlyPaymentMethods(ctx context.Context, in *FindYearTransaction, opts ...grpc.CallOption) (*ApiResponseTransactionYearMethod, error)
-	FindMonthlyAmounts(ctx context.Context, in *FindYearTransaction, opts ...grpc.CallOption) (*ApiResponseTransactionMonthAmount, error)
-	FindYearlyAmounts(ctx context.Context, in *FindYearTransaction, opts ...grpc.CallOption) (*ApiResponseTransactionYearAmount, error)
+	FindYearlyTransactionStatusFailed(ctx context.Context, in *FindYearTransactionStatus, opts ...grpc.CallOption) (*ApiResponseTransactionYearStatusFailed, error)
+	FindMonthlyTransactionStatusSuccessByCardNumber(ctx context.Context, in *FindMonthlyTransactionStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransactionMonthStatusSuccess, error)
+	FindYearlyTransactionStatusSuccessByCardNumber(ctx context.Context, in *FindYearTransactionStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransactionYearStatusSuccess, error)
+	FindMonthlyTransactionStatusFailedByCardNumber(ctx context.Context, in *FindMonthlyTransactionStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransactionMonthStatusFailed, error)
+	FindYearlyTransactionStatusFailedByCardNumber(ctx context.Context, in *FindYearTransactionStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransactionYearStatusFailed, error)
+	FindMonthlyPaymentMethods(ctx context.Context, in *FindYearTransactionStatus, opts ...grpc.CallOption) (*ApiResponseTransactionMonthMethod, error)
+	FindYearlyPaymentMethods(ctx context.Context, in *FindYearTransactionStatus, opts ...grpc.CallOption) (*ApiResponseTransactionYearMethod, error)
+	FindMonthlyAmounts(ctx context.Context, in *FindYearTransactionStatus, opts ...grpc.CallOption) (*ApiResponseTransactionMonthAmount, error)
+	FindYearlyAmounts(ctx context.Context, in *FindYearTransactionStatus, opts ...grpc.CallOption) (*ApiResponseTransactionYearAmount, error)
 	FindMonthlyPaymentMethodsByCardNumber(ctx context.Context, in *FindByYearCardNumberTransactionRequest, opts ...grpc.CallOption) (*ApiResponseTransactionMonthMethod, error)
 	FindYearlyPaymentMethodsByCardNumber(ctx context.Context, in *FindByYearCardNumberTransactionRequest, opts ...grpc.CallOption) (*ApiResponseTransactionYearMethod, error)
 	FindMonthlyAmountsByCardNumber(ctx context.Context, in *FindByYearCardNumberTransactionRequest, opts ...grpc.CallOption) (*ApiResponseTransactionMonthAmount, error)
@@ -126,7 +134,7 @@ func (c *transactionServiceClient) FindMonthlyTransactionStatusSuccess(ctx conte
 	return out, nil
 }
 
-func (c *transactionServiceClient) FindYearlyTransactionStatusSuccess(ctx context.Context, in *FindYearTransaction, opts ...grpc.CallOption) (*ApiResponseTransactionYearStatusSuccess, error) {
+func (c *transactionServiceClient) FindYearlyTransactionStatusSuccess(ctx context.Context, in *FindYearTransactionStatus, opts ...grpc.CallOption) (*ApiResponseTransactionYearStatusSuccess, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTransactionYearStatusSuccess)
 	err := c.cc.Invoke(ctx, TransactionService_FindYearlyTransactionStatusSuccess_FullMethodName, in, out, cOpts...)
@@ -146,7 +154,7 @@ func (c *transactionServiceClient) FindMonthlyTransactionStatusFailed(ctx contex
 	return out, nil
 }
 
-func (c *transactionServiceClient) FindYearlyTransactionStatusFailed(ctx context.Context, in *FindYearTransaction, opts ...grpc.CallOption) (*ApiResponseTransactionYearStatusFailed, error) {
+func (c *transactionServiceClient) FindYearlyTransactionStatusFailed(ctx context.Context, in *FindYearTransactionStatus, opts ...grpc.CallOption) (*ApiResponseTransactionYearStatusFailed, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTransactionYearStatusFailed)
 	err := c.cc.Invoke(ctx, TransactionService_FindYearlyTransactionStatusFailed_FullMethodName, in, out, cOpts...)
@@ -156,7 +164,47 @@ func (c *transactionServiceClient) FindYearlyTransactionStatusFailed(ctx context
 	return out, nil
 }
 
-func (c *transactionServiceClient) FindMonthlyPaymentMethods(ctx context.Context, in *FindYearTransaction, opts ...grpc.CallOption) (*ApiResponseTransactionMonthMethod, error) {
+func (c *transactionServiceClient) FindMonthlyTransactionStatusSuccessByCardNumber(ctx context.Context, in *FindMonthlyTransactionStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransactionMonthStatusSuccess, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseTransactionMonthStatusSuccess)
+	err := c.cc.Invoke(ctx, TransactionService_FindMonthlyTransactionStatusSuccessByCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *transactionServiceClient) FindYearlyTransactionStatusSuccessByCardNumber(ctx context.Context, in *FindYearTransactionStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransactionYearStatusSuccess, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseTransactionYearStatusSuccess)
+	err := c.cc.Invoke(ctx, TransactionService_FindYearlyTransactionStatusSuccessByCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *transactionServiceClient) FindMonthlyTransactionStatusFailedByCardNumber(ctx context.Context, in *FindMonthlyTransactionStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransactionMonthStatusFailed, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseTransactionMonthStatusFailed)
+	err := c.cc.Invoke(ctx, TransactionService_FindMonthlyTransactionStatusFailedByCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *transactionServiceClient) FindYearlyTransactionStatusFailedByCardNumber(ctx context.Context, in *FindYearTransactionStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransactionYearStatusFailed, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseTransactionYearStatusFailed)
+	err := c.cc.Invoke(ctx, TransactionService_FindYearlyTransactionStatusFailedByCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *transactionServiceClient) FindMonthlyPaymentMethods(ctx context.Context, in *FindYearTransactionStatus, opts ...grpc.CallOption) (*ApiResponseTransactionMonthMethod, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTransactionMonthMethod)
 	err := c.cc.Invoke(ctx, TransactionService_FindMonthlyPaymentMethods_FullMethodName, in, out, cOpts...)
@@ -166,7 +214,7 @@ func (c *transactionServiceClient) FindMonthlyPaymentMethods(ctx context.Context
 	return out, nil
 }
 
-func (c *transactionServiceClient) FindYearlyPaymentMethods(ctx context.Context, in *FindYearTransaction, opts ...grpc.CallOption) (*ApiResponseTransactionYearMethod, error) {
+func (c *transactionServiceClient) FindYearlyPaymentMethods(ctx context.Context, in *FindYearTransactionStatus, opts ...grpc.CallOption) (*ApiResponseTransactionYearMethod, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTransactionYearMethod)
 	err := c.cc.Invoke(ctx, TransactionService_FindYearlyPaymentMethods_FullMethodName, in, out, cOpts...)
@@ -176,7 +224,7 @@ func (c *transactionServiceClient) FindYearlyPaymentMethods(ctx context.Context,
 	return out, nil
 }
 
-func (c *transactionServiceClient) FindMonthlyAmounts(ctx context.Context, in *FindYearTransaction, opts ...grpc.CallOption) (*ApiResponseTransactionMonthAmount, error) {
+func (c *transactionServiceClient) FindMonthlyAmounts(ctx context.Context, in *FindYearTransactionStatus, opts ...grpc.CallOption) (*ApiResponseTransactionMonthAmount, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTransactionMonthAmount)
 	err := c.cc.Invoke(ctx, TransactionService_FindMonthlyAmounts_FullMethodName, in, out, cOpts...)
@@ -186,7 +234,7 @@ func (c *transactionServiceClient) FindMonthlyAmounts(ctx context.Context, in *F
 	return out, nil
 }
 
-func (c *transactionServiceClient) FindYearlyAmounts(ctx context.Context, in *FindYearTransaction, opts ...grpc.CallOption) (*ApiResponseTransactionYearAmount, error) {
+func (c *transactionServiceClient) FindYearlyAmounts(ctx context.Context, in *FindYearTransactionStatus, opts ...grpc.CallOption) (*ApiResponseTransactionYearAmount, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTransactionYearAmount)
 	err := c.cc.Invoke(ctx, TransactionService_FindYearlyAmounts_FullMethodName, in, out, cOpts...)
@@ -344,13 +392,17 @@ type TransactionServiceServer interface {
 	FindAllTransactionByCardNumber(context.Context, *FindAllTransactionCardNumberRequest) (*ApiResponsePaginationTransaction, error)
 	FindByIdTransaction(context.Context, *FindByIdTransactionRequest) (*ApiResponseTransaction, error)
 	FindMonthlyTransactionStatusSuccess(context.Context, *FindMonthlyTransactionStatus) (*ApiResponseTransactionMonthStatusSuccess, error)
-	FindYearlyTransactionStatusSuccess(context.Context, *FindYearTransaction) (*ApiResponseTransactionYearStatusSuccess, error)
+	FindYearlyTransactionStatusSuccess(context.Context, *FindYearTransactionStatus) (*ApiResponseTransactionYearStatusSuccess, error)
 	FindMonthlyTransactionStatusFailed(context.Context, *FindMonthlyTransactionStatus) (*ApiResponseTransactionMonthStatusFailed, error)
-	FindYearlyTransactionStatusFailed(context.Context, *FindYearTransaction) (*ApiResponseTransactionYearStatusFailed, error)
-	FindMonthlyPaymentMethods(context.Context, *FindYearTransaction) (*ApiResponseTransactionMonthMethod, error)
-	FindYearlyPaymentMethods(context.Context, *FindYearTransaction) (*ApiResponseTransactionYearMethod, error)
-	FindMonthlyAmounts(context.Context, *FindYearTransaction) (*ApiResponseTransactionMonthAmount, error)
-	FindYearlyAmounts(context.Context, *FindYearTransaction) (*ApiResponseTransactionYearAmount, error)
+	FindYearlyTransactionStatusFailed(context.Context, *FindYearTransactionStatus) (*ApiResponseTransactionYearStatusFailed, error)
+	FindMonthlyTransactionStatusSuccessByCardNumber(context.Context, *FindMonthlyTransactionStatusCardNumber) (*ApiResponseTransactionMonthStatusSuccess, error)
+	FindYearlyTransactionStatusSuccessByCardNumber(context.Context, *FindYearTransactionStatusCardNumber) (*ApiResponseTransactionYearStatusSuccess, error)
+	FindMonthlyTransactionStatusFailedByCardNumber(context.Context, *FindMonthlyTransactionStatusCardNumber) (*ApiResponseTransactionMonthStatusFailed, error)
+	FindYearlyTransactionStatusFailedByCardNumber(context.Context, *FindYearTransactionStatusCardNumber) (*ApiResponseTransactionYearStatusFailed, error)
+	FindMonthlyPaymentMethods(context.Context, *FindYearTransactionStatus) (*ApiResponseTransactionMonthMethod, error)
+	FindYearlyPaymentMethods(context.Context, *FindYearTransactionStatus) (*ApiResponseTransactionYearMethod, error)
+	FindMonthlyAmounts(context.Context, *FindYearTransactionStatus) (*ApiResponseTransactionMonthAmount, error)
+	FindYearlyAmounts(context.Context, *FindYearTransactionStatus) (*ApiResponseTransactionYearAmount, error)
 	FindMonthlyPaymentMethodsByCardNumber(context.Context, *FindByYearCardNumberTransactionRequest) (*ApiResponseTransactionMonthMethod, error)
 	FindYearlyPaymentMethodsByCardNumber(context.Context, *FindByYearCardNumberTransactionRequest) (*ApiResponseTransactionYearMethod, error)
 	FindMonthlyAmountsByCardNumber(context.Context, *FindByYearCardNumberTransactionRequest) (*ApiResponseTransactionMonthAmount, error)
@@ -387,25 +439,37 @@ func (UnimplementedTransactionServiceServer) FindByIdTransaction(context.Context
 func (UnimplementedTransactionServiceServer) FindMonthlyTransactionStatusSuccess(context.Context, *FindMonthlyTransactionStatus) (*ApiResponseTransactionMonthStatusSuccess, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTransactionStatusSuccess not implemented")
 }
-func (UnimplementedTransactionServiceServer) FindYearlyTransactionStatusSuccess(context.Context, *FindYearTransaction) (*ApiResponseTransactionYearStatusSuccess, error) {
+func (UnimplementedTransactionServiceServer) FindYearlyTransactionStatusSuccess(context.Context, *FindYearTransactionStatus) (*ApiResponseTransactionYearStatusSuccess, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTransactionStatusSuccess not implemented")
 }
 func (UnimplementedTransactionServiceServer) FindMonthlyTransactionStatusFailed(context.Context, *FindMonthlyTransactionStatus) (*ApiResponseTransactionMonthStatusFailed, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTransactionStatusFailed not implemented")
 }
-func (UnimplementedTransactionServiceServer) FindYearlyTransactionStatusFailed(context.Context, *FindYearTransaction) (*ApiResponseTransactionYearStatusFailed, error) {
+func (UnimplementedTransactionServiceServer) FindYearlyTransactionStatusFailed(context.Context, *FindYearTransactionStatus) (*ApiResponseTransactionYearStatusFailed, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTransactionStatusFailed not implemented")
 }
-func (UnimplementedTransactionServiceServer) FindMonthlyPaymentMethods(context.Context, *FindYearTransaction) (*ApiResponseTransactionMonthMethod, error) {
+func (UnimplementedTransactionServiceServer) FindMonthlyTransactionStatusSuccessByCardNumber(context.Context, *FindMonthlyTransactionStatusCardNumber) (*ApiResponseTransactionMonthStatusSuccess, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTransactionStatusSuccessByCardNumber not implemented")
+}
+func (UnimplementedTransactionServiceServer) FindYearlyTransactionStatusSuccessByCardNumber(context.Context, *FindYearTransactionStatusCardNumber) (*ApiResponseTransactionYearStatusSuccess, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTransactionStatusSuccessByCardNumber not implemented")
+}
+func (UnimplementedTransactionServiceServer) FindMonthlyTransactionStatusFailedByCardNumber(context.Context, *FindMonthlyTransactionStatusCardNumber) (*ApiResponseTransactionMonthStatusFailed, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTransactionStatusFailedByCardNumber not implemented")
+}
+func (UnimplementedTransactionServiceServer) FindYearlyTransactionStatusFailedByCardNumber(context.Context, *FindYearTransactionStatusCardNumber) (*ApiResponseTransactionYearStatusFailed, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTransactionStatusFailedByCardNumber not implemented")
+}
+func (UnimplementedTransactionServiceServer) FindMonthlyPaymentMethods(context.Context, *FindYearTransactionStatus) (*ApiResponseTransactionMonthMethod, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyPaymentMethods not implemented")
 }
-func (UnimplementedTransactionServiceServer) FindYearlyPaymentMethods(context.Context, *FindYearTransaction) (*ApiResponseTransactionYearMethod, error) {
+func (UnimplementedTransactionServiceServer) FindYearlyPaymentMethods(context.Context, *FindYearTransactionStatus) (*ApiResponseTransactionYearMethod, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyPaymentMethods not implemented")
 }
-func (UnimplementedTransactionServiceServer) FindMonthlyAmounts(context.Context, *FindYearTransaction) (*ApiResponseTransactionMonthAmount, error) {
+func (UnimplementedTransactionServiceServer) FindMonthlyAmounts(context.Context, *FindYearTransactionStatus) (*ApiResponseTransactionMonthAmount, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyAmounts not implemented")
 }
-func (UnimplementedTransactionServiceServer) FindYearlyAmounts(context.Context, *FindYearTransaction) (*ApiResponseTransactionYearAmount, error) {
+func (UnimplementedTransactionServiceServer) FindYearlyAmounts(context.Context, *FindYearTransactionStatus) (*ApiResponseTransactionYearAmount, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyAmounts not implemented")
 }
 func (UnimplementedTransactionServiceServer) FindMonthlyPaymentMethodsByCardNumber(context.Context, *FindByYearCardNumberTransactionRequest) (*ApiResponseTransactionMonthMethod, error) {
@@ -544,7 +608,7 @@ func _TransactionService_FindMonthlyTransactionStatusSuccess_Handler(srv interfa
 }
 
 func _TransactionService_FindYearlyTransactionStatusSuccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTransaction)
+	in := new(FindYearTransactionStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -556,7 +620,7 @@ func _TransactionService_FindYearlyTransactionStatusSuccess_Handler(srv interfac
 		FullMethod: TransactionService_FindYearlyTransactionStatusSuccess_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransactionServiceServer).FindYearlyTransactionStatusSuccess(ctx, req.(*FindYearTransaction))
+		return srv.(TransactionServiceServer).FindYearlyTransactionStatusSuccess(ctx, req.(*FindYearTransactionStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -580,7 +644,7 @@ func _TransactionService_FindMonthlyTransactionStatusFailed_Handler(srv interfac
 }
 
 func _TransactionService_FindYearlyTransactionStatusFailed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTransaction)
+	in := new(FindYearTransactionStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -592,13 +656,85 @@ func _TransactionService_FindYearlyTransactionStatusFailed_Handler(srv interface
 		FullMethod: TransactionService_FindYearlyTransactionStatusFailed_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransactionServiceServer).FindYearlyTransactionStatusFailed(ctx, req.(*FindYearTransaction))
+		return srv.(TransactionServiceServer).FindYearlyTransactionStatusFailed(ctx, req.(*FindYearTransactionStatus))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TransactionService_FindMonthlyTransactionStatusSuccessByCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindMonthlyTransactionStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TransactionServiceServer).FindMonthlyTransactionStatusSuccessByCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TransactionService_FindMonthlyTransactionStatusSuccessByCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TransactionServiceServer).FindMonthlyTransactionStatusSuccessByCardNumber(ctx, req.(*FindMonthlyTransactionStatusCardNumber))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TransactionService_FindYearlyTransactionStatusSuccessByCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindYearTransactionStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TransactionServiceServer).FindYearlyTransactionStatusSuccessByCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TransactionService_FindYearlyTransactionStatusSuccessByCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TransactionServiceServer).FindYearlyTransactionStatusSuccessByCardNumber(ctx, req.(*FindYearTransactionStatusCardNumber))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TransactionService_FindMonthlyTransactionStatusFailedByCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindMonthlyTransactionStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TransactionServiceServer).FindMonthlyTransactionStatusFailedByCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TransactionService_FindMonthlyTransactionStatusFailedByCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TransactionServiceServer).FindMonthlyTransactionStatusFailedByCardNumber(ctx, req.(*FindMonthlyTransactionStatusCardNumber))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TransactionService_FindYearlyTransactionStatusFailedByCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindYearTransactionStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TransactionServiceServer).FindYearlyTransactionStatusFailedByCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TransactionService_FindYearlyTransactionStatusFailedByCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TransactionServiceServer).FindYearlyTransactionStatusFailedByCardNumber(ctx, req.(*FindYearTransactionStatusCardNumber))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _TransactionService_FindMonthlyPaymentMethods_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTransaction)
+	in := new(FindYearTransactionStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -610,13 +746,13 @@ func _TransactionService_FindMonthlyPaymentMethods_Handler(srv interface{}, ctx 
 		FullMethod: TransactionService_FindMonthlyPaymentMethods_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransactionServiceServer).FindMonthlyPaymentMethods(ctx, req.(*FindYearTransaction))
+		return srv.(TransactionServiceServer).FindMonthlyPaymentMethods(ctx, req.(*FindYearTransactionStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _TransactionService_FindYearlyPaymentMethods_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTransaction)
+	in := new(FindYearTransactionStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -628,13 +764,13 @@ func _TransactionService_FindYearlyPaymentMethods_Handler(srv interface{}, ctx c
 		FullMethod: TransactionService_FindYearlyPaymentMethods_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransactionServiceServer).FindYearlyPaymentMethods(ctx, req.(*FindYearTransaction))
+		return srv.(TransactionServiceServer).FindYearlyPaymentMethods(ctx, req.(*FindYearTransactionStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _TransactionService_FindMonthlyAmounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTransaction)
+	in := new(FindYearTransactionStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -646,13 +782,13 @@ func _TransactionService_FindMonthlyAmounts_Handler(srv interface{}, ctx context
 		FullMethod: TransactionService_FindMonthlyAmounts_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransactionServiceServer).FindMonthlyAmounts(ctx, req.(*FindYearTransaction))
+		return srv.(TransactionServiceServer).FindMonthlyAmounts(ctx, req.(*FindYearTransactionStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _TransactionService_FindYearlyAmounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTransaction)
+	in := new(FindYearTransactionStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -664,7 +800,7 @@ func _TransactionService_FindYearlyAmounts_Handler(srv interface{}, ctx context.
 		FullMethod: TransactionService_FindYearlyAmounts_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransactionServiceServer).FindYearlyAmounts(ctx, req.(*FindYearTransaction))
+		return srv.(TransactionServiceServer).FindYearlyAmounts(ctx, req.(*FindYearTransactionStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -955,6 +1091,22 @@ var TransactionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FindYearlyTransactionStatusFailed",
 			Handler:    _TransactionService_FindYearlyTransactionStatusFailed_Handler,
+		},
+		{
+			MethodName: "FindMonthlyTransactionStatusSuccessByCardNumber",
+			Handler:    _TransactionService_FindMonthlyTransactionStatusSuccessByCardNumber_Handler,
+		},
+		{
+			MethodName: "FindYearlyTransactionStatusSuccessByCardNumber",
+			Handler:    _TransactionService_FindYearlyTransactionStatusSuccessByCardNumber_Handler,
+		},
+		{
+			MethodName: "FindMonthlyTransactionStatusFailedByCardNumber",
+			Handler:    _TransactionService_FindMonthlyTransactionStatusFailedByCardNumber_Handler,
+		},
+		{
+			MethodName: "FindYearlyTransactionStatusFailedByCardNumber",
+			Handler:    _TransactionService_FindYearlyTransactionStatusFailedByCardNumber_Handler,
 		},
 		{
 			MethodName: "FindMonthlyPaymentMethods",

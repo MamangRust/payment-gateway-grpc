@@ -241,6 +241,80 @@ func (t *topupRecordMapper) ToTopupRecordsYearStatusFailed(topups []*db.GetYearl
 	return topupRecords
 }
 
+func (t *topupRecordMapper) ToTopupRecordMonthStatusSuccessByCardNumber(s *db.GetMonthTopupStatusSuccessCardNumberRow) *record.TopupRecordMonthStatusSuccess {
+	return &record.TopupRecordMonthStatusSuccess{
+		Year:         s.Year,
+		Month:        s.Month,
+		TotalSuccess: int(s.TotalSuccess),
+		TotalAmount:  int(s.TotalAmount),
+	}
+}
+
+func (t *topupRecordMapper) ToTopupRecordsMonthStatusSuccessByCardNumber(topups []*db.GetMonthTopupStatusSuccessCardNumberRow) []*record.TopupRecordMonthStatusSuccess {
+	var topupRecords []*record.TopupRecordMonthStatusSuccess
+
+	for _, topup := range topups {
+		topupRecords = append(topupRecords, t.ToTopupRecordMonthStatusSuccessByCardNumber(topup))
+	}
+
+	return topupRecords
+}
+
+func (t *topupRecordMapper) ToTopupRecordYearStatusSuccessByCardNumber(s *db.GetYearlyTopupStatusSuccessCardNumberRow) *record.TopupRecordYearStatusSuccess {
+	return &record.TopupRecordYearStatusSuccess{
+		Year:         s.Year,
+		TotalSuccess: int(s.TotalSuccess),
+		TotalAmount:  int(s.TotalAmount),
+	}
+}
+
+func (t *topupRecordMapper) ToTopupRecordsYearStatusSuccessByCardNumber(topups []*db.GetYearlyTopupStatusSuccessCardNumberRow) []*record.TopupRecordYearStatusSuccess {
+	var topupRecords []*record.TopupRecordYearStatusSuccess
+
+	for _, topup := range topups {
+		topupRecords = append(topupRecords, t.ToTopupRecordYearStatusSuccessByCardNumber(topup))
+	}
+
+	return topupRecords
+}
+
+func (t *topupRecordMapper) ToTopupRecordMonthStatusFailedByCardNumber(s *db.GetMonthTopupStatusFailedCardNumberRow) *record.TopupRecordMonthStatusFailed {
+	return &record.TopupRecordMonthStatusFailed{
+		Year:        s.Year,
+		Month:       s.Month,
+		TotalFailed: int(s.TotalFailed),
+		TotalAmount: int(s.TotalAmount),
+	}
+}
+
+func (t *topupRecordMapper) ToTopupRecordsMonthStatusFailedByCardNumber(topups []*db.GetMonthTopupStatusFailedCardNumberRow) []*record.TopupRecordMonthStatusFailed {
+	var topupRecords []*record.TopupRecordMonthStatusFailed
+
+	for _, topup := range topups {
+		topupRecords = append(topupRecords, t.ToTopupRecordMonthStatusFailedByCardNumber(topup))
+	}
+
+	return topupRecords
+}
+
+func (t *topupRecordMapper) ToTopupRecordYearStatusFailedByCardNumber(s *db.GetYearlyTopupStatusFailedCardNumberRow) *record.TopupRecordYearStatusFailed {
+	return &record.TopupRecordYearStatusFailed{
+		Year:        s.Year,
+		TotalFailed: int(s.TotalFailed),
+		TotalAmount: int(s.TotalAmount),
+	}
+}
+
+func (t *topupRecordMapper) ToTopupRecordsYearStatusFailedByCardNumber(topups []*db.GetYearlyTopupStatusFailedCardNumberRow) []*record.TopupRecordYearStatusFailed {
+	var topupRecords []*record.TopupRecordYearStatusFailed
+
+	for _, topup := range topups {
+		topupRecords = append(topupRecords, t.ToTopupRecordYearStatusFailedByCardNumber(topup))
+	}
+
+	return topupRecords
+}
+
 func (t *topupRecordMapper) ToTopupMonthlyMethod(s *db.GetMonthlyTopupMethodsRow) *record.TopupMonthMethod {
 	return &record.TopupMonthMethod{
 		Month:       s.Month,

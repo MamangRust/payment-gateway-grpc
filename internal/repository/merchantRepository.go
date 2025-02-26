@@ -257,8 +257,6 @@ func (r *merchantRepository) FindAllTransactionsByMerchant(merchant_id int, sear
 	return r.mapping.ToMerchantsTransactionByMerchantRecord(merchant), totalCount, nil
 }
 
-///
-
 func (r *merchantRepository) GetMonthlyPaymentMethodByApikey(api_key string, year int) ([]*record.MerchantMonthlyPaymentMethod, error) {
 	yearStart := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
 	res, err := r.db.GetMonthlyPaymentMethodByApikey(r.ctx, db.GetMonthlyPaymentMethodByApikeyParams{

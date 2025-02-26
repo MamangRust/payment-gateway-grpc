@@ -33,9 +33,13 @@ func NewHandlerTransfer(client pb.TransferServiceClient, router *echo.Echo, logg
 
 	routerTransfer.GET("/monthly-success", transferHandler.FindMonthlyTransferStatusSuccess)
 	routerTransfer.GET("/yearly-success", transferHandler.FindYearlyTransferStatusSuccess)
-
 	routerTransfer.GET("/monthly-failed", transferHandler.FindMonthlyTransferStatusFailed)
 	routerTransfer.GET("/yearly-failed", transferHandler.FindYearlyTransferStatusFailed)
+
+	routerTransfer.GET("/monthly-success-by-card", transferHandler.FindMonthlyTransferStatusSuccessByCardNumber)
+	routerTransfer.GET("/yearly-success-by-card", transferHandler.FindYearlyTransferStatusSuccessByCardNumber)
+	routerTransfer.GET("/monthly-failed-by-card", transferHandler.FindMonthlyTransferStatusFailedByCardNumber)
+	routerTransfer.GET("/yearly-failed-by-card", transferHandler.FindYearlyTransferStatusFailedByCardNumber)
 
 	routerTransfer.GET("/monthly-amount", transferHandler.FindMonthlyTransferAmounts)
 	routerTransfer.GET("/yearly-amount", transferHandler.FindYearlyTransferAmounts)
@@ -107,7 +111,9 @@ func (h *transferHandleApi) FindAll(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponsePaginationTransfer(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Find a transfer by ID
@@ -151,7 +157,9 @@ func (h *transferHandleApi) FindById(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransfer(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindMonthlyTransferStatusSuccess retrieves the monthly transfer status for successful transactions.
@@ -203,7 +211,9 @@ func (h *transferHandleApi) FindMonthlyTransferStatusSuccess(c echo.Context) err
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransferMonthStatusSuccess(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindYearlyTransferStatusSuccess retrieves the yearly transfer status for successful transactions.
@@ -231,7 +241,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusSuccess(c echo.Context) erro
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindYearlyTransferStatusSuccess(ctx, &pb.FindYearTransfer{
+	res, err := h.client.FindYearlyTransferStatusSuccess(ctx, &pb.FindYearTransferStatus{
 		Year: int32(year),
 	})
 
@@ -244,7 +254,9 @@ func (h *transferHandleApi) FindYearlyTransferStatusSuccess(c echo.Context) erro
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransferYearStatusSuccess(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindMonthlyTransferStatusFailed retrieves the monthly transfer status for failed transactions.
@@ -296,7 +308,9 @@ func (h *transferHandleApi) FindMonthlyTransferStatusFailed(c echo.Context) erro
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransferMonthStatusFailed(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindYearlyTransferStatusFailed retrieves the yearly transfer status for failed transactions.
@@ -324,7 +338,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusFailed(c echo.Context) error
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindYearlyTransferStatusFailed(ctx, &pb.FindYearTransfer{
+	res, err := h.client.FindYearlyTransferStatusFailed(ctx, &pb.FindYearTransferStatus{
 		Year: int32(year),
 	})
 
@@ -337,7 +351,214 @@ func (h *transferHandleApi) FindYearlyTransferStatusFailed(c echo.Context) error
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransferYearStatusFailed(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindMonthlyTransferStatusSuccessByCardNumber retrieves the monthly transfer status for successful transactions.
+// @Summary Get monthly transfer status for successful transactions
+// @Tags Transfer
+// @Security Bearer
+// @Description Retrieve the monthly transfer status for successful transactions by year and month.
+// @Accept json
+// @Produce json
+// @Param year query int true "Year"
+// @Param month query int true "Month"
+// @Success 200 {object} response.ApiResponseTransferMonthStatusSuccess "Monthly transfer status for successful transactions"
+// @Failure 400 {object} response.ErrorResponse "Invalid year or month"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transfer status for successful transactions"
+// @Router /api/transfers/monthly-success-by-card [get]
+func (h *transferHandleApi) FindMonthlyTransferStatusSuccessByCardNumber(c echo.Context) error {
+	yearStr := c.QueryParam("year")
+	monthStr := c.QueryParam("month")
+	cardNumber := c.QueryParam("card_number")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	month, err := strconv.Atoi(monthStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid month",
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	res, err := h.client.FindMonthlyTransferStatusSuccessByCardNumber(ctx, &pb.FindMonthlyTransferStatusCardNumber{
+		Year:       int32(year),
+		Month:      int32(month),
+		CardNumber: cardNumber,
+	})
+
+	if err != nil {
+		h.logger.Debug("Failed to retrieve monthly Transfer status success", zap.Error(err))
+
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve monthly Transfer status success: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseTransferMonthStatusSuccess(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindYearlyTransferStatusSuccessByCardNumber retrieves the yearly transfer status for successful transactions.
+// @Summary Get yearly transfer status for successful transactions
+// @Tags Transfer
+// @Security Bearer
+// @Description Retrieve the yearly transfer status for successful transactions by year.
+// @Accept json
+// @Produce json
+// @Param year query int true "Year"
+// @Param card_number query string true "Card Number"
+// @Success 200 {object} response.ApiResponseTransferYearStatusSuccess "Yearly transfer status for successful transactions"
+// @Failure 400 {object} response.ErrorResponse "Invalid year"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transfer status for successful transactions"
+// @Router /api/transfers/yearly-success-by-card [get]
+func (h *transferHandleApi) FindYearlyTransferStatusSuccessByCardNumber(c echo.Context) error {
+	yearStr := c.QueryParam("year")
+	cardNumber := c.QueryParam("card_number")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	res, err := h.client.FindYearlyTransferStatusSuccessByCardNumber(ctx, &pb.FindYearTransferStatusCardNumber{
+		Year:       int32(year),
+		CardNumber: cardNumber,
+	})
+
+	if err != nil {
+		h.logger.Debug("Failed to retrieve yearly Transfer status success", zap.Error(err))
+
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve yearly Transfer status success: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseTransferYearStatusSuccess(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindMonthlyTransferStatusFailedByCardNumber retrieves the monthly transfer status for failed transactions.
+// @Summary Get monthly transfer status for failed transactions
+// @Tags Transfer
+// @Security Bearer
+// @Description Retrieve the monthly transfer status for failed transactions by year and month.
+// @Accept json
+// @Produce json
+// @Param year query int true "Year"
+// @Param month query int true "Month"
+// @Param card_number query string true "Card Number"
+// @Success 200 {object} response.ApiResponseTransferMonthStatusFailed "Monthly transfer status for failed transactions"
+// @Failure 400 {object} response.ErrorResponse "Invalid year or month"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transfer status for failed transactions"
+// @Router /api/transfers/monthly-failed-by-card [get]
+func (h *transferHandleApi) FindMonthlyTransferStatusFailedByCardNumber(c echo.Context) error {
+	yearStr := c.QueryParam("year")
+	monthStr := c.QueryParam("month")
+	cardNumber := c.QueryParam("card_number")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	month, err := strconv.Atoi(monthStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid month",
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	res, err := h.client.FindMonthlyTransferStatusFailedByCardNumber(ctx, &pb.FindMonthlyTransferStatusCardNumber{
+		Year:       int32(year),
+		Month:      int32(month),
+		CardNumber: cardNumber,
+	})
+
+	if err != nil {
+		h.logger.Debug("Failed to retrieve monthly Transfer status Failed", zap.Error(err))
+
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve monthly Transfer status Failed: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseTransferMonthStatusFailed(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindYearlyTransferStatusFailedByCardNumber retrieves the yearly transfer status for failed transactions.
+// @Summary Get yearly transfer status for failed transactions
+// @Tags Transfer
+// @Security Bearer
+// @Description Retrieve the yearly transfer status for failed transactions by year.
+// @Accept json
+// @Produce json
+// @Param year query int true "Year"
+// @Param card_number query string true "Card Number"
+// @Success 200 {object} response.ApiResponseTransferYearStatusFailed "Yearly transfer status for failed transactions"
+// @Failure 400 {object} response.ErrorResponse "Invalid year"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transfer status for failed transactions"
+// @Router /api/transfers/yearly-failed-by-card [get]
+func (h *transferHandleApi) FindYearlyTransferStatusFailedByCardNumber(c echo.Context) error {
+	yearStr := c.QueryParam("year")
+	cardNumber := c.QueryParam("card_number")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	res, err := h.client.FindYearlyTransferStatusFailedByCardNumber(ctx, &pb.FindYearTransferStatusCardNumber{
+		Year:       int32(year),
+		CardNumber: cardNumber,
+	})
+
+	if err != nil {
+		h.logger.Debug("Failed to retrieve yearly Transfer status Failed", zap.Error(err))
+
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve yearly Transfer status Failed: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseTransferYearStatusFailed(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindMonthlyTransferAmounts retrieves the monthly transfer amounts for a specific year.
@@ -365,7 +586,7 @@ func (h *transferHandleApi) FindMonthlyTransferAmounts(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindMonthlyTransferAmounts(ctx, &pb.FindYearTransfer{
+	res, err := h.client.FindMonthlyTransferAmounts(ctx, &pb.FindYearTransferStatus{
 		Year: int32(year),
 	})
 	if err != nil {
@@ -376,7 +597,9 @@ func (h *transferHandleApi) FindMonthlyTransferAmounts(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransferMonthAmount(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindYearlyTransferAmounts retrieves the yearly transfer amounts for a specific year.
@@ -404,7 +627,7 @@ func (h *transferHandleApi) FindYearlyTransferAmounts(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindYearlyTransferAmounts(ctx, &pb.FindYearTransfer{
+	res, err := h.client.FindYearlyTransferAmounts(ctx, &pb.FindYearTransferStatus{
 		Year: int32(year),
 	})
 	if err != nil {
@@ -415,7 +638,9 @@ func (h *transferHandleApi) FindYearlyTransferAmounts(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransferYearAmount(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindMonthlyTransferAmountsBySenderCardNumber retrieves the monthly transfer amounts for a specific sender card number and year.
@@ -457,7 +682,9 @@ func (h *transferHandleApi) FindMonthlyTransferAmountsBySenderCardNumber(c echo.
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransferMonthAmount(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindMonthlyTransferAmountsByReceiverCardNumber retrieves the monthly transfer amounts for a specific receiver card number and year.
@@ -499,7 +726,9 @@ func (h *transferHandleApi) FindMonthlyTransferAmountsByReceiverCardNumber(c ech
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransferMonthAmount(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindYearlyTransferAmountsBySenderCardNumber retrieves the yearly transfer amounts for a specific sender card number and year.
@@ -541,7 +770,9 @@ func (h *transferHandleApi) FindYearlyTransferAmountsBySenderCardNumber(c echo.C
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransferYearAmount(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindYearlyTransferAmountsByReceiverCardNumber retrieves the yearly transfer amounts for a specific receiver card number and year.
@@ -585,7 +816,9 @@ func (h *transferHandleApi) FindYearlyTransferAmountsByReceiverCardNumber(c echo
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransferYearAmount(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Find transfers by transfer_from
@@ -616,7 +849,9 @@ func (h *transferHandleApi) FindByTransferByTransferFrom(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransfers(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Find transfers by transfer_to
@@ -647,7 +882,9 @@ func (h *transferHandleApi) FindByTransferByTransferTo(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransfers(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Find active transfers
@@ -695,7 +932,9 @@ func (h *transferHandleApi) FindByActiveTransfer(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponsePaginationTransferDeleteAt(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Retrieve trashed transfers
@@ -796,7 +1035,9 @@ func (h *transferHandleApi) CreateTransfer(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransfer(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Update a transfer
@@ -862,7 +1103,9 @@ func (h *transferHandleApi) UpdateTransfer(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransfer(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Soft delete a transfer
@@ -906,7 +1149,9 @@ func (h *transferHandleApi) TrashTransfer(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransfer(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Restore a trashed transfer
@@ -949,7 +1194,9 @@ func (h *transferHandleApi) RestoreTransfer(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransfer(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Permanently delete a transfer
@@ -990,7 +1237,9 @@ func (h *transferHandleApi) DeleteTransferPermanent(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransferDelete(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Restore a trashed transfer
@@ -1018,7 +1267,9 @@ func (h *transferHandleApi) RestoreAllTransfer(c echo.Context) error {
 
 	h.logger.Debug("Successfully restored all transfer")
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransferAll(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Permanently delete a transfer
@@ -1048,5 +1299,7 @@ func (h *transferHandleApi) DeleteAllTransferPermanent(c echo.Context) error {
 
 	h.logger.Debug("Successfully deleted all transfer permanently")
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseTransferAll(res)
+
+	return c.JSON(http.StatusOK, so)
 }

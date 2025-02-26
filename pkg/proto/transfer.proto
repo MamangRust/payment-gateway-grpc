@@ -13,13 +13,25 @@ message FindByCardNumberTransferRequest {
     int32 year = 2;
 }
 
-message FindYearTransfer{
+message FindYearTransferStatus{
     int32 year = 1;
 }
 
 message FindMonthlyTransferStatus {
     int32 year = 1;
     int32 month = 2;
+}
+
+
+message FindYearTransferStatusCardNumber{
+    string card_number = 1;
+    int32 year = 2;
+}
+
+message FindMonthlyTransferStatusCardNumber{
+    string card_number = 1;
+    int32 year = 2;
+    int32 month = 3;
 }
 
 
@@ -195,14 +207,18 @@ service TransferService {
     rpc FindByIdTransfer (FindByIdTransferRequest) returns (ApiResponseTransfer);
 
     rpc FindMonthlyTransferStatusSuccess(FindMonthlyTransferStatus)returns(ApiResponseTransferMonthStatusSuccess){}
-    rpc FindYearlyTransferStatusSuccess(FindYearTransfer)returns(ApiResponseTransferYearStatusSuccess){}
+    rpc FindYearlyTransferStatusSuccess(FindYearTransferStatus)returns(ApiResponseTransferYearStatusSuccess){}
     rpc FindMonthlyTransferStatusFailed(FindMonthlyTransferStatus)returns(ApiResponseTransferMonthStatusFailed){}
-    rpc FindYearlyTransferStatusFailed(FindYearTransfer)returns(ApiResponseTransferYearStatusFailed){}
+    rpc FindYearlyTransferStatusFailed(FindYearTransferStatus)returns(ApiResponseTransferYearStatusFailed){}
+
+    rpc FindMonthlyTransferStatusSuccessByCardNumber(FindMonthlyTransferStatusCardNumber)returns(ApiResponseTransferMonthStatusSuccess){}
+    rpc FindYearlyTransferStatusSuccessByCardNumber(FindYearTransferStatusCardNumber)returns(ApiResponseTransferYearStatusSuccess){}
+    rpc FindMonthlyTransferStatusFailedByCardNumber(FindMonthlyTransferStatusCardNumber)returns(ApiResponseTransferMonthStatusFailed){}
+    rpc FindYearlyTransferStatusFailedByCardNumber(FindYearTransferStatusCardNumber)returns(ApiResponseTransferYearStatusFailed){}
 
 
-
-    rpc FindMonthlyTransferAmounts(FindYearTransfer)returns(ApiResponseTransferMonthAmount){}
-    rpc FindYearlyTransferAmounts(FindYearTransfer)returns(ApiResponseTransferYearAmount){}
+    rpc FindMonthlyTransferAmounts(FindYearTransferStatus)returns(ApiResponseTransferMonthAmount){}
+    rpc FindYearlyTransferAmounts(FindYearTransferStatus)returns(ApiResponseTransferYearAmount){}
 
     rpc FindMonthlyTransferAmountsBySenderCardNumber(FindByCardNumberTransferRequest)returns(ApiResponseTransferMonthAmount){}
     rpc FindMonthlyTransferAmountsByReceiverCardNumber(FindByCardNumberTransferRequest)returns(ApiResponseTransferMonthAmount){}

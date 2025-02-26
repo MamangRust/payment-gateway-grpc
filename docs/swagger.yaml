@@ -5168,47 +5168,6 @@ paths:
       - Bearer: []
       tags:
       - Topup
-  /api/topups/{card_number}:
-    get:
-      consumes:
-      - application/json
-      description: Retrieve a list of transactions for a specific card number
-      parameters:
-      - description: Card Number
-        in: path
-        name: card_number
-        required: true
-        type: string
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 10
-        description: Number of items per page
-        in: query
-        name: page_size
-        type: integer
-      - description: Search query
-        in: query
-        name: search
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: List of topups
-          schema:
-            $ref: '#/definitions/response.ApiResponsePaginationTopup'
-        "500":
-          description: Failed to retrieve topups data
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-      security:
-      - Bearer: []
-      summary: Find all topup by card number
-      tags:
-      - Transaction
   /api/topups/{id}:
     get:
       consumes:
@@ -5276,6 +5235,47 @@ paths:
       summary: Find active topups
       tags:
       - Topup
+  /api/topups/card-number/{card_number}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of transactions for a specific card number
+      parameters:
+      - description: Card Number
+        in: path
+        name: card_number
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Number of items per page
+        in: query
+        name: page_size
+        type: integer
+      - description: Search query
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of topups
+          schema:
+            $ref: '#/definitions/response.ApiResponsePaginationTopup'
+        "500":
+          description: Failed to retrieve topups data
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Find all topup by card number
+      tags:
+      - Transaction
   /api/topups/create:
     post:
       consumes:
@@ -5995,7 +5995,7 @@ paths:
       summary: Find active transactions
       tags:
       - Transaction
-  /api/transactions/card/{card_number}:
+  /api/transactions/card-number/{card_number}:
     get:
       consumes:
       - application/json

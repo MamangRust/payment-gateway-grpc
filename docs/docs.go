@@ -5233,6 +5233,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/topups/card-number/{card_number}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve a list of transactions for a specific card number",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Find all topup by card number",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Card Number",
+                        "name": "card_number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Number of items per page",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of topups",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponsePaginationTopup"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve topups data",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/topups/create": {
             "post": {
                 "security": [
@@ -6194,69 +6257,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/topups/{card_number}": {
-            "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Retrieve a list of transactions for a specific card number",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Transaction"
-                ],
-                "summary": "Find all topup by card number",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Card Number",
-                        "name": "card_number",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Number of items per page",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search query",
-                        "name": "search",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "List of topups",
-                        "schema": {
-                            "$ref": "#/definitions/response.ApiResponsePaginationTopup"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to retrieve topups data",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/api/topups/{id}": {
             "get": {
                 "security": [
@@ -6416,7 +6416,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/transactions/card/{card_number}": {
+        "/api/transactions/card-number/{card_number}": {
             "get": {
                 "security": [
                     {

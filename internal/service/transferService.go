@@ -176,6 +176,86 @@ func (s *transferService) FindYearlyTransferStatusFailed(year int) ([]*response.
 	return so, nil
 }
 
+func (s *transferService) FindMonthTransferStatusSuccessByCardNumber(card_number string, year int, month int) ([]*response.TransferResponseMonthStatusSuccess, *response.ErrorResponse) {
+	s.logger.Debug("Fetching monthly Transfer status success", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
+
+	records, err := s.transferRepository.GetMonthTransferStatusSuccessByCardNumber(card_number, year, month)
+	if err != nil {
+		s.logger.Error("failed to fetch monthly Transfer status success", zap.Error(err))
+
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch monthly Transfer status success",
+		}
+	}
+
+	s.logger.Debug("Successfully fetched monthly Transfer status success", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
+
+	so := s.mapping.ToTransferResponsesMonthStatusSuccess(records)
+
+	return so, nil
+}
+
+func (s *transferService) FindYearlyTransferStatusSuccessByCardNumber(card_number string, year int) ([]*response.TransferResponseYearStatusSuccess, *response.ErrorResponse) {
+	s.logger.Debug("Fetching yearly Transfer status success", zap.Int("year", year), zap.String("card_number", card_number))
+
+	records, err := s.transferRepository.GetYearlyTransferStatusSuccessByCardNumber(card_number, year)
+	if err != nil {
+		s.logger.Error("failed to fetch yearly Transfer status success", zap.Error(err))
+
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch yearly Transfer status success",
+		}
+	}
+
+	s.logger.Debug("Successfully fetched yearly Transfer status success", zap.Int("year", year), zap.String("card_number", card_number))
+
+	so := s.mapping.ToTransferResponsesYearStatusSuccess(records)
+
+	return so, nil
+}
+
+func (s *transferService) FindMonthTransferStatusFailedByCardNumber(card_number string, year int, month int) ([]*response.TransferResponseMonthStatusFailed, *response.ErrorResponse) {
+	s.logger.Debug("Fetching monthly Transfer status Failed", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
+
+	records, err := s.transferRepository.GetMonthTransferStatusFailedByCardNumber(card_number, year, month)
+	if err != nil {
+		s.logger.Error("failed to fetch monthly Transfer status Failed", zap.Error(err))
+
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch monthly Transfer status Failed",
+		}
+	}
+
+	s.logger.Debug("Failedfully fetched monthly Transfer status Failed", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
+
+	so := s.mapping.ToTransferResponsesMonthStatusFailed(records)
+
+	return so, nil
+}
+
+func (s *transferService) FindYearlyTransferStatusFailedByCardNumber(card_number string, year int) ([]*response.TransferResponseYearStatusFailed, *response.ErrorResponse) {
+	s.logger.Debug("Fetching yearly Transfer status Failed", zap.Int("year", year), zap.String("card_number", card_number))
+
+	records, err := s.transferRepository.GetYearlyTransferStatusFailedByCardNumber(card_number, year)
+	if err != nil {
+		s.logger.Error("failed to fetch yearly Transfer status Failed", zap.Error(err))
+
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch yearly Transfer status Failed",
+		}
+	}
+
+	s.logger.Debug("Failedfully fetched yearly Transfer status Failed", zap.Int("year", year), zap.String("card_number", card_number))
+
+	so := s.mapping.ToTransferResponsesYearStatusFailed(records)
+
+	return so, nil
+}
+
 func (s *transferService) FindMonthlyTransferAmounts(year int) ([]*response.TransferMonthAmountResponse, *response.ErrorResponse) {
 	s.logger.Debug("Fetching monthly transfer amounts", zap.Int("year", year))
 

@@ -20,27 +20,31 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	WithdrawService_FindAllWithdraw_FullMethodName                  = "/pb.WithdrawService/FindAllWithdraw"
-	WithdrawService_FindAllWithdrawByCardNumber_FullMethodName      = "/pb.WithdrawService/FindAllWithdrawByCardNumber"
-	WithdrawService_FindByIdWithdraw_FullMethodName                 = "/pb.WithdrawService/FindByIdWithdraw"
-	WithdrawService_FindMonthlyWithdrawStatusSuccess_FullMethodName = "/pb.WithdrawService/FindMonthlyWithdrawStatusSuccess"
-	WithdrawService_FindYearlyWithdrawStatusSuccess_FullMethodName  = "/pb.WithdrawService/FindYearlyWithdrawStatusSuccess"
-	WithdrawService_FindMonthlyWithdrawStatusFailed_FullMethodName  = "/pb.WithdrawService/FindMonthlyWithdrawStatusFailed"
-	WithdrawService_FindYearlyWithdrawStatusFailed_FullMethodName   = "/pb.WithdrawService/FindYearlyWithdrawStatusFailed"
-	WithdrawService_FindMonthlyWithdraws_FullMethodName             = "/pb.WithdrawService/FindMonthlyWithdraws"
-	WithdrawService_FindYearlyWithdraws_FullMethodName              = "/pb.WithdrawService/FindYearlyWithdraws"
-	WithdrawService_FindMonthlyWithdrawsByCardNumber_FullMethodName = "/pb.WithdrawService/FindMonthlyWithdrawsByCardNumber"
-	WithdrawService_FindYearlyWithdrawsByCardNumber_FullMethodName  = "/pb.WithdrawService/FindYearlyWithdrawsByCardNumber"
-	WithdrawService_FindByCardNumber_FullMethodName                 = "/pb.WithdrawService/FindByCardNumber"
-	WithdrawService_FindByActive_FullMethodName                     = "/pb.WithdrawService/FindByActive"
-	WithdrawService_FindByTrashed_FullMethodName                    = "/pb.WithdrawService/FindByTrashed"
-	WithdrawService_CreateWithdraw_FullMethodName                   = "/pb.WithdrawService/CreateWithdraw"
-	WithdrawService_UpdateWithdraw_FullMethodName                   = "/pb.WithdrawService/UpdateWithdraw"
-	WithdrawService_TrashedWithdraw_FullMethodName                  = "/pb.WithdrawService/TrashedWithdraw"
-	WithdrawService_RestoreWithdraw_FullMethodName                  = "/pb.WithdrawService/RestoreWithdraw"
-	WithdrawService_DeleteWithdrawPermanent_FullMethodName          = "/pb.WithdrawService/DeleteWithdrawPermanent"
-	WithdrawService_RestoreAllWithdraw_FullMethodName               = "/pb.WithdrawService/RestoreAllWithdraw"
-	WithdrawService_DeleteAllWithdrawPermanent_FullMethodName       = "/pb.WithdrawService/DeleteAllWithdrawPermanent"
+	WithdrawService_FindAllWithdraw_FullMethodName                            = "/pb.WithdrawService/FindAllWithdraw"
+	WithdrawService_FindAllWithdrawByCardNumber_FullMethodName                = "/pb.WithdrawService/FindAllWithdrawByCardNumber"
+	WithdrawService_FindByIdWithdraw_FullMethodName                           = "/pb.WithdrawService/FindByIdWithdraw"
+	WithdrawService_FindMonthlyWithdrawStatusSuccess_FullMethodName           = "/pb.WithdrawService/FindMonthlyWithdrawStatusSuccess"
+	WithdrawService_FindYearlyWithdrawStatusSuccess_FullMethodName            = "/pb.WithdrawService/FindYearlyWithdrawStatusSuccess"
+	WithdrawService_FindMonthlyWithdrawStatusFailed_FullMethodName            = "/pb.WithdrawService/FindMonthlyWithdrawStatusFailed"
+	WithdrawService_FindYearlyWithdrawStatusFailed_FullMethodName             = "/pb.WithdrawService/FindYearlyWithdrawStatusFailed"
+	WithdrawService_FindMonthlyWithdrawStatusSuccessCardNumber_FullMethodName = "/pb.WithdrawService/FindMonthlyWithdrawStatusSuccessCardNumber"
+	WithdrawService_FindYearlyWithdrawStatusSuccessCardNumber_FullMethodName  = "/pb.WithdrawService/FindYearlyWithdrawStatusSuccessCardNumber"
+	WithdrawService_FindMonthlyWithdrawStatusFailedCardNumber_FullMethodName  = "/pb.WithdrawService/FindMonthlyWithdrawStatusFailedCardNumber"
+	WithdrawService_FindYearlyWithdrawStatusFailedCardNumber_FullMethodName   = "/pb.WithdrawService/FindYearlyWithdrawStatusFailedCardNumber"
+	WithdrawService_FindMonthlyWithdraws_FullMethodName                       = "/pb.WithdrawService/FindMonthlyWithdraws"
+	WithdrawService_FindYearlyWithdraws_FullMethodName                        = "/pb.WithdrawService/FindYearlyWithdraws"
+	WithdrawService_FindMonthlyWithdrawsByCardNumber_FullMethodName           = "/pb.WithdrawService/FindMonthlyWithdrawsByCardNumber"
+	WithdrawService_FindYearlyWithdrawsByCardNumber_FullMethodName            = "/pb.WithdrawService/FindYearlyWithdrawsByCardNumber"
+	WithdrawService_FindByCardNumber_FullMethodName                           = "/pb.WithdrawService/FindByCardNumber"
+	WithdrawService_FindByActive_FullMethodName                               = "/pb.WithdrawService/FindByActive"
+	WithdrawService_FindByTrashed_FullMethodName                              = "/pb.WithdrawService/FindByTrashed"
+	WithdrawService_CreateWithdraw_FullMethodName                             = "/pb.WithdrawService/CreateWithdraw"
+	WithdrawService_UpdateWithdraw_FullMethodName                             = "/pb.WithdrawService/UpdateWithdraw"
+	WithdrawService_TrashedWithdraw_FullMethodName                            = "/pb.WithdrawService/TrashedWithdraw"
+	WithdrawService_RestoreWithdraw_FullMethodName                            = "/pb.WithdrawService/RestoreWithdraw"
+	WithdrawService_DeleteWithdrawPermanent_FullMethodName                    = "/pb.WithdrawService/DeleteWithdrawPermanent"
+	WithdrawService_RestoreAllWithdraw_FullMethodName                         = "/pb.WithdrawService/RestoreAllWithdraw"
+	WithdrawService_DeleteAllWithdrawPermanent_FullMethodName                 = "/pb.WithdrawService/DeleteAllWithdrawPermanent"
 )
 
 // WithdrawServiceClient is the client API for WithdrawService service.
@@ -51,11 +55,15 @@ type WithdrawServiceClient interface {
 	FindAllWithdrawByCardNumber(ctx context.Context, in *FindAllWithdrawByCardNumberRequest, opts ...grpc.CallOption) (*ApiResponsePaginationWithdraw, error)
 	FindByIdWithdraw(ctx context.Context, in *FindByIdWithdrawRequest, opts ...grpc.CallOption) (*ApiResponseWithdraw, error)
 	FindMonthlyWithdrawStatusSuccess(ctx context.Context, in *FindMonthlyWithdrawStatus, opts ...grpc.CallOption) (*ApiResponseWithdrawMonthStatusSuccess, error)
-	FindYearlyWithdrawStatusSuccess(ctx context.Context, in *FindYearWithdraw, opts ...grpc.CallOption) (*ApiResponseWithdrawYearStatusSuccess, error)
+	FindYearlyWithdrawStatusSuccess(ctx context.Context, in *FindYearWithdrawStatus, opts ...grpc.CallOption) (*ApiResponseWithdrawYearStatusSuccess, error)
 	FindMonthlyWithdrawStatusFailed(ctx context.Context, in *FindMonthlyWithdrawStatus, opts ...grpc.CallOption) (*ApiResponseWithdrawMonthStatusFailed, error)
-	FindYearlyWithdrawStatusFailed(ctx context.Context, in *FindYearWithdraw, opts ...grpc.CallOption) (*ApiResponseWithdrawYearStatusFailed, error)
-	FindMonthlyWithdraws(ctx context.Context, in *FindYearWithdraw, opts ...grpc.CallOption) (*ApiResponseWithdrawMonthAmount, error)
-	FindYearlyWithdraws(ctx context.Context, in *FindYearWithdraw, opts ...grpc.CallOption) (*ApiResponseWithdrawYearAmount, error)
+	FindYearlyWithdrawStatusFailed(ctx context.Context, in *FindYearWithdrawStatus, opts ...grpc.CallOption) (*ApiResponseWithdrawYearStatusFailed, error)
+	FindMonthlyWithdrawStatusSuccessCardNumber(ctx context.Context, in *FindMonthlyWithdrawStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseWithdrawMonthStatusSuccess, error)
+	FindYearlyWithdrawStatusSuccessCardNumber(ctx context.Context, in *FindYearWithdrawStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseWithdrawYearStatusSuccess, error)
+	FindMonthlyWithdrawStatusFailedCardNumber(ctx context.Context, in *FindMonthlyWithdrawStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseWithdrawMonthStatusFailed, error)
+	FindYearlyWithdrawStatusFailedCardNumber(ctx context.Context, in *FindYearWithdrawStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseWithdrawYearStatusFailed, error)
+	FindMonthlyWithdraws(ctx context.Context, in *FindYearWithdrawStatus, opts ...grpc.CallOption) (*ApiResponseWithdrawMonthAmount, error)
+	FindYearlyWithdraws(ctx context.Context, in *FindYearWithdrawStatus, opts ...grpc.CallOption) (*ApiResponseWithdrawYearAmount, error)
 	FindMonthlyWithdrawsByCardNumber(ctx context.Context, in *FindYearWithdrawCardNumber, opts ...grpc.CallOption) (*ApiResponseWithdrawMonthAmount, error)
 	FindYearlyWithdrawsByCardNumber(ctx context.Context, in *FindYearWithdrawCardNumber, opts ...grpc.CallOption) (*ApiResponseWithdrawYearAmount, error)
 	FindByCardNumber(ctx context.Context, in *FindByCardNumberRequest, opts ...grpc.CallOption) (*ApiResponsesWithdraw, error)
@@ -118,7 +126,7 @@ func (c *withdrawServiceClient) FindMonthlyWithdrawStatusSuccess(ctx context.Con
 	return out, nil
 }
 
-func (c *withdrawServiceClient) FindYearlyWithdrawStatusSuccess(ctx context.Context, in *FindYearWithdraw, opts ...grpc.CallOption) (*ApiResponseWithdrawYearStatusSuccess, error) {
+func (c *withdrawServiceClient) FindYearlyWithdrawStatusSuccess(ctx context.Context, in *FindYearWithdrawStatus, opts ...grpc.CallOption) (*ApiResponseWithdrawYearStatusSuccess, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseWithdrawYearStatusSuccess)
 	err := c.cc.Invoke(ctx, WithdrawService_FindYearlyWithdrawStatusSuccess_FullMethodName, in, out, cOpts...)
@@ -138,7 +146,7 @@ func (c *withdrawServiceClient) FindMonthlyWithdrawStatusFailed(ctx context.Cont
 	return out, nil
 }
 
-func (c *withdrawServiceClient) FindYearlyWithdrawStatusFailed(ctx context.Context, in *FindYearWithdraw, opts ...grpc.CallOption) (*ApiResponseWithdrawYearStatusFailed, error) {
+func (c *withdrawServiceClient) FindYearlyWithdrawStatusFailed(ctx context.Context, in *FindYearWithdrawStatus, opts ...grpc.CallOption) (*ApiResponseWithdrawYearStatusFailed, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseWithdrawYearStatusFailed)
 	err := c.cc.Invoke(ctx, WithdrawService_FindYearlyWithdrawStatusFailed_FullMethodName, in, out, cOpts...)
@@ -148,7 +156,47 @@ func (c *withdrawServiceClient) FindYearlyWithdrawStatusFailed(ctx context.Conte
 	return out, nil
 }
 
-func (c *withdrawServiceClient) FindMonthlyWithdraws(ctx context.Context, in *FindYearWithdraw, opts ...grpc.CallOption) (*ApiResponseWithdrawMonthAmount, error) {
+func (c *withdrawServiceClient) FindMonthlyWithdrawStatusSuccessCardNumber(ctx context.Context, in *FindMonthlyWithdrawStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseWithdrawMonthStatusSuccess, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseWithdrawMonthStatusSuccess)
+	err := c.cc.Invoke(ctx, WithdrawService_FindMonthlyWithdrawStatusSuccessCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *withdrawServiceClient) FindYearlyWithdrawStatusSuccessCardNumber(ctx context.Context, in *FindYearWithdrawStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseWithdrawYearStatusSuccess, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseWithdrawYearStatusSuccess)
+	err := c.cc.Invoke(ctx, WithdrawService_FindYearlyWithdrawStatusSuccessCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *withdrawServiceClient) FindMonthlyWithdrawStatusFailedCardNumber(ctx context.Context, in *FindMonthlyWithdrawStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseWithdrawMonthStatusFailed, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseWithdrawMonthStatusFailed)
+	err := c.cc.Invoke(ctx, WithdrawService_FindMonthlyWithdrawStatusFailedCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *withdrawServiceClient) FindYearlyWithdrawStatusFailedCardNumber(ctx context.Context, in *FindYearWithdrawStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseWithdrawYearStatusFailed, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseWithdrawYearStatusFailed)
+	err := c.cc.Invoke(ctx, WithdrawService_FindYearlyWithdrawStatusFailedCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *withdrawServiceClient) FindMonthlyWithdraws(ctx context.Context, in *FindYearWithdrawStatus, opts ...grpc.CallOption) (*ApiResponseWithdrawMonthAmount, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseWithdrawMonthAmount)
 	err := c.cc.Invoke(ctx, WithdrawService_FindMonthlyWithdraws_FullMethodName, in, out, cOpts...)
@@ -158,7 +206,7 @@ func (c *withdrawServiceClient) FindMonthlyWithdraws(ctx context.Context, in *Fi
 	return out, nil
 }
 
-func (c *withdrawServiceClient) FindYearlyWithdraws(ctx context.Context, in *FindYearWithdraw, opts ...grpc.CallOption) (*ApiResponseWithdrawYearAmount, error) {
+func (c *withdrawServiceClient) FindYearlyWithdraws(ctx context.Context, in *FindYearWithdrawStatus, opts ...grpc.CallOption) (*ApiResponseWithdrawYearAmount, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseWithdrawYearAmount)
 	err := c.cc.Invoke(ctx, WithdrawService_FindYearlyWithdraws_FullMethodName, in, out, cOpts...)
@@ -296,11 +344,15 @@ type WithdrawServiceServer interface {
 	FindAllWithdrawByCardNumber(context.Context, *FindAllWithdrawByCardNumberRequest) (*ApiResponsePaginationWithdraw, error)
 	FindByIdWithdraw(context.Context, *FindByIdWithdrawRequest) (*ApiResponseWithdraw, error)
 	FindMonthlyWithdrawStatusSuccess(context.Context, *FindMonthlyWithdrawStatus) (*ApiResponseWithdrawMonthStatusSuccess, error)
-	FindYearlyWithdrawStatusSuccess(context.Context, *FindYearWithdraw) (*ApiResponseWithdrawYearStatusSuccess, error)
+	FindYearlyWithdrawStatusSuccess(context.Context, *FindYearWithdrawStatus) (*ApiResponseWithdrawYearStatusSuccess, error)
 	FindMonthlyWithdrawStatusFailed(context.Context, *FindMonthlyWithdrawStatus) (*ApiResponseWithdrawMonthStatusFailed, error)
-	FindYearlyWithdrawStatusFailed(context.Context, *FindYearWithdraw) (*ApiResponseWithdrawYearStatusFailed, error)
-	FindMonthlyWithdraws(context.Context, *FindYearWithdraw) (*ApiResponseWithdrawMonthAmount, error)
-	FindYearlyWithdraws(context.Context, *FindYearWithdraw) (*ApiResponseWithdrawYearAmount, error)
+	FindYearlyWithdrawStatusFailed(context.Context, *FindYearWithdrawStatus) (*ApiResponseWithdrawYearStatusFailed, error)
+	FindMonthlyWithdrawStatusSuccessCardNumber(context.Context, *FindMonthlyWithdrawStatusCardNumber) (*ApiResponseWithdrawMonthStatusSuccess, error)
+	FindYearlyWithdrawStatusSuccessCardNumber(context.Context, *FindYearWithdrawStatusCardNumber) (*ApiResponseWithdrawYearStatusSuccess, error)
+	FindMonthlyWithdrawStatusFailedCardNumber(context.Context, *FindMonthlyWithdrawStatusCardNumber) (*ApiResponseWithdrawMonthStatusFailed, error)
+	FindYearlyWithdrawStatusFailedCardNumber(context.Context, *FindYearWithdrawStatusCardNumber) (*ApiResponseWithdrawYearStatusFailed, error)
+	FindMonthlyWithdraws(context.Context, *FindYearWithdrawStatus) (*ApiResponseWithdrawMonthAmount, error)
+	FindYearlyWithdraws(context.Context, *FindYearWithdrawStatus) (*ApiResponseWithdrawYearAmount, error)
 	FindMonthlyWithdrawsByCardNumber(context.Context, *FindYearWithdrawCardNumber) (*ApiResponseWithdrawMonthAmount, error)
 	FindYearlyWithdrawsByCardNumber(context.Context, *FindYearWithdrawCardNumber) (*ApiResponseWithdrawYearAmount, error)
 	FindByCardNumber(context.Context, *FindByCardNumberRequest) (*ApiResponsesWithdraw, error)
@@ -335,19 +387,31 @@ func (UnimplementedWithdrawServiceServer) FindByIdWithdraw(context.Context, *Fin
 func (UnimplementedWithdrawServiceServer) FindMonthlyWithdrawStatusSuccess(context.Context, *FindMonthlyWithdrawStatus) (*ApiResponseWithdrawMonthStatusSuccess, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyWithdrawStatusSuccess not implemented")
 }
-func (UnimplementedWithdrawServiceServer) FindYearlyWithdrawStatusSuccess(context.Context, *FindYearWithdraw) (*ApiResponseWithdrawYearStatusSuccess, error) {
+func (UnimplementedWithdrawServiceServer) FindYearlyWithdrawStatusSuccess(context.Context, *FindYearWithdrawStatus) (*ApiResponseWithdrawYearStatusSuccess, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyWithdrawStatusSuccess not implemented")
 }
 func (UnimplementedWithdrawServiceServer) FindMonthlyWithdrawStatusFailed(context.Context, *FindMonthlyWithdrawStatus) (*ApiResponseWithdrawMonthStatusFailed, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyWithdrawStatusFailed not implemented")
 }
-func (UnimplementedWithdrawServiceServer) FindYearlyWithdrawStatusFailed(context.Context, *FindYearWithdraw) (*ApiResponseWithdrawYearStatusFailed, error) {
+func (UnimplementedWithdrawServiceServer) FindYearlyWithdrawStatusFailed(context.Context, *FindYearWithdrawStatus) (*ApiResponseWithdrawYearStatusFailed, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyWithdrawStatusFailed not implemented")
 }
-func (UnimplementedWithdrawServiceServer) FindMonthlyWithdraws(context.Context, *FindYearWithdraw) (*ApiResponseWithdrawMonthAmount, error) {
+func (UnimplementedWithdrawServiceServer) FindMonthlyWithdrawStatusSuccessCardNumber(context.Context, *FindMonthlyWithdrawStatusCardNumber) (*ApiResponseWithdrawMonthStatusSuccess, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyWithdrawStatusSuccessCardNumber not implemented")
+}
+func (UnimplementedWithdrawServiceServer) FindYearlyWithdrawStatusSuccessCardNumber(context.Context, *FindYearWithdrawStatusCardNumber) (*ApiResponseWithdrawYearStatusSuccess, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyWithdrawStatusSuccessCardNumber not implemented")
+}
+func (UnimplementedWithdrawServiceServer) FindMonthlyWithdrawStatusFailedCardNumber(context.Context, *FindMonthlyWithdrawStatusCardNumber) (*ApiResponseWithdrawMonthStatusFailed, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyWithdrawStatusFailedCardNumber not implemented")
+}
+func (UnimplementedWithdrawServiceServer) FindYearlyWithdrawStatusFailedCardNumber(context.Context, *FindYearWithdrawStatusCardNumber) (*ApiResponseWithdrawYearStatusFailed, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyWithdrawStatusFailedCardNumber not implemented")
+}
+func (UnimplementedWithdrawServiceServer) FindMonthlyWithdraws(context.Context, *FindYearWithdrawStatus) (*ApiResponseWithdrawMonthAmount, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyWithdraws not implemented")
 }
-func (UnimplementedWithdrawServiceServer) FindYearlyWithdraws(context.Context, *FindYearWithdraw) (*ApiResponseWithdrawYearAmount, error) {
+func (UnimplementedWithdrawServiceServer) FindYearlyWithdraws(context.Context, *FindYearWithdrawStatus) (*ApiResponseWithdrawYearAmount, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyWithdraws not implemented")
 }
 func (UnimplementedWithdrawServiceServer) FindMonthlyWithdrawsByCardNumber(context.Context, *FindYearWithdrawCardNumber) (*ApiResponseWithdrawMonthAmount, error) {
@@ -480,7 +544,7 @@ func _WithdrawService_FindMonthlyWithdrawStatusSuccess_Handler(srv interface{}, 
 }
 
 func _WithdrawService_FindYearlyWithdrawStatusSuccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearWithdraw)
+	in := new(FindYearWithdrawStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -492,7 +556,7 @@ func _WithdrawService_FindYearlyWithdrawStatusSuccess_Handler(srv interface{}, c
 		FullMethod: WithdrawService_FindYearlyWithdrawStatusSuccess_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WithdrawServiceServer).FindYearlyWithdrawStatusSuccess(ctx, req.(*FindYearWithdraw))
+		return srv.(WithdrawServiceServer).FindYearlyWithdrawStatusSuccess(ctx, req.(*FindYearWithdrawStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -516,7 +580,7 @@ func _WithdrawService_FindMonthlyWithdrawStatusFailed_Handler(srv interface{}, c
 }
 
 func _WithdrawService_FindYearlyWithdrawStatusFailed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearWithdraw)
+	in := new(FindYearWithdrawStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -528,13 +592,85 @@ func _WithdrawService_FindYearlyWithdrawStatusFailed_Handler(srv interface{}, ct
 		FullMethod: WithdrawService_FindYearlyWithdrawStatusFailed_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WithdrawServiceServer).FindYearlyWithdrawStatusFailed(ctx, req.(*FindYearWithdraw))
+		return srv.(WithdrawServiceServer).FindYearlyWithdrawStatusFailed(ctx, req.(*FindYearWithdrawStatus))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WithdrawService_FindMonthlyWithdrawStatusSuccessCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindMonthlyWithdrawStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WithdrawServiceServer).FindMonthlyWithdrawStatusSuccessCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WithdrawService_FindMonthlyWithdrawStatusSuccessCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WithdrawServiceServer).FindMonthlyWithdrawStatusSuccessCardNumber(ctx, req.(*FindMonthlyWithdrawStatusCardNumber))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WithdrawService_FindYearlyWithdrawStatusSuccessCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindYearWithdrawStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WithdrawServiceServer).FindYearlyWithdrawStatusSuccessCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WithdrawService_FindYearlyWithdrawStatusSuccessCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WithdrawServiceServer).FindYearlyWithdrawStatusSuccessCardNumber(ctx, req.(*FindYearWithdrawStatusCardNumber))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WithdrawService_FindMonthlyWithdrawStatusFailedCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindMonthlyWithdrawStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WithdrawServiceServer).FindMonthlyWithdrawStatusFailedCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WithdrawService_FindMonthlyWithdrawStatusFailedCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WithdrawServiceServer).FindMonthlyWithdrawStatusFailedCardNumber(ctx, req.(*FindMonthlyWithdrawStatusCardNumber))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WithdrawService_FindYearlyWithdrawStatusFailedCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindYearWithdrawStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WithdrawServiceServer).FindYearlyWithdrawStatusFailedCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WithdrawService_FindYearlyWithdrawStatusFailedCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WithdrawServiceServer).FindYearlyWithdrawStatusFailedCardNumber(ctx, req.(*FindYearWithdrawStatusCardNumber))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _WithdrawService_FindMonthlyWithdraws_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearWithdraw)
+	in := new(FindYearWithdrawStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -546,13 +682,13 @@ func _WithdrawService_FindMonthlyWithdraws_Handler(srv interface{}, ctx context.
 		FullMethod: WithdrawService_FindMonthlyWithdraws_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WithdrawServiceServer).FindMonthlyWithdraws(ctx, req.(*FindYearWithdraw))
+		return srv.(WithdrawServiceServer).FindMonthlyWithdraws(ctx, req.(*FindYearWithdrawStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _WithdrawService_FindYearlyWithdraws_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearWithdraw)
+	in := new(FindYearWithdrawStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -564,7 +700,7 @@ func _WithdrawService_FindYearlyWithdraws_Handler(srv interface{}, ctx context.C
 		FullMethod: WithdrawService_FindYearlyWithdraws_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WithdrawServiceServer).FindYearlyWithdraws(ctx, req.(*FindYearWithdraw))
+		return srv.(WithdrawServiceServer).FindYearlyWithdraws(ctx, req.(*FindYearWithdrawStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -819,6 +955,22 @@ var WithdrawService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FindYearlyWithdrawStatusFailed",
 			Handler:    _WithdrawService_FindYearlyWithdrawStatusFailed_Handler,
+		},
+		{
+			MethodName: "FindMonthlyWithdrawStatusSuccessCardNumber",
+			Handler:    _WithdrawService_FindMonthlyWithdrawStatusSuccessCardNumber_Handler,
+		},
+		{
+			MethodName: "FindYearlyWithdrawStatusSuccessCardNumber",
+			Handler:    _WithdrawService_FindYearlyWithdrawStatusSuccessCardNumber_Handler,
+		},
+		{
+			MethodName: "FindMonthlyWithdrawStatusFailedCardNumber",
+			Handler:    _WithdrawService_FindMonthlyWithdrawStatusFailedCardNumber_Handler,
+		},
+		{
+			MethodName: "FindYearlyWithdrawStatusFailedCardNumber",
+			Handler:    _WithdrawService_FindYearlyWithdrawStatusFailedCardNumber_Handler,
 		},
 		{
 			MethodName: "FindMonthlyWithdraws",

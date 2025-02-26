@@ -393,6 +393,118 @@ func (q *Queries) GetMonthTransferStatusFailed(ctx context.Context, arg GetMonth
 	return items, nil
 }
 
+const getMonthTransferStatusFailedCardNumber = `-- name: GetMonthTransferStatusFailedCardNumber :many
+WITH monthly_data AS (
+    SELECT
+        EXTRACT(YEAR FROM t.transfer_time)::integer AS year,
+        EXTRACT(MONTH FROM t.transfer_time)::integer AS month,
+        COUNT(*) AS total_failed,
+        COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
+    FROM
+        transfers t
+    WHERE
+        t.deleted_at IS NULL
+        AND t.status = 'failed'
+        AND (t.transfer_from = $1 OR t.transfer_to = $1)
+        AND (
+            (t.transfer_time >= $2::timestamp AND t.transfer_time <= $3::timestamp)
+            OR (t.transfer_time >= $4::timestamp AND t.transfer_time <= $5::timestamp)
+        )
+    GROUP BY
+        EXTRACT(YEAR FROM t.transfer_time),
+        EXTRACT(MONTH FROM t.transfer_time)
+), formatted_data AS (
+    SELECT
+        year::text,
+        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
+        total_failed,
+        total_amount
+    FROM
+        monthly_data
+
+    UNION ALL
+
+    SELECT
+        EXTRACT(YEAR FROM $1::timestamp)::text AS year,
+        TO_CHAR($1::timestamp, 'Mon') AS month,
+        0 AS total_failed,
+        0 AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM monthly_data
+        WHERE year = EXTRACT(YEAR FROM $1::timestamp)::integer
+        AND month = EXTRACT(MONTH FROM $1::timestamp)::integer
+    )
+
+    UNION ALL
+
+    SELECT
+        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
+        TO_CHAR($3::timestamp, 'Mon') AS month,
+        0 AS total_failed,
+        0 AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM monthly_data
+        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
+        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
+    )
+)
+SELECT year, month, total_failed, total_amount FROM formatted_data
+ORDER BY
+    year DESC,
+    TO_DATE(month, 'Mon') DESC
+`
+
+type GetMonthTransferStatusFailedCardNumberParams struct {
+	TransferFrom string    `json:"transfer_from"`
+	Column2      time.Time `json:"column_2"`
+	Column3      time.Time `json:"column_3"`
+	Column4      time.Time `json:"column_4"`
+	Column5      time.Time `json:"column_5"`
+}
+
+type GetMonthTransferStatusFailedCardNumberRow struct {
+	Year        string `json:"year"`
+	Month       string `json:"month"`
+	TotalFailed int64  `json:"total_failed"`
+	TotalAmount int32  `json:"total_amount"`
+}
+
+func (q *Queries) GetMonthTransferStatusFailedCardNumber(ctx context.Context, arg GetMonthTransferStatusFailedCardNumberParams) ([]*GetMonthTransferStatusFailedCardNumberRow, error) {
+	rows, err := q.db.QueryContext(ctx, getMonthTransferStatusFailedCardNumber,
+		arg.TransferFrom,
+		arg.Column2,
+		arg.Column3,
+		arg.Column4,
+		arg.Column5,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetMonthTransferStatusFailedCardNumberRow
+	for rows.Next() {
+		var i GetMonthTransferStatusFailedCardNumberRow
+		if err := rows.Scan(
+			&i.Year,
+			&i.Month,
+			&i.TotalFailed,
+			&i.TotalAmount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getMonthTransferStatusSuccess = `-- name: GetMonthTransferStatusSuccess :many
 WITH monthly_data AS (
     SELECT
@@ -483,6 +595,118 @@ func (q *Queries) GetMonthTransferStatusSuccess(ctx context.Context, arg GetMont
 	var items []*GetMonthTransferStatusSuccessRow
 	for rows.Next() {
 		var i GetMonthTransferStatusSuccessRow
+		if err := rows.Scan(
+			&i.Year,
+			&i.Month,
+			&i.TotalSuccess,
+			&i.TotalAmount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getMonthTransferStatusSuccessCardNumber = `-- name: GetMonthTransferStatusSuccessCardNumber :many
+WITH monthly_data AS (
+    SELECT
+        EXTRACT(YEAR FROM t.transfer_time)::integer AS year,
+        EXTRACT(MONTH FROM t.transfer_time)::integer AS month,
+        COUNT(*) AS total_success,
+        COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
+    FROM
+        transfers t
+    WHERE
+        t.deleted_at IS NULL
+        AND t.status = 'success'
+        AND (t.transfer_from = $1 OR t.transfer_to = $1)
+        AND (
+            (t.transfer_time >= $2::timestamp AND t.transfer_time <= $3::timestamp)
+            OR (t.transfer_time >= $4::timestamp AND t.transfer_time <= $5::timestamp)
+        )
+    GROUP BY
+        EXTRACT(YEAR FROM t.transfer_time),
+        EXTRACT(MONTH FROM t.transfer_time)
+), formatted_data AS (
+    SELECT
+        year::text,
+        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
+        total_success,
+        total_amount
+    FROM
+        monthly_data
+
+    UNION ALL
+
+    SELECT
+        EXTRACT(YEAR FROM $1::timestamp)::text AS year,
+        TO_CHAR($1::timestamp, 'Mon') AS month,
+        0 AS total_success,
+        0 AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM monthly_data
+        WHERE year = EXTRACT(YEAR FROM $1::timestamp)::integer
+        AND month = EXTRACT(MONTH FROM $1::timestamp)::integer
+    )
+
+    UNION ALL
+
+    SELECT
+        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
+        TO_CHAR($3::timestamp, 'Mon') AS month,
+        0 AS total_success,
+        0 AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM monthly_data
+        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
+        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
+    )
+)
+SELECT year, month, total_success, total_amount FROM formatted_data
+ORDER BY
+    year DESC,
+    TO_DATE(month, 'Mon') DESC
+`
+
+type GetMonthTransferStatusSuccessCardNumberParams struct {
+	TransferFrom string    `json:"transfer_from"`
+	Column2      time.Time `json:"column_2"`
+	Column3      time.Time `json:"column_3"`
+	Column4      time.Time `json:"column_4"`
+	Column5      time.Time `json:"column_5"`
+}
+
+type GetMonthTransferStatusSuccessCardNumberRow struct {
+	Year         string `json:"year"`
+	Month        string `json:"month"`
+	TotalSuccess int64  `json:"total_success"`
+	TotalAmount  int32  `json:"total_amount"`
+}
+
+func (q *Queries) GetMonthTransferStatusSuccessCardNumber(ctx context.Context, arg GetMonthTransferStatusSuccessCardNumberParams) ([]*GetMonthTransferStatusSuccessCardNumberRow, error) {
+	rows, err := q.db.QueryContext(ctx, getMonthTransferStatusSuccessCardNumber,
+		arg.TransferFrom,
+		arg.Column2,
+		arg.Column3,
+		arg.Column4,
+		arg.Column5,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetMonthTransferStatusSuccessCardNumberRow
+	for rows.Next() {
+		var i GetMonthTransferStatusSuccessCardNumberRow
 		if err := rows.Scan(
 			&i.Year,
 			&i.Month,
@@ -1223,6 +1447,95 @@ func (q *Queries) GetYearlyTransferStatusFailed(ctx context.Context, dollar_1 in
 	return items, nil
 }
 
+const getYearlyTransferStatusFailedCardNumber = `-- name: GetYearlyTransferStatusFailedCardNumber :many
+WITH yearly_data AS (
+    SELECT
+        EXTRACT(YEAR FROM t.transfer_time)::integer AS year,
+        COUNT(*) AS total_failed,
+        COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
+    FROM
+        transfers t
+    WHERE
+        t.deleted_at IS NULL
+        AND t.status = 'failed'
+        AND (t.transfer_from = $1 OR t.transfer_to = $1)
+        AND (
+            EXTRACT(YEAR FROM t.transfer_time) = $2::integer
+            OR EXTRACT(YEAR FROM t.transfer_time) = $2::integer - 1
+        )
+    GROUP BY
+        EXTRACT(YEAR FROM t.transfer_time)
+), formatted_data AS (
+    SELECT
+        year::text,
+        total_failed::integer,
+        total_amount::integer
+    FROM
+        yearly_data
+
+    UNION ALL
+
+    SELECT
+        $1::text AS year,
+        0::integer AS total_failed,
+        0::integer AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM yearly_data
+        WHERE year = $1::integer
+    )
+
+    UNION ALL
+
+    SELECT
+        ($1::integer - 1)::text AS year,
+        0::integer AS total_failed,
+        0::integer AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM yearly_data
+        WHERE year = $1::integer - 1
+    )
+)
+SELECT year, total_failed, total_amount FROM formatted_data
+ORDER BY
+    year DESC
+`
+
+type GetYearlyTransferStatusFailedCardNumberParams struct {
+	TransferFrom string `json:"transfer_from"`
+	Column2      int32  `json:"column_2"`
+}
+
+type GetYearlyTransferStatusFailedCardNumberRow struct {
+	Year        string `json:"year"`
+	TotalFailed int32  `json:"total_failed"`
+	TotalAmount int32  `json:"total_amount"`
+}
+
+func (q *Queries) GetYearlyTransferStatusFailedCardNumber(ctx context.Context, arg GetYearlyTransferStatusFailedCardNumberParams) ([]*GetYearlyTransferStatusFailedCardNumberRow, error) {
+	rows, err := q.db.QueryContext(ctx, getYearlyTransferStatusFailedCardNumber, arg.TransferFrom, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetYearlyTransferStatusFailedCardNumberRow
+	for rows.Next() {
+		var i GetYearlyTransferStatusFailedCardNumberRow
+		if err := rows.Scan(&i.Year, &i.TotalFailed, &i.TotalAmount); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getYearlyTransferStatusSuccess = `-- name: GetYearlyTransferStatusSuccess :many
 WITH yearly_data AS (
     SELECT
@@ -1292,6 +1605,95 @@ func (q *Queries) GetYearlyTransferStatusSuccess(ctx context.Context, dollar_1 i
 	var items []*GetYearlyTransferStatusSuccessRow
 	for rows.Next() {
 		var i GetYearlyTransferStatusSuccessRow
+		if err := rows.Scan(&i.Year, &i.TotalSuccess, &i.TotalAmount); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getYearlyTransferStatusSuccessCardNumber = `-- name: GetYearlyTransferStatusSuccessCardNumber :many
+WITH yearly_data AS (
+    SELECT
+        EXTRACT(YEAR FROM t.transfer_time)::integer AS year,
+        COUNT(*) AS total_success,
+        COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
+    FROM
+        transfers t
+    WHERE
+        t.deleted_at IS NULL
+        AND t.status = 'success'
+        AND (t.transfer_from = $1 OR t.transfer_to = $1)
+        AND (
+            EXTRACT(YEAR FROM t.transfer_time) = $2::integer
+            OR EXTRACT(YEAR FROM t.transfer_time) = $2::integer - 1
+        )
+    GROUP BY
+        EXTRACT(YEAR FROM t.transfer_time)
+), formatted_data AS (
+    SELECT
+        year::text,
+        total_success::integer,
+        total_amount::integer
+    FROM
+        yearly_data
+
+    UNION ALL
+
+    SELECT
+        $1::text AS year,
+        0::integer AS total_success,
+        0::integer AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM yearly_data
+        WHERE year = $1::integer
+    )
+
+    UNION ALL
+
+    SELECT
+        ($1::integer - 1)::text AS year,
+        0::integer AS total_success,
+        0::integer AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM yearly_data
+        WHERE year = $1::integer - 1
+    )
+)
+SELECT year, total_success, total_amount FROM formatted_data
+ORDER BY
+    year DESC
+`
+
+type GetYearlyTransferStatusSuccessCardNumberParams struct {
+	TransferFrom string `json:"transfer_from"`
+	Column2      int32  `json:"column_2"`
+}
+
+type GetYearlyTransferStatusSuccessCardNumberRow struct {
+	Year         string `json:"year"`
+	TotalSuccess int32  `json:"total_success"`
+	TotalAmount  int32  `json:"total_amount"`
+}
+
+func (q *Queries) GetYearlyTransferStatusSuccessCardNumber(ctx context.Context, arg GetYearlyTransferStatusSuccessCardNumberParams) ([]*GetYearlyTransferStatusSuccessCardNumberRow, error) {
+	rows, err := q.db.QueryContext(ctx, getYearlyTransferStatusSuccessCardNumber, arg.TransferFrom, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetYearlyTransferStatusSuccessCardNumberRow
+	for rows.Next() {
+		var i GetYearlyTransferStatusSuccessCardNumberRow
 		if err := rows.Scan(&i.Year, &i.TotalSuccess, &i.TotalAmount); err != nil {
 			return nil, err
 		}

@@ -29,14 +29,18 @@ func NewHandlerTopup(client pb.TopupServiceClient, router *echo.Echo, logger log
 	routerTopup := router.Group("/api/topups")
 
 	routerTopup.GET("", topupHandler.FindAll)
-	routerTopup.GET("/card/:card_number", topupHandler.FindAllByCardNumber)
+	routerTopup.GET("/card-number/:card_number", topupHandler.FindAllByCardNumber)
 	routerTopup.GET("/:id", topupHandler.FindById)
 
 	routerTopup.GET("/monthly-success", topupHandler.FindMonthlyTopupStatusSuccess)
 	routerTopup.GET("/yearly-success", topupHandler.FindYearlyTopupStatusSuccess)
-
 	routerTopup.GET("/monthly-failed", topupHandler.FindMonthlyTopupStatusFailed)
 	routerTopup.GET("/yearly-failed", topupHandler.FindYearlyTopupStatusFailed)
+
+	routerTopup.GET("/monthly-success-by-card", topupHandler.FindMonthlyTopupStatusSuccessByCardNumber)
+	routerTopup.GET("/yearly-success-by-card", topupHandler.FindYearlyTopupStatusSuccessByCardNumber)
+	routerTopup.GET("/monthly-failed-by-card", topupHandler.FindMonthlyTopupStatusFailedByCardNumber)
+	routerTopup.GET("/yearly-failed-by-card", topupHandler.FindYearlyTopupStatusFailedByCardNumber)
 
 	routerTopup.GET("/monthly-methods", topupHandler.FindMonthlyTopupMethods)
 	routerTopup.GET("/yearly-methods", topupHandler.FindYearlyTopupMethods)
@@ -124,7 +128,7 @@ func (h topupHandleApi) FindAll(c echo.Context) error {
 // @Param search query string false "Search query"
 // @Success 200 {object} response.ApiResponsePaginationTopup "List of topups"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve topups data"
-// @Router /api/topups/{card_number} [get]
+// @Router /api/topups/card-number/{card_number} [get]
 func (h *topupHandleApi) FindAllByCardNumber(c echo.Context) error {
 	cardNumber := c.Param("card_number")
 	if cardNumber == "" {
@@ -293,7 +297,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusSuccess(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindYearlyTopupStatusSuccess(ctx, &pb.FindYearTopup{
+	res, err := h.client.FindYearlyTopupStatusSuccess(ctx, &pb.FindYearTopupStatus{
 		Year: int32(year),
 	})
 
@@ -390,8 +394,214 @@ func (h *topupHandleApi) FindYearlyTopupStatusFailed(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindYearlyTopupStatusFailed(ctx, &pb.FindYearTopup{
+	res, err := h.client.FindYearlyTopupStatusFailed(ctx, &pb.FindYearTopupStatus{
 		Year: int32(year),
+	})
+
+	if err != nil {
+		h.logger.Debug("Failed to retrieve yearly topup status failed", zap.Error(err))
+
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve yearly topup status failed: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseTopupYearStatusFailed(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindMonthlyTopupStatusSuccess retrieves the monthly top-up status for successful transactions.
+// @Summary Get monthly top-up status for successful transactions
+// @Tags Topup
+// @Security Bearer
+// @Description Retrieve the monthly top-up status for successful transactions by year and month.
+// @Accept json
+// @Produce json
+// @Param year query int true "Year"
+// @Param month query int true "Month"
+// @Param card_number query string true "Card Number"
+// @Success 200 {object} response.ApiResponseTopupMonthStatusSuccess "Monthly top-up status for successful transactions"
+// @Failure 400 {object} response.ErrorResponse "Invalid year or month"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up status for successful transactions"
+// @Router /api/topups/monthly-success [get]
+func (h *topupHandleApi) FindMonthlyTopupStatusSuccessByCardNumber(c echo.Context) error {
+	yearStr := c.QueryParam("year")
+	monthStr := c.QueryParam("month")
+	cardNumber := c.QueryParam("card_number")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	month, err := strconv.Atoi(monthStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid month",
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	res, err := h.client.FindMonthlyTopupStatusSuccessByCardNumber(ctx, &pb.FindMonthlyTopupStatusCardNumber{
+		Year:       int32(year),
+		Month:      int32(month),
+		CardNumber: cardNumber,
+	})
+
+	if err != nil {
+		h.logger.Debug("Failed to retrieve monthly topup status success", zap.Error(err))
+
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve monthly topup status success: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseTopupMonthStatusSuccess(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindYearlyTopupStatusSuccess retrieves the yearly top-up status for successful transactions.
+// @Summary Get yearly top-up status for successful transactions
+// @Tags Topup
+// @Security Bearer
+// @Description Retrieve the yearly top-up status for successful transactions by year.
+// @Accept json
+// @Produce json
+// @Param year query int true "Year"
+// @Param card_number query string true "Card Number"
+// @Success 200 {object} response.ApiResponseTopupYearStatusSuccess "Yearly top-up status for successful transactions"
+// @Failure 400 {object} response.ErrorResponse "Invalid year"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up status for successful transactions"
+// @Router /api/topups/yearly-success [get]
+func (h *topupHandleApi) FindYearlyTopupStatusSuccessByCardNumber(c echo.Context) error {
+	yearStr := c.QueryParam("year")
+	cardNumber := c.QueryParam("card_number")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	res, err := h.client.FindYearlyTopupStatusSuccessByCardNumber(ctx, &pb.FindYearTopupStatusCardNumber{
+		Year:       int32(year),
+		CardNumber: cardNumber,
+	})
+
+	if err != nil {
+		h.logger.Debug("Failed to retrieve yearly topup status success", zap.Error(err))
+
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve yearly topup status success: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseTopupYearStatusSuccess(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindMonthlyTopupStatusFailed retrieves the monthly top-up status for failed transactions.
+// @Summary Get monthly top-up status for failed transactions
+// @Tags Topup
+// @Security Bearer
+// @Description Retrieve the monthly top-up status for failed transactions by year and month.
+// @Accept json
+// @Produce json
+// @Param year query int true "Year"
+// @Param month query int true "Month"
+// @Param card_number query string true "Card Number"
+// @Success 200 {object} response.ApiResponseTopupMonthStatusFailed "Monthly top-up status for failed transactions"
+// @Failure 400 {object} response.ErrorResponse "Invalid year or month"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up status for failed transactions"
+// @Router /api/topups/monthly-failed [get]
+func (h *topupHandleApi) FindMonthlyTopupStatusFailedByCardNumber(c echo.Context) error {
+	yearStr := c.QueryParam("year")
+	monthStr := c.QueryParam("month")
+	cardNumber := c.QueryParam("card_number")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	month, err := strconv.Atoi(monthStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid month",
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	res, err := h.client.FindMonthlyTopupStatusFailedByCardNumber(ctx, &pb.FindMonthlyTopupStatusCardNumber{
+		Year:       int32(year),
+		Month:      int32(month),
+		CardNumber: cardNumber,
+	})
+
+	if err != nil {
+		h.logger.Debug("Failed to retrieve monthly topup status failed", zap.Error(err))
+
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve monthly topup status failed: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseTopupMonthStatusFailed(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindYearlyTopupStatusFailedByCardNumber retrieves the yearly top-up status for failed transactions.
+// @Summary Get yearly top-up status for failed transactions
+// @Tags Topup
+// @Security Bearer
+// @Description Retrieve the yearly top-up status for failed transactions by year.
+// @Accept json
+// @Produce json
+// @Param year query int true "Year"
+// @Param card_number query string true "Card Number"
+// @Success 200 {object} response.ApiResponseTopupYearStatusFailed "Yearly top-up status for failed transactions"
+// @Failure 400 {object} response.ErrorResponse "Invalid year"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up status for failed transactions"
+// @Router /api/topups/yearly-failed [get]
+func (h *topupHandleApi) FindYearlyTopupStatusFailedByCardNumber(c echo.Context) error {
+	yearStr := c.QueryParam("year")
+	cardNumber := c.QueryParam("card_number")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	res, err := h.client.FindYearlyTopupStatusFailedByCardNumber(ctx, &pb.FindYearTopupStatusCardNumber{
+		Year:       int32(year),
+		CardNumber: cardNumber,
 	})
 
 	if err != nil {
@@ -433,7 +643,7 @@ func (h *topupHandleApi) FindMonthlyTopupMethods(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindMonthlyTopupMethods(ctx, &pb.FindYearTopup{
+	res, err := h.client.FindMonthlyTopupMethods(ctx, &pb.FindYearTopupStatus{
 		Year: int32(year),
 	})
 	if err != nil {
@@ -474,7 +684,7 @@ func (h *topupHandleApi) FindYearlyTopupMethods(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindYearlyTopupMethods(ctx, &pb.FindYearTopup{
+	res, err := h.client.FindYearlyTopupMethods(ctx, &pb.FindYearTopupStatus{
 		Year: int32(year),
 	})
 	if err != nil {
@@ -515,7 +725,7 @@ func (h *topupHandleApi) FindMonthlyTopupAmounts(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindMonthlyTopupAmounts(ctx, &pb.FindYearTopup{
+	res, err := h.client.FindMonthlyTopupAmounts(ctx, &pb.FindYearTopupStatus{
 		Year: int32(year),
 	})
 	if err != nil {
@@ -556,7 +766,7 @@ func (h *topupHandleApi) FindYearlyTopupAmounts(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindYearlyTopupAmounts(ctx, &pb.FindYearTopup{
+	res, err := h.client.FindYearlyTopupAmounts(ctx, &pb.FindYearTopupStatus{
 		Year: int32(year),
 	})
 	if err != nil {
@@ -677,6 +887,7 @@ func (h *topupHandleApi) FindMonthlyTopupAmountsByCardNumber(c echo.Context) err
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
+
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{

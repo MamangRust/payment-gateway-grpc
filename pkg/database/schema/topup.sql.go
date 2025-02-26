@@ -270,6 +270,118 @@ func (q *Queries) GetMonthTopupStatusFailed(ctx context.Context, arg GetMonthTop
 	return items, nil
 }
 
+const getMonthTopupStatusFailedCardNumber = `-- name: GetMonthTopupStatusFailedCardNumber :many
+WITH monthly_data AS (
+    SELECT
+        EXTRACT(YEAR FROM t.topup_time)::integer AS year,
+        EXTRACT(MONTH FROM t.topup_time)::integer AS month,
+        COUNT(*) AS total_failed,
+        COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
+    FROM
+        topups t
+    WHERE
+        t.deleted_at IS NULL
+        AND t.status = 'failed'
+        AND t.card_number = $1
+        AND (
+            (t.topup_time >= $2::timestamp AND t.topup_time <= $3::timestamp)
+            OR (t.topup_time >= $4::timestamp AND t.topup_time <= $5::timestamp)
+        )
+    GROUP BY
+        EXTRACT(YEAR FROM t.topup_time),
+        EXTRACT(MONTH FROM t.topup_time)
+), formatted_data AS (
+    SELECT
+        year::text,
+        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
+        total_failed,
+        total_amount
+    FROM
+        monthly_data
+
+    UNION ALL
+
+    SELECT
+        EXTRACT(YEAR FROM $2::timestamp)::text AS year,
+        TO_CHAR($2::timestamp, 'Mon') AS month,
+        0 AS total_failed,
+        0 AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM monthly_data
+        WHERE year = EXTRACT(YEAR FROM $2::timestamp)::integer
+        AND month = EXTRACT(MONTH FROM $2::timestamp)::integer
+    )
+
+    UNION ALL
+
+    SELECT
+        EXTRACT(YEAR FROM $4::timestamp)::text AS year,
+        TO_CHAR($4::timestamp, 'Mon') AS month,
+        0 AS total_failed,
+        0 AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM monthly_data
+        WHERE year = EXTRACT(YEAR FROM $4::timestamp)::integer
+        AND month = EXTRACT(MONTH FROM $4::timestamp)::integer
+    )
+)
+SELECT year, month, total_failed, total_amount FROM formatted_data
+ORDER BY
+    year DESC,
+    TO_DATE(month, 'Mon') DESC
+`
+
+type GetMonthTopupStatusFailedCardNumberParams struct {
+	CardNumber string    `json:"card_number"`
+	Column2    time.Time `json:"column_2"`
+	Column3    time.Time `json:"column_3"`
+	Column4    time.Time `json:"column_4"`
+	Column5    time.Time `json:"column_5"`
+}
+
+type GetMonthTopupStatusFailedCardNumberRow struct {
+	Year        string `json:"year"`
+	Month       string `json:"month"`
+	TotalFailed int64  `json:"total_failed"`
+	TotalAmount int32  `json:"total_amount"`
+}
+
+func (q *Queries) GetMonthTopupStatusFailedCardNumber(ctx context.Context, arg GetMonthTopupStatusFailedCardNumberParams) ([]*GetMonthTopupStatusFailedCardNumberRow, error) {
+	rows, err := q.db.QueryContext(ctx, getMonthTopupStatusFailedCardNumber,
+		arg.CardNumber,
+		arg.Column2,
+		arg.Column3,
+		arg.Column4,
+		arg.Column5,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetMonthTopupStatusFailedCardNumberRow
+	for rows.Next() {
+		var i GetMonthTopupStatusFailedCardNumberRow
+		if err := rows.Scan(
+			&i.Year,
+			&i.Month,
+			&i.TotalFailed,
+			&i.TotalAmount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getMonthTopupStatusSuccess = `-- name: GetMonthTopupStatusSuccess :many
 WITH monthly_data AS (
     SELECT
@@ -360,6 +472,118 @@ func (q *Queries) GetMonthTopupStatusSuccess(ctx context.Context, arg GetMonthTo
 	var items []*GetMonthTopupStatusSuccessRow
 	for rows.Next() {
 		var i GetMonthTopupStatusSuccessRow
+		if err := rows.Scan(
+			&i.Year,
+			&i.Month,
+			&i.TotalSuccess,
+			&i.TotalAmount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getMonthTopupStatusSuccessCardNumber = `-- name: GetMonthTopupStatusSuccessCardNumber :many
+WITH monthly_data AS (
+    SELECT
+        EXTRACT(YEAR FROM t.topup_time)::integer AS year,
+        EXTRACT(MONTH FROM t.topup_time)::integer AS month,
+        COUNT(*) AS total_success,
+        COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
+    FROM
+        topups t
+    WHERE
+        t.deleted_at IS NULL
+        AND t.status = 'success'
+        AND t.card_number = $1
+        AND (
+            (t.topup_time >= $2::timestamp AND t.topup_time <= $3::timestamp)
+            OR (t.topup_time >= $4::timestamp AND t.topup_time <= $5::timestamp)
+        )
+    GROUP BY
+        EXTRACT(YEAR FROM t.topup_time),
+        EXTRACT(MONTH FROM t.topup_time)
+), formatted_data AS (
+    SELECT
+        year::text,
+        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
+        total_success,
+        total_amount
+    FROM
+        monthly_data
+
+    UNION ALL
+
+    SELECT
+        EXTRACT(YEAR FROM $2::timestamp)::text AS year,
+        TO_CHAR($2::timestamp, 'Mon') AS month,
+        0 AS total_success,
+        0 AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM monthly_data
+        WHERE year = EXTRACT(YEAR FROM $2::timestamp)::integer
+        AND month = EXTRACT(MONTH FROM $2::timestamp)::integer
+    )
+
+    UNION ALL
+
+    SELECT
+        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
+        TO_CHAR($3::timestamp, 'Mon') AS month,
+        0 AS total_success,
+        0 AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM monthly_data
+        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
+        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
+    )
+)
+SELECT year, month, total_success, total_amount FROM formatted_data
+ORDER BY
+    year DESC,
+    TO_DATE(month, 'Mon') DESC
+`
+
+type GetMonthTopupStatusSuccessCardNumberParams struct {
+	CardNumber string    `json:"card_number"`
+	Column2    time.Time `json:"column_2"`
+	Column3    time.Time `json:"column_3"`
+	Column4    time.Time `json:"column_4"`
+	Column5    time.Time `json:"column_5"`
+}
+
+type GetMonthTopupStatusSuccessCardNumberRow struct {
+	Year         string `json:"year"`
+	Month        string `json:"month"`
+	TotalSuccess int64  `json:"total_success"`
+	TotalAmount  int32  `json:"total_amount"`
+}
+
+func (q *Queries) GetMonthTopupStatusSuccessCardNumber(ctx context.Context, arg GetMonthTopupStatusSuccessCardNumberParams) ([]*GetMonthTopupStatusSuccessCardNumberRow, error) {
+	rows, err := q.db.QueryContext(ctx, getMonthTopupStatusSuccessCardNumber,
+		arg.CardNumber,
+		arg.Column2,
+		arg.Column3,
+		arg.Column4,
+		arg.Column5,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetMonthTopupStatusSuccessCardNumberRow
+	for rows.Next() {
+		var i GetMonthTopupStatusSuccessCardNumberRow
 		if err := rows.Scan(
 			&i.Year,
 			&i.Month,
@@ -1207,6 +1431,95 @@ func (q *Queries) GetYearlyTopupStatusFailed(ctx context.Context, dollar_1 int32
 	return items, nil
 }
 
+const getYearlyTopupStatusFailedCardNumber = `-- name: GetYearlyTopupStatusFailedCardNumber :many
+WITH yearly_data AS (
+    SELECT
+        EXTRACT(YEAR FROM t.topup_time)::integer AS year,
+        COUNT(*) AS total_failed,
+        COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
+    FROM
+        topups t
+    WHERE
+        t.deleted_at IS NULL
+        AND t.status = 'failed'
+        AND t.card_number = $1
+            AND (
+                EXTRACT(YEAR FROM t.topup_time) = $2::integer
+                OR EXTRACT(YEAR FROM t.topup_time) = $2::integer - 1
+        )
+    GROUP BY
+        EXTRACT(YEAR FROM t.topup_time)
+), formatted_data AS (
+    SELECT
+        year::text,
+        total_failed::integer,
+        total_amount::integer
+    FROM
+        yearly_data
+
+    UNION ALL
+
+    SELECT
+        $2::text AS year,
+        0::integer AS total_failed,
+        0::integer AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM yearly_data
+        WHERE year = $2::integer
+    )
+
+    UNION ALL
+
+    SELECT
+        ($2::integer - 1)::text AS year,
+        0::integer AS total_failed,
+        0::integer AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM yearly_data
+        WHERE year = $2::integer - 1
+    )
+)
+SELECT year, total_failed, total_amount FROM formatted_data
+ORDER BY
+    year DESC
+`
+
+type GetYearlyTopupStatusFailedCardNumberParams struct {
+	CardNumber string `json:"card_number"`
+	Column2    int32  `json:"column_2"`
+}
+
+type GetYearlyTopupStatusFailedCardNumberRow struct {
+	Year        string `json:"year"`
+	TotalFailed int32  `json:"total_failed"`
+	TotalAmount int32  `json:"total_amount"`
+}
+
+func (q *Queries) GetYearlyTopupStatusFailedCardNumber(ctx context.Context, arg GetYearlyTopupStatusFailedCardNumberParams) ([]*GetYearlyTopupStatusFailedCardNumberRow, error) {
+	rows, err := q.db.QueryContext(ctx, getYearlyTopupStatusFailedCardNumber, arg.CardNumber, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetYearlyTopupStatusFailedCardNumberRow
+	for rows.Next() {
+		var i GetYearlyTopupStatusFailedCardNumberRow
+		if err := rows.Scan(&i.Year, &i.TotalFailed, &i.TotalAmount); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getYearlyTopupStatusSuccess = `-- name: GetYearlyTopupStatusSuccess :many
 WITH yearly_data AS (
     SELECT
@@ -1276,6 +1589,95 @@ func (q *Queries) GetYearlyTopupStatusSuccess(ctx context.Context, dollar_1 int3
 	var items []*GetYearlyTopupStatusSuccessRow
 	for rows.Next() {
 		var i GetYearlyTopupStatusSuccessRow
+		if err := rows.Scan(&i.Year, &i.TotalSuccess, &i.TotalAmount); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getYearlyTopupStatusSuccessCardNumber = `-- name: GetYearlyTopupStatusSuccessCardNumber :many
+WITH yearly_data AS (
+    SELECT
+        EXTRACT(YEAR FROM t.topup_time)::integer AS year,
+        COUNT(*) AS total_success,
+        COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
+    FROM
+        topups t
+    WHERE
+        t.deleted_at IS NULL
+        AND t.status = 'success'
+        AND t.card_number = $1
+            AND (
+                EXTRACT(YEAR FROM t.topup_time) = $2::integer
+                OR EXTRACT(YEAR FROM t.topup_time) = $2::integer - 1
+        )
+    GROUP BY
+        EXTRACT(YEAR FROM t.topup_time)
+), formatted_data AS (
+    SELECT
+        year::text,
+        total_success::integer,
+        total_amount::integer
+    FROM
+        yearly_data
+
+    UNION ALL
+
+    SELECT
+        $2::text AS year,
+        0::integer AS total_success,
+        0::integer AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM yearly_data
+        WHERE year = $2::integer
+    )
+
+    UNION ALL
+
+    SELECT
+        ($2::integer - 1)::text AS year,
+        0::integer AS total_success,
+        0::integer AS total_amount
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM yearly_data
+        WHERE year = $2::integer - 1
+    )
+)
+SELECT year, total_success, total_amount FROM formatted_data
+ORDER BY
+    year DESC
+`
+
+type GetYearlyTopupStatusSuccessCardNumberParams struct {
+	CardNumber string `json:"card_number"`
+	Column2    int32  `json:"column_2"`
+}
+
+type GetYearlyTopupStatusSuccessCardNumberRow struct {
+	Year         string `json:"year"`
+	TotalSuccess int32  `json:"total_success"`
+	TotalAmount  int32  `json:"total_amount"`
+}
+
+func (q *Queries) GetYearlyTopupStatusSuccessCardNumber(ctx context.Context, arg GetYearlyTopupStatusSuccessCardNumberParams) ([]*GetYearlyTopupStatusSuccessCardNumberRow, error) {
+	rows, err := q.db.QueryContext(ctx, getYearlyTopupStatusSuccessCardNumber, arg.CardNumber, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetYearlyTopupStatusSuccessCardNumberRow
+	for rows.Next() {
+		var i GetYearlyTopupStatusSuccessCardNumberRow
 		if err := rows.Scan(&i.Year, &i.TotalSuccess, &i.TotalAmount); err != nil {
 			return nil, err
 		}

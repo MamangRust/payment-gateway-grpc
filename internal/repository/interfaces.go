@@ -190,6 +190,12 @@ type TopupRepository interface {
 	GetMonthTopupStatusFailed(year int, month int) ([]*record.TopupRecordMonthStatusFailed, error)
 	GetYearlyTopupStatusFailed(year int) ([]*record.TopupRecordYearStatusFailed, error)
 
+	GetMonthTopupStatusSuccessByCardNumber(card_number string, year int, month int) ([]*record.TopupRecordMonthStatusSuccess, error)
+	GetYearlyTopupStatusSuccessByCardNumber(card_number string, year int) ([]*record.TopupRecordYearStatusSuccess, error)
+
+	GetMonthTopupStatusFailedByCardNumber(card_number string, year int, month int) ([]*record.TopupRecordMonthStatusFailed, error)
+	GetYearlyTopupStatusFailedByCardNumber(card_number string, year int) ([]*record.TopupRecordYearStatusFailed, error)
+
 	GetMonthlyTopupMethods(year int) ([]*record.TopupMonthMethod, error)
 	GetYearlyTopupMethods(year int) ([]*record.TopupYearlyMethod, error)
 	GetMonthlyTopupAmounts(year int) ([]*record.TopupMonthAmount, error)
@@ -225,9 +231,13 @@ type TransactionRepository interface {
 
 	GetMonthTransactionStatusSuccess(year int, month int) ([]*record.TransactionRecordMonthStatusSuccess, error)
 	GetYearlyTransactionStatusSuccess(year int) ([]*record.TransactionRecordYearStatusSuccess, error)
-
 	GetMonthTransactionStatusFailed(year int, month int) ([]*record.TransactionRecordMonthStatusFailed, error)
 	GetYearlyTransactionStatusFailed(year int) ([]*record.TransactionRecordYearStatusFailed, error)
+
+	GetMonthTransactionStatusSuccessByCardNumber(card_number string, year int, month int) ([]*record.TransactionRecordMonthStatusSuccess, error)
+	GetYearlyTransactionStatusSuccessByCardNumber(card_number string, year int) ([]*record.TransactionRecordYearStatusSuccess, error)
+	GetMonthTransactionStatusFailedByCardNumber(card_number string, year int, month int) ([]*record.TransactionRecordMonthStatusFailed, error)
+	GetYearlyTransactionStatusFailedByCardNumber(card_number string, year int) ([]*record.TransactionRecordYearStatusFailed, error)
 
 	GetMonthlyPaymentMethods(year int) ([]*record.TransactionMonthMethod, error)
 	GetYearlyPaymentMethods(year int) ([]*record.TransactionYearMethod, error)
@@ -261,9 +271,13 @@ type TransferRepository interface {
 
 	GetMonthTransferStatusSuccess(year int, month int) ([]*record.TransferRecordMonthStatusSuccess, error)
 	GetYearlyTransferStatusSuccess(year int) ([]*record.TransferRecordYearStatusSuccess, error)
-
 	GetMonthTransferStatusFailed(year int, month int) ([]*record.TransferRecordMonthStatusFailed, error)
 	GetYearlyTransferStatusFailed(year int) ([]*record.TransferRecordYearStatusFailed, error)
+
+	GetMonthTransferStatusSuccessByCardNumber(cardNumber string, year int, month int) ([]*record.TransferRecordMonthStatusSuccess, error)
+	GetYearlyTransferStatusSuccessByCardNumber(cardNumber string, year int) ([]*record.TransferRecordYearStatusSuccess, error)
+	GetMonthTransferStatusFailedByCardNumber(cardNumber string, year int, month int) ([]*record.TransferRecordMonthStatusFailed, error)
+	GetYearlyTransferStatusFailedByCardNumber(cardNumber string, year int) ([]*record.TransferRecordYearStatusFailed, error)
 
 	GetMonthlyTransferAmounts(year int) ([]*record.TransferMonthAmount, error)
 	GetYearlyTransferAmounts(year int) ([]*record.TransferYearAmount, error)
@@ -297,9 +311,13 @@ type WithdrawRepository interface {
 
 	GetMonthWithdrawStatusSuccess(year int, month int) ([]*record.WithdrawRecordMonthStatusSuccess, error)
 	GetYearlyWithdrawStatusSuccess(year int) ([]*record.WithdrawRecordYearStatusSuccess, error)
-
 	GetMonthWithdrawStatusFailed(year int, month int) ([]*record.WithdrawRecordMonthStatusFailed, error)
 	GetYearlyWithdrawStatusFailed(year int) ([]*record.WithdrawRecordYearStatusFailed, error)
+
+	GetMonthWithdrawStatusSuccessByCardNumber(card_number string, year int, month int) ([]*record.WithdrawRecordMonthStatusSuccess, error)
+	GetYearlyWithdrawStatusSuccessByCardNumber(card_number string, year int) ([]*record.WithdrawRecordYearStatusSuccess, error)
+	GetMonthWithdrawStatusFailedByCardNumber(card_number string, year int, month int) ([]*record.WithdrawRecordMonthStatusFailed, error)
+	GetYearlyWithdrawStatusFailedByCardNumber(card_number string, year int) ([]*record.WithdrawRecordYearStatusFailed, error)
 
 	GetMonthlyWithdraws(year int) ([]*record.WithdrawMonthlyAmount, error)
 	GetYearlyWithdraws(year int) ([]*record.WithdrawYearlyAmount, error)

@@ -10,7 +10,7 @@ import "google/protobuf/empty.proto";
 option go_package = "MamangRust/paymentgatewaygrpc/internal/pb";
 
 
-message FindYearWithdraw{
+message FindYearWithdrawStatus{
     int32 year = 1;
 }
 
@@ -19,6 +19,20 @@ message FindMonthlyWithdrawStatus {
     int32 year = 1;
     int32 month = 2;
 }
+
+
+message FindYearWithdrawStatusCardNumber{
+    string card_number = 1;
+    int32 year = 2;
+}
+
+
+message FindMonthlyWithdrawStatusCardNumber{
+    string card_number = 1;
+    int32 year = 2;
+    int32 month = 3;
+}
+
 
 
 message FindYearWithdrawCardNumber{
@@ -200,14 +214,18 @@ service WithdrawService {
     rpc FindByIdWithdraw (FindByIdWithdrawRequest) returns (ApiResponseWithdraw);
 
     rpc FindMonthlyWithdrawStatusSuccess(FindMonthlyWithdrawStatus)returns(ApiResponseWithdrawMonthStatusSuccess){}
-    rpc FindYearlyWithdrawStatusSuccess(FindYearWithdraw)returns(ApiResponseWithdrawYearStatusSuccess){}
+    rpc FindYearlyWithdrawStatusSuccess(FindYearWithdrawStatus)returns(ApiResponseWithdrawYearStatusSuccess){}
     rpc FindMonthlyWithdrawStatusFailed(FindMonthlyWithdrawStatus)returns(ApiResponseWithdrawMonthStatusFailed){}
-    rpc FindYearlyWithdrawStatusFailed(FindYearWithdraw)returns(ApiResponseWithdrawYearStatusFailed){}
+    rpc FindYearlyWithdrawStatusFailed(FindYearWithdrawStatus)returns(ApiResponseWithdrawYearStatusFailed){}
+
+    rpc FindMonthlyWithdrawStatusSuccessCardNumber(FindMonthlyWithdrawStatusCardNumber)returns(ApiResponseWithdrawMonthStatusSuccess){}
+    rpc FindYearlyWithdrawStatusSuccessCardNumber(FindYearWithdrawStatusCardNumber)returns(ApiResponseWithdrawYearStatusSuccess){}
+    rpc FindMonthlyWithdrawStatusFailedCardNumber(FindMonthlyWithdrawStatusCardNumber)returns(ApiResponseWithdrawMonthStatusFailed){}
+    rpc FindYearlyWithdrawStatusFailedCardNumber(FindYearWithdrawStatusCardNumber)returns(ApiResponseWithdrawYearStatusFailed){}
 
 
-
-    rpc FindMonthlyWithdraws(FindYearWithdraw)returns(ApiResponseWithdrawMonthAmount){}
-    rpc FindYearlyWithdraws(FindYearWithdraw) returns(ApiResponseWithdrawYearAmount){}
+    rpc FindMonthlyWithdraws(FindYearWithdrawStatus)returns(ApiResponseWithdrawMonthAmount){}
+    rpc FindYearlyWithdraws(FindYearWithdrawStatus) returns(ApiResponseWithdrawYearAmount){}
 
     rpc FindMonthlyWithdrawsByCardNumber(FindYearWithdrawCardNumber)returns(ApiResponseWithdrawMonthAmount){}
     rpc FindYearlyWithdrawsByCardNumber(FindYearWithdrawCardNumber)returns(ApiResponseWithdrawYearAmount){}

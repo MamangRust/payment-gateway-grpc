@@ -13,13 +13,24 @@ message FindByYearCardNumberTransactionRequest {
     int32 year = 2;
 }
 
-message FindYearTransaction{
+message FindYearTransactionStatus{
     int32 year = 1;
 }
 
 message FindMonthlyTransactionStatus {
     int32 year = 1;
     int32 month = 2;
+}
+
+message FindYearTransactionStatusCardNumber{
+    string card_number = 1;
+    int32 year = 2;
+}
+
+message FindMonthlyTransactionStatusCardNumber {
+    string card_number = 1;
+    int32 year = 2;
+    int32 month = 3;
 }
 
 
@@ -237,15 +248,19 @@ service TransactionService {
     rpc FindByIdTransaction (FindByIdTransactionRequest) returns (ApiResponseTransaction);
 
     rpc FindMonthlyTransactionStatusSuccess(FindMonthlyTransactionStatus)returns(ApiResponseTransactionMonthStatusSuccess){}
-    rpc FindYearlyTransactionStatusSuccess(FindYearTransaction)returns(ApiResponseTransactionYearStatusSuccess){}
+    rpc FindYearlyTransactionStatusSuccess(FindYearTransactionStatus)returns(ApiResponseTransactionYearStatusSuccess){}
     rpc FindMonthlyTransactionStatusFailed(FindMonthlyTransactionStatus)returns(ApiResponseTransactionMonthStatusFailed){}
-    rpc FindYearlyTransactionStatusFailed(FindYearTransaction)returns(ApiResponseTransactionYearStatusFailed){}
+    rpc FindYearlyTransactionStatusFailed(FindYearTransactionStatus)returns(ApiResponseTransactionYearStatusFailed){}
 
+    rpc FindMonthlyTransactionStatusSuccessByCardNumber(FindMonthlyTransactionStatusCardNumber)returns(ApiResponseTransactionMonthStatusSuccess){}
+    rpc FindYearlyTransactionStatusSuccessByCardNumber(FindYearTransactionStatusCardNumber)returns(ApiResponseTransactionYearStatusSuccess){}
+    rpc FindMonthlyTransactionStatusFailedByCardNumber(FindMonthlyTransactionStatusCardNumber)returns(ApiResponseTransactionMonthStatusFailed){}
+    rpc FindYearlyTransactionStatusFailedByCardNumber(FindYearTransactionStatusCardNumber)returns(ApiResponseTransactionYearStatusFailed){}
 
-    rpc FindMonthlyPaymentMethods(FindYearTransaction)returns(ApiResponseTransactionMonthMethod){}
-    rpc FindYearlyPaymentMethods(FindYearTransaction)returns(ApiResponseTransactionYearMethod){}
-    rpc FindMonthlyAmounts(FindYearTransaction)returns(ApiResponseTransactionMonthAmount){}
-    rpc FindYearlyAmounts(FindYearTransaction)returns(ApiResponseTransactionYearAmount){}
+    rpc FindMonthlyPaymentMethods(FindYearTransactionStatus)returns(ApiResponseTransactionMonthMethod){}
+    rpc FindYearlyPaymentMethods(FindYearTransactionStatus)returns(ApiResponseTransactionYearMethod){}
+    rpc FindMonthlyAmounts(FindYearTransactionStatus)returns(ApiResponseTransactionMonthAmount){}
+    rpc FindYearlyAmounts(FindYearTransactionStatus)returns(ApiResponseTransactionYearAmount){}
 
     rpc FindMonthlyPaymentMethodsByCardNumber(FindByYearCardNumberTransactionRequest)returns(ApiResponseTransactionMonthMethod){}
     rpc FindYearlyPaymentMethodsByCardNumber(FindByYearCardNumberTransactionRequest)returns(ApiResponseTransactionYearMethod){}

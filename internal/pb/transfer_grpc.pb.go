@@ -26,6 +26,10 @@ const (
 	TransferService_FindYearlyTransferStatusSuccess_FullMethodName                = "/pb.TransferService/FindYearlyTransferStatusSuccess"
 	TransferService_FindMonthlyTransferStatusFailed_FullMethodName                = "/pb.TransferService/FindMonthlyTransferStatusFailed"
 	TransferService_FindYearlyTransferStatusFailed_FullMethodName                 = "/pb.TransferService/FindYearlyTransferStatusFailed"
+	TransferService_FindMonthlyTransferStatusSuccessByCardNumber_FullMethodName   = "/pb.TransferService/FindMonthlyTransferStatusSuccessByCardNumber"
+	TransferService_FindYearlyTransferStatusSuccessByCardNumber_FullMethodName    = "/pb.TransferService/FindYearlyTransferStatusSuccessByCardNumber"
+	TransferService_FindMonthlyTransferStatusFailedByCardNumber_FullMethodName    = "/pb.TransferService/FindMonthlyTransferStatusFailedByCardNumber"
+	TransferService_FindYearlyTransferStatusFailedByCardNumber_FullMethodName     = "/pb.TransferService/FindYearlyTransferStatusFailedByCardNumber"
 	TransferService_FindMonthlyTransferAmounts_FullMethodName                     = "/pb.TransferService/FindMonthlyTransferAmounts"
 	TransferService_FindYearlyTransferAmounts_FullMethodName                      = "/pb.TransferService/FindYearlyTransferAmounts"
 	TransferService_FindMonthlyTransferAmountsBySenderCardNumber_FullMethodName   = "/pb.TransferService/FindMonthlyTransferAmountsBySenderCardNumber"
@@ -52,11 +56,15 @@ type TransferServiceClient interface {
 	FindAllTransfer(ctx context.Context, in *FindAllTransferRequest, opts ...grpc.CallOption) (*ApiResponsePaginationTransfer, error)
 	FindByIdTransfer(ctx context.Context, in *FindByIdTransferRequest, opts ...grpc.CallOption) (*ApiResponseTransfer, error)
 	FindMonthlyTransferStatusSuccess(ctx context.Context, in *FindMonthlyTransferStatus, opts ...grpc.CallOption) (*ApiResponseTransferMonthStatusSuccess, error)
-	FindYearlyTransferStatusSuccess(ctx context.Context, in *FindYearTransfer, opts ...grpc.CallOption) (*ApiResponseTransferYearStatusSuccess, error)
+	FindYearlyTransferStatusSuccess(ctx context.Context, in *FindYearTransferStatus, opts ...grpc.CallOption) (*ApiResponseTransferYearStatusSuccess, error)
 	FindMonthlyTransferStatusFailed(ctx context.Context, in *FindMonthlyTransferStatus, opts ...grpc.CallOption) (*ApiResponseTransferMonthStatusFailed, error)
-	FindYearlyTransferStatusFailed(ctx context.Context, in *FindYearTransfer, opts ...grpc.CallOption) (*ApiResponseTransferYearStatusFailed, error)
-	FindMonthlyTransferAmounts(ctx context.Context, in *FindYearTransfer, opts ...grpc.CallOption) (*ApiResponseTransferMonthAmount, error)
-	FindYearlyTransferAmounts(ctx context.Context, in *FindYearTransfer, opts ...grpc.CallOption) (*ApiResponseTransferYearAmount, error)
+	FindYearlyTransferStatusFailed(ctx context.Context, in *FindYearTransferStatus, opts ...grpc.CallOption) (*ApiResponseTransferYearStatusFailed, error)
+	FindMonthlyTransferStatusSuccessByCardNumber(ctx context.Context, in *FindMonthlyTransferStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransferMonthStatusSuccess, error)
+	FindYearlyTransferStatusSuccessByCardNumber(ctx context.Context, in *FindYearTransferStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransferYearStatusSuccess, error)
+	FindMonthlyTransferStatusFailedByCardNumber(ctx context.Context, in *FindMonthlyTransferStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransferMonthStatusFailed, error)
+	FindYearlyTransferStatusFailedByCardNumber(ctx context.Context, in *FindYearTransferStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransferYearStatusFailed, error)
+	FindMonthlyTransferAmounts(ctx context.Context, in *FindYearTransferStatus, opts ...grpc.CallOption) (*ApiResponseTransferMonthAmount, error)
+	FindYearlyTransferAmounts(ctx context.Context, in *FindYearTransferStatus, opts ...grpc.CallOption) (*ApiResponseTransferYearAmount, error)
 	FindMonthlyTransferAmountsBySenderCardNumber(ctx context.Context, in *FindByCardNumberTransferRequest, opts ...grpc.CallOption) (*ApiResponseTransferMonthAmount, error)
 	FindMonthlyTransferAmountsByReceiverCardNumber(ctx context.Context, in *FindByCardNumberTransferRequest, opts ...grpc.CallOption) (*ApiResponseTransferMonthAmount, error)
 	FindYearlyTransferAmountsBySenderCardNumber(ctx context.Context, in *FindByCardNumberTransferRequest, opts ...grpc.CallOption) (*ApiResponseTransferYearAmount, error)
@@ -112,7 +120,7 @@ func (c *transferServiceClient) FindMonthlyTransferStatusSuccess(ctx context.Con
 	return out, nil
 }
 
-func (c *transferServiceClient) FindYearlyTransferStatusSuccess(ctx context.Context, in *FindYearTransfer, opts ...grpc.CallOption) (*ApiResponseTransferYearStatusSuccess, error) {
+func (c *transferServiceClient) FindYearlyTransferStatusSuccess(ctx context.Context, in *FindYearTransferStatus, opts ...grpc.CallOption) (*ApiResponseTransferYearStatusSuccess, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTransferYearStatusSuccess)
 	err := c.cc.Invoke(ctx, TransferService_FindYearlyTransferStatusSuccess_FullMethodName, in, out, cOpts...)
@@ -132,7 +140,7 @@ func (c *transferServiceClient) FindMonthlyTransferStatusFailed(ctx context.Cont
 	return out, nil
 }
 
-func (c *transferServiceClient) FindYearlyTransferStatusFailed(ctx context.Context, in *FindYearTransfer, opts ...grpc.CallOption) (*ApiResponseTransferYearStatusFailed, error) {
+func (c *transferServiceClient) FindYearlyTransferStatusFailed(ctx context.Context, in *FindYearTransferStatus, opts ...grpc.CallOption) (*ApiResponseTransferYearStatusFailed, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTransferYearStatusFailed)
 	err := c.cc.Invoke(ctx, TransferService_FindYearlyTransferStatusFailed_FullMethodName, in, out, cOpts...)
@@ -142,7 +150,47 @@ func (c *transferServiceClient) FindYearlyTransferStatusFailed(ctx context.Conte
 	return out, nil
 }
 
-func (c *transferServiceClient) FindMonthlyTransferAmounts(ctx context.Context, in *FindYearTransfer, opts ...grpc.CallOption) (*ApiResponseTransferMonthAmount, error) {
+func (c *transferServiceClient) FindMonthlyTransferStatusSuccessByCardNumber(ctx context.Context, in *FindMonthlyTransferStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransferMonthStatusSuccess, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseTransferMonthStatusSuccess)
+	err := c.cc.Invoke(ctx, TransferService_FindMonthlyTransferStatusSuccessByCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *transferServiceClient) FindYearlyTransferStatusSuccessByCardNumber(ctx context.Context, in *FindYearTransferStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransferYearStatusSuccess, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseTransferYearStatusSuccess)
+	err := c.cc.Invoke(ctx, TransferService_FindYearlyTransferStatusSuccessByCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *transferServiceClient) FindMonthlyTransferStatusFailedByCardNumber(ctx context.Context, in *FindMonthlyTransferStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransferMonthStatusFailed, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseTransferMonthStatusFailed)
+	err := c.cc.Invoke(ctx, TransferService_FindMonthlyTransferStatusFailedByCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *transferServiceClient) FindYearlyTransferStatusFailedByCardNumber(ctx context.Context, in *FindYearTransferStatusCardNumber, opts ...grpc.CallOption) (*ApiResponseTransferYearStatusFailed, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApiResponseTransferYearStatusFailed)
+	err := c.cc.Invoke(ctx, TransferService_FindYearlyTransferStatusFailedByCardNumber_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *transferServiceClient) FindMonthlyTransferAmounts(ctx context.Context, in *FindYearTransferStatus, opts ...grpc.CallOption) (*ApiResponseTransferMonthAmount, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTransferMonthAmount)
 	err := c.cc.Invoke(ctx, TransferService_FindMonthlyTransferAmounts_FullMethodName, in, out, cOpts...)
@@ -152,7 +200,7 @@ func (c *transferServiceClient) FindMonthlyTransferAmounts(ctx context.Context, 
 	return out, nil
 }
 
-func (c *transferServiceClient) FindYearlyTransferAmounts(ctx context.Context, in *FindYearTransfer, opts ...grpc.CallOption) (*ApiResponseTransferYearAmount, error) {
+func (c *transferServiceClient) FindYearlyTransferAmounts(ctx context.Context, in *FindYearTransferStatus, opts ...grpc.CallOption) (*ApiResponseTransferYearAmount, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ApiResponseTransferYearAmount)
 	err := c.cc.Invoke(ctx, TransferService_FindYearlyTransferAmounts_FullMethodName, in, out, cOpts...)
@@ -319,11 +367,15 @@ type TransferServiceServer interface {
 	FindAllTransfer(context.Context, *FindAllTransferRequest) (*ApiResponsePaginationTransfer, error)
 	FindByIdTransfer(context.Context, *FindByIdTransferRequest) (*ApiResponseTransfer, error)
 	FindMonthlyTransferStatusSuccess(context.Context, *FindMonthlyTransferStatus) (*ApiResponseTransferMonthStatusSuccess, error)
-	FindYearlyTransferStatusSuccess(context.Context, *FindYearTransfer) (*ApiResponseTransferYearStatusSuccess, error)
+	FindYearlyTransferStatusSuccess(context.Context, *FindYearTransferStatus) (*ApiResponseTransferYearStatusSuccess, error)
 	FindMonthlyTransferStatusFailed(context.Context, *FindMonthlyTransferStatus) (*ApiResponseTransferMonthStatusFailed, error)
-	FindYearlyTransferStatusFailed(context.Context, *FindYearTransfer) (*ApiResponseTransferYearStatusFailed, error)
-	FindMonthlyTransferAmounts(context.Context, *FindYearTransfer) (*ApiResponseTransferMonthAmount, error)
-	FindYearlyTransferAmounts(context.Context, *FindYearTransfer) (*ApiResponseTransferYearAmount, error)
+	FindYearlyTransferStatusFailed(context.Context, *FindYearTransferStatus) (*ApiResponseTransferYearStatusFailed, error)
+	FindMonthlyTransferStatusSuccessByCardNumber(context.Context, *FindMonthlyTransferStatusCardNumber) (*ApiResponseTransferMonthStatusSuccess, error)
+	FindYearlyTransferStatusSuccessByCardNumber(context.Context, *FindYearTransferStatusCardNumber) (*ApiResponseTransferYearStatusSuccess, error)
+	FindMonthlyTransferStatusFailedByCardNumber(context.Context, *FindMonthlyTransferStatusCardNumber) (*ApiResponseTransferMonthStatusFailed, error)
+	FindYearlyTransferStatusFailedByCardNumber(context.Context, *FindYearTransferStatusCardNumber) (*ApiResponseTransferYearStatusFailed, error)
+	FindMonthlyTransferAmounts(context.Context, *FindYearTransferStatus) (*ApiResponseTransferMonthAmount, error)
+	FindYearlyTransferAmounts(context.Context, *FindYearTransferStatus) (*ApiResponseTransferYearAmount, error)
 	FindMonthlyTransferAmountsBySenderCardNumber(context.Context, *FindByCardNumberTransferRequest) (*ApiResponseTransferMonthAmount, error)
 	FindMonthlyTransferAmountsByReceiverCardNumber(context.Context, *FindByCardNumberTransferRequest) (*ApiResponseTransferMonthAmount, error)
 	FindYearlyTransferAmountsBySenderCardNumber(context.Context, *FindByCardNumberTransferRequest) (*ApiResponseTransferYearAmount, error)
@@ -358,19 +410,31 @@ func (UnimplementedTransferServiceServer) FindByIdTransfer(context.Context, *Fin
 func (UnimplementedTransferServiceServer) FindMonthlyTransferStatusSuccess(context.Context, *FindMonthlyTransferStatus) (*ApiResponseTransferMonthStatusSuccess, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTransferStatusSuccess not implemented")
 }
-func (UnimplementedTransferServiceServer) FindYearlyTransferStatusSuccess(context.Context, *FindYearTransfer) (*ApiResponseTransferYearStatusSuccess, error) {
+func (UnimplementedTransferServiceServer) FindYearlyTransferStatusSuccess(context.Context, *FindYearTransferStatus) (*ApiResponseTransferYearStatusSuccess, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTransferStatusSuccess not implemented")
 }
 func (UnimplementedTransferServiceServer) FindMonthlyTransferStatusFailed(context.Context, *FindMonthlyTransferStatus) (*ApiResponseTransferMonthStatusFailed, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTransferStatusFailed not implemented")
 }
-func (UnimplementedTransferServiceServer) FindYearlyTransferStatusFailed(context.Context, *FindYearTransfer) (*ApiResponseTransferYearStatusFailed, error) {
+func (UnimplementedTransferServiceServer) FindYearlyTransferStatusFailed(context.Context, *FindYearTransferStatus) (*ApiResponseTransferYearStatusFailed, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTransferStatusFailed not implemented")
 }
-func (UnimplementedTransferServiceServer) FindMonthlyTransferAmounts(context.Context, *FindYearTransfer) (*ApiResponseTransferMonthAmount, error) {
+func (UnimplementedTransferServiceServer) FindMonthlyTransferStatusSuccessByCardNumber(context.Context, *FindMonthlyTransferStatusCardNumber) (*ApiResponseTransferMonthStatusSuccess, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTransferStatusSuccessByCardNumber not implemented")
+}
+func (UnimplementedTransferServiceServer) FindYearlyTransferStatusSuccessByCardNumber(context.Context, *FindYearTransferStatusCardNumber) (*ApiResponseTransferYearStatusSuccess, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTransferStatusSuccessByCardNumber not implemented")
+}
+func (UnimplementedTransferServiceServer) FindMonthlyTransferStatusFailedByCardNumber(context.Context, *FindMonthlyTransferStatusCardNumber) (*ApiResponseTransferMonthStatusFailed, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTransferStatusFailedByCardNumber not implemented")
+}
+func (UnimplementedTransferServiceServer) FindYearlyTransferStatusFailedByCardNumber(context.Context, *FindYearTransferStatusCardNumber) (*ApiResponseTransferYearStatusFailed, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTransferStatusFailedByCardNumber not implemented")
+}
+func (UnimplementedTransferServiceServer) FindMonthlyTransferAmounts(context.Context, *FindYearTransferStatus) (*ApiResponseTransferMonthAmount, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMonthlyTransferAmounts not implemented")
 }
-func (UnimplementedTransferServiceServer) FindYearlyTransferAmounts(context.Context, *FindYearTransfer) (*ApiResponseTransferYearAmount, error) {
+func (UnimplementedTransferServiceServer) FindYearlyTransferAmounts(context.Context, *FindYearTransferStatus) (*ApiResponseTransferYearAmount, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindYearlyTransferAmounts not implemented")
 }
 func (UnimplementedTransferServiceServer) FindMonthlyTransferAmountsBySenderCardNumber(context.Context, *FindByCardNumberTransferRequest) (*ApiResponseTransferMonthAmount, error) {
@@ -494,7 +558,7 @@ func _TransferService_FindMonthlyTransferStatusSuccess_Handler(srv interface{}, 
 }
 
 func _TransferService_FindYearlyTransferStatusSuccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTransfer)
+	in := new(FindYearTransferStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -506,7 +570,7 @@ func _TransferService_FindYearlyTransferStatusSuccess_Handler(srv interface{}, c
 		FullMethod: TransferService_FindYearlyTransferStatusSuccess_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransferServiceServer).FindYearlyTransferStatusSuccess(ctx, req.(*FindYearTransfer))
+		return srv.(TransferServiceServer).FindYearlyTransferStatusSuccess(ctx, req.(*FindYearTransferStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -530,7 +594,7 @@ func _TransferService_FindMonthlyTransferStatusFailed_Handler(srv interface{}, c
 }
 
 func _TransferService_FindYearlyTransferStatusFailed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTransfer)
+	in := new(FindYearTransferStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -542,13 +606,85 @@ func _TransferService_FindYearlyTransferStatusFailed_Handler(srv interface{}, ct
 		FullMethod: TransferService_FindYearlyTransferStatusFailed_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransferServiceServer).FindYearlyTransferStatusFailed(ctx, req.(*FindYearTransfer))
+		return srv.(TransferServiceServer).FindYearlyTransferStatusFailed(ctx, req.(*FindYearTransferStatus))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TransferService_FindMonthlyTransferStatusSuccessByCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindMonthlyTransferStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TransferServiceServer).FindMonthlyTransferStatusSuccessByCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TransferService_FindMonthlyTransferStatusSuccessByCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TransferServiceServer).FindMonthlyTransferStatusSuccessByCardNumber(ctx, req.(*FindMonthlyTransferStatusCardNumber))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TransferService_FindYearlyTransferStatusSuccessByCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindYearTransferStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TransferServiceServer).FindYearlyTransferStatusSuccessByCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TransferService_FindYearlyTransferStatusSuccessByCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TransferServiceServer).FindYearlyTransferStatusSuccessByCardNumber(ctx, req.(*FindYearTransferStatusCardNumber))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TransferService_FindMonthlyTransferStatusFailedByCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindMonthlyTransferStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TransferServiceServer).FindMonthlyTransferStatusFailedByCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TransferService_FindMonthlyTransferStatusFailedByCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TransferServiceServer).FindMonthlyTransferStatusFailedByCardNumber(ctx, req.(*FindMonthlyTransferStatusCardNumber))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TransferService_FindYearlyTransferStatusFailedByCardNumber_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindYearTransferStatusCardNumber)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TransferServiceServer).FindYearlyTransferStatusFailedByCardNumber(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TransferService_FindYearlyTransferStatusFailedByCardNumber_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TransferServiceServer).FindYearlyTransferStatusFailedByCardNumber(ctx, req.(*FindYearTransferStatusCardNumber))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _TransferService_FindMonthlyTransferAmounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTransfer)
+	in := new(FindYearTransferStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -560,13 +696,13 @@ func _TransferService_FindMonthlyTransferAmounts_Handler(srv interface{}, ctx co
 		FullMethod: TransferService_FindMonthlyTransferAmounts_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransferServiceServer).FindMonthlyTransferAmounts(ctx, req.(*FindYearTransfer))
+		return srv.(TransferServiceServer).FindMonthlyTransferAmounts(ctx, req.(*FindYearTransferStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _TransferService_FindYearlyTransferAmounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindYearTransfer)
+	in := new(FindYearTransferStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -578,7 +714,7 @@ func _TransferService_FindYearlyTransferAmounts_Handler(srv interface{}, ctx con
 		FullMethod: TransferService_FindYearlyTransferAmounts_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransferServiceServer).FindYearlyTransferAmounts(ctx, req.(*FindYearTransfer))
+		return srv.(TransferServiceServer).FindYearlyTransferAmounts(ctx, req.(*FindYearTransferStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -883,6 +1019,22 @@ var TransferService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FindYearlyTransferStatusFailed",
 			Handler:    _TransferService_FindYearlyTransferStatusFailed_Handler,
+		},
+		{
+			MethodName: "FindMonthlyTransferStatusSuccessByCardNumber",
+			Handler:    _TransferService_FindMonthlyTransferStatusSuccessByCardNumber_Handler,
+		},
+		{
+			MethodName: "FindYearlyTransferStatusSuccessByCardNumber",
+			Handler:    _TransferService_FindYearlyTransferStatusSuccessByCardNumber_Handler,
+		},
+		{
+			MethodName: "FindMonthlyTransferStatusFailedByCardNumber",
+			Handler:    _TransferService_FindMonthlyTransferStatusFailedByCardNumber_Handler,
+		},
+		{
+			MethodName: "FindYearlyTransferStatusFailedByCardNumber",
+			Handler:    _TransferService_FindYearlyTransferStatusFailedByCardNumber_Handler,
 		},
 		{
 			MethodName: "FindMonthlyTransferAmounts",

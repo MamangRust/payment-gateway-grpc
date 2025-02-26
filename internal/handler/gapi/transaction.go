@@ -143,7 +143,7 @@ func (s *transactionHandleGrpc) FindMonthlyTransactionStatusSuccess(ctx context.
 	return so, nil
 }
 
-func (s *transactionHandleGrpc) FindYearlyTransactionStatusSuccess(ctx context.Context, req *pb.FindYearTransaction) (*pb.ApiResponseTransactionYearStatusSuccess, error) {
+func (s *transactionHandleGrpc) FindYearlyTransactionStatusSuccess(ctx context.Context, req *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionYearStatusSuccess, error) {
 	if req.GetYear() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
 			Status:  "error",
@@ -190,7 +190,7 @@ func (s *transactionHandleGrpc) FindMonthlyTransactionStatusFailed(ctx context.C
 	return so, nil
 }
 
-func (s *transactionHandleGrpc) FindYearlyTransactionStatusFailed(ctx context.Context, req *pb.FindYearTransaction) (*pb.ApiResponseTransactionYearStatusFailed, error) {
+func (s *transactionHandleGrpc) FindYearlyTransactionStatusFailed(ctx context.Context, req *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionYearStatusFailed, error) {
 	if req.GetYear() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
 			Status:  "error",
@@ -213,7 +213,105 @@ func (s *transactionHandleGrpc) FindYearlyTransactionStatusFailed(ctx context.Co
 	return so, nil
 }
 
-func (t *transactionHandleGrpc) FindMonthlyPaymentMethods(ctx context.Context, req *pb.FindYearTransaction) (*pb.ApiResponseTransactionMonthMethod, error) {
+func (s *transactionHandleGrpc) FindMonthlyTransactionStatusSuccessByCardNumber(ctx context.Context, req *pb.FindMonthlyTransactionStatusCardNumber) (*pb.ApiResponseTransactionMonthStatusSuccess, error) {
+	if req.GetYear() <= 0 || req.GetMonth() <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year or month",
+		})
+	}
+
+	year := req.GetYear()
+	month := req.GetMonth()
+	cardNumber := req.GetCardNumber()
+
+	records, errResponse := s.transactionService.FindMonthTransactionStatusSuccessByCardNumber(cardNumber, int(year), int(month))
+	if errResponse != nil {
+		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch monthly Transaction status success: " + errResponse.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseTransactionMonthStatusSuccess("success", "Successfully fetched monthly Transaction status success", records)
+
+	return so, nil
+}
+
+func (s *transactionHandleGrpc) FindYearlyTransactionStatusSuccessByCardNumber(ctx context.Context, req *pb.FindYearTransactionStatusCardNumber) (*pb.ApiResponseTransactionYearStatusSuccess, error) {
+	if req.GetYear() <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	year := req.GetYear()
+	cardNumber := req.GetCardNumber()
+
+	records, errResponse := s.transactionService.FindYearlyTransactionStatusSuccessByCardNumber(cardNumber, int(year))
+	if errResponse != nil {
+		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch yearly Transaction status success: " + errResponse.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseTransactionYearStatusSuccess("success", "Successfully fetched yearly Transaction status success", records)
+
+	return so, nil
+}
+
+func (s *transactionHandleGrpc) FindMonthlyTransactionStatusFailedByCardNumber(ctx context.Context, req *pb.FindMonthlyTransactionStatusCardNumber) (*pb.ApiResponseTransactionMonthStatusFailed, error) {
+	if req.GetYear() <= 0 || req.GetMonth() <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year or month",
+		})
+	}
+
+	year := req.GetYear()
+	month := req.GetMonth()
+	cardNumber := req.GetCardNumber()
+
+	records, errResponse := s.transactionService.FindMonthTransactionStatusFailedByCardNumber(cardNumber, int(year), int(month))
+	if errResponse != nil {
+		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch monthly Transaction status Failed: " + errResponse.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseTransactionMonthStatusFailed("success", "success fetched monthly Transaction status Failed", records)
+
+	return so, nil
+}
+
+func (s *transactionHandleGrpc) FindYearlyTransactionStatusFailedByCardNumber(ctx context.Context, req *pb.FindYearTransactionStatusCardNumber) (*pb.ApiResponseTransactionYearStatusFailed, error) {
+	if req.GetYear() <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	year := req.GetYear()
+	cardNumber := req.GetCardNumber()
+
+	records, errResponse := s.transactionService.FindYearlyTransactionStatusFailedByCardNumber(cardNumber, int(year))
+	if errResponse != nil {
+		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch yearly Transaction status Failed: " + errResponse.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseTransactionYearStatusFailed("success", "success fetched yearly Transaction status Failed", records)
+
+	return so, nil
+}
+
+func (t *transactionHandleGrpc) FindMonthlyPaymentMethods(ctx context.Context, req *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionMonthMethod, error) {
 	methods, err := t.transactionService.FindMonthlyPaymentMethods(int(req.GetYear()))
 
 	if err != nil {
@@ -228,7 +326,7 @@ func (t *transactionHandleGrpc) FindMonthlyPaymentMethods(ctx context.Context, r
 	return so, nil
 }
 
-func (t *transactionHandleGrpc) FindYearlyPaymentMethods(ctx context.Context, req *pb.FindYearTransaction) (*pb.ApiResponseTransactionYearMethod, error) {
+func (t *transactionHandleGrpc) FindYearlyPaymentMethods(ctx context.Context, req *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionYearMethod, error) {
 	methods, err := t.transactionService.FindYearlyPaymentMethods(int(req.GetYear()))
 
 	if err != nil {
@@ -243,7 +341,7 @@ func (t *transactionHandleGrpc) FindYearlyPaymentMethods(ctx context.Context, re
 	return so, nil
 }
 
-func (t *transactionHandleGrpc) FindMonthlyAmounts(ctx context.Context, req *pb.FindYearTransaction) (*pb.ApiResponseTransactionMonthAmount, error) {
+func (t *transactionHandleGrpc) FindMonthlyAmounts(ctx context.Context, req *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionMonthAmount, error) {
 	amounts, err := t.transactionService.FindMonthlyAmounts(int(req.GetYear()))
 
 	if err != nil {
@@ -258,7 +356,7 @@ func (t *transactionHandleGrpc) FindMonthlyAmounts(ctx context.Context, req *pb.
 	return so, nil
 }
 
-func (t *transactionHandleGrpc) FindYearlyAmounts(ctx context.Context, req *pb.FindYearTransaction) (*pb.ApiResponseTransactionYearAmount, error) {
+func (t *transactionHandleGrpc) FindYearlyAmounts(ctx context.Context, req *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionYearAmount, error) {
 	amounts, err := t.transactionService.FindYearlyAmounts(int(req.GetYear()))
 
 	if err != nil {

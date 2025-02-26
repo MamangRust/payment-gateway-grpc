@@ -134,7 +134,7 @@ func (s *withdrawHandleGrpc) FindMonthlyWithdrawStatusSuccess(ctx context.Contex
 	return so, nil
 }
 
-func (s *withdrawHandleGrpc) FindYearlyWithdrawStatusSuccess(ctx context.Context, req *pb.FindYearWithdraw) (*pb.ApiResponseWithdrawYearStatusSuccess, error) {
+func (s *withdrawHandleGrpc) FindYearlyWithdrawStatusSuccess(ctx context.Context, req *pb.FindYearWithdrawStatus) (*pb.ApiResponseWithdrawYearStatusSuccess, error) {
 	if req.GetYear() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
 			Status:  "error",
@@ -181,7 +181,7 @@ func (s *withdrawHandleGrpc) FindMonthlyWithdrawStatusFailed(ctx context.Context
 	return so, nil
 }
 
-func (s *withdrawHandleGrpc) FindYearlyWithdrawStatusFailed(ctx context.Context, req *pb.FindYearWithdraw) (*pb.ApiResponseWithdrawYearStatusFailed, error) {
+func (s *withdrawHandleGrpc) FindYearlyWithdrawStatusFailed(ctx context.Context, req *pb.FindYearWithdrawStatus) (*pb.ApiResponseWithdrawYearStatusFailed, error) {
 	if req.GetYear() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
 			Status:  "error",
@@ -204,7 +204,105 @@ func (s *withdrawHandleGrpc) FindYearlyWithdrawStatusFailed(ctx context.Context,
 	return so, nil
 }
 
-func (w *withdrawHandleGrpc) FindMonthlyWithdraws(ctx context.Context, req *pb.FindYearWithdraw) (*pb.ApiResponseWithdrawMonthAmount, error) {
+func (s *withdrawHandleGrpc) FindMonthlyWithdrawStatusSuccessCardNumber(ctx context.Context, req *pb.FindMonthlyWithdrawStatusCardNumber) (*pb.ApiResponseWithdrawMonthStatusSuccess, error) {
+	if req.GetYear() <= 0 || req.GetMonth() <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year or month",
+		})
+	}
+
+	year := req.GetYear()
+	month := req.GetMonth()
+	cardNumber := req.GetCardNumber()
+
+	records, errResponse := s.withdrawService.FindMonthWithdrawStatusSuccessByCardNumber(cardNumber, int(year), int(month))
+	if errResponse != nil {
+		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch monthly Withdraw status success: " + errResponse.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseWithdrawMonthStatusSuccess("success", "Successfully fetched withdraw", records)
+
+	return so, nil
+}
+
+func (s *withdrawHandleGrpc) FindYearlyWithdrawStatusSuccessCardNumber(ctx context.Context, req *pb.FindYearWithdrawStatusCardNumber) (*pb.ApiResponseWithdrawYearStatusSuccess, error) {
+	if req.GetYear() <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	year := req.GetYear()
+	cardNumber := req.GetCardNumber()
+
+	records, errResponse := s.withdrawService.FindYearlyWithdrawStatusSuccessByCardNumber(cardNumber, int(year))
+	if errResponse != nil {
+		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch yearly Withdraw status success: " + errResponse.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseWithdrawYearStatusSuccess("success", "Successfully fetched yearly Withdraw status success", records)
+
+	return so, nil
+}
+
+func (s *withdrawHandleGrpc) FindMonthlyWithdrawStatusFailedCardNumber(ctx context.Context, req *pb.FindMonthlyWithdrawStatusCardNumber) (*pb.ApiResponseWithdrawMonthStatusFailed, error) {
+	if req.GetYear() <= 0 || req.GetMonth() <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year or month",
+		})
+	}
+
+	year := req.GetYear()
+	month := req.GetMonth()
+	cardNumber := req.GetCardNumber()
+
+	records, errResponse := s.withdrawService.FindMonthWithdrawStatusFailedByCardNumber(cardNumber, int(year), int(month))
+	if errResponse != nil {
+		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch monthly Withdraw status failed: " + errResponse.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseWithdrawMonthStatusFailed("success", "Successfully fetched monthly Withdraw status failed", records)
+
+	return so, nil
+}
+
+func (s *withdrawHandleGrpc) FindYearlyWithdrawStatusFailedCardNumber(ctx context.Context, req *pb.FindYearWithdrawStatusCardNumber) (*pb.ApiResponseWithdrawYearStatusFailed, error) {
+	if req.GetYear() <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	year := req.GetYear()
+	cardNumber := req.GetCardNumber()
+
+	records, errResponse := s.withdrawService.FindYearlyWithdrawStatusFailedByCardNumber(cardNumber, int(year))
+	if errResponse != nil {
+		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch yearly Withdraw status failed: " + errResponse.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseWithdrawYearStatusFailed("success", "Successfully fetched yearly Withdraw status failed", records)
+
+	return so, nil
+}
+
+func (w *withdrawHandleGrpc) FindMonthlyWithdraws(ctx context.Context, req *pb.FindYearWithdrawStatus) (*pb.ApiResponseWithdrawMonthAmount, error) {
 	withdraws, err := w.withdrawService.FindMonthlyWithdraws(int(req.GetYear()))
 
 	if err != nil {
@@ -219,7 +317,7 @@ func (w *withdrawHandleGrpc) FindMonthlyWithdraws(ctx context.Context, req *pb.F
 	return so, nil
 }
 
-func (w *withdrawHandleGrpc) FindYearlyWithdraws(ctx context.Context, req *pb.FindYearWithdraw) (*pb.ApiResponseWithdrawYearAmount, error) {
+func (w *withdrawHandleGrpc) FindYearlyWithdraws(ctx context.Context, req *pb.FindYearWithdrawStatus) (*pb.ApiResponseWithdrawYearAmount, error) {
 	withdraws, err := w.withdrawService.FindYearlyWithdraws(int(req.GetYear()))
 
 	if err != nil {

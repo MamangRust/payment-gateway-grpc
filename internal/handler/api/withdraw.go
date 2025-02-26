@@ -30,15 +30,19 @@ func NewHandlerWithdraw(client pb.WithdrawServiceClient, router *echo.Echo, logg
 	routerWithdraw := router.Group("/api/withdraws")
 
 	routerWithdraw.GET("", withdrawHandler.FindAll)
-	routerWithdraw.GET("/card/:card_number", withdrawHandler.FindByCardNumber)
+	routerWithdraw.GET("/card-number/:card_number", withdrawHandler.FindAllByCardNumber)
 
 	routerWithdraw.GET("/:id", withdrawHandler.FindById)
 
 	routerWithdraw.GET("/monthly-success", withdrawHandler.FindMonthlyWithdrawStatusSuccess)
 	routerWithdraw.GET("/yearly-success", withdrawHandler.FindYearlyWithdrawStatusSuccess)
-
 	routerWithdraw.GET("/monthly-failed", withdrawHandler.FindMonthlyWithdrawStatusFailed)
 	routerWithdraw.GET("/yearly-failed", withdrawHandler.FindYearlyWithdrawStatusFailed)
+
+	routerWithdraw.GET("/monthly-success-by-card", withdrawHandler.FindMonthlyWithdrawStatusSuccessByCardNumber)
+	routerWithdraw.GET("/yearly-success-by-card", withdrawHandler.FindYearlyWithdrawStatusSuccessByCardNumber)
+	routerWithdraw.GET("/monthly-failed-by-card", withdrawHandler.FindMonthlyWithdrawStatusFailedByCardNumber)
+	routerWithdraw.GET("/yearly-failed-by-card", withdrawHandler.FindYearlyWithdrawStatusFailedByCardNumber)
 
 	routerWithdraw.GET("/monthly-amount", withdrawHandler.FindMonthlyWithdraws)
 	routerWithdraw.GET("/yearly-amount", withdrawHandler.FindYearlyWithdraws)
@@ -105,7 +109,9 @@ func (h *withdrawHandleApi) FindAll(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponsePaginationWithdraw(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Find all withdraw records by card number
@@ -120,7 +126,7 @@ func (h *withdrawHandleApi) FindAll(c echo.Context) error {
 // @Param search query string false "Search query"
 // @Success 200 {object} response.ApiResponsePaginationWithdraw "List of withdraw records"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve withdraw data"
-// @Router /api/withdraw/card/{card_number} [get]
+// @Router /api/withdraw/card-number/{card_number} [get]
 func (h *withdrawHandleApi) FindAllByCardNumber(c echo.Context) error {
 	cardNumber := c.Param("card_number")
 	if cardNumber == "" {
@@ -162,7 +168,9 @@ func (h *withdrawHandleApi) FindAllByCardNumber(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponsePaginationWithdraw(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Find a withdraw by ID
@@ -205,7 +213,9 @@ func (h *withdrawHandleApi) FindById(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, withdraw)
+	so := h.mapping.ToApiResponseWithdraw(withdraw)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindMonthlyWithdrawStatusSuccess retrieves the monthly withdraw status for successful transactions.
@@ -257,7 +267,9 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusSuccess(c echo.Context) err
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdrawMonthStatusSuccess(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindYearlyWithdrawStatusSuccess retrieves the yearly withdraw status for successful transactions.
@@ -285,7 +297,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusSuccess(c echo.Context) erro
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindYearlyWithdrawStatusSuccess(ctx, &pb.FindYearWithdraw{
+	res, err := h.client.FindYearlyWithdrawStatusSuccess(ctx, &pb.FindYearWithdrawStatus{
 		Year: int32(year),
 	})
 
@@ -298,7 +310,9 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusSuccess(c echo.Context) erro
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdrawYearStatusSuccess(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindMonthlyWithdrawStatusFailed retrieves the monthly withdraw status for failed transactions.
@@ -350,7 +364,9 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusFailed(c echo.Context) erro
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdrawMonthStatusFailed(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindYearlyWithdrawStatusFailed retrieves the yearly withdraw status for failed transactions.
@@ -378,7 +394,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusFailed(c echo.Context) error
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindYearlyWithdrawStatusFailed(ctx, &pb.FindYearWithdraw{
+	res, err := h.client.FindYearlyWithdrawStatusFailed(ctx, &pb.FindYearWithdrawStatus{
 		Year: int32(year),
 	})
 
@@ -391,7 +407,215 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusFailed(c echo.Context) error
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdrawYearStatusFailed(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindMonthlyWithdrawStatusSuccessByCardNumber retrieves the monthly withdraw status for successful transactions.
+// @Summary Get monthly withdraw status for successful transactions
+// @Tags Withdraw
+// @Security Bearer
+// @Description Retrieve the monthly withdraw status for successful transactions by year and month.
+// @Accept json
+// @Produce json
+// @Param year query int true "Year"
+// @Param month query int true "Month"
+// @Param card_number query string true "Card Number"
+// @Success 200 {object} response.ApiResponseWithdrawMonthStatusSuccess "Monthly withdraw status for successful transactions"
+// @Failure 400 {object} response.ErrorResponse "Invalid year or month"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly withdraw status for successful transactions"
+// @Router /api/withdraws/monthly-success-by-card [get]
+func (h *withdrawHandleApi) FindMonthlyWithdrawStatusSuccessByCardNumber(c echo.Context) error {
+	yearStr := c.QueryParam("year")
+	monthStr := c.QueryParam("month")
+	cardNumber := c.QueryParam("card_number")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	month, err := strconv.Atoi(monthStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid month",
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	res, err := h.client.FindMonthlyWithdrawStatusSuccessCardNumber(ctx, &pb.FindMonthlyWithdrawStatusCardNumber{
+		Year:       int32(year),
+		Month:      int32(month),
+		CardNumber: cardNumber,
+	})
+
+	if err != nil {
+		h.logger.Debug("Failed to retrieve monthly Withdraw status success", zap.Error(err))
+
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve monthly Withdraw status success: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseWithdrawMonthStatusSuccess(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindYearlyWithdrawStatusSuccessByCardNumber retrieves the yearly withdraw status for successful transactions.
+// @Summary Get yearly withdraw status for successful transactions
+// @Tags Withdraw
+// @Security Bearer
+// @Description Retrieve the yearly withdraw status for successful transactions by year.
+// @Accept json
+// @Produce json
+// @Param year query int true "Year"
+// @Param card_number query string true "Card Number"
+// @Success 200 {object} response.ApiResponseWithdrawYearStatusSuccess "Yearly withdraw status for successful transactions"
+// @Failure 400 {object} response.ErrorResponse "Invalid year"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly withdraw status for successful transactions"
+// @Router /api/withdraws/yearly-success-by-card-number [get]
+func (h *withdrawHandleApi) FindYearlyWithdrawStatusSuccessByCardNumber(c echo.Context) error {
+	yearStr := c.QueryParam("year")
+	card_number := c.QueryParam("card_number")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	res, err := h.client.FindYearlyWithdrawStatusSuccessCardNumber(ctx, &pb.FindYearWithdrawStatusCardNumber{
+		CardNumber: card_number,
+		Year:       int32(year),
+	})
+
+	if err != nil {
+		h.logger.Debug("Failed to retrieve yearly Withdraw status success", zap.Error(err))
+
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve yearly Withdraw status success: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseWithdrawYearStatusSuccess(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindMonthlyWithdrawStatusFailedByCardNumber retrieves the monthly withdraw status for failed transactions.
+// @Summary Get monthly withdraw status for failed transactions
+// @Tags Withdraw
+// @Security Bearer
+// @Description Retrieve the monthly withdraw status for failed transactions by year and month.
+// @Accept json
+// @Produce json
+// @Param year query int true "Year"
+// @Param month query int true "Month"
+// @Param card_number query string true "Card Number"
+// @Success 200 {object} response.ApiResponseWithdrawMonthStatusFailed "Monthly withdraw status for failed transactions"
+// @Failure 400 {object} response.ErrorResponse "Invalid year or month"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly withdraw status for failed transactions"
+// @Router /api/withdraws/monthly-failed-by-card [get]
+func (h *withdrawHandleApi) FindMonthlyWithdrawStatusFailedByCardNumber(c echo.Context) error {
+	yearStr := c.QueryParam("year")
+	monthStr := c.QueryParam("month")
+	card_number := c.QueryParam("card_number")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	month, err := strconv.Atoi(monthStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid month",
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	res, err := h.client.FindMonthlyWithdrawStatusFailedCardNumber(ctx, &pb.FindMonthlyWithdrawStatusCardNumber{
+		Year:       int32(year),
+		Month:      int32(month),
+		CardNumber: card_number,
+	})
+
+	if err != nil {
+		h.logger.Debug("Failed to retrieve monthly Withdraw status Failed", zap.Error(err))
+
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve monthly Withdraw status Failed: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseWithdrawMonthStatusFailed(res)
+
+	return c.JSON(http.StatusOK, so)
+}
+
+// FindYearlyWithdrawStatusFailedByCardNumber retrieves the yearly withdraw status for failed transactions.
+// @Summary Get yearly withdraw status for failed transactions
+// @Tags Withdraw
+// @Security Bearer
+// @Description Retrieve the yearly withdraw status for failed transactions by year.
+// @Accept json
+// @Produce json
+// @Param year query int true "Year"
+// @Param card_number query string true "Card Number"
+// @Success 200 {object} response.ApiResponseWithdrawYearStatusSuccess "Yearly withdraw status for failed transactions"
+// @Failure 400 {object} response.ErrorResponse "Invalid year"
+// @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly withdraw status for failed transactions"
+// @Router /api/withdraws/yearly-failed-by-card [get]
+func (h *withdrawHandleApi) FindYearlyWithdrawStatusFailedByCardNumber(c echo.Context) error {
+	yearStr := c.QueryParam("year")
+	cardNumber := c.QueryParam("card_number")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year",
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	res, err := h.client.FindYearlyWithdrawStatusFailedCardNumber(ctx, &pb.FindYearWithdrawStatusCardNumber{
+		CardNumber: cardNumber,
+		Year:       int32(year),
+	})
+
+	if err != nil {
+		h.logger.Debug("Failed to retrieve yearly Withdraw status Failed", zap.Error(err))
+
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve yearly Withdraw status Failed: " + err.Error(),
+		})
+	}
+
+	so := h.mapping.ToApiResponseWithdrawYearStatusFailed(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindMonthlyWithdraws retrieves the monthly withdraws for a specific year.
@@ -419,7 +643,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdraws(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindMonthlyWithdraws(ctx, &pb.FindYearWithdraw{
+	res, err := h.client.FindMonthlyWithdraws(ctx, &pb.FindYearWithdrawStatus{
 		Year: int32(year),
 	})
 	if err != nil {
@@ -430,7 +654,9 @@ func (h *withdrawHandleApi) FindMonthlyWithdraws(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdrawMonthAmount(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindYearlyWithdraws retrieves the yearly withdraws for a specific year.
@@ -458,7 +684,7 @@ func (h *withdrawHandleApi) FindYearlyWithdraws(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindYearlyWithdraws(ctx, &pb.FindYearWithdraw{
+	res, err := h.client.FindYearlyWithdraws(ctx, &pb.FindYearWithdrawStatus{
 		Year: int32(year),
 	})
 	if err != nil {
@@ -469,7 +695,9 @@ func (h *withdrawHandleApi) FindYearlyWithdraws(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdrawYearAmount(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindMonthlyWithdrawsByCardNumber retrieves the monthly withdraws for a specific card number and year.
@@ -511,7 +739,9 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawsByCardNumber(c echo.Context) err
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdrawMonthAmount(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // FindYearlyWithdrawsByCardNumber retrieves the yearly withdraws for a specific card number and year.
@@ -553,7 +783,9 @@ func (h *withdrawHandleApi) FindYearlyWithdrawsByCardNumber(c echo.Context) erro
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdrawYearAmount(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Find a withdraw by card number
@@ -587,7 +819,9 @@ func (h *withdrawHandleApi) FindByCardNumber(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, withdraw)
+	so := h.mapping.ToApiResponsesWithdraw(withdraw)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Retrieve all active withdraw data
@@ -631,7 +865,9 @@ func (h *withdrawHandleApi) FindByActive(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponsePaginationWithdrawDeleteAt(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Retrieve trashed withdraw data
@@ -675,7 +911,9 @@ func (h *withdrawHandleApi) FindByTrashed(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponsePaginationWithdrawDeleteAt(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Create a new withdraw
@@ -727,7 +965,9 @@ func (h *withdrawHandleApi) Create(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdraw(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Update an existing withdraw
@@ -792,7 +1032,9 @@ func (h *withdrawHandleApi) Update(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdraw(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Trash a withdraw by ID
@@ -833,7 +1075,9 @@ func (h *withdrawHandleApi) TrashWithdraw(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdraw(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Restore a withdraw by ID
@@ -873,7 +1117,9 @@ func (h *withdrawHandleApi) RestoreWithdraw(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdraw(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Permanently delete a withdraw by ID
@@ -914,7 +1160,9 @@ func (h *withdrawHandleApi) DeleteWithdrawPermanent(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdrawDelete(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Restore a withdraw all
@@ -942,7 +1190,9 @@ func (h *withdrawHandleApi) RestoreAllWithdraw(c echo.Context) error {
 
 	h.logger.Debug("Successfully restored all withdraw")
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdrawAll(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Summary Permanently delete a withdraw by ID
@@ -971,5 +1221,7 @@ func (h *withdrawHandleApi) DeleteAllWithdrawPermanent(c echo.Context) error {
 
 	h.logger.Debug("Successfully deleted all withdraw permanently")
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseWithdrawAll(res)
+
+	return c.JSON(http.StatusOK, so)
 }

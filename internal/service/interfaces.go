@@ -126,7 +126,6 @@ type SaldoService interface {
 
 	FindMonthlyTotalSaldoBalance(year int, month int) ([]*response.SaldoMonthTotalBalanceResponse, *response.ErrorResponse)
 	FindYearTotalSaldoBalance(year int) ([]*response.SaldoYearTotalBalanceResponse, *response.ErrorResponse)
-
 	FindMonthlySaldoBalances(year int) ([]*response.SaldoMonthBalanceResponse, *response.ErrorResponse)
 	FindYearlySaldoBalances(year int) ([]*response.SaldoYearBalanceResponse, *response.ErrorResponse)
 
@@ -151,9 +150,13 @@ type TopupService interface {
 
 	FindMonthTopupStatusSuccess(year int, month int) ([]*response.TopupResponseMonthStatusSuccess, *response.ErrorResponse)
 	FindYearlyTopupStatusSuccess(year int) ([]*response.TopupResponseYearStatusSuccess, *response.ErrorResponse)
-
 	FindMonthTopupStatusFailed(year int, month int) ([]*response.TopupResponseMonthStatusFailed, *response.ErrorResponse)
 	FindYearlyTopupStatusFailed(year int) ([]*response.TopupResponseYearStatusFailed, *response.ErrorResponse)
+
+	FindMonthTopupStatusSuccessByCardNumber(card_number string, year int, month int) ([]*response.TopupResponseMonthStatusSuccess, *response.ErrorResponse)
+	FindYearlyTopupStatusSuccessByCardNumber(card_number string, year int) ([]*response.TopupResponseYearStatusSuccess, *response.ErrorResponse)
+	FindMonthTopupStatusFailedByCardNumber(card_number string, year int, month int) ([]*response.TopupResponseMonthStatusFailed, *response.ErrorResponse)
+	FindYearlyTopupStatusFailedByCardNumber(card_number string, year int) ([]*response.TopupResponseYearStatusFailed, *response.ErrorResponse)
 
 	FindMonthlyTopupMethods(year int) ([]*response.TopupMonthMethodResponse, *response.ErrorResponse)
 	FindYearlyTopupMethods(year int) ([]*response.TopupYearlyMethodResponse, *response.ErrorResponse)
@@ -185,9 +188,13 @@ type TransactionService interface {
 
 	FindMonthTransactionStatusSuccess(year int, month int) ([]*response.TransactionResponseMonthStatusSuccess, *response.ErrorResponse)
 	FindYearlyTransactionStatusSuccess(year int) ([]*response.TransactionResponseYearStatusSuccess, *response.ErrorResponse)
-
 	FindMonthTransactionStatusFailed(year int, month int) ([]*response.TransactionResponseMonthStatusFailed, *response.ErrorResponse)
 	FindYearlyTransactionStatusFailed(year int) ([]*response.TransactionResponseYearStatusFailed, *response.ErrorResponse)
+
+	FindMonthTransactionStatusSuccessByCardNumber(card_number string, year int, month int) ([]*response.TransactionResponseMonthStatusSuccess, *response.ErrorResponse)
+	FindYearlyTransactionStatusSuccessByCardNumber(card_number string, year int) ([]*response.TransactionResponseYearStatusSuccess, *response.ErrorResponse)
+	FindMonthTransactionStatusFailedByCardNumber(card_number string, year int, month int) ([]*response.TransactionResponseMonthStatusFailed, *response.ErrorResponse)
+	FindYearlyTransactionStatusFailedByCardNumber(card_number string, year int) ([]*response.TransactionResponseYearStatusFailed, *response.ErrorResponse)
 
 	FindMonthlyPaymentMethods(year int) ([]*response.TransactionMonthMethodResponse, *response.ErrorResponse)
 	FindYearlyPaymentMethods(year int) ([]*response.TransactionYearMethodResponse, *response.ErrorResponse)
@@ -218,9 +225,13 @@ type TransferService interface {
 
 	FindMonthTransferStatusSuccess(year int, month int) ([]*response.TransferResponseMonthStatusSuccess, *response.ErrorResponse)
 	FindYearlyTransferStatusSuccess(year int) ([]*response.TransferResponseYearStatusSuccess, *response.ErrorResponse)
-
 	FindMonthTransferStatusFailed(year int, month int) ([]*response.TransferResponseMonthStatusFailed, *response.ErrorResponse)
 	FindYearlyTransferStatusFailed(year int) ([]*response.TransferResponseYearStatusFailed, *response.ErrorResponse)
+
+	FindMonthTransferStatusSuccessByCardNumber(cardNumber string, year int, month int) ([]*response.TransferResponseMonthStatusSuccess, *response.ErrorResponse)
+	FindYearlyTransferStatusSuccessByCardNumber(cardNumber string, year int) ([]*response.TransferResponseYearStatusSuccess, *response.ErrorResponse)
+	FindMonthTransferStatusFailedByCardNumber(cardNumber string, year int, month int) ([]*response.TransferResponseMonthStatusFailed, *response.ErrorResponse)
+	FindYearlyTransferStatusFailedByCardNumber(cardNumber string, year int) ([]*response.TransferResponseYearStatusFailed, *response.ErrorResponse)
 
 	FindMonthlyTransferAmounts(year int) ([]*response.TransferMonthAmountResponse, *response.ErrorResponse)
 	FindYearlyTransferAmounts(year int) ([]*response.TransferYearAmountResponse, *response.ErrorResponse)
@@ -266,9 +277,13 @@ type WithdrawService interface {
 
 	FindMonthWithdrawStatusSuccess(year int, month int) ([]*response.WithdrawResponseMonthStatusSuccess, *response.ErrorResponse)
 	FindYearlyWithdrawStatusSuccess(year int) ([]*response.WithdrawResponseYearStatusSuccess, *response.ErrorResponse)
-
 	FindMonthWithdrawStatusFailed(year int, month int) ([]*response.WithdrawResponseMonthStatusFailed, *response.ErrorResponse)
 	FindYearlyWithdrawStatusFailed(year int) ([]*response.WithdrawResponseYearStatusFailed, *response.ErrorResponse)
+
+	FindMonthWithdrawStatusSuccessByCardNumber(card_number string, year int, month int) ([]*response.WithdrawResponseMonthStatusSuccess, *response.ErrorResponse)
+	FindYearlyWithdrawStatusSuccessByCardNumber(card_number string, year int) ([]*response.WithdrawResponseYearStatusSuccess, *response.ErrorResponse)
+	FindMonthWithdrawStatusFailedByCardNumber(card_number string, year int, month int) ([]*response.WithdrawResponseMonthStatusFailed, *response.ErrorResponse)
+	FindYearlyWithdrawStatusFailedByCardNumber(card_number string, year int) ([]*response.WithdrawResponseYearStatusFailed, *response.ErrorResponse)
 
 	FindMonthlyWithdraws(year int) ([]*response.WithdrawMonthlyAmountResponse, *response.ErrorResponse)
 	FindYearlyWithdraws(year int) ([]*response.WithdrawYearlyAmountResponse, *response.ErrorResponse)

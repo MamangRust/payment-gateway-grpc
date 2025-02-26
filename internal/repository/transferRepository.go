@@ -129,6 +129,84 @@ func (r *transferRepository) GetYearlyTransferStatusFailed(year int) ([]*record.
 	return so, nil
 }
 
+func (r *transferRepository) GetMonthTransferStatusSuccessByCardNumber(card_number string, year int, month int) ([]*record.TransferRecordMonthStatusSuccess, error) {
+	currentDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	prevDate := currentDate.AddDate(0, -1, 0)
+
+	lastDayCurrentMonth := currentDate.AddDate(0, 1, -1)
+	lastDayPrevMonth := prevDate.AddDate(0, 1, -1)
+
+	res, err := r.db.GetMonthTransferStatusSuccessCardNumber(r.ctx, db.GetMonthTransferStatusSuccessCardNumberParams{
+		TransferFrom: card_number,
+		Column2:      currentDate,
+		Column3:      lastDayCurrentMonth,
+		Column4:      prevDate,
+		Column5:      lastDayPrevMonth,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get month top-up status success for year %d and month %d: %w", year, month, err)
+	}
+
+	so := r.mapping.ToTransferRecordsMonthStatusSuccessCardNumber(res)
+
+	return so, nil
+}
+
+func (r *transferRepository) GetYearlyTransferStatusSuccessByCardNumber(card_number string, year int) ([]*record.TransferRecordYearStatusSuccess, error) {
+	res, err := r.db.GetYearlyTransferStatusSuccessCardNumber(r.ctx, db.GetYearlyTransferStatusSuccessCardNumberParams{
+		TransferFrom: card_number,
+		Column2:      int32(year),
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get yearly top-up status success for year %d: %w", year, err)
+	}
+
+	so := r.mapping.ToTransferRecordsYearStatusSuccessCardNumber(res)
+
+	return so, nil
+}
+
+func (r *transferRepository) GetMonthTransferStatusFailedByCardNumber(card_number string, year int, month int) ([]*record.TransferRecordMonthStatusFailed, error) {
+	currentDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	prevDate := currentDate.AddDate(0, -1, 0)
+
+	lastDayCurrentMonth := currentDate.AddDate(0, 1, -1)
+	lastDayPrevMonth := prevDate.AddDate(0, 1, -1)
+
+	res, err := r.db.GetMonthTransferStatusFailedCardNumber(r.ctx, db.GetMonthTransferStatusFailedCardNumberParams{
+		TransferFrom: card_number,
+		Column2:      currentDate,
+		Column3:      lastDayCurrentMonth,
+		Column4:      prevDate,
+		Column5:      lastDayPrevMonth,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get month top-up status failed for year %d and month %d: %w", year, month, err)
+	}
+
+	so := r.mapping.ToTransferRecordsMonthStatusFailedCardNumber(res)
+
+	return so, nil
+}
+
+func (r *transferRepository) GetYearlyTransferStatusFailedByCardNumber(card_number string, year int) ([]*record.TransferRecordYearStatusFailed, error) {
+	res, err := r.db.GetYearlyTransferStatusFailedCardNumber(r.ctx, db.GetYearlyTransferStatusFailedCardNumberParams{
+		TransferFrom: card_number,
+		Column2:      int32(year),
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get yearly top-up status failed for year %d: %w", year, err)
+	}
+
+	so := r.mapping.ToTransferRecordsYearStatusFailedCardNumber(res)
+
+	return so, nil
+}
+
 func (r *transferRepository) GetMonthlyTransferAmounts(year int) ([]*record.TransferMonthAmount, error) {
 	yearStart := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
 

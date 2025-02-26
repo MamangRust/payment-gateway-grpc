@@ -143,7 +143,7 @@ func (s *topupHandleGrpc) FindMonthlyTopupStatusSuccess(ctx context.Context, req
 	return so, nil
 }
 
-func (s *topupHandleGrpc) FindYearlyTopupStatusSuccess(ctx context.Context, req *pb.FindYearTopup) (*pb.ApiResponseTopupYearStatusSuccess, error) {
+func (s *topupHandleGrpc) FindYearlyTopupStatusSuccess(ctx context.Context, req *pb.FindYearTopupStatus) (*pb.ApiResponseTopupYearStatusSuccess, error) {
 	if req.GetYear() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
 			Status:  "error",
@@ -190,7 +190,7 @@ func (s *topupHandleGrpc) FindMonthlyTopupStatusFailed(ctx context.Context, req 
 	return so, nil
 }
 
-func (s *topupHandleGrpc) FindYearlyTopupStatusFailed(ctx context.Context, req *pb.FindYearTopup) (*pb.ApiResponseTopupYearStatusFailed, error) {
+func (s *topupHandleGrpc) FindYearlyTopupStatusFailed(ctx context.Context, req *pb.FindYearTopupStatus) (*pb.ApiResponseTopupYearStatusFailed, error) {
 	if req.GetYear() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
 			Status:  "error",
@@ -213,7 +213,101 @@ func (s *topupHandleGrpc) FindYearlyTopupStatusFailed(ctx context.Context, req *
 	return so, nil
 }
 
-func (s *topupHandleGrpc) FindMonthlyTopupMethods(ctx context.Context, req *pb.FindYearTopup) (*pb.ApiResponseTopupMonthMethod, error) {
+func (s *topupHandleGrpc) FindMonthlyTopupStatusSuccessByCardNumber(ctx context.Context, req *pb.FindMonthlyTopupStatusCardNumber) (*pb.ApiResponseTopupMonthStatusSuccess, error) {
+	if req.GetYear() <= 0 || req.GetMonth() <= 0 || req.GetCardNumber() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year, month, or card number",
+		})
+	}
+
+	year := req.GetYear()
+	month := req.GetMonth()
+	cardNumber := req.GetCardNumber()
+
+	records, errResponse := s.topupService.FindMonthTopupStatusSuccessByCardNumber(cardNumber, int(year), int(month))
+	if errResponse != nil {
+		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch monthly topup status success: " + errResponse.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseTopupMonthStatusSuccess("success", "Successfully fetched monthly topup status success", records)
+	return so, nil
+}
+
+func (s *topupHandleGrpc) FindYearlyTopupStatusSuccessByCardNumber(ctx context.Context, req *pb.FindYearTopupStatusCardNumber) (*pb.ApiResponseTopupYearStatusSuccess, error) {
+	if req.GetYear() <= 0 || req.GetCardNumber() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year or card number",
+		})
+	}
+
+	year := req.GetYear()
+	cardNumber := req.GetCardNumber()
+
+	records, errResponse := s.topupService.FindYearlyTopupStatusSuccessByCardNumber(cardNumber, int(year))
+	if errResponse != nil {
+		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch yearly topup status success: " + errResponse.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseTopupYearStatusSuccess("success", "Successfully fetched yearly topup status success", records)
+	return so, nil
+}
+
+func (s *topupHandleGrpc) FindMonthlyTopupStatusFailedByCardNumber(ctx context.Context, req *pb.FindMonthlyTopupStatusCardNumber) (*pb.ApiResponseTopupMonthStatusFailed, error) {
+	if req.GetYear() <= 0 || req.GetMonth() <= 0 || req.GetCardNumber() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year, month, or card number",
+		})
+	}
+
+	year := req.GetYear()
+	month := req.GetMonth()
+	cardNumber := req.GetCardNumber()
+
+	records, errResponse := s.topupService.FindMonthTopupStatusFailedByCardNumber(cardNumber, int(year), int(month))
+	if errResponse != nil {
+		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch monthly topup status failed: " + errResponse.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseTopupMonthStatusFailed("success", "Successfully fetched monthly topup status failed", records)
+	return so, nil
+}
+
+func (s *topupHandleGrpc) FindYearlyTopupStatusFailedByCardNumber(ctx context.Context, req *pb.FindYearTopupStatusCardNumber) (*pb.ApiResponseTopupYearStatusFailed, error) {
+	if req.GetYear() <= 0 || req.GetCardNumber() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid year or card number",
+		})
+	}
+
+	year := req.GetYear()
+	cardNumber := req.GetCardNumber()
+
+	records, errResponse := s.topupService.FindYearlyTopupStatusFailedByCardNumber(cardNumber, int(year))
+	if errResponse != nil {
+		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch yearly topup status failed: " + errResponse.Message,
+		})
+	}
+
+	so := s.mapping.ToProtoResponseTopupYearStatusFailed("success", "Successfully fetched yearly topup status failed", records)
+	return so, nil
+}
+
+func (s *topupHandleGrpc) FindMonthlyTopupMethods(ctx context.Context, req *pb.FindYearTopupStatus) (*pb.ApiResponseTopupMonthMethod, error) {
 	methods, err := s.topupService.FindMonthlyTopupMethods(int(req.GetYear()))
 
 	if err != nil {
@@ -228,7 +322,7 @@ func (s *topupHandleGrpc) FindMonthlyTopupMethods(ctx context.Context, req *pb.F
 	return so, nil
 }
 
-func (s *topupHandleGrpc) FindYearlyTopupMethods(ctx context.Context, req *pb.FindYearTopup) (*pb.ApiResponseTopupYearMethod, error) {
+func (s *topupHandleGrpc) FindYearlyTopupMethods(ctx context.Context, req *pb.FindYearTopupStatus) (*pb.ApiResponseTopupYearMethod, error) {
 	methods, err := s.topupService.FindYearlyTopupMethods(int(req.GetYear()))
 
 	if err != nil {
@@ -243,7 +337,7 @@ func (s *topupHandleGrpc) FindYearlyTopupMethods(ctx context.Context, req *pb.Fi
 	return so, nil
 }
 
-func (s *topupHandleGrpc) FindMonthlyTopupAmounts(ctx context.Context, req *pb.FindYearTopup) (*pb.ApiResponseTopupMonthAmount, error) {
+func (s *topupHandleGrpc) FindMonthlyTopupAmounts(ctx context.Context, req *pb.FindYearTopupStatus) (*pb.ApiResponseTopupMonthAmount, error) {
 	amounts, err := s.topupService.FindMonthlyTopupAmounts(int(req.GetYear()))
 
 	if err != nil {
@@ -258,7 +352,7 @@ func (s *topupHandleGrpc) FindMonthlyTopupAmounts(ctx context.Context, req *pb.F
 	return so, nil
 }
 
-func (s *topupHandleGrpc) FindYearlyTopupAmounts(ctx context.Context, req *pb.FindYearTopup) (*pb.ApiResponseTopupYearAmount, error) {
+func (s *topupHandleGrpc) FindYearlyTopupAmounts(ctx context.Context, req *pb.FindYearTopupStatus) (*pb.ApiResponseTopupYearAmount, error) {
 	amounts, err := s.topupService.FindYearlyTopupAmounts(int(req.GetYear()))
 
 	if err != nil {

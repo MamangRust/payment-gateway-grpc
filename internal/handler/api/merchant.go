@@ -34,12 +34,12 @@ func NewHandlerMerchant(merchant pb.MerchantServiceClient, router *echo.Echo, lo
 
 	routerMerchant.GET("/transactions", merchantHandler.FindAllTransactions)
 	routerMerchant.GET("/transactions/:merchant_id", merchantHandler.FindAllTransactionByMerchant)
+	routerMerchant.GET("/transactions/api-key/:api_key", merchantHandler.FindAllTransactionByApikey)
 
 	routerMerchant.GET("/monthly-payment-methods", merchantHandler.FindMonthlyPaymentMethodsMerchant)
 	routerMerchant.GET("/yearly-payment-methods", merchantHandler.FindYearlyPaymentMethodMerchant)
 	routerMerchant.GET("/monthly-amount", merchantHandler.FindMonthlyAmountMerchant)
 	routerMerchant.GET("/yearly-amount", merchantHandler.FindYearlyAmountMerchant)
-
 	routerMerchant.GET("/monthly-total-amount", merchantHandler.FindMonthlyTotalAmountMerchant)
 	routerMerchant.GET("/yearly-total-amount", merchantHandler.FindYearlyTotalAmountMerchant)
 
@@ -699,6 +699,7 @@ func (h *merchantHandleApi) FindYearlyAmountByMerchants(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	merchantID, err := strconv.Atoi(merchantIDStr)
+
 	if err != nil || merchantID <= 0 {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
@@ -707,6 +708,7 @@ func (h *merchantHandleApi) FindYearlyAmountByMerchants(c echo.Context) error {
 	}
 
 	year, err := strconv.Atoi(yearStr)
+
 	if err != nil || year <= 0 {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
@@ -715,12 +717,14 @@ func (h *merchantHandleApi) FindYearlyAmountByMerchants(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
+
 	req := &pb.FindYearMerchantById{
 		MerchantId: int32(merchantID),
 		Year:       int32(year),
 	}
 
 	res, err := h.merchant.FindYearlyAmountByMerchants(ctx, req)
+
 	if err != nil {
 		h.logger.Debug("Failed to find yearly amount by merchant", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
@@ -853,7 +857,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountByMerchants(c echo.Context) err
 // @Param search query string false "Search query"
 // @Success 200 {object} response.ApiResponsePaginationTransaction "List of transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
-// @Router /api/merchants/transactions/:merchant_id [get]
+// @Router /api/merchants/transactions/api-key/:api_key [get]
 func (h *merchantHandleApi) FindAllTransactionByApikey(c echo.Context) error {
 	api_key := c.Param("api_key")
 

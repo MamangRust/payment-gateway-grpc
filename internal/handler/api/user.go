@@ -89,7 +89,9 @@ func (h *userHandleApi) FindAllUser(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponsePaginationUser(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Security Bearer
@@ -130,7 +132,9 @@ func (h *userHandleApi) FindById(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, user)
+	so := h.mapping.ToApiResponseUser(user)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Security Bearer
@@ -175,7 +179,10 @@ func (h *userHandleApi) FindByActive(c echo.Context) error {
 			Message: "Failed to retrieve user data: ",
 		})
 	}
-	return c.JSON(http.StatusOK, res)
+
+	so := h.mapping.ToApiResponsePaginationUserDeleteAt(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Security Bearer
@@ -222,7 +229,9 @@ func (h *userHandleApi) FindByTrashed(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponsePaginationUserDeleteAt(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Security Bearer
@@ -276,7 +285,9 @@ func (h *userHandleApi) Create(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseUser(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Security Bearer
@@ -331,7 +342,9 @@ func (h *userHandleApi) Update(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseUser(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Security Bearer
@@ -373,7 +386,9 @@ func (h *userHandleApi) TrashedUser(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, user)
+	so := h.mapping.ToApiResponseUser(user)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Security Bearer
@@ -415,7 +430,9 @@ func (h *userHandleApi) RestoreUser(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, user)
+	so := h.mapping.ToApiResponseUser(user)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Security Bearer
@@ -457,7 +474,9 @@ func (h *userHandleApi) DeleteUserPermanent(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, user)
+	so := h.mapping.ToApiResponseUserDelete(user)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Security Bearer
@@ -487,7 +506,9 @@ func (h *userHandleApi) RestoreAllUser(c echo.Context) error {
 
 	h.logger.Debug("Successfully restored all user")
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseUserAll(res)
+
+	return c.JSON(http.StatusOK, so)
 }
 
 // @Security Bearer
@@ -518,5 +539,7 @@ func (h *userHandleApi) DeleteAllUserPermanent(c echo.Context) error {
 
 	h.logger.Debug("Successfully deleted all user permanently")
 
-	return c.JSON(http.StatusOK, res)
+	so := h.mapping.ToApiResponseUserAll(res)
+
+	return c.JSON(http.StatusOK, so)
 }

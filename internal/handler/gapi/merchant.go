@@ -391,7 +391,7 @@ func (s *merchantHandleGrpc) FindAllTransactionByApikey(ctx context.Context, req
 	return so, nil
 }
 
-func (s *merchantHandleGrpc) FindMonthlyPaymentMethodByApikeys(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
+func (s *merchantHandleGrpc) FindMonthlyPaymentMethodByApikey(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
 	if req.GetApiKey() == "" || req.GetYear() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
 			Status:  "error",
@@ -412,7 +412,7 @@ func (s *merchantHandleGrpc) FindMonthlyPaymentMethodByApikeys(ctx context.Conte
 	return so, nil
 }
 
-func (s *merchantHandleGrpc) FindYearlyPaymentMethodByApikeys(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantYearlyPaymentMethod, error) {
+func (s *merchantHandleGrpc) FindYearlyPaymentMethodByApikey(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantYearlyPaymentMethod, error) {
 	if req.GetApiKey() == "" || req.GetYear() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
 			Status:  "error",
@@ -433,7 +433,7 @@ func (s *merchantHandleGrpc) FindYearlyPaymentMethodByApikeys(ctx context.Contex
 	return so, nil
 }
 
-func (s *merchantHandleGrpc) FindMonthlyAmountByApikeys(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantMonthlyAmount, error) {
+func (s *merchantHandleGrpc) FindMonthlyAmountByApikey(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantMonthlyAmount, error) {
 	if req.GetApiKey() == "" || req.GetYear() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
 			Status:  "error",
@@ -454,7 +454,7 @@ func (s *merchantHandleGrpc) FindMonthlyAmountByApikeys(ctx context.Context, req
 	return so, nil
 }
 
-func (s *merchantHandleGrpc) FindYearlyAmountByApikeys(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantYearlyAmount, error) {
+func (s *merchantHandleGrpc) FindYearlyAmountByApikey(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantYearlyAmount, error) {
 	if req.GetApiKey() == "" || req.GetYear() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
 			Status:  "error",

@@ -28,7 +28,7 @@ func (m *withdrawResponseMapper) ToApiResponsesWithdraw(pbResponse *pb.ApiRespon
 	}
 }
 
-func (m *withdrawResponseMapper) ToApiResponseWithdrawDelete(pbResponse *response.ApiResponseWithdrawDelete) *response.ApiResponseWithdrawDelete {
+func (m *withdrawResponseMapper) ToApiResponseWithdrawDelete(pbResponse *pb.ApiResponseWithdrawDelete) *response.ApiResponseWithdrawDelete {
 	return &response.ApiResponseWithdrawDelete{
 		Status:  pbResponse.Status,
 		Message: pbResponse.Message,

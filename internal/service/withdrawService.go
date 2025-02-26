@@ -208,6 +208,86 @@ func (s *withdrawService) FindYearlyWithdrawStatusFailed(year int) ([]*response.
 	return so, nil
 }
 
+func (s *withdrawService) FindMonthWithdrawStatusSuccessByCardNumber(card_number string, year int, month int) ([]*response.WithdrawResponseMonthStatusSuccess, *response.ErrorResponse) {
+	s.logger.Debug("Fetching monthly Withdraw status success", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
+
+	records, err := s.withdrawRepository.GetMonthWithdrawStatusSuccessByCardNumber(card_number, year, month)
+	if err != nil {
+		s.logger.Error("failed to fetch monthly Withdraw status success", zap.Error(err))
+
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch monthly Withdraw status success",
+		}
+	}
+
+	s.logger.Debug("Successfully fetched monthly Withdraw status success", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
+
+	so := s.mapping.ToWithdrawResponsesMonthStatusSuccess(records)
+
+	return so, nil
+}
+
+func (s *withdrawService) FindYearlyWithdrawStatusSuccessByCardNumber(card_number string, year int) ([]*response.WithdrawResponseYearStatusSuccess, *response.ErrorResponse) {
+	s.logger.Debug("Fetching yearly Withdraw status success", zap.Int("year", year), zap.String("card_number", card_number))
+
+	records, err := s.withdrawRepository.GetYearlyWithdrawStatusSuccessByCardNumber(card_number, year)
+	if err != nil {
+		s.logger.Error("failed to fetch yearly Withdraw status success", zap.Error(err))
+
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch yearly Withdraw status success",
+		}
+	}
+
+	s.logger.Debug("Successfully fetched yearly Withdraw status success", zap.Int("year", year), zap.String("card_number", card_number))
+
+	so := s.mapping.ToWithdrawResponsesYearStatusSuccess(records)
+
+	return so, nil
+}
+
+func (s *withdrawService) FindMonthWithdrawStatusFailedByCardNumber(card_number string, year int, month int) ([]*response.WithdrawResponseMonthStatusFailed, *response.ErrorResponse) {
+	s.logger.Debug("Fetching monthly Withdraw status Failed", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
+
+	records, err := s.withdrawRepository.GetMonthWithdrawStatusFailedByCardNumber(card_number, year, month)
+	if err != nil {
+		s.logger.Error("failed to fetch monthly Withdraw status Failed", zap.Error(err))
+
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch monthly Withdraw status Failed",
+		}
+	}
+
+	s.logger.Debug("Failedfully fetched monthly Withdraw status Failed", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
+
+	so := s.mapping.ToWithdrawResponsesMonthStatusFailed(records)
+
+	return so, nil
+}
+
+func (s *withdrawService) FindYearlyWithdrawStatusFailedByCardNumber(card_number string, year int) ([]*response.WithdrawResponseYearStatusFailed, *response.ErrorResponse) {
+	s.logger.Debug("Fetching yearly Withdraw status Failed", zap.Int("year", year), zap.String("card_number", card_number))
+
+	records, err := s.withdrawRepository.GetYearlyWithdrawStatusFailedByCardNumber(card_number, year)
+	if err != nil {
+		s.logger.Error("failed to fetch yearly Withdraw status Failed", zap.Error(err))
+
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch yearly Withdraw status Failed",
+		}
+	}
+
+	s.logger.Debug("Failedfully fetched yearly Withdraw status Failed", zap.Int("year", year), zap.String("card_number", card_number))
+
+	so := s.mapping.ToWithdrawResponsesYearStatusFailed(records)
+
+	return so, nil
+}
+
 func (s *withdrawService) FindMonthlyWithdraws(year int) ([]*response.WithdrawMonthlyAmountResponse, *response.ErrorResponse) {
 	s.logger.Debug("Fetching monthly withdraws", zap.Int("year", year))
 
