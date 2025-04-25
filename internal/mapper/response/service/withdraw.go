@@ -41,12 +41,7 @@ func (s *withdrawResponseMapper) ToWithdrawResponseDeleteAt(withdraw *record.Wit
 		WithdrawTime:   withdraw.WithdrawTime,
 		CreatedAt:      withdraw.CreatedAt,
 		UpdatedAt:      withdraw.UpdatedAt,
-		DeletedAt: func() string {
-			if withdraw.DeletedAt != nil {
-				return *withdraw.DeletedAt
-			}
-			return ""
-		}(),
+		DeletedAt:      withdraw.DeletedAt,
 	}
 }
 

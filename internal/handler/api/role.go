@@ -41,8 +41,8 @@ func NewHandlerRole(role pb.RoleServiceClient, router *echo.Echo, logger logger.
 	routerRole.PUT("/restore/:id", roleHandler.Restore)
 	routerRole.DELETE("/permanent/:id", roleHandler.DeletePermanent)
 
-	routerRole.POST("/restore-all", roleHandler.RestoreAll)
-	routerRole.POST("/permanent-all", roleHandler.DeleteAllPermanent)
+	routerRole.POST("/restore/all", roleHandler.RestoreAll)
+	routerRole.POST("/permanent/all", roleHandler.DeleteAllPermanent)
 
 	return roleHandler
 }
@@ -88,6 +88,7 @@ func (h *roleHandleApi) FindAll(c echo.Context) error {
 			return c.JSON(http.StatusUnauthorized, response.ErrorResponse{
 				Status:  "error",
 				Message: "Unauthorized",
+				Code:    http.StatusUnauthorized,
 			})
 		}
 
@@ -95,6 +96,7 @@ func (h *roleHandleApi) FindAll(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch role records",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -121,6 +123,7 @@ func (h *roleHandleApi) FindById(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid role ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -136,6 +139,7 @@ func (h *roleHandleApi) FindById(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch role",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -185,6 +189,7 @@ func (h *roleHandleApi) FindByActive(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch active roles",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -234,6 +239,7 @@ func (h *roleHandleApi) FindByTrashed(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch trashed roles",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -260,6 +266,7 @@ func (h *roleHandleApi) FindByUserId(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid user ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -275,6 +282,7 @@ func (h *roleHandleApi) FindByUserId(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch role by user ID",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -301,6 +309,7 @@ func (h *roleHandleApi) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid request body",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -316,6 +325,7 @@ func (h *roleHandleApi) Create(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to create role",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -343,6 +353,7 @@ func (h *roleHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid role ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -351,11 +362,12 @@ func (h *roleHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid request body",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
 	myReq := pb.UpdateRoleRequest{
-		Id:   int32(req.ID),
+		Id:   int32(roleID),
 		Name: req.Name,
 	}
 
@@ -367,6 +379,7 @@ func (h *roleHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update role",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -393,6 +406,7 @@ func (h *roleHandleApi) Trashed(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid role ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -408,6 +422,7 @@ func (h *roleHandleApi) Trashed(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to trash role",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -434,6 +449,7 @@ func (h *roleHandleApi) Restore(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid role ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -449,6 +465,7 @@ func (h *roleHandleApi) Restore(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to restore role",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -490,6 +507,7 @@ func (h *roleHandleApi) DeletePermanent(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to delete role permanently",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -517,6 +535,7 @@ func (h *roleHandleApi) RestoreAll(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to restore all roles",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -544,6 +563,7 @@ func (h *roleHandleApi) DeleteAllPermanent(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to delete all roles permanently",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 

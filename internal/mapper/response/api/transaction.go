@@ -158,6 +158,11 @@ func (m *transactionResponseMapper) mapResponsesTransaction(transactions []*pb.T
 }
 
 func (m *transactionResponseMapper) mapResponseTransactionDeleteAt(transaction *pb.TransactionResponseDeleteAt) *response.TransactionResponseDeleteAt {
+	var deletedAt string
+	if transaction.DeletedAt != nil {
+		deletedAt = transaction.DeletedAt.Value
+	}
+
 	return &response.TransactionResponseDeleteAt{
 		ID:              int(transaction.Id),
 		TransactionNo:   transaction.TransactionNo,
@@ -168,7 +173,7 @@ func (m *transactionResponseMapper) mapResponseTransactionDeleteAt(transaction *
 		MerchantID:      int(transaction.MerchantId),
 		CreatedAt:       transaction.CreatedAt,
 		UpdatedAt:       transaction.UpdatedAt,
-		DeletedAt:       transaction.DeletedAt,
+		DeletedAt:       &deletedAt,
 	}
 }
 

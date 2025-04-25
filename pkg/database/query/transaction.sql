@@ -1,4 +1,17 @@
--- Search Transactions with Pagination
+-- GetTransactions: Retrieves paginated transaction records with search capability
+-- Purpose: List all transactions for management UI with filtering options
+-- Parameters:
+--   $1: search_term - Optional text to filter transactions by card number, payment method, or status (NULL for no filter)
+--   $2: limit - Maximum number of records to return
+--   $3: offset - Number of records to skip for pagination
+-- Returns:
+--   All transaction fields plus total_count of matching records
+-- Business Logic:
+--   - Excludes soft-deleted transactions (deleted_at IS NULL)
+--   - Supports partial text matching on multiple fields (case-insensitive)
+--   - Orders by transaction_time (newest first)
+--   - Provides total_count for pagination calculations
+--   - Useful for transaction monitoring and auditing
 -- name: GetTransactions :many
 SELECT
     *,
@@ -16,7 +29,71 @@ ORDER BY
     transaction_time DESC
 LIMIT $2 OFFSET $3;
 
--- Get Transaction by ID
+
+-- GetActiveTransactions: Retrieves paginated active transactions with search
+-- Purpose: List all non-deleted transactions with filtering options
+-- Parameters:
+--   $1: search_term - Optional text to filter by card number or payment method
+--   $2: limit - Maximum records to return
+--   $3: offset - Records to skip for pagination
+-- Returns:
+--   All transaction fields plus total_count of matching active records
+-- Business Logic:
+--   - Only includes active transactions (deleted_at IS NULL)
+--   - Filters on card_number and payment_method fields
+--   - Orders by transaction_time (newest first)
+--   - Provides pagination metadata
+--   - Used in transaction management interfaces
+-- name: GetActiveTransactions :many
+SELECT
+    *,
+    COUNT(*) OVER() AS total_count
+FROM
+    transactions
+WHERE
+    deleted_at IS NULL
+    AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%' OR payment_method ILIKE '%' || $1 || '%')
+ORDER BY
+    transaction_time DESC
+LIMIT $2 OFFSET $3;
+
+
+-- GetTrashedTransactions: Retrieves paginated soft-deleted transactions
+-- Purpose: List all deleted transactions for recovery or audit purposes
+-- Parameters:
+--   $1: search_term - Optional text to filter deleted transactions
+--   $2: limit - Maximum records to return
+--   $3: offset - Records to skip for pagination
+-- Returns:
+--   All transaction fields plus total_count of matching deleted records
+-- Business Logic:
+--   - Only includes soft-deleted transactions (deleted_at IS NOT NULL)
+--   - Same filtering capabilities as active transactions
+--   - Maintains newest-first ordering
+--   - Used in admin interfaces for transaction recovery
+-- name: GetTrashedTransactions :many
+SELECT
+    *,
+    COUNT(*) OVER() AS total_count
+FROM
+    transactions
+WHERE
+    deleted_at IS NOT NULL
+    AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%' OR payment_method ILIKE '%' || $1 || '%')
+ORDER BY
+    transaction_time DESC
+LIMIT $2 OFFSET $3;
+
+
+-- GetTransactionByID: Retrieves a single transaction by its ID
+-- Purpose: Get detailed information about a specific transaction
+-- Parameters:
+--   $1: transaction_id - The ID of the transaction to retrieve
+-- Returns:
+--   All fields for the specified transaction or NULL if not found/deleted
+-- Business Logic:
+--   - Only returns active transactions (deleted_at IS NULL)
+--   - Useful for transaction details viewing and verification
 -- name: GetTransactionByID :one
 SELECT *
 FROM transactions
@@ -24,7 +101,21 @@ WHERE
     transaction_id = $1
     AND deleted_at IS NULL;
 
--- Get Transactions by Card Number
+-- GetTransactionsByCardNumber: Retrieves paginated transactions for a specific card
+-- Purpose: List all transactions associated with a particular card
+-- Parameters:
+--   $1: card_number - The card number to filter transactions
+--   $2: search_term - Optional text to filter by payment method or status
+--   $3: limit - Maximum number of records to return
+--   $4: offset - Number of records to skip for pagination
+-- Returns:
+--   All transaction fields plus total_count of matching records
+-- Business Logic:
+--   - Only includes active transactions (deleted_at IS NULL)
+--   - Strict card number matching combined with optional search filters
+--   - Orders by transaction_time (newest first)
+--   - Provides pagination support with total_count
+--   - Useful for cardholder transaction history
 -- name: GetTransactionsByCardNumber :many
 SELECT
     *,
@@ -43,7 +134,17 @@ ORDER BY
     transaction_time DESC
 LIMIT $3 OFFSET $4;
 
--- Get Transactions by Merchant ID
+-- GetTransactionsByMerchantID: Retrieves transactions for a specific merchant
+-- Purpose: List all transactions associated with a merchant
+-- Parameters:
+--   $1: merchant_id - The ID of the merchant to filter transactions
+-- Returns:
+--   All transaction fields for the merchant's transactions
+-- Business Logic:
+--   - Only includes active transactions (deleted_at IS NULL)
+--   - Orders by transaction_time (newest first)
+--   - No pagination (assumes manageable number of records per merchant)
+--   - Useful for merchant transaction reports
 -- name: GetTransactionsByMerchantID :many
 SELECT *
 FROM transactions
@@ -52,7 +153,15 @@ WHERE
     AND deleted_at IS NULL
 ORDER BY transaction_time DESC;
 
--- Get Trashed By Transaction ID
+-- GetTrashedTransactionByID: Retrieves a single soft-deleted transaction by ID
+-- Purpose: View details of a deleted transaction for recovery or audit
+-- Parameters:
+--   $1: transaction_id - The ID of the transaction to retrieve
+-- Returns:
+--   All fields for the specified trashed transaction or NULL if not found/active
+-- Business Logic:
+--   - Only returns soft-deleted transactions (deleted_at IS NOT NULL)
+--   - Used in admin interfaces for transaction recovery
 -- name: GetTrashedTransactionByID :one
 SELECT *
 FROM transactions
@@ -61,6 +170,25 @@ WHERE
     AND deleted_at IS NOT NULL;
 
 
+-- GetMonthTransactionStatusSuccess: Retrieves monthly success metrics for transactions
+-- Purpose: Analyze successful transaction trends across comparison periods
+-- Parameters:
+--   $1: period1_start - Start date of first comparison period
+--   $2: period1_end - End date of first comparison period
+--   $3: period2_start - Start date of second comparison period
+--   $4: period2_end - End date of second comparison period
+-- Returns:
+--   year: Year as text (e.g., '2023')
+--   month: 3-letter month abbreviation (e.g., 'Jan')
+--   total_success: Count of successful transactions
+--   total_amount: Sum of successful transaction amounts
+-- Business Logic:
+--   - Only includes successful transactions (status = 'success')
+--   - Covers two customizable time periods for comparison
+--   - Zero-fills months with no activity
+--   - Formats output for consistent visualization (year as text, month as 'Mon')
+--   - Orders by year and month (newest first)
+--   - Useful for identifying seasonal transaction patterns and revenue trends
 -- name: GetMonthTransactionStatusSuccess :many
 WITH monthly_data AS (
     SELECT
@@ -123,7 +251,21 @@ ORDER BY
     TO_DATE(month, 'Mon') DESC;
 
 
-
+-- GetYearlyTransactionStatusSuccess: Retrieves yearly success metrics for transactions
+-- Purpose: Compare annual successful transaction performance
+-- Parameters:
+--   $1: current_year - The target year (includes this year and previous)
+-- Returns:
+--   year: Year as text (e.g., '2023')
+--   total_success: Count of successful transactions
+--   total_amount: Sum of successful transaction amounts
+-- Business Logic:
+--   - Only includes successful transactions (status = 'success')
+--   - Compares current year with previous year
+--   - Zero-fills years with no activity
+--   - Orders by year (newest first)
+--   - Useful for year-over-year growth analysis and financial reporting
+--   - Helps identify annual transaction volume and revenue trends
 -- name: GetYearlyTransactionStatusSuccess :many
 WITH yearly_data AS (
     SELECT
@@ -179,6 +321,25 @@ ORDER BY
 
 
 
+-- GetMonthTransactionStatusFailed: Retrieves monthly failed metrics for transactions
+-- Purpose: Analyze failedful transaction trends across comparison periods
+-- Parameters:
+--   $1: period1_start - Start date of first comparison period
+--   $2: period1_end - End date of first comparison period
+--   $3: period2_start - Start date of second comparison period
+--   $4: period2_end - End date of second comparison period
+-- Returns:
+--   year: Year as text (e.g., '2023')
+--   month: 3-letter month abbreviation (e.g., 'Jan')
+--   total_failed: Count of failedful transactions
+--   total_amount: Sum of failedful transaction amounts
+-- Business Logic:
+--   - Only includes failedful transactions (status = 'failed')
+--   - Covers two customizable time periods for comparison
+--   - Zero-fills months with no activity
+--   - Formats output for consistent visualization (year as text, month as 'Mon')
+--   - Orders by year and month (newest first)
+--   - Useful for identifying seasonal transaction patterns and revenue trends
 -- name: GetMonthTransactionStatusFailed :many
 WITH monthly_data AS (
     SELECT
@@ -241,6 +402,21 @@ ORDER BY
     TO_DATE(month, 'Mon') DESC;
 
 
+-- GetYearlyTransactionStatusFailed: Retrieves yearly failed metrics for transactions
+-- Purpose: Compare annual failedful transaction performance
+-- Parameters:
+--   $1: current_year - The target year (includes this year and previous)
+-- Returns:
+--   year: Year as text (e.g., '2023')
+--   total_failed: Count of failedful transactions
+--   total_amount: Sum of failedful transaction amounts
+-- Business Logic:
+--   - Only includes failedful transactions (status = 'failed')
+--   - Compares current year with previous year
+--   - Zero-fills years with no activity
+--   - Orders by year (newest first)
+--   - Useful for year-over-year growth analysis and financial reporting
+--   - Helps identify annual transaction volume and revenue trends
 -- name: GetYearlyTransactionStatusFailed :many
 WITH yearly_data AS (
     SELECT
@@ -295,6 +471,27 @@ ORDER BY
     year DESC;
 
 
+
+-- GetMonthTransactionStatusSuccessCardNumber: Retrieves monthly success metrics for transactions
+-- Purpose: Analyze successful transaction trends across comparison periods
+-- Parameters:
+--   $1: card_number  - filter by card_number
+--   $2: period1_start - Start date of first comparison period
+--   $3: period1_end - End date of first comparison period
+--   $4: period2_start - Start date of second comparison period
+--   $5: period2_end - End date of second comparison period
+-- Returns:
+--   year: Year as text (e.g., '2023')
+--   month: 3-letter month abbreviation (e.g., 'Jan')
+--   total_success: Count of successful transactions
+--   total_amount: Sum of successful transaction amounts
+-- Business Logic:
+--   - Only includes successful transactions (status = 'success')
+--   - Covers two customizable time periods for comparison
+--   - Zero-fills months with no activity
+--   - Formats output for consistent visualization (year as text, month as 'Mon')
+--   - Orders by year and month (newest first)
+--   - Useful for identifying seasonal transaction patterns and revenue trends
 -- name: GetMonthTransactionStatusSuccessCardNumber :many
 WITH monthly_data AS (
     SELECT
@@ -359,6 +556,22 @@ ORDER BY
 
 
 
+-- GetYearlyTransactionStatusSuccessCardNumber: Retrieves yearly success metrics for transactions
+-- Purpose: Compare annual successful transaction performance
+-- Parameters:
+--   $1: card_number  - filter by card_number
+--   $2: current_year - The target year (includes this year and previous)
+-- Returns:
+--   year: Year as text (e.g., '2023')
+--   total_success: Count of successful transactions
+--   total_amount: Sum of successful transaction amounts
+-- Business Logic:
+--   - Only includes successful transactions (status = 'success')
+--   - Compares current year with previous year
+--   - Zero-fills years with no activity
+--   - Orders by year (newest first)
+--   - Useful for year-over-year growth analysis and financial reporting
+--   - Helps identify annual transaction volume and revenue trends
 -- name: GetYearlyTransactionStatusSuccessCardNumber :many
 WITH yearly_data AS (
     SELECT
@@ -414,7 +627,26 @@ ORDER BY
     year DESC;
 
 
-
+-- GetMonthTransactionStatusFailed: Retrieves monthly failed metrics for transactions
+-- Purpose: Analyze failedful transaction trends across comparison periods
+-- Parameters:
+--   $1: card_number  - filter by card_number
+--   $2: period1_start - Start date of first comparison period
+--   $3: period1_end - End date of first comparison period
+--   $4: period2_start - Start date of second comparison period
+--   $5: period2_end - End date of second comparison period
+-- Returns:
+--   year: Year as text (e.g., '2023')
+--   month: 3-letter month abbreviation (e.g., 'Jan')
+--   total_failed: Count of failedful transactions
+--   total_amount: Sum of failedful transaction amounts
+-- Business Logic:
+--   - Only includes failedful transactions (status = 'failed')
+--   - Covers two customizable time periods for comparison
+--   - Zero-fills months with no activity
+--   - Formats output for consistent visualization (year as text, month as 'Mon')
+--   - Orders by year and month (newest first)
+--   - Useful for identifying seasonal transaction patterns and revenue trends
 -- name: GetMonthTransactionStatusFailedCardNumber :many
 WITH monthly_data AS (
     SELECT
@@ -478,6 +710,23 @@ ORDER BY
     TO_DATE(month, 'Mon') DESC;
 
 
+
+-- GetYearlyTransactionStatusFailed: Retrieves yearly failed metrics for transactions
+-- Purpose: Compare annual failedful transaction performance
+-- Parameters:
+--   $1: card_number  - filter by card_number
+--   $2: current_year - The target year (includes this year and previous)
+-- Returns:
+--   year: Year as text (e.g., '2023')
+--   total_failed: Count of failedful transactions
+--   total_amount: Sum of failedful transaction amounts
+-- Business Logic:
+--   - Only includes failedful transactions (status = 'failed')
+--   - Compares current year with previous year
+--   - Zero-fills years with no activity
+--   - Orders by year (newest first)
+--   - Useful for year-over-year growth analysis and financial reporting
+--   - Helps identify annual transaction volume and revenue trends
 -- name: GetYearlyTransactionStatusFailedCardNumber :many
 WITH yearly_data AS (
     SELECT
@@ -533,6 +782,20 @@ ORDER BY
     year DESC;
 
 
+-- GetMonthlyPaymentMethods: Retrieves a monthly summary of transaction transactions categorized by payment method
+-- Purpose:
+--   Useful for visualizing how each payment method is used over time within a given year
+-- Parameters:
+--   $1: reference_date - Any date within the target year (used to generate monthly range)
+-- Returns:
+--   - month (e.g., 'Jan', 'Feb')
+--   - payment_method (e.g., 'e-wallet', 'bank_transfer')
+--   - total_transactions: Number of transactions for the method that month
+--   - total_amount: Total amount of transactions for the method that month
+-- Business Logic:
+--   - Includes all combinations of months and available payment methods (even if 0 data)
+--   - Excludes soft-deleted transactions (deleted_at IS NULL)
+--   - Uses CROSS JOIN to ensure all months and methods are represented
 -- name: GetMonthlyPaymentMethods :many
 WITH months AS (
     SELECT generate_series(
@@ -568,6 +831,19 @@ ORDER BY
     pm.payment_method;
 
 
+-- GetYearlyPaymentMethods: Retrieves yearly summary of transaction transactions grouped by payment method over a 5-year span
+-- Purpose:
+--   Analyze long-term trends of transaction method usage across years
+-- Parameters:
+--   $1: current_year - The most recent year to include (covers current_year - 4 to current_year)
+-- Returns:
+--   - year: Year of transaction (e.g., 2020, 2021)
+--   - payment_method
+--   - total_transactions: Count of transactions per method per year
+--   - total_amount: Sum of amounts per method per year
+-- Business Logic:
+--   - Filters data within a 5-year window
+--   - Excludes soft-deleted transactions (deleted_at IS NULL)
 -- name: GetYearlyPaymentMethods :many
 SELECT
     EXTRACT(YEAR FROM t.created_at) AS year,
@@ -587,6 +863,17 @@ ORDER BY
     year;
 
 
+-- GetMonthlyAmounts: Retrieves total transaction amount per month for a specific year
+-- Purpose:
+--   Visualize monthly trends in transaction volume for charting/dashboards
+-- Parameters:
+--   $1: reference_date - Any date within the target year
+-- Returns:
+--   - month: 3-letter month abbreviation
+--   - total_amount: Sum of transaction amounts in each month
+-- Business Logic:
+--   - Uses LEFT JOIN to ensure all months are included, even with 0 transactions
+--   - Filters out soft-deleted data (deleted_at IS NULL)
 -- name: GetMonthlyAmounts :many
 WITH months AS (
     SELECT generate_series(
@@ -610,6 +897,17 @@ ORDER BY
     m.month;
 
 
+
+-- GetYearlyAmounts: Retrieves total transaction amount per year over a 5-year span
+-- Purpose:
+--   Analyze annual growth or decline in transaction volume for trend analysis
+-- Parameters:
+--   $1: current_year - The most recent year to include (covers current_year - 4 to current_year)
+-- Returns:
+--   - year: Year of the transaction
+--   - total_amount: Total transaction amount for the year
+-- Business Logic:
+--   - Excludes soft-deleted transactions (deleted_at IS NULL)
 -- name: GetYearlyAmounts :many
 SELECT
     EXTRACT(YEAR FROM t.created_at) AS year,
@@ -626,7 +924,22 @@ ORDER BY
     year;
 
 
-
+-- GetTransactionByCardNumber: Retrieves paginated transactions for a specific card with optional filtering
+-- Purpose: View transaction history for a particular card with search capability
+-- Parameters:
+--   $1: card_number - The card number to filter transactions (exact match)
+--   $2: search_term - Optional text to filter by payment method (NULL for no filter)
+--   $3: limit - Maximum number of records to return per page
+--   $4: offset - Number of records to skip for pagination
+-- Returns:
+--   All transaction fields plus total_count of matching records
+-- Business Logic:
+--   - Only returns active transactions (non-deleted records)
+--   - Strict matching on card_number combined with optional payment method search
+--   - Case-insensitive partial matching on payment_method when search term provided
+--   - Orders results by transaction_time (newest transactions first)
+--   - Includes pagination metadata via total_count
+--   - Useful for cardholder transaction history views and statements
 -- name: GetTransactionByCardNumber :many
 SELECT
     *,
@@ -642,6 +955,21 @@ ORDER BY
 LIMIT $3 OFFSET $4;
 
 
+-- GetMonthlyPaymentMethodsByCardNumber: Retrieves a monthly summary of transaction transactions categorized by payment method
+-- Purpose:
+--   Useful for visualizing how each payment method is used over time within a given year
+-- Parameters:
+--   $1: card_number  - filter by card_number
+--   $2: reference_date - Any date within the target year (used to generate monthly range)
+-- Returns:
+--   - month (e.g., 'Jan', 'Feb')
+--   - payment_method (e.g., 'e-wallet', 'bank_transfer')
+--   - total_transactions: Number of transactions for the method that month
+--   - total_amount: Total amount of transactions for the method that month
+-- Business Logic:
+--   - Includes all combinations of months and available payment methods (even if 0 data)
+--   - Excludes soft-deleted transactions (deleted_at IS NULL)
+--   - Uses CROSS JOIN to ensure all months and methods are represent
 -- name: GetMonthlyPaymentMethodsByCardNumber :many
 WITH months AS (
     SELECT generate_series(
@@ -680,6 +1008,20 @@ ORDER BY
 
 
 
+-- GetYearlyPaymentMethodsByCardNumber: Retrieves yearly summary of transaction transactions grouped by payment method over a 5-year span
+-- Purpose:
+--   Analyze long-term trends of transaction method usage across years
+-- Parameters:
+--   $1: card_number  - filter by card_number
+--   $2: current_year - The most recent year to include (covers current_year - 4 to current_year)
+-- Returns:
+--   - year: Year of transaction (e.g., 2020, 2021)
+--   - payment_method
+--   - total_transactions: Count of transactions per method per year
+--   - total_amount: Sum of amounts per method per year
+-- Business Logic:
+--   - Filters data within a 5-year window
+--   - Excludes soft-deleted transactions (deleted_at IS NULL)
 -- name: GetYearlyPaymentMethodsByCardNumber :many
 SELECT
     EXTRACT(YEAR FROM t.created_at) AS year,
@@ -700,7 +1042,18 @@ ORDER BY
     year;
 
 
-
+-- GetMonthlyAmountsByCardNumber: Retrieves total transaction amount per month for a specific year
+-- Purpose:
+--   Visualize monthly trends in transaction volume for charting/dashboards
+-- Parameters:
+--   $1: card_number  - filter by card_number
+--   $2: reference_date - Any date within the target year
+-- Returns:
+--   - month: 3-letter month abbreviation
+--   - total_amount: Sum of transaction amounts in each month
+-- Business Logic:
+--   - Uses LEFT JOIN to ensure all months are included, even with 0 transactions
+--   - Filters out soft-deleted data (deleted_at IS NULL)
 -- name: GetMonthlyAmountsByCardNumber :many
 WITH months AS (
     SELECT generate_series(
@@ -725,7 +1078,17 @@ ORDER BY
     m.month;
 
 
-
+-- GetYearlyAmountsByCardNumber:  Retrieves total transaction amount per year over a 5-year span
+-- Purpose:
+--   Analyze annual growth or decline in transaction volume for trend analysis
+-- Parameters:
+--   $1: card_number  - filter by card_number
+--   $2: current_year - The most recent year to include (covers current_year - 4 to current_year)
+-- Returns:
+--   - year: Year of the transaction
+--   - total_amount: Total transaction amount for the year
+-- Business Logic:
+--   - Excludes soft-deleted transactions (deleted_at IS NULL)
 -- name: GetYearlyAmountsByCardNumber :many
 SELECT
     EXTRACT(YEAR FROM t.created_at) AS year,
@@ -743,36 +1106,20 @@ ORDER BY
     year;
 
 
--- Get Active Transactions with Pagination, Search, and Count
--- name: GetActiveTransactions :many
-SELECT
-    *,
-    COUNT(*) OVER() AS total_count
-FROM
-    transactions
-WHERE
-    deleted_at IS NULL
-    AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%' OR payment_method ILIKE '%' || $1 || '%')
-ORDER BY
-    transaction_time DESC
-LIMIT $2 OFFSET $3;
 
-
--- Get Trashed Transactions with Pagination, Search, and Count
--- name: GetTrashedTransactions :many
-SELECT
-    *,
-    COUNT(*) OVER() AS total_count
-FROM
-    transactions
-WHERE
-    deleted_at IS NOT NULL
-    AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%' OR payment_method ILIKE '%' || $1 || '%')
-ORDER BY
-    transaction_time DESC
-LIMIT $2 OFFSET $3;
-
--- Create Transaction
+-- CreateTransaction: Creates a new transaction record
+-- Purpose: Record a financial transaction in the system
+-- Parameters:
+--   $1: card_number - The card used for the transaction
+--   $2: amount - The transaction amount
+--   $3: payment_method - Payment method used (e.g., 'credit', 'debit')
+--   $4: merchant_id - ID of the merchant where transaction occurred
+--   $5: transaction_time - Timestamp of when transaction occurred
+-- Returns:
+--   The newly created transaction record with all fields
+-- Business Logic:
+--   - Sets creation and update timestamps automatically
+--   - Used for recording purchases, payments, and other financial activities
 -- name: CreateTransaction :one
 INSERT INTO
     transactions (
@@ -794,10 +1141,20 @@ VALUES (
         current_timestamp
     ) RETURNING *;
 
-
-
--- Update Transaction
--- name: UpdateTransaction :exec
+-- UpdateTransaction: Modifies an existing transaction's details
+-- Purpose: Update transaction information
+-- Parameters:
+--   $1: transaction_id - ID of transaction to update
+--   $2: card_number - Updated card number
+--   $3: amount - Updated transaction amount
+--   $4: payment_method - Updated payment method
+--   $5: merchant_id - Updated merchant ID
+--   $6: transaction_time - Updated transaction timestamp
+-- Business Logic:
+--   - Only updates active transactions (non-deleted)
+--   - Automatically updates the modification timestamp
+--   - Used for correcting transaction details
+-- name: UpdateTransaction :one
 UPDATE transactions
 SET
     card_number = $2,
@@ -808,46 +1165,80 @@ SET
     updated_at = current_timestamp
 WHERE
     transaction_id = $1
-    AND deleted_at IS NULL;
+    AND deleted_at IS NULL
+RETURNING *;
 
-
--- Update Transaction Status
--- name: UpdateTransactionStatus :exec
+-- UpdateTransactionStatus: Changes a transaction's status
+-- Purpose: Update transaction processing status
+-- Parameters:
+--   $1: transaction_id - ID of transaction to update
+--   $2: status - New status (e.g., 'success', 'failed', 'pending')
+-- Business Logic:
+--   - Only updates active transactions
+--   - Used to reflect transaction processing outcomes
+--   - Important for reconciliation and reporting
+-- name: UpdateTransactionStatus :one
 UPDATE transactions
 SET
     status = $2,
     updated_at = current_timestamp
 WHERE
     transaction_id = $1
-    AND deleted_at IS NULL;
+    AND deleted_at IS NULL
+RETURNING *;
 
-
--- Trash Transaction
--- name: TrashTransaction :exec
+-- TrashTransaction: Soft-deletes a transaction record
+-- Purpose: Remove transaction from active use without permanent deletion
+-- Parameters:
+--   $1: transaction_id - ID of transaction to trash
+-- Business Logic:
+--   - Sets deleted_at timestamp
+--   - Preserves data for audit/recovery purposes
+--   - Only affects currently active records
+-- name: TrashTransaction :one
 UPDATE transactions
 SET
     deleted_at = current_timestamp
 WHERE
     transaction_id = $1
-    AND deleted_at IS NULL;
+    AND deleted_at IS NULL
+RETURNING *;
 
-
--- Restore Trashed Transaction
--- name: RestoreTransaction :exec
+-- RestoreTransaction: Recovers a soft-deleted transaction
+-- Purpose: Reactivate a previously trashed transaction
+-- Parameters:
+--   $1: transaction_id - ID of transaction to restore
+-- Business Logic:
+--   - Clears the deleted_at timestamp
+--   - Only works on currently trashed records
+--   - Used for data recovery purposes
+-- name: RestoreTransaction :one
 UPDATE transactions
 SET
     deleted_at = NULL
 WHERE
     transaction_id = $1
-    AND deleted_at IS NOT NULL;
+    AND deleted_at IS NOT NULL
+RETURNING *;
 
-
--- Delete Transaction Permanently
+-- DeleteTransactionPermanently: Hard-deletes a trashed transaction
+-- Purpose: Permanently remove a transaction from the system
+-- Parameters:
+--   $1: transaction_id - ID of transaction to delete
+-- Business Logic:
+--   - Physical deletion from database
+--   - Only works on already trashed records
+--   - Irreversible operation
+--   - Used for data cleanup after retention period
 -- name: DeleteTransactionPermanently :exec
 DELETE FROM transactions WHERE transaction_id = $1 AND deleted_at IS NOT NULL;
 
-
--- Restore All Trashed Transactions
+-- RestoreAllTransactions: Recovers all trashed transactions
+-- Purpose: Mass restoration of deleted transactions
+-- Business Logic:
+--   - Clears deleted_at for all trashed records
+--   - Useful for system recovery scenarios
+--   - Should be used cautiously in production
 -- name: RestoreAllTransactions :exec
 UPDATE transactions
 SET
@@ -855,8 +1246,13 @@ SET
 WHERE
     deleted_at IS NOT NULL;
 
-
--- Delete All Trashed Transactions Permanently
+-- DeleteAllPermanentTransactions: Permanently removes all trashed transactions
+-- Purpose: Clean up all soft-deleted transaction records
+-- Business Logic:
+--   - Irreversible bulk deletion
+--   - Only affects records marked as deleted
+--   - Frees database space from old records
+--   - Typically used during maintenance periods
 -- name: DeleteAllPermanentTransactions :exec
 DELETE FROM transactions
 WHERE

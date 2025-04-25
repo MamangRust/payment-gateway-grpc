@@ -41,12 +41,7 @@ func (s *userResponseMapper) ToUserResponseDeleteAt(user *record.UserRecord) *re
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
-		DeletedAt: func() string {
-			if user.DeletedAt != nil {
-				return *user.DeletedAt
-			}
-			return ""
-		}(),
+		DeletedAt: user.DeletedAt,
 	}
 }
 

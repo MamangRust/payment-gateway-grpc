@@ -43,7 +43,23 @@ type CreateTransactionParams struct {
 	TransactionTime time.Time `json:"transaction_time"`
 }
 
-// Create Transaction
+// CreateTransaction: Creates a new transaction record
+// Purpose: Record a financial transaction in the system
+// Parameters:
+//
+//	$1: card_number - The card used for the transaction
+//	$2: amount - The transaction amount
+//	$3: payment_method - Payment method used (e.g., 'credit', 'debit')
+//	$4: merchant_id - ID of the merchant where transaction occurred
+//	$5: transaction_time - Timestamp of when transaction occurred
+//
+// Returns:
+//
+//	The newly created transaction record with all fields
+//
+// Business Logic:
+//   - Sets creation and update timestamps automatically
+//   - Used for recording purchases, payments, and other financial activities
 func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionParams) (*Transaction, error) {
 	row := q.db.QueryRowContext(ctx, createTransaction,
 		arg.CardNumber,
@@ -75,7 +91,13 @@ WHERE
     deleted_at IS NOT NULL
 `
 
-// Delete All Trashed Transactions Permanently
+// DeleteAllPermanentTransactions: Permanently removes all trashed transactions
+// Purpose: Clean up all soft-deleted transaction records
+// Business Logic:
+//   - Irreversible bulk deletion
+//   - Only affects records marked as deleted
+//   - Frees database space from old records
+//   - Typically used during maintenance periods
 func (q *Queries) DeleteAllPermanentTransactions(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, deleteAllPermanentTransactions)
 	return err
@@ -85,7 +107,17 @@ const deleteTransactionPermanently = `-- name: DeleteTransactionPermanently :exe
 DELETE FROM transactions WHERE transaction_id = $1 AND deleted_at IS NOT NULL
 `
 
-// Delete Transaction Permanently
+// DeleteTransactionPermanently: Hard-deletes a trashed transaction
+// Purpose: Permanently remove a transaction from the system
+// Parameters:
+//
+//	$1: transaction_id - ID of transaction to delete
+//
+// Business Logic:
+//   - Physical deletion from database
+//   - Only works on already trashed records
+//   - Irreversible operation
+//   - Used for data cleanup after retention period
 func (q *Queries) DeleteTransactionPermanently(ctx context.Context, transactionID int32) error {
 	_, err := q.db.ExecContext(ctx, deleteTransactionPermanently, transactionID)
 	return err
@@ -126,7 +158,24 @@ type GetActiveTransactionsRow struct {
 	TotalCount      int64        `json:"total_count"`
 }
 
-// Get Active Transactions with Pagination, Search, and Count
+// GetActiveTransactions: Retrieves paginated active transactions with search
+// Purpose: List all non-deleted transactions with filtering options
+// Parameters:
+//
+//	$1: search_term - Optional text to filter by card number or payment method
+//	$2: limit - Maximum records to return
+//	$3: offset - Records to skip for pagination
+//
+// Returns:
+//
+//	All transaction fields plus total_count of matching active records
+//
+// Business Logic:
+//   - Only includes active transactions (deleted_at IS NULL)
+//   - Filters on card_number and payment_method fields
+//   - Orders by transaction_time (newest first)
+//   - Provides pagination metadata
+//   - Used in transaction management interfaces
 func (q *Queries) GetActiveTransactions(ctx context.Context, arg GetActiveTransactionsParams) ([]*GetActiveTransactionsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getActiveTransactions, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -239,6 +288,29 @@ type GetMonthTransactionStatusFailedRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetMonthTransactionStatusFailed: Retrieves monthly failed metrics for transactions
+// Purpose: Analyze failedful transaction trends across comparison periods
+// Parameters:
+//
+//	$1: period1_start - Start date of first comparison period
+//	$2: period1_end - End date of first comparison period
+//	$3: period2_start - Start date of second comparison period
+//	$4: period2_end - End date of second comparison period
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	total_failed: Count of failedful transactions
+//	total_amount: Sum of failedful transaction amounts
+//
+// Business Logic:
+//   - Only includes failedful transactions (status = 'failed')
+//   - Covers two customizable time periods for comparison
+//   - Zero-fills months with no activity
+//   - Formats output for consistent visualization (year as text, month as 'Mon')
+//   - Orders by year and month (newest first)
+//   - Useful for identifying seasonal transaction patterns and revenue trends
 func (q *Queries) GetMonthTransactionStatusFailed(ctx context.Context, arg GetMonthTransactionStatusFailedParams) ([]*GetMonthTransactionStatusFailedRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthTransactionStatusFailed,
 		arg.Column1,
@@ -350,6 +422,30 @@ type GetMonthTransactionStatusFailedCardNumberRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetMonthTransactionStatusFailed: Retrieves monthly failed metrics for transactions
+// Purpose: Analyze failedful transaction trends across comparison periods
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: period1_start - Start date of first comparison period
+//	$3: period1_end - End date of first comparison period
+//	$4: period2_start - Start date of second comparison period
+//	$5: period2_end - End date of second comparison period
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	total_failed: Count of failedful transactions
+//	total_amount: Sum of failedful transaction amounts
+//
+// Business Logic:
+//   - Only includes failedful transactions (status = 'failed')
+//   - Covers two customizable time periods for comparison
+//   - Zero-fills months with no activity
+//   - Formats output for consistent visualization (year as text, month as 'Mon')
+//   - Orders by year and month (newest first)
+//   - Useful for identifying seasonal transaction patterns and revenue trends
 func (q *Queries) GetMonthTransactionStatusFailedCardNumber(ctx context.Context, arg GetMonthTransactionStatusFailedCardNumberParams) ([]*GetMonthTransactionStatusFailedCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthTransactionStatusFailedCardNumber,
 		arg.CardNumber,
@@ -460,6 +556,29 @@ type GetMonthTransactionStatusSuccessRow struct {
 	TotalAmount  int32  `json:"total_amount"`
 }
 
+// GetMonthTransactionStatusSuccess: Retrieves monthly success metrics for transactions
+// Purpose: Analyze successful transaction trends across comparison periods
+// Parameters:
+//
+//	$1: period1_start - Start date of first comparison period
+//	$2: period1_end - End date of first comparison period
+//	$3: period2_start - Start date of second comparison period
+//	$4: period2_end - End date of second comparison period
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	total_success: Count of successful transactions
+//	total_amount: Sum of successful transaction amounts
+//
+// Business Logic:
+//   - Only includes successful transactions (status = 'success')
+//   - Covers two customizable time periods for comparison
+//   - Zero-fills months with no activity
+//   - Formats output for consistent visualization (year as text, month as 'Mon')
+//   - Orders by year and month (newest first)
+//   - Useful for identifying seasonal transaction patterns and revenue trends
 func (q *Queries) GetMonthTransactionStatusSuccess(ctx context.Context, arg GetMonthTransactionStatusSuccessParams) ([]*GetMonthTransactionStatusSuccessRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthTransactionStatusSuccess,
 		arg.Column1,
@@ -571,6 +690,30 @@ type GetMonthTransactionStatusSuccessCardNumberRow struct {
 	TotalAmount  int32  `json:"total_amount"`
 }
 
+// GetMonthTransactionStatusSuccessCardNumber: Retrieves monthly success metrics for transactions
+// Purpose: Analyze successful transaction trends across comparison periods
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: period1_start - Start date of first comparison period
+//	$3: period1_end - End date of first comparison period
+//	$4: period2_start - Start date of second comparison period
+//	$5: period2_end - End date of second comparison period
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	total_success: Count of successful transactions
+//	total_amount: Sum of successful transaction amounts
+//
+// Business Logic:
+//   - Only includes successful transactions (status = 'success')
+//   - Covers two customizable time periods for comparison
+//   - Zero-fills months with no activity
+//   - Formats output for consistent visualization (year as text, month as 'Mon')
+//   - Orders by year and month (newest first)
+//   - Useful for identifying seasonal transaction patterns and revenue trends
 func (q *Queries) GetMonthTransactionStatusSuccessCardNumber(ctx context.Context, arg GetMonthTransactionStatusSuccessCardNumberParams) ([]*GetMonthTransactionStatusSuccessCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthTransactionStatusSuccessCardNumber,
 		arg.CardNumber,
@@ -633,6 +776,22 @@ type GetMonthlyAmountsRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetMonthlyAmounts: Retrieves total transaction amount per month for a specific year
+// Purpose:
+//
+//	Visualize monthly trends in transaction volume for charting/dashboards
+//
+// Parameters:
+//
+//	$1: reference_date - Any date within the target year
+//
+// Returns:
+//   - month: 3-letter month abbreviation
+//   - total_amount: Sum of transaction amounts in each month
+//
+// Business Logic:
+//   - Uses LEFT JOIN to ensure all months are included, even with 0 transactions
+//   - Filters out soft-deleted data (deleted_at IS NULL)
 func (q *Queries) GetMonthlyAmounts(ctx context.Context, dollar_1 time.Time) ([]*GetMonthlyAmountsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyAmounts, dollar_1)
 	if err != nil {
@@ -690,6 +849,23 @@ type GetMonthlyAmountsByCardNumberRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetMonthlyAmountsByCardNumber: Retrieves total transaction amount per month for a specific year
+// Purpose:
+//
+//	Visualize monthly trends in transaction volume for charting/dashboards
+//
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: reference_date - Any date within the target year
+//
+// Returns:
+//   - month: 3-letter month abbreviation
+//   - total_amount: Sum of transaction amounts in each month
+//
+// Business Logic:
+//   - Uses LEFT JOIN to ensure all months are included, even with 0 transactions
+//   - Filters out soft-deleted data (deleted_at IS NULL)
 func (q *Queries) GetMonthlyAmountsByCardNumber(ctx context.Context, arg GetMonthlyAmountsByCardNumberParams) ([]*GetMonthlyAmountsByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyAmountsByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -755,6 +931,25 @@ type GetMonthlyPaymentMethodsRow struct {
 	TotalAmount       int32  `json:"total_amount"`
 }
 
+// GetMonthlyPaymentMethods: Retrieves a monthly summary of transaction transactions categorized by payment method
+// Purpose:
+//
+//	Useful for visualizing how each payment method is used over time within a given year
+//
+// Parameters:
+//
+//	$1: reference_date - Any date within the target year (used to generate monthly range)
+//
+// Returns:
+//   - month (e.g., 'Jan', 'Feb')
+//   - payment_method (e.g., 'e-wallet', 'bank_transfer')
+//   - total_transactions: Number of transactions for the method that month
+//   - total_amount: Total amount of transactions for the method that month
+//
+// Business Logic:
+//   - Includes all combinations of months and available payment methods (even if 0 data)
+//   - Excludes soft-deleted transactions (deleted_at IS NULL)
+//   - Uses CROSS JOIN to ensure all months and methods are represented
 func (q *Queries) GetMonthlyPaymentMethods(ctx context.Context, dollar_1 time.Time) ([]*GetMonthlyPaymentMethodsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyPaymentMethods, dollar_1)
 	if err != nil {
@@ -831,6 +1026,26 @@ type GetMonthlyPaymentMethodsByCardNumberRow struct {
 	TotalAmount       int32  `json:"total_amount"`
 }
 
+// GetMonthlyPaymentMethodsByCardNumber: Retrieves a monthly summary of transaction transactions categorized by payment method
+// Purpose:
+//
+//	Useful for visualizing how each payment method is used over time within a given year
+//
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: reference_date - Any date within the target year (used to generate monthly range)
+//
+// Returns:
+//   - month (e.g., 'Jan', 'Feb')
+//   - payment_method (e.g., 'e-wallet', 'bank_transfer')
+//   - total_transactions: Number of transactions for the method that month
+//   - total_amount: Total amount of transactions for the method that month
+//
+// Business Logic:
+//   - Includes all combinations of months and available payment methods (even if 0 data)
+//   - Excludes soft-deleted transactions (deleted_at IS NULL)
+//   - Uses CROSS JOIN to ensure all months and methods are represent
 func (q *Queries) GetMonthlyPaymentMethodsByCardNumber(ctx context.Context, arg GetMonthlyPaymentMethodsByCardNumberParams) ([]*GetMonthlyPaymentMethodsByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyPaymentMethodsByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -896,6 +1111,26 @@ type GetTransactionByCardNumberRow struct {
 	TotalCount      int64        `json:"total_count"`
 }
 
+// GetTransactionByCardNumber: Retrieves paginated transactions for a specific card with optional filtering
+// Purpose: View transaction history for a particular card with search capability
+// Parameters:
+//
+//	$1: card_number - The card number to filter transactions (exact match)
+//	$2: search_term - Optional text to filter by payment method (NULL for no filter)
+//	$3: limit - Maximum number of records to return per page
+//	$4: offset - Number of records to skip for pagination
+//
+// Returns:
+//
+//	All transaction fields plus total_count of matching records
+//
+// Business Logic:
+//   - Only returns active transactions (non-deleted records)
+//   - Strict matching on card_number combined with optional payment method search
+//   - Case-insensitive partial matching on payment_method when search term provided
+//   - Orders results by transaction_time (newest transactions first)
+//   - Includes pagination metadata via total_count
+//   - Useful for cardholder transaction history views and statements
 func (q *Queries) GetTransactionByCardNumber(ctx context.Context, arg GetTransactionByCardNumberParams) ([]*GetTransactionByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getTransactionByCardNumber,
 		arg.CardNumber,
@@ -945,7 +1180,19 @@ WHERE
     AND deleted_at IS NULL
 `
 
-// Get Transaction by ID
+// GetTransactionByID: Retrieves a single transaction by its ID
+// Purpose: Get detailed information about a specific transaction
+// Parameters:
+//
+//	$1: transaction_id - The ID of the transaction to retrieve
+//
+// Returns:
+//
+//	All fields for the specified transaction or NULL if not found/deleted
+//
+// Business Logic:
+//   - Only returns active transactions (deleted_at IS NULL)
+//   - Useful for transaction details viewing and verification
 func (q *Queries) GetTransactionByID(ctx context.Context, transactionID int32) (*Transaction, error) {
 	row := q.db.QueryRowContext(ctx, getTransactionByID, transactionID)
 	var i Transaction
@@ -1004,7 +1251,24 @@ type GetTransactionsRow struct {
 	TotalCount      int64        `json:"total_count"`
 }
 
-// Search Transactions with Pagination
+// GetTransactions: Retrieves paginated transaction records with search capability
+// Purpose: List all transactions for management UI with filtering options
+// Parameters:
+//
+//	$1: search_term - Optional text to filter transactions by card number, payment method, or status (NULL for no filter)
+//	$2: limit - Maximum number of records to return
+//	$3: offset - Number of records to skip for pagination
+//
+// Returns:
+//
+//	All transaction fields plus total_count of matching records
+//
+// Business Logic:
+//   - Excludes soft-deleted transactions (deleted_at IS NULL)
+//   - Supports partial text matching on multiple fields (case-insensitive)
+//   - Orders by transaction_time (newest first)
+//   - Provides total_count for pagination calculations
+//   - Useful for transaction monitoring and auditing
 func (q *Queries) GetTransactions(ctx context.Context, arg GetTransactionsParams) ([]*GetTransactionsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getTransactions, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -1082,7 +1346,25 @@ type GetTransactionsByCardNumberRow struct {
 	TotalCount      int64        `json:"total_count"`
 }
 
-// Get Transactions by Card Number
+// GetTransactionsByCardNumber: Retrieves paginated transactions for a specific card
+// Purpose: List all transactions associated with a particular card
+// Parameters:
+//
+//	$1: card_number - The card number to filter transactions
+//	$2: search_term - Optional text to filter by payment method or status
+//	$3: limit - Maximum number of records to return
+//	$4: offset - Number of records to skip for pagination
+//
+// Returns:
+//
+//	All transaction fields plus total_count of matching records
+//
+// Business Logic:
+//   - Only includes active transactions (deleted_at IS NULL)
+//   - Strict card number matching combined with optional search filters
+//   - Orders by transaction_time (newest first)
+//   - Provides pagination support with total_count
+//   - Useful for cardholder transaction history
 func (q *Queries) GetTransactionsByCardNumber(ctx context.Context, arg GetTransactionsByCardNumberParams) ([]*GetTransactionsByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getTransactionsByCardNumber,
 		arg.CardNumber,
@@ -1133,7 +1415,21 @@ WHERE
 ORDER BY transaction_time DESC
 `
 
-// Get Transactions by Merchant ID
+// GetTransactionsByMerchantID: Retrieves transactions for a specific merchant
+// Purpose: List all transactions associated with a merchant
+// Parameters:
+//
+//	$1: merchant_id - The ID of the merchant to filter transactions
+//
+// Returns:
+//
+//	All transaction fields for the merchant's transactions
+//
+// Business Logic:
+//   - Only includes active transactions (deleted_at IS NULL)
+//   - Orders by transaction_time (newest first)
+//   - No pagination (assumes manageable number of records per merchant)
+//   - Useful for merchant transaction reports
 func (q *Queries) GetTransactionsByMerchantID(ctx context.Context, merchantID int32) ([]*Transaction, error) {
 	rows, err := q.db.QueryContext(ctx, getTransactionsByMerchantID, merchantID)
 	if err != nil {
@@ -1177,7 +1473,19 @@ WHERE
     AND deleted_at IS NOT NULL
 `
 
-// Get Trashed By Transaction ID
+// GetTrashedTransactionByID: Retrieves a single soft-deleted transaction by ID
+// Purpose: View details of a deleted transaction for recovery or audit
+// Parameters:
+//
+//	$1: transaction_id - The ID of the transaction to retrieve
+//
+// Returns:
+//
+//	All fields for the specified trashed transaction or NULL if not found/active
+//
+// Business Logic:
+//   - Only returns soft-deleted transactions (deleted_at IS NOT NULL)
+//   - Used in admin interfaces for transaction recovery
 func (q *Queries) GetTrashedTransactionByID(ctx context.Context, transactionID int32) (*Transaction, error) {
 	row := q.db.QueryRowContext(ctx, getTrashedTransactionByID, transactionID)
 	var i Transaction
@@ -1232,7 +1540,23 @@ type GetTrashedTransactionsRow struct {
 	TotalCount      int64        `json:"total_count"`
 }
 
-// Get Trashed Transactions with Pagination, Search, and Count
+// GetTrashedTransactions: Retrieves paginated soft-deleted transactions
+// Purpose: List all deleted transactions for recovery or audit purposes
+// Parameters:
+//
+//	$1: search_term - Optional text to filter deleted transactions
+//	$2: limit - Maximum records to return
+//	$3: offset - Records to skip for pagination
+//
+// Returns:
+//
+//	All transaction fields plus total_count of matching deleted records
+//
+// Business Logic:
+//   - Only includes soft-deleted transactions (deleted_at IS NOT NULL)
+//   - Same filtering capabilities as active transactions
+//   - Maintains newest-first ordering
+//   - Used in admin interfaces for transaction recovery
 func (q *Queries) GetTrashedTransactions(ctx context.Context, arg GetTrashedTransactionsParams) ([]*GetTrashedTransactionsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getTrashedTransactions, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -1290,6 +1614,21 @@ type GetYearlyAmountsRow struct {
 	TotalAmount int64  `json:"total_amount"`
 }
 
+// GetYearlyAmounts: Retrieves total transaction amount per year over a 5-year span
+// Purpose:
+//
+//	Analyze annual growth or decline in transaction volume for trend analysis
+//
+// Parameters:
+//
+//	$1: current_year - The most recent year to include (covers current_year - 4 to current_year)
+//
+// Returns:
+//   - year: Year of the transaction
+//   - total_amount: Total transaction amount for the year
+//
+// Business Logic:
+//   - Excludes soft-deleted transactions (deleted_at IS NULL)
 func (q *Queries) GetYearlyAmounts(ctx context.Context, dollar_1 interface{}) ([]*GetYearlyAmountsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyAmounts, dollar_1)
 	if err != nil {
@@ -1340,6 +1679,22 @@ type GetYearlyAmountsByCardNumberRow struct {
 	TotalAmount int64  `json:"total_amount"`
 }
 
+// GetYearlyAmountsByCardNumber:  Retrieves total transaction amount per year over a 5-year span
+// Purpose:
+//
+//	Analyze annual growth or decline in transaction volume for trend analysis
+//
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: current_year - The most recent year to include (covers current_year - 4 to current_year)
+//
+// Returns:
+//   - year: Year of the transaction
+//   - total_amount: Total transaction amount for the year
+//
+// Business Logic:
+//   - Excludes soft-deleted transactions (deleted_at IS NULL)
 func (q *Queries) GetYearlyAmountsByCardNumber(ctx context.Context, arg GetYearlyAmountsByCardNumberParams) ([]*GetYearlyAmountsByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyAmountsByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -1389,6 +1744,24 @@ type GetYearlyPaymentMethodsRow struct {
 	TotalAmount       int64  `json:"total_amount"`
 }
 
+// GetYearlyPaymentMethods: Retrieves yearly summary of transaction transactions grouped by payment method over a 5-year span
+// Purpose:
+//
+//	Analyze long-term trends of transaction method usage across years
+//
+// Parameters:
+//
+//	$1: current_year - The most recent year to include (covers current_year - 4 to current_year)
+//
+// Returns:
+//   - year: Year of transaction (e.g., 2020, 2021)
+//   - payment_method
+//   - total_transactions: Count of transactions per method per year
+//   - total_amount: Sum of amounts per method per year
+//
+// Business Logic:
+//   - Filters data within a 5-year window
+//   - Excludes soft-deleted transactions (deleted_at IS NULL)
 func (q *Queries) GetYearlyPaymentMethods(ctx context.Context, dollar_1 interface{}) ([]*GetYearlyPaymentMethodsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyPaymentMethods, dollar_1)
 	if err != nil {
@@ -1449,6 +1822,25 @@ type GetYearlyPaymentMethodsByCardNumberRow struct {
 	TotalAmount       int64  `json:"total_amount"`
 }
 
+// GetYearlyPaymentMethodsByCardNumber: Retrieves yearly summary of transaction transactions grouped by payment method over a 5-year span
+// Purpose:
+//
+//	Analyze long-term trends of transaction method usage across years
+//
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: current_year - The most recent year to include (covers current_year - 4 to current_year)
+//
+// Returns:
+//   - year: Year of transaction (e.g., 2020, 2021)
+//   - payment_method
+//   - total_transactions: Count of transactions per method per year
+//   - total_amount: Sum of amounts per method per year
+//
+// Business Logic:
+//   - Filters data within a 5-year window
+//   - Excludes soft-deleted transactions (deleted_at IS NULL)
 func (q *Queries) GetYearlyPaymentMethodsByCardNumber(ctx context.Context, arg GetYearlyPaymentMethodsByCardNumberParams) ([]*GetYearlyPaymentMethodsByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyPaymentMethodsByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -1537,6 +1929,25 @@ type GetYearlyTransactionStatusFailedRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetYearlyTransactionStatusFailed: Retrieves yearly failed metrics for transactions
+// Purpose: Compare annual failedful transaction performance
+// Parameters:
+//
+//	$1: current_year - The target year (includes this year and previous)
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	total_failed: Count of failedful transactions
+//	total_amount: Sum of failedful transaction amounts
+//
+// Business Logic:
+//   - Only includes failedful transactions (status = 'failed')
+//   - Compares current year with previous year
+//   - Zero-fills years with no activity
+//   - Orders by year (newest first)
+//   - Useful for year-over-year growth analysis and financial reporting
+//   - Helps identify annual transaction volume and revenue trends
 func (q *Queries) GetYearlyTransactionStatusFailed(ctx context.Context, dollar_1 int32) ([]*GetYearlyTransactionStatusFailedRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTransactionStatusFailed, dollar_1)
 	if err != nil {
@@ -1626,6 +2037,26 @@ type GetYearlyTransactionStatusFailedCardNumberRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetYearlyTransactionStatusFailed: Retrieves yearly failed metrics for transactions
+// Purpose: Compare annual failedful transaction performance
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: current_year - The target year (includes this year and previous)
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	total_failed: Count of failedful transactions
+//	total_amount: Sum of failedful transaction amounts
+//
+// Business Logic:
+//   - Only includes failedful transactions (status = 'failed')
+//   - Compares current year with previous year
+//   - Zero-fills years with no activity
+//   - Orders by year (newest first)
+//   - Useful for year-over-year growth analysis and financial reporting
+//   - Helps identify annual transaction volume and revenue trends
 func (q *Queries) GetYearlyTransactionStatusFailedCardNumber(ctx context.Context, arg GetYearlyTransactionStatusFailedCardNumberParams) ([]*GetYearlyTransactionStatusFailedCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTransactionStatusFailedCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -1709,6 +2140,25 @@ type GetYearlyTransactionStatusSuccessRow struct {
 	TotalAmount  int32  `json:"total_amount"`
 }
 
+// GetYearlyTransactionStatusSuccess: Retrieves yearly success metrics for transactions
+// Purpose: Compare annual successful transaction performance
+// Parameters:
+//
+//	$1: current_year - The target year (includes this year and previous)
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	total_success: Count of successful transactions
+//	total_amount: Sum of successful transaction amounts
+//
+// Business Logic:
+//   - Only includes successful transactions (status = 'success')
+//   - Compares current year with previous year
+//   - Zero-fills years with no activity
+//   - Orders by year (newest first)
+//   - Useful for year-over-year growth analysis and financial reporting
+//   - Helps identify annual transaction volume and revenue trends
 func (q *Queries) GetYearlyTransactionStatusSuccess(ctx context.Context, dollar_1 int32) ([]*GetYearlyTransactionStatusSuccessRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTransactionStatusSuccess, dollar_1)
 	if err != nil {
@@ -1798,6 +2248,26 @@ type GetYearlyTransactionStatusSuccessCardNumberRow struct {
 	TotalAmount  int32  `json:"total_amount"`
 }
 
+// GetYearlyTransactionStatusSuccessCardNumber: Retrieves yearly success metrics for transactions
+// Purpose: Compare annual successful transaction performance
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: current_year - The target year (includes this year and previous)
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	total_success: Count of successful transactions
+//	total_amount: Sum of successful transaction amounts
+//
+// Business Logic:
+//   - Only includes successful transactions (status = 'success')
+//   - Compares current year with previous year
+//   - Zero-fills years with no activity
+//   - Orders by year (newest first)
+//   - Useful for year-over-year growth analysis and financial reporting
+//   - Helps identify annual transaction volume and revenue trends
 func (q *Queries) GetYearlyTransactionStatusSuccessCardNumber(ctx context.Context, arg GetYearlyTransactionStatusSuccessCardNumberParams) ([]*GetYearlyTransactionStatusSuccessCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTransactionStatusSuccessCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -1829,43 +2299,96 @@ WHERE
     deleted_at IS NOT NULL
 `
 
-// Restore All Trashed Transactions
+// RestoreAllTransactions: Recovers all trashed transactions
+// Purpose: Mass restoration of deleted transactions
+// Business Logic:
+//   - Clears deleted_at for all trashed records
+//   - Useful for system recovery scenarios
+//   - Should be used cautiously in production
 func (q *Queries) RestoreAllTransactions(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, restoreAllTransactions)
 	return err
 }
 
-const restoreTransaction = `-- name: RestoreTransaction :exec
+const restoreTransaction = `-- name: RestoreTransaction :one
 UPDATE transactions
 SET
     deleted_at = NULL
 WHERE
     transaction_id = $1
     AND deleted_at IS NOT NULL
+RETURNING transaction_id, transaction_no, card_number, amount, payment_method, merchant_id, transaction_time, status, created_at, updated_at, deleted_at
 `
 
-// Restore Trashed Transaction
-func (q *Queries) RestoreTransaction(ctx context.Context, transactionID int32) error {
-	_, err := q.db.ExecContext(ctx, restoreTransaction, transactionID)
-	return err
+// RestoreTransaction: Recovers a soft-deleted transaction
+// Purpose: Reactivate a previously trashed transaction
+// Parameters:
+//
+//	$1: transaction_id - ID of transaction to restore
+//
+// Business Logic:
+//   - Clears the deleted_at timestamp
+//   - Only works on currently trashed records
+//   - Used for data recovery purposes
+func (q *Queries) RestoreTransaction(ctx context.Context, transactionID int32) (*Transaction, error) {
+	row := q.db.QueryRowContext(ctx, restoreTransaction, transactionID)
+	var i Transaction
+	err := row.Scan(
+		&i.TransactionID,
+		&i.TransactionNo,
+		&i.CardNumber,
+		&i.Amount,
+		&i.PaymentMethod,
+		&i.MerchantID,
+		&i.TransactionTime,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }
 
-const trashTransaction = `-- name: TrashTransaction :exec
+const trashTransaction = `-- name: TrashTransaction :one
 UPDATE transactions
 SET
     deleted_at = current_timestamp
 WHERE
     transaction_id = $1
     AND deleted_at IS NULL
+RETURNING transaction_id, transaction_no, card_number, amount, payment_method, merchant_id, transaction_time, status, created_at, updated_at, deleted_at
 `
 
-// Trash Transaction
-func (q *Queries) TrashTransaction(ctx context.Context, transactionID int32) error {
-	_, err := q.db.ExecContext(ctx, trashTransaction, transactionID)
-	return err
+// TrashTransaction: Soft-deletes a transaction record
+// Purpose: Remove transaction from active use without permanent deletion
+// Parameters:
+//
+//	$1: transaction_id - ID of transaction to trash
+//
+// Business Logic:
+//   - Sets deleted_at timestamp
+//   - Preserves data for audit/recovery purposes
+//   - Only affects currently active records
+func (q *Queries) TrashTransaction(ctx context.Context, transactionID int32) (*Transaction, error) {
+	row := q.db.QueryRowContext(ctx, trashTransaction, transactionID)
+	var i Transaction
+	err := row.Scan(
+		&i.TransactionID,
+		&i.TransactionNo,
+		&i.CardNumber,
+		&i.Amount,
+		&i.PaymentMethod,
+		&i.MerchantID,
+		&i.TransactionTime,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }
 
-const updateTransaction = `-- name: UpdateTransaction :exec
+const updateTransaction = `-- name: UpdateTransaction :one
 UPDATE transactions
 SET
     card_number = $2,
@@ -1877,6 +2400,7 @@ SET
 WHERE
     transaction_id = $1
     AND deleted_at IS NULL
+RETURNING transaction_id, transaction_no, card_number, amount, payment_method, merchant_id, transaction_time, status, created_at, updated_at, deleted_at
 `
 
 type UpdateTransactionParams struct {
@@ -1888,9 +2412,23 @@ type UpdateTransactionParams struct {
 	TransactionTime time.Time `json:"transaction_time"`
 }
 
-// Update Transaction
-func (q *Queries) UpdateTransaction(ctx context.Context, arg UpdateTransactionParams) error {
-	_, err := q.db.ExecContext(ctx, updateTransaction,
+// UpdateTransaction: Modifies an existing transaction's details
+// Purpose: Update transaction information
+// Parameters:
+//
+//	$1: transaction_id - ID of transaction to update
+//	$2: card_number - Updated card number
+//	$3: amount - Updated transaction amount
+//	$4: payment_method - Updated payment method
+//	$5: merchant_id - Updated merchant ID
+//	$6: transaction_time - Updated transaction timestamp
+//
+// Business Logic:
+//   - Only updates active transactions (non-deleted)
+//   - Automatically updates the modification timestamp
+//   - Used for correcting transaction details
+func (q *Queries) UpdateTransaction(ctx context.Context, arg UpdateTransactionParams) (*Transaction, error) {
+	row := q.db.QueryRowContext(ctx, updateTransaction,
 		arg.TransactionID,
 		arg.CardNumber,
 		arg.Amount,
@@ -1898,10 +2436,24 @@ func (q *Queries) UpdateTransaction(ctx context.Context, arg UpdateTransactionPa
 		arg.MerchantID,
 		arg.TransactionTime,
 	)
-	return err
+	var i Transaction
+	err := row.Scan(
+		&i.TransactionID,
+		&i.TransactionNo,
+		&i.CardNumber,
+		&i.Amount,
+		&i.PaymentMethod,
+		&i.MerchantID,
+		&i.TransactionTime,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }
 
-const updateTransactionStatus = `-- name: UpdateTransactionStatus :exec
+const updateTransactionStatus = `-- name: UpdateTransactionStatus :one
 UPDATE transactions
 SET
     status = $2,
@@ -1909,6 +2461,7 @@ SET
 WHERE
     transaction_id = $1
     AND deleted_at IS NULL
+RETURNING transaction_id, transaction_no, card_number, amount, payment_method, merchant_id, transaction_time, status, created_at, updated_at, deleted_at
 `
 
 type UpdateTransactionStatusParams struct {
@@ -1916,8 +2469,32 @@ type UpdateTransactionStatusParams struct {
 	Status        string `json:"status"`
 }
 
-// Update Transaction Status
-func (q *Queries) UpdateTransactionStatus(ctx context.Context, arg UpdateTransactionStatusParams) error {
-	_, err := q.db.ExecContext(ctx, updateTransactionStatus, arg.TransactionID, arg.Status)
-	return err
+// UpdateTransactionStatus: Changes a transaction's status
+// Purpose: Update transaction processing status
+// Parameters:
+//
+//	$1: transaction_id - ID of transaction to update
+//	$2: status - New status (e.g., 'success', 'failed', 'pending')
+//
+// Business Logic:
+//   - Only updates active transactions
+//   - Used to reflect transaction processing outcomes
+//   - Important for reconciliation and reporting
+func (q *Queries) UpdateTransactionStatus(ctx context.Context, arg UpdateTransactionStatusParams) (*Transaction, error) {
+	row := q.db.QueryRowContext(ctx, updateTransactionStatus, arg.TransactionID, arg.Status)
+	var i Transaction
+	err := row.Scan(
+		&i.TransactionID,
+		&i.TransactionNo,
+		&i.CardNumber,
+		&i.Amount,
+		&i.PaymentMethod,
+		&i.MerchantID,
+		&i.TransactionTime,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }

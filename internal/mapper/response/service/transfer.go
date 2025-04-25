@@ -45,7 +45,7 @@ func (s *transferResponseMapper) ToTransferResponseDeleteAt(transfer *record.Tra
 		TransferTime:   transfer.TransferTime,
 		CreatedAt:      transfer.CreatedAt,
 		UpdatedAt:      transfer.UpdatedAt,
-		DeletedAt:      *transfer.DeletedAt,
+		DeletedAt:      transfer.DeletedAt,
 	}
 }
 

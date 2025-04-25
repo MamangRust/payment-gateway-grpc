@@ -81,7 +81,7 @@ func (r *topupSeeder) Seed() error {
 		}
 
 		status := statusOptions[rand.Intn(len(statusOptions))]
-		err = r.db.UpdateTopupStatus(r.ctx, db.UpdateTopupStatusParams{
+		_, err = r.db.UpdateTopupStatus(r.ctx, db.UpdateTopupStatusParams{
 			TopupID: topup.TopupID,
 			Status:  status,
 		})
@@ -91,7 +91,7 @@ func (r *topupSeeder) Seed() error {
 		}
 
 		if i >= activeTopups {
-			err = r.db.TrashTopup(r.ctx, topup.TopupID)
+			_, err = r.db.TrashTopup(r.ctx, topup.TopupID)
 			if err != nil {
 				r.logger.Error("failed to trash topup", zap.Int("topup", i+1), zap.String("card", cardNumber), zap.Error(err))
 				return fmt.Errorf("failed to trash topup %d for card %s: %w", i+1, cardNumber, err)

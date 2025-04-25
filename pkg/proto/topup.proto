@@ -4,6 +4,7 @@ package pb;
 
 option go_package = 'MamangRust/paymentgatewaygrpc/internal/pb';
 
+import "google/protobuf/wrappers.proto";
 import "google/protobuf/empty.proto";
 import "api.proto";
 
@@ -90,7 +91,7 @@ message TopupResponseDeleteAt {
     string topup_time = 6;
     string created_at = 7;
     string updated_at = 8;
-    string deleted_at = 9;
+    google.protobuf.StringValue deleted_at = 9;
 }
 
 

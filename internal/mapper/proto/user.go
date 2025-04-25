@@ -3,6 +3,8 @@ package protomapper
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
+
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type userProtoMapper struct {
@@ -82,6 +84,11 @@ func (u *userProtoMapper) mapResponsesUser(users []*response.UserResponse) []*pb
 }
 
 func (u *userProtoMapper) mapResponseUserDelete(user *response.UserResponseDeleteAt) *pb.UserResponseWithDeleteAt {
+	var deletedAt *wrapperspb.StringValue
+	if user.DeletedAt != nil {
+		deletedAt = wrapperspb.String(*user.DeletedAt)
+	}
+
 	return &pb.UserResponseWithDeleteAt{
 		Id:        int32(user.ID),
 		Firstname: user.FirstName,
@@ -89,7 +96,7 @@ func (u *userProtoMapper) mapResponseUserDelete(user *response.UserResponseDelet
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
-		DeletedAt: user.DeletedAt,
+		DeletedAt: deletedAt,
 	}
 }
 

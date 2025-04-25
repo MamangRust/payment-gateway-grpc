@@ -116,6 +116,7 @@ func (h *merchantHandleApi) FindAll(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve merchant data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -166,6 +167,7 @@ func (h *merchantHandleApi) FindAllTransactions(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transaction data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -194,6 +196,7 @@ func (h *merchantHandleApi) FindAllTransactionByMerchant(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid merchant ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -225,6 +228,7 @@ func (h *merchantHandleApi) FindAllTransactionByMerchant(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transaction data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -252,6 +256,7 @@ func (h *merchantHandleApi) FindById(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid merchant ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -268,6 +273,7 @@ func (h *merchantHandleApi) FindById(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve merchant data: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -295,6 +301,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodsMerchant(c echo.Context) er
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -309,6 +316,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodsMerchant(c echo.Context) er
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly payment methods for merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -336,6 +344,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodMerchant(c echo.Context) erro
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -350,6 +359,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodMerchant(c echo.Context) erro
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly payment methods for merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -377,6 +387,7 @@ func (h *merchantHandleApi) FindMonthlyAmountMerchant(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -391,6 +402,7 @@ func (h *merchantHandleApi) FindMonthlyAmountMerchant(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly amount for merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -418,6 +430,7 @@ func (h *merchantHandleApi) FindYearlyAmountMerchant(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -432,6 +445,7 @@ func (h *merchantHandleApi) FindYearlyAmountMerchant(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly amount for merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -459,6 +473,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountMerchant(c echo.Context) error
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -473,6 +488,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountMerchant(c echo.Context) error
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly amount for merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -500,6 +516,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountMerchant(c echo.Context) error 
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -514,6 +531,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountMerchant(c echo.Context) error 
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly amount for merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -544,6 +562,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodByMerchants(c echo.Context) 
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid merchant ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -552,6 +571,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodByMerchants(c echo.Context) 
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -567,6 +587,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodByMerchants(c echo.Context) 
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly payment methods by merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -597,6 +618,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodByMerchants(c echo.Context) e
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid merchant ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -605,6 +627,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodByMerchants(c echo.Context) e
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -620,6 +643,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodByMerchants(c echo.Context) e
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly payment methods by merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -650,6 +674,7 @@ func (h *merchantHandleApi) FindMonthlyAmountByMerchants(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid merchant ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -658,6 +683,7 @@ func (h *merchantHandleApi) FindMonthlyAmountByMerchants(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -673,6 +699,7 @@ func (h *merchantHandleApi) FindMonthlyAmountByMerchants(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly amount by merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -704,6 +731,7 @@ func (h *merchantHandleApi) FindYearlyAmountByMerchants(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid merchant ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -713,6 +741,7 @@ func (h *merchantHandleApi) FindYearlyAmountByMerchants(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -730,6 +759,7 @@ func (h *merchantHandleApi) FindYearlyAmountByMerchants(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly amount by merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -760,6 +790,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountByMerchants(c echo.Context) er
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid merchant ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -768,6 +799,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountByMerchants(c echo.Context) er
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -783,6 +815,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountByMerchants(c echo.Context) er
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly amount by merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -813,6 +846,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountByMerchants(c echo.Context) err
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid merchant ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -821,6 +855,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountByMerchants(c echo.Context) err
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -836,6 +871,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountByMerchants(c echo.Context) err
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly amount by merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -889,6 +925,7 @@ func (h *merchantHandleApi) FindAllTransactionByApikey(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transaction data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -919,6 +956,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodByApikeys(c echo.Context) er
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -934,6 +972,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodByApikeys(c echo.Context) er
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly payment methods by merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -964,6 +1003,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodByApikeys(c echo.Context) err
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -979,6 +1019,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodByApikeys(c echo.Context) err
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly payment methods by merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1009,6 +1050,7 @@ func (h *merchantHandleApi) FindMonthlyAmountByApikeys(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1024,6 +1066,7 @@ func (h *merchantHandleApi) FindMonthlyAmountByApikeys(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly amount by merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1054,6 +1097,7 @@ func (h *merchantHandleApi) FindYearlyAmountByApikeys(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1069,6 +1113,7 @@ func (h *merchantHandleApi) FindYearlyAmountByApikeys(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly amount by merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1099,6 +1144,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountByApikeys(c echo.Context) erro
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1114,6 +1160,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountByApikeys(c echo.Context) erro
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly amount by merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1144,6 +1191,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountByApikeys(c echo.Context) error
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1159,6 +1207,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountByApikeys(c echo.Context) error
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly amount by merchant: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1196,6 +1245,7 @@ func (h *merchantHandleApi) FindByApiKey(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve merchant data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1223,6 +1273,7 @@ func (h *merchantHandleApi) FindByMerchantUserId(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid merchant ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1239,6 +1290,7 @@ func (h *merchantHandleApi) FindByMerchantUserId(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve merchant data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1288,6 +1340,7 @@ func (h *merchantHandleApi) FindByActive(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve merchant data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1338,6 +1391,7 @@ func (h *merchantHandleApi) FindByTrashed(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve merchant data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1366,6 +1420,7 @@ func (h *merchantHandleApi) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1374,6 +1429,7 @@ func (h *merchantHandleApi) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1391,6 +1447,7 @@ func (h *merchantHandleApi) Create(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to create merchant:",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1418,6 +1475,7 @@ func (h *merchantHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid merchant ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1428,6 +1486,7 @@ func (h *merchantHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1436,14 +1495,13 @@ func (h *merchantHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: ",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
-	body.MerchantID = id
-
 	ctx := c.Request().Context()
 	req := &pb.UpdateMerchantRequest{
-		MerchantId: int32(body.MerchantID),
+		MerchantId: int32(id),
 		Name:       body.Name,
 		UserId:     int32(body.UserID),
 		Status:     body.Status,
@@ -1456,6 +1514,7 @@ func (h *merchantHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update merchant: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1487,6 +1546,7 @@ func (h *merchantHandleApi) TrashedMerchant(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1502,6 +1562,7 @@ func (h *merchantHandleApi) TrashedMerchant(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to trashed merchant:",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1533,6 +1594,7 @@ func (h *merchantHandleApi) RestoreMerchant(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1548,6 +1610,7 @@ func (h *merchantHandleApi) RestoreMerchant(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to restore merchant:",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1577,6 +1640,7 @@ func (h *merchantHandleApi) Delete(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1592,6 +1656,7 @@ func (h *merchantHandleApi) Delete(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to delete merchant:",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1620,6 +1685,7 @@ func (h *merchantHandleApi) RestoreAllMerchant(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to permanently restore all merchant",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1650,6 +1716,7 @@ func (h *merchantHandleApi) DeleteAllMerchantPermanent(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to permanently delete all merchant",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 

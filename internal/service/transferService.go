@@ -4,6 +4,7 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/service"
+	"net/http"
 
 	"MamangRust/paymentgatewaygrpc/internal/repository"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
@@ -36,7 +37,11 @@ func NewTransferService(
 	}
 }
 
-func (s *transferService) FindAll(page int, pageSize int, search string) ([]*response.TransferResponse, int, *response.ErrorResponse) {
+func (s *transferService) FindAll(req *requests.FindAllTranfers) ([]*response.TransferResponse, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+
 	s.logger.Debug("Fetching transfer",
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize),
@@ -50,7 +55,7 @@ func (s *transferService) FindAll(page int, pageSize int, search string) ([]*res
 		pageSize = 10
 	}
 
-	transfers, totalRecords, err := s.transferRepository.FindAll(search, page, pageSize)
+	transfers, totalRecords, err := s.transferRepository.FindAll(req)
 
 	if err != nil {
 		s.logger.Error("Failed to fetch transfer",
@@ -59,7 +64,7 @@ func (s *transferService) FindAll(page int, pageSize int, search string) ([]*res
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search))
 
-		return nil, 0, &response.ErrorResponse{
+		return nil, nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch transfers",
 		}
@@ -68,7 +73,7 @@ func (s *transferService) FindAll(page int, pageSize int, search string) ([]*res
 	so := s.mapping.ToTransfersResponse(transfers)
 
 	s.logger.Debug("Successfully fetched transfer",
-		zap.Int("totalRecords", totalRecords),
+		zap.Int("totalRecords", *totalRecords),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
@@ -96,10 +101,14 @@ func (s *transferService) FindById(transferId int) (*response.TransferResponse, 
 	return so, nil
 }
 
-func (s *transferService) FindMonthTransferStatusSuccess(year int, month int) ([]*response.TransferResponseMonthStatusSuccess, *response.ErrorResponse) {
+func (s *transferService) FindMonthTransferStatusSuccess(req *requests.MonthStatusTransfer) ([]*response.TransferResponseMonthStatusSuccess, *response.ErrorResponse) {
+	year := req.Year
+	month := req.Month
+
 	s.logger.Debug("Fetching monthly Transfer status success", zap.Int("year", year), zap.Int("month", month))
 
-	records, err := s.transferRepository.GetMonthTransferStatusSuccess(year, month)
+	records, err := s.transferRepository.GetMonthTransferStatusSuccess(req)
+
 	if err != nil {
 		s.logger.Error("failed to fetch monthly Transfer status success", zap.Error(err))
 
@@ -136,10 +145,14 @@ func (s *transferService) FindYearlyTransferStatusSuccess(year int) ([]*response
 	return so, nil
 }
 
-func (s *transferService) FindMonthTransferStatusFailed(year int, month int) ([]*response.TransferResponseMonthStatusFailed, *response.ErrorResponse) {
+func (s *transferService) FindMonthTransferStatusFailed(req *requests.MonthStatusTransfer) ([]*response.TransferResponseMonthStatusFailed, *response.ErrorResponse) {
+	year := req.Year
+	month := req.Month
+
 	s.logger.Debug("Fetching monthly Transfer status Failed", zap.Int("year", year), zap.Int("month", month))
 
-	records, err := s.transferRepository.GetMonthTransferStatusFailed(year, month)
+	records, err := s.transferRepository.GetMonthTransferStatusFailed(req)
+
 	if err != nil {
 		s.logger.Error("failed to fetch monthly Transfer status Failed", zap.Error(err))
 
@@ -176,10 +189,14 @@ func (s *transferService) FindYearlyTransferStatusFailed(year int) ([]*response.
 	return so, nil
 }
 
-func (s *transferService) FindMonthTransferStatusSuccessByCardNumber(card_number string, year int, month int) ([]*response.TransferResponseMonthStatusSuccess, *response.ErrorResponse) {
+func (s *transferService) FindMonthTransferStatusSuccessByCardNumber(req *requests.MonthStatusTransferCardNumber) ([]*response.TransferResponseMonthStatusSuccess, *response.ErrorResponse) {
+	card_number := req.CardNumber
+	year := req.Year
+	month := req.Month
+
 	s.logger.Debug("Fetching monthly Transfer status success", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
 
-	records, err := s.transferRepository.GetMonthTransferStatusSuccessByCardNumber(card_number, year, month)
+	records, err := s.transferRepository.GetMonthTransferStatusSuccessByCardNumber(req)
 	if err != nil {
 		s.logger.Error("failed to fetch monthly Transfer status success", zap.Error(err))
 
@@ -196,10 +213,13 @@ func (s *transferService) FindMonthTransferStatusSuccessByCardNumber(card_number
 	return so, nil
 }
 
-func (s *transferService) FindYearlyTransferStatusSuccessByCardNumber(card_number string, year int) ([]*response.TransferResponseYearStatusSuccess, *response.ErrorResponse) {
+func (s *transferService) FindYearlyTransferStatusSuccessByCardNumber(req *requests.YearStatusTransferCardNumber) ([]*response.TransferResponseYearStatusSuccess, *response.ErrorResponse) {
+	card_number := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("Fetching yearly Transfer status success", zap.Int("year", year), zap.String("card_number", card_number))
 
-	records, err := s.transferRepository.GetYearlyTransferStatusSuccessByCardNumber(card_number, year)
+	records, err := s.transferRepository.GetYearlyTransferStatusSuccessByCardNumber(req)
 	if err != nil {
 		s.logger.Error("failed to fetch yearly Transfer status success", zap.Error(err))
 
@@ -216,10 +236,15 @@ func (s *transferService) FindYearlyTransferStatusSuccessByCardNumber(card_numbe
 	return so, nil
 }
 
-func (s *transferService) FindMonthTransferStatusFailedByCardNumber(card_number string, year int, month int) ([]*response.TransferResponseMonthStatusFailed, *response.ErrorResponse) {
+func (s *transferService) FindMonthTransferStatusFailedByCardNumber(req *requests.MonthStatusTransferCardNumber) ([]*response.TransferResponseMonthStatusFailed, *response.ErrorResponse) {
+	card_number := req.CardNumber
+	year := req.Year
+	month := req.Month
+
 	s.logger.Debug("Fetching monthly Transfer status Failed", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
 
-	records, err := s.transferRepository.GetMonthTransferStatusFailedByCardNumber(card_number, year, month)
+	records, err := s.transferRepository.GetMonthTransferStatusFailedByCardNumber(req)
+
 	if err != nil {
 		s.logger.Error("failed to fetch monthly Transfer status Failed", zap.Error(err))
 
@@ -236,10 +261,13 @@ func (s *transferService) FindMonthTransferStatusFailedByCardNumber(card_number 
 	return so, nil
 }
 
-func (s *transferService) FindYearlyTransferStatusFailedByCardNumber(card_number string, year int) ([]*response.TransferResponseYearStatusFailed, *response.ErrorResponse) {
+func (s *transferService) FindYearlyTransferStatusFailedByCardNumber(req *requests.YearStatusTransferCardNumber) ([]*response.TransferResponseYearStatusFailed, *response.ErrorResponse) {
+	card_number := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("Fetching yearly Transfer status Failed", zap.Int("year", year), zap.String("card_number", card_number))
 
-	records, err := s.transferRepository.GetYearlyTransferStatusFailedByCardNumber(card_number, year)
+	records, err := s.transferRepository.GetYearlyTransferStatusFailedByCardNumber(req)
 	if err != nil {
 		s.logger.Error("failed to fetch yearly Transfer status Failed", zap.Error(err))
 
@@ -294,10 +322,13 @@ func (s *transferService) FindYearlyTransferAmounts(year int) ([]*response.Trans
 	return responseAmounts, nil
 }
 
-func (s *transferService) FindMonthlyTransferAmountsBySenderCardNumber(cardNumber string, year int) ([]*response.TransferMonthAmountResponse, *response.ErrorResponse) {
+func (s *transferService) FindMonthlyTransferAmountsBySenderCardNumber(req *requests.MonthYearCardNumber) ([]*response.TransferMonthAmountResponse, *response.ErrorResponse) {
+	cardNumber := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("Fetching monthly transfer amounts by sender card number", zap.String("card_number", cardNumber), zap.Int("year", year))
 
-	amounts, err := s.transferRepository.GetMonthlyTransferAmountsBySenderCardNumber(cardNumber, year)
+	amounts, err := s.transferRepository.GetMonthlyTransferAmountsBySenderCardNumber(req)
 	if err != nil {
 		s.logger.Error("failed to find monthly transfer amounts by sender card number", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -313,10 +344,13 @@ func (s *transferService) FindMonthlyTransferAmountsBySenderCardNumber(cardNumbe
 	return responseAmounts, nil
 }
 
-func (s *transferService) FindMonthlyTransferAmountsByReceiverCardNumber(cardNumber string, year int) ([]*response.TransferMonthAmountResponse, *response.ErrorResponse) {
+func (s *transferService) FindMonthlyTransferAmountsByReceiverCardNumber(req *requests.MonthYearCardNumber) ([]*response.TransferMonthAmountResponse, *response.ErrorResponse) {
+	cardNumber := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("Fetching monthly transfer amounts by receiver card number", zap.String("card_number", cardNumber), zap.Int("year", year))
 
-	amounts, err := s.transferRepository.GetMonthlyTransferAmountsByReceiverCardNumber(cardNumber, year)
+	amounts, err := s.transferRepository.GetMonthlyTransferAmountsByReceiverCardNumber(req)
 	if err != nil {
 		s.logger.Error("failed to find monthly transfer amounts by receiver card number", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -332,10 +366,13 @@ func (s *transferService) FindMonthlyTransferAmountsByReceiverCardNumber(cardNum
 	return responseAmounts, nil
 }
 
-func (s *transferService) FindYearlyTransferAmountsBySenderCardNumber(cardNumber string, year int) ([]*response.TransferYearAmountResponse, *response.ErrorResponse) {
+func (s *transferService) FindYearlyTransferAmountsBySenderCardNumber(req *requests.MonthYearCardNumber) ([]*response.TransferYearAmountResponse, *response.ErrorResponse) {
+	cardNumber := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("Fetching yearly transfer amounts by sender card number", zap.String("card_number", cardNumber), zap.Int("year", year))
 
-	amounts, err := s.transferRepository.GetYearlyTransferAmountsBySenderCardNumber(cardNumber, year)
+	amounts, err := s.transferRepository.GetYearlyTransferAmountsBySenderCardNumber(req)
 	if err != nil {
 		s.logger.Error("failed to find yearly transfer amounts by sender card number", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -351,10 +388,13 @@ func (s *transferService) FindYearlyTransferAmountsBySenderCardNumber(cardNumber
 	return responseAmounts, nil
 }
 
-func (s *transferService) FindYearlyTransferAmountsByReceiverCardNumber(cardNumber string, year int) ([]*response.TransferYearAmountResponse, *response.ErrorResponse) {
+func (s *transferService) FindYearlyTransferAmountsByReceiverCardNumber(req *requests.MonthYearCardNumber) ([]*response.TransferYearAmountResponse, *response.ErrorResponse) {
+	cardNumber := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("Fetching yearly transfer amounts by receiver card number", zap.String("card_number", cardNumber), zap.Int("year", year))
 
-	amounts, err := s.transferRepository.GetYearlyTransferAmountsByReceiverCardNumber(cardNumber, year)
+	amounts, err := s.transferRepository.GetYearlyTransferAmountsByReceiverCardNumber(req)
 	if err != nil {
 		s.logger.Error("failed to find yearly transfer amounts by receiver card number", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -370,7 +410,11 @@ func (s *transferService) FindYearlyTransferAmountsByReceiverCardNumber(cardNumb
 	return responseAmounts, nil
 }
 
-func (s *transferService) FindByActive(page int, pageSize int, search string) ([]*response.TransferResponseDeleteAt, int, *response.ErrorResponse) {
+func (s *transferService) FindByActive(req *requests.FindAllTranfers) ([]*response.TransferResponseDeleteAt, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+
 	s.logger.Debug("Fetching active transfer",
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize),
@@ -384,7 +428,7 @@ func (s *transferService) FindByActive(page int, pageSize int, search string) ([
 		pageSize = 10
 	}
 
-	transfers, totalRecords, err := s.transferRepository.FindByActive(search, page, pageSize)
+	transfers, totalRecords, err := s.transferRepository.FindByActive(req)
 
 	if err != nil {
 		s.logger.Error("Failed to fetch active transfer",
@@ -393,7 +437,7 @@ func (s *transferService) FindByActive(page int, pageSize int, search string) ([
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search))
 
-		return nil, 0, &response.ErrorResponse{
+		return nil, nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "No active transaction records found",
 		}
@@ -402,14 +446,18 @@ func (s *transferService) FindByActive(page int, pageSize int, search string) ([
 	so := s.mapping.ToTransfersResponseDeleteAt(transfers)
 
 	s.logger.Debug("Successfully fetched active transfer",
-		zap.Int("totalRecords", totalRecords),
+		zap.Int("totalRecords", *totalRecords),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
 	return so, totalRecords, nil
 }
 
-func (s *transferService) FindByTrashed(page int, pageSize int, search string) ([]*response.TransferResponseDeleteAt, int, *response.ErrorResponse) {
+func (s *transferService) FindByTrashed(req *requests.FindAllTranfers) ([]*response.TransferResponseDeleteAt, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+
 	s.logger.Debug("Fetching trashed transfer",
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize),
@@ -423,7 +471,7 @@ func (s *transferService) FindByTrashed(page int, pageSize int, search string) (
 		pageSize = 10
 	}
 
-	transfers, totalRecords, err := s.transferRepository.FindByTrashed(search, page, pageSize)
+	transfers, totalRecords, err := s.transferRepository.FindByTrashed(req)
 
 	if err != nil {
 		s.logger.Error("Failed to fetch trashed transfer",
@@ -432,7 +480,7 @@ func (s *transferService) FindByTrashed(page int, pageSize int, search string) (
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search))
 
-		return nil, 0, &response.ErrorResponse{
+		return nil, nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "No trashed transaction records found",
 		}
@@ -441,7 +489,7 @@ func (s *transferService) FindByTrashed(page int, pageSize int, search string) (
 	so := s.mapping.ToTransfersResponseDeleteAt(transfers)
 
 	s.logger.Debug("Successfully fetched trashed transfer",
-		zap.Int("totalRecords", totalRecords),
+		zap.Int("totalRecords", *totalRecords),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
@@ -502,27 +550,13 @@ func (s *transferService) CreateTransaction(request *requests.CreateTransferRequ
 		zap.Any("request", request),
 	)
 
-	if s.logger == nil {
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Logger not initialized",
-		}
-	}
-
-	if s.mapping == nil {
-		s.logger.Error("Mapping service not initialized")
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Mapping service not initialized",
-		}
-	}
-
 	_, err := s.cardRepository.FindCardByCardNumber(request.TransferFrom)
 	if err != nil {
 		s.logger.Error("failed to find sender card by Number", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Sender card not found",
+			Code:    http.StatusNotFound,
 		}
 	}
 
@@ -532,6 +566,7 @@ func (s *transferService) CreateTransaction(request *requests.CreateTransferRequ
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Receiver card not found",
+			Code:    http.StatusNotFound,
 		}
 	}
 
@@ -541,6 +576,7 @@ func (s *transferService) CreateTransaction(request *requests.CreateTransferRequ
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find sender saldo",
+			Code:    http.StatusNotFound,
 		}
 	}
 
@@ -550,6 +586,7 @@ func (s *transferService) CreateTransaction(request *requests.CreateTransferRequ
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find receiver saldo",
+			Code:    http.StatusNotFound,
 		}
 	}
 
@@ -557,6 +594,7 @@ func (s *transferService) CreateTransaction(request *requests.CreateTransferRequ
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Insufficient balance for sender",
+			Code:    http.StatusBadRequest,
 		}
 	}
 
@@ -570,6 +608,7 @@ func (s *transferService) CreateTransaction(request *requests.CreateTransferRequ
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update sender saldo",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -593,6 +632,7 @@ func (s *transferService) CreateTransaction(request *requests.CreateTransferRequ
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update receiver saldo",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -629,6 +669,7 @@ func (s *transferService) CreateTransaction(request *requests.CreateTransferRequ
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to create transfer",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -640,6 +681,7 @@ func (s *transferService) CreateTransaction(request *requests.CreateTransferRequ
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update transfer status",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -654,28 +696,28 @@ func (s *transferService) CreateTransaction(request *requests.CreateTransferRequ
 
 func (s *transferService) UpdateTransaction(request *requests.UpdateTransferRequest) (*response.TransferResponse, *response.ErrorResponse) {
 	s.logger.Debug("Starting update transaction process",
-		zap.Int("transfer_id", request.TransferID),
+		zap.Int("transfer_id", *request.TransferID),
 	)
 
-	transfer, err := s.transferRepository.FindById(request.TransferID)
+	transfer, err := s.transferRepository.FindById(*request.TransferID)
 	if err != nil {
 		s.logger.Error("Failed to find transfer by ID", zap.Error(err))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: fmt.Sprintf("Transfer with ID %d not found: %v", request.TransferID, err),
+			Message: fmt.Sprintf("Transfer with ID %d not found: %v", *request.TransferID, err),
+			Code:    http.StatusNotFound,
 		}
 	}
 
 	amountDifference := request.TransferAmount - transfer.TransferAmount
 
 	senderSaldo, err := s.saldoRepository.FindByCardNumber(transfer.TransferFrom)
-
 	if err != nil {
 		s.logger.Error("Failed to find sender's saldo by user ID", zap.Error(err))
 
 		if _, err := s.transferRepository.UpdateTransferStatus(&requests.UpdateTransferStatus{
-			TransferID: request.TransferID,
+			TransferID: *request.TransferID,
 			Status:     "failed",
 		}); err != nil {
 			s.logger.Error("Failed to update transfer status", zap.Error(err))
@@ -684,6 +726,7 @@ func (s *transferService) UpdateTransaction(request *requests.UpdateTransferRequ
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to find sender's saldo: %v", err),
+			Code:    http.StatusNotFound,
 		}
 	}
 
@@ -692,7 +735,7 @@ func (s *transferService) UpdateTransaction(request *requests.UpdateTransferRequ
 		s.logger.Error("Insufficient balance for sender", zap.String("senderID", transfer.TransferFrom))
 
 		if _, err := s.transferRepository.UpdateTransferStatus(&requests.UpdateTransferStatus{
-			TransferID: request.TransferID,
+			TransferID: *request.TransferID,
 			Status:     "failed",
 		}); err != nil {
 			s.logger.Error("Failed to update transfer status", zap.Error(err))
@@ -701,6 +744,7 @@ func (s *transferService) UpdateTransaction(request *requests.UpdateTransferRequ
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Insufficient balance for sender",
+			Code:    http.StatusBadRequest,
 		}
 	}
 
@@ -713,7 +757,7 @@ func (s *transferService) UpdateTransaction(request *requests.UpdateTransferRequ
 		s.logger.Error("Failed to update sender's saldo", zap.Error(err))
 
 		if _, err := s.transferRepository.UpdateTransferStatus(&requests.UpdateTransferStatus{
-			TransferID: request.TransferID,
+			TransferID: *request.TransferID,
 			Status:     "failed",
 		}); err != nil {
 			s.logger.Error("Failed to update transfer status", zap.Error(err))
@@ -722,15 +766,14 @@ func (s *transferService) UpdateTransaction(request *requests.UpdateTransferRequ
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to update sender's saldo: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
-	// Cari saldo penerima
 	receiverSaldo, err := s.saldoRepository.FindByCardNumber(transfer.TransferTo)
 	if err != nil {
 		s.logger.Error("Failed to find receiver's saldo by user ID", zap.Error(err))
 
-		// Rollback saldo pengirim
 		rollbackSenderBalance := &requests.UpdateSaldoBalance{
 			CardNumber:   transfer.TransferFrom,
 			TotalBalance: senderSaldo.TotalBalance + amountDifference,
@@ -741,7 +784,7 @@ func (s *transferService) UpdateTransaction(request *requests.UpdateTransferRequ
 		}
 
 		if _, err := s.transferRepository.UpdateTransferStatus(&requests.UpdateTransferStatus{
-			TransferID: request.TransferID,
+			TransferID: *request.TransferID,
 			Status:     "failed",
 		}); err != nil {
 			s.logger.Error("Failed to update transfer status", zap.Error(err))
@@ -750,6 +793,7 @@ func (s *transferService) UpdateTransaction(request *requests.UpdateTransferRequ
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to find receiver's saldo: %v", err),
+			Code:    http.StatusNotFound,
 		}
 	}
 
@@ -779,7 +823,7 @@ func (s *transferService) UpdateTransaction(request *requests.UpdateTransferRequ
 		}
 
 		if _, err := s.transferRepository.UpdateTransferStatus(&requests.UpdateTransferStatus{
-			TransferID: request.TransferID,
+			TransferID: *request.TransferID,
 			Status:     "failed",
 		}); err != nil {
 			s.logger.Error("Failed to update transfer status", zap.Error(err))
@@ -788,10 +832,10 @@ func (s *transferService) UpdateTransaction(request *requests.UpdateTransferRequ
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update receiver's saldo, rollback attempted but may be incomplete",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
-	// Update transfer di database
 	updatedTransfer, err := s.transferRepository.UpdateTransfer(request)
 	if err != nil {
 		s.logger.Error("Failed to update transfer", zap.Error(err))
@@ -813,7 +857,7 @@ func (s *transferService) UpdateTransaction(request *requests.UpdateTransferRequ
 		}
 
 		if _, err := s.transferRepository.UpdateTransferStatus(&requests.UpdateTransferStatus{
-			TransferID: request.TransferID,
+			TransferID: *request.TransferID,
 			Status:     "failed",
 		}); err != nil {
 			s.logger.Error("Failed to update transfer status", zap.Error(err))
@@ -822,24 +866,26 @@ func (s *transferService) UpdateTransaction(request *requests.UpdateTransferRequ
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to update transfer: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	if _, err := s.transferRepository.UpdateTransferStatus(&requests.UpdateTransferStatus{
-		TransferID: request.TransferID,
+		TransferID: *request.TransferID,
 		Status:     "success",
 	}); err != nil {
 		s.logger.Error("Failed to update transfer status", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update transfer status to success",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	so := s.mapping.ToTransferResponse(updatedTransfer)
 
 	s.logger.Debug("successfully update transaction",
-		zap.Int("transfer_id", request.TransferID),
+		zap.Int("transfer_id", *request.TransferID),
 	)
 
 	return so, nil

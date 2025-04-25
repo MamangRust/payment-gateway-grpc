@@ -7,13 +7,24 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+type FindAllSaldos struct {
+	Search   string `json:"search" validate:"required"`
+	Page     int    `json:"page" validate:"min=1"`
+	PageSize int    `json:"page_size" validate:"min=1,max=100"`
+}
+
+type MonthTotalSaldoBalance struct {
+	Year  int `json:"year" validate:"required"`
+	Month int `json:"month" validate:"required"`
+}
+
 type CreateSaldoRequest struct {
 	CardNumber   string `json:"card_number" validate:"required"`
 	TotalBalance int    `json:"total_balance" validate:"required"`
 }
 
 type UpdateSaldoRequest struct {
-	SaldoID      int    `json:"saldo_id" validate:"required"`
+	SaldoID      *int   `json:"saldo_id" `
 	CardNumber   string `json:"card_number" validate:"required"`
 	TotalBalance int    `json:"total_balance" validate:"required"`
 }

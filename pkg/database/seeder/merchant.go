@@ -56,7 +56,7 @@ func (r *merchantSeeder) Seed() error {
 
 		status := statusOptions[rand.Intn(len(statusOptions))]
 
-		err = r.db.UpdateMerchantStatus(r.ctx, db.UpdateMerchantStatusParams{
+		_, err = r.db.UpdateMerchantStatus(r.ctx, db.UpdateMerchantStatusParams{
 			MerchantID: merchant.MerchantID,
 			Status:     status,
 		})
@@ -67,7 +67,7 @@ func (r *merchantSeeder) Seed() error {
 		}
 
 		if i >= activeMerchants {
-			err = r.db.TrashMerchant(r.ctx, merchant.MerchantID)
+			_, err = r.db.TrashMerchant(r.ctx, merchant.MerchantID)
 			if err != nil {
 				r.logger.Error("failed to trash merchant", zap.Int("merchant", i+1), zap.Error(err))
 				return fmt.Errorf("failed to trash merchant %d: %w", i+1, err)

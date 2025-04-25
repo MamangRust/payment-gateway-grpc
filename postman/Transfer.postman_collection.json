@@ -1,0 +1,1371 @@
+{
+	"info": {
+		"_postman_id": "771e6aea-9367-43a9-a4f1-aa97c913cc72",
+		"name": "Transfer",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12455638"
+	},
+	"item": [
+		{
+			"name": "Sender",
+			"item": [
+				{
+					"name": "Find All",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers?page=1&page_size=10&search=test",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "test"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers?page=1&page_size=10&search=test\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find By Id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Transfer From",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": ""
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/transfer_from/1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"transfer_from",
+								"1234567890"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/transfer_from/1234567890\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Transfer To",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/transfer_to/9876543210",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"transfer_to",
+								"9876543210"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/transfer_to/9876543210\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\"\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Trash Transfer",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/trashed?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"trashed"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/trashed?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Active",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/active?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"active"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/active?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Create Transfer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transfer_from\": \"1234567890\",\n    \"transfer_to\": \"9876543210\",\n    \"transfer_amount\": 100000\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"create"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transfers/create\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"transfer_from\": \"1234567890\",\n    \"transfer_to\": \"9876543210\",\n    \"transfer_amount\": 100000\n  }'\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Transfer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transfer_id\": 123,\n    \"transfer_from\": \"1234567890\",\n    \"transfer_to\": \"9876543210\",\n    \"transfer_amount\": 150000\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/update/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"update",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transfers/update/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"transfer_id\": 123,\n    \"transfer_from\": \"1234567890\",\n    \"transfer_to\": \"9876543210\",\n    \"transfer_amount\": 150000\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "Trash Transfer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/trashed/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"trashed",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transfers/trashed/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Transfer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/restore/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"restore",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transfers/restore/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Permanent",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/permanent/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"permanent",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X DELETE \"http://localhost:5000/api/transfers/permanent/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Restore All",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/restore/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"restore",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transfers/restore/all\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\"\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete all Permanent",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/permanent/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"permanent",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transfers/permanent/all\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Receiver",
+			"item": [
+				{
+					"name": "Find All",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers?page=1&page_size=10&search=test",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "test"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers?page=1&page_size=10&search=test\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find By Id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Transfer From",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": ""
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/transfer_from/1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"transfer_from",
+								"1234567890"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/transfer_from/1234567890\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Transfer To",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/transfer_to/9876543210",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"transfer_to",
+								"9876543210"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/transfer_to/9876543210\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\"\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Trash Transfer",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/trashed?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"trashed"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/trashed?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Active",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/active?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"active"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/active?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Create Transfer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transfer_from\": \"1234567890\",\n    \"transfer_to\": \"9876543210\",\n    \"transfer_amount\": 100000\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"create"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transfers/create\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"transfer_from\": \"1234567890\",\n    \"transfer_to\": \"9876543210\",\n    \"transfer_amount\": 100000\n  }'\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Transfer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transfer_id\": 123,\n    \"transfer_from\": \"1234567890\",\n    \"transfer_to\": \"9876543210\",\n    \"transfer_amount\": 150000\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/update/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"update",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transfers/update/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"transfer_id\": 123,\n    \"transfer_from\": \"1234567890\",\n    \"transfer_to\": \"9876543210\",\n    \"transfer_amount\": 150000\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "Trash Transfer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/trashed/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"trashed",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transfers/trashed/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Transfer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/restore/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"restore",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transfers/restore/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Permanent",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/permanent/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"permanent",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X DELETE \"http://localhost:5000/api/transfers/permanent/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Restore All",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/restore/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"restore",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transfers/restore/all\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\"\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete all Permanent",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/permanent/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"permanent",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transfers/permanent/all\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "By Card",
+			"item": [
+				{
+					"name": "Month Success by Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/monthly-success-by-card?year=2025&month=07&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"monthly-success-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "month",
+									"value": "07"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/monthly-success-by-card?year=2025&month=07&card_number=1234567890\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Success By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/yearly-success-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"yearly-success-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/yearly-success-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\"\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Month Failed By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/monthly-failed-by-card?year=2025&month=07&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"monthly-failed-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "month",
+									"value": "07"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/monthly-failed-by-card?year=2025&month=07&card_number=1234567890\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Failed By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/yearly-failed-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"yearly-failed-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/yearly-failed-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month By Sender",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/monthly-by-sender?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"monthly-by-sender"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/monthly-by-sender?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month By Receiver",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/monthly-by-receiver?year=2025&card_number=9876543210",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"monthly-by-receiver"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "9876543210"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/monthly-by-receiver?year=2025&card_number=9876543210\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year By Sender",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/yearly-by-sender?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"yearly-by-sender"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/yearly-by-sender?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\"\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Year By Receiver",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transfers/yearly-by-receiver?year=2025&card_number=9876543210",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transfers",
+								"yearly-by-receiver"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "9876543210"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/yearly-by-receiver?year=2025&card_number=9876543210\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Month Success",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/transfers/monthly-success?year=2025&month=07",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"transfers",
+						"monthly-success"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						},
+						{
+							"key": "month",
+							"value": "07"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/monthly-success?year=2025&month=07\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Success",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/transfers/yearly-success?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"transfers",
+						"yearly-success"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/yearly-success?year=2025\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+			},
+			"response": []
+		},
+		{
+			"name": "Month Failed",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/transfers/monthly-failed?year=2025&month=07",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"transfers",
+						"monthly-failed"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						},
+						{
+							"key": "month",
+							"value": "07"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/monthly-failed?year=2025&month=07\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year failed",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/transfers/yearly-failed?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"transfers",
+						"yearly-failed"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/yearly-failed?year=2025\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+			},
+			"response": []
+		},
+		{
+			"name": "Month Amount",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/transfers/monthly-amount?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"transfers",
+						"monthly-amount"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/monthly-amount?year=2025\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Amount",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/transfers/yearly-amount?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"transfers",
+						"yearly-amount"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transfers/yearly-amount?year=2025\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+			},
+			"response": []
+		}
+	]
+}

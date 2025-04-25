@@ -3,6 +3,8 @@ package protomapper
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
+
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type topupProtoMapper struct {
@@ -116,7 +118,6 @@ func (t topupProtoMapper) ToProtoResponseTopupAll(status string, message string)
 	}
 }
 
-
 func (t *topupProtoMapper) mapResponseTopup(topup *response.TopupResponse) *pb.TopupResponse {
 	return &pb.TopupResponse{
 		Id:          int32(topup.ID),
@@ -141,6 +142,11 @@ func (t *topupProtoMapper) mapResponsesTopup(topups []*response.TopupResponse) [
 }
 
 func (t *topupProtoMapper) mapResponseTopupDeleteAt(topup *response.TopupResponseDeleteAt) *pb.TopupResponseDeleteAt {
+	var deletedAt *wrapperspb.StringValue
+	if topup.DeletedAt != nil {
+		deletedAt = wrapperspb.String(*topup.DeletedAt)
+	}
+
 	return &pb.TopupResponseDeleteAt{
 		Id:          int32(topup.ID),
 		CardNumber:  topup.CardNumber,
@@ -150,7 +156,7 @@ func (t *topupProtoMapper) mapResponseTopupDeleteAt(topup *response.TopupRespons
 		TopupTime:   topup.TopupTime,
 		CreatedAt:   topup.CreatedAt,
 		UpdatedAt:   topup.UpdatedAt,
-		DeletedAt:   topup.DeletedAt,
+		DeletedAt:   deletedAt,
 	}
 }
 

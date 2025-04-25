@@ -42,7 +42,7 @@ func (r *userSeeder) Seed() error {
 		}
 
 		if i <= 20 {
-			err = r.db.TrashUser(r.ctx, createdUser.UserID)
+			_, err := r.db.TrashUser(r.ctx, createdUser.UserID)
 			if err != nil {
 				r.logger.Error("failed to trash user", zap.Int("user", i), zap.Error(err))
 				return fmt.Errorf("failed to trash user %d: %w", i, err)

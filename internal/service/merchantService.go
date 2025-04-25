@@ -6,6 +6,7 @@ import (
 	responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/service"
 	"MamangRust/paymentgatewaygrpc/internal/repository"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
+	"net/http"
 
 	"go.uber.org/zap"
 )
@@ -28,7 +29,11 @@ func NewMerchantService(
 	}
 }
 
-func (s *merchantService) FindAll(page int, pageSize int, search string) ([]*response.MerchantResponse, int, *response.ErrorResponse) {
+func (s *merchantService) FindAll(req *requests.FindAllMerchants) ([]*response.MerchantResponse, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+
 	s.logger.Debug("Fetching all merchant records",
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize),
@@ -42,27 +47,37 @@ func (s *merchantService) FindAll(page int, pageSize int, search string) ([]*res
 		pageSize = 10
 	}
 
-	merchants, totalRecords, err := s.merchantRepository.FindAllMerchants(search, page, pageSize)
+	merchants, totalRecords, err := s.merchantRepository.FindAllMerchants(req)
 
 	if err != nil {
-		s.logger.Error("Failed to fetch merchant records", zap.Error(err))
-		return nil, 0, &response.ErrorResponse{
+		s.logger.Error("Failed to fetch merchants",
+			zap.Error(err),
+			zap.Int("page", page),
+			zap.Int("pageSize", pageSize),
+			zap.String("search", search))
+
+		return nil, nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch merchant records",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	merchantResponses := s.mapping.ToMerchantsResponse(merchants)
 
 	s.logger.Debug("Successfully all merchant records",
-		zap.Int("totalRecords", totalRecords),
+		zap.Int("totalRecords", *totalRecords),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
 	return merchantResponses, totalRecords, nil
 }
 
-func (s *merchantService) FindAllTransactions(page int, pageSize int, search string) ([]*response.MerchantTransactionResponse, int, *response.ErrorResponse) {
+func (s *merchantService) FindAllTransactions(req *requests.FindAllMerchantTransactions) ([]*response.MerchantTransactionResponse, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+
 	s.logger.Debug("Fetching all merchant records",
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize),
@@ -76,11 +91,11 @@ func (s *merchantService) FindAllTransactions(page int, pageSize int, search str
 		pageSize = 10
 	}
 
-	merchants, totalRecords, err := s.merchantRepository.FindAllTransactions(search, page, pageSize)
+	merchants, totalRecords, err := s.merchantRepository.FindAllTransactions(req)
 
 	if err != nil {
 		s.logger.Error("Failed to fetch merchant records", zap.Error(err))
-		return nil, 0, &response.ErrorResponse{
+		return nil, nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch merchant records",
 		}
@@ -89,7 +104,7 @@ func (s *merchantService) FindAllTransactions(page int, pageSize int, search str
 	merchantResponses := s.mapping.ToMerchantsTransactionResponse(merchants)
 
 	s.logger.Debug("Successfully all merchant records",
-		zap.Int("totalRecords", totalRecords),
+		zap.Int("totalRecords", *totalRecords),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
@@ -100,17 +115,20 @@ func (s *merchantService) FindById(merchant_id int) (*response.MerchantResponse,
 	s.logger.Debug("Finding merchant by ID", zap.Int("merchant_id", merchant_id))
 
 	res, err := s.merchantRepository.FindById(merchant_id)
+
 	if err != nil {
-		s.logger.Error("Failed to find merchant by ID", zap.Error(err), zap.Int("merchant_id", merchant_id))
+		s.logger.Error("Failed to retrieve merchant details",
+			zap.Error(err),
+			zap.Int("merchant_id", merchant_id))
+
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Merchant not found",
+			Message: "Failed to retrieve merchant details",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	so := s.mapping.ToMerchantResponse(res)
-
-	s.logger.Debug("Successfully found merchant by ID", zap.Int("merchant_id", merchant_id))
 
 	return so, nil
 }
@@ -126,6 +144,7 @@ func (s *merchantService) FindMonthlyPaymentMethodsMerchant(year int) ([]*respon
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly payment methods for merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -140,12 +159,14 @@ func (s *merchantService) FindYearlyPaymentMethodMerchant(year int) ([]*response
 	s.logger.Debug("Finding yearly payment methods for merchant", zap.Int("year", year))
 
 	res, err := s.merchantRepository.GetYearlyPaymentMethodMerchant(year)
+
 	if err != nil {
 		s.logger.Error("Failed to find yearly payment methods for merchant", zap.Error(err), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly payment methods for merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -160,12 +181,14 @@ func (s *merchantService) FindMonthlyAmountMerchant(year int) ([]*response.Merch
 	s.logger.Debug("Finding monthly amount for merchant", zap.Int("year", year))
 
 	res, err := s.merchantRepository.GetMonthlyAmountMerchant(year)
+
 	if err != nil {
 		s.logger.Error("Failed to find monthly amount for merchant", zap.Error(err), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly amount for merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -180,12 +203,14 @@ func (s *merchantService) FindYearlyAmountMerchant(year int) ([]*response.Mercha
 	s.logger.Debug("Finding yearly amount for merchant", zap.Int("year", year))
 
 	res, err := s.merchantRepository.GetYearlyAmountMerchant(year)
+
 	if err != nil {
 		s.logger.Error("Failed to find yearly amount for merchant", zap.Error(err), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly amount for merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -200,16 +225,16 @@ func (s *merchantService) FindMonthlyTotalAmountMerchant(year int) ([]*response.
 	s.logger.Debug("Finding monthly amount for merchant", zap.Int("year", year))
 
 	res, err := s.merchantRepository.GetMonthlyTotalAmountMerchant(year)
+
 	if err != nil {
 		s.logger.Error("Failed to find monthly amount for merchant", zap.Error(err), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly amount for merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
-
-	s.logger.Debug("Example", zap.Any("response month", res))
 
 	so := s.mapping.ToMerchantMonthlyTotalAmounts(res)
 
@@ -222,12 +247,14 @@ func (s *merchantService) FindYearlyTotalAmountMerchant(year int) ([]*response.M
 	s.logger.Debug("Finding yearly amount for merchant", zap.Int("year", year))
 
 	res, err := s.merchantRepository.GetYearlyTotalAmountMerchant(year)
+
 	if err != nil {
 		s.logger.Error("Failed to find yearly amount for merchant", zap.Error(err), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly amount for merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -238,7 +265,11 @@ func (s *merchantService) FindYearlyTotalAmountMerchant(year int) ([]*response.M
 	return so, nil
 }
 
-func (s *merchantService) FindAllTransactionsByMerchant(merchant_id int, page int, pageSize int, search string) ([]*response.MerchantTransactionResponse, int, *response.ErrorResponse) {
+func (s *merchantService) FindAllTransactionsByMerchant(req *requests.FindAllMerchantTransactionsById) ([]*response.MerchantTransactionResponse, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+
 	s.logger.Debug("Fetching all merchant records",
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize),
@@ -252,36 +283,47 @@ func (s *merchantService) FindAllTransactionsByMerchant(merchant_id int, page in
 		pageSize = 10
 	}
 
-	merchants, totalRecords, err := s.merchantRepository.FindAllTransactionsByMerchant(merchant_id, search, page, pageSize)
+	merchants, totalRecords, err := s.merchantRepository.FindAllTransactionsByMerchant(req)
 
 	if err != nil {
-		s.logger.Error("Failed to fetch merchant records", zap.Error(err))
-		return nil, 0, &response.ErrorResponse{
+		s.logger.Error("Failed to retrieve active merchant",
+			zap.Error(err),
+			zap.Int("page", req.Page),
+			zap.Int("pageSize", req.PageSize),
+			zap.String("search", req.Search))
+
+		return nil, nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to fetch merchant records",
+			Message: "Failed to retrieve active merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	merchantResponses := s.mapping.ToMerchantsTransactionResponse(merchants)
 
-	s.logger.Debug("Successfully all merchant records",
-		zap.Int("totalRecords", totalRecords),
+	s.logger.Debug("Successfully fetched active merchant",
+		zap.Int("totalRecords", *totalRecords),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
 	return merchantResponses, totalRecords, nil
 }
 
-func (s *merchantService) FindMonthlyPaymentMethodByMerchants(merchantID int, year int) ([]*response.MerchantResponseMonthlyPaymentMethod, *response.ErrorResponse) {
-	s.logger.Debug("Finding monthly payment methods by merchant", zap.Int("merchantID", merchantID), zap.Int("year", year))
+func (s *merchantService) FindMonthlyPaymentMethodByMerchants(req *requests.MonthYearPaymentMethodMerchant) ([]*response.MerchantResponseMonthlyPaymentMethod, *response.ErrorResponse) {
+	year := req.Year
+	merchantID := req.MerchantID
 
-	res, err := s.merchantRepository.GetMonthlyPaymentMethodByMerchants(merchantID, year)
+	s.logger.Debug("Finding monthly payment methods by merchant", zap.Int("merchant_id", merchantID), zap.Int("year", year))
+
+	res, err := s.merchantRepository.GetMonthlyPaymentMethodByMerchants(req)
+
 	if err != nil {
 		s.logger.Error("Failed to find monthly payment methods by merchant", zap.Error(err), zap.Int("merchantID", merchantID), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly payment methods by merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -292,16 +334,21 @@ func (s *merchantService) FindMonthlyPaymentMethodByMerchants(merchantID int, ye
 	return so, nil
 }
 
-func (s *merchantService) FindYearlyPaymentMethodByMerchants(merchantID int, year int) ([]*response.MerchantResponseYearlyPaymentMethod, *response.ErrorResponse) {
-	s.logger.Debug("Finding yearly payment methods by merchant", zap.Int("merchantID", merchantID), zap.Int("year", year))
+func (s *merchantService) FindYearlyPaymentMethodByMerchants(req *requests.MonthYearPaymentMethodMerchant) ([]*response.MerchantResponseYearlyPaymentMethod, *response.ErrorResponse) {
+	year := req.Year
+	merchantID := req.MerchantID
 
-	res, err := s.merchantRepository.GetYearlyPaymentMethodByMerchants(merchantID, year)
+	s.logger.Debug("Finding yearly payment methods by merchant", zap.Int("merchant_id", merchantID), zap.Int("year", year))
+
+	res, err := s.merchantRepository.GetYearlyPaymentMethodByMerchants(req)
+
 	if err != nil {
-		s.logger.Error("Failed to find yearly payment methods by merchant", zap.Error(err), zap.Int("merchantID", merchantID), zap.Int("year", year))
+		s.logger.Error("Failed to find yearly payment methods by merchant", zap.Error(err), zap.Int("merchant_id", merchantID), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly payment methods by merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -312,16 +359,20 @@ func (s *merchantService) FindYearlyPaymentMethodByMerchants(merchantID int, yea
 	return so, nil
 }
 
-func (s *merchantService) FindMonthlyAmountByMerchants(merchantID int, year int) ([]*response.MerchantResponseMonthlyAmount, *response.ErrorResponse) {
-	s.logger.Debug("Finding monthly amount by merchant", zap.Int("merchantID", merchantID), zap.Int("year", year))
+func (s *merchantService) FindMonthlyAmountByMerchants(req *requests.MonthYearAmountMerchant) ([]*response.MerchantResponseMonthlyAmount, *response.ErrorResponse) {
+	year := req.Year
+	merchantID := req.MerchantID
 
-	res, err := s.merchantRepository.GetMonthlyAmountByMerchants(merchantID, year)
+	s.logger.Debug("Finding monthly amount by merchant", zap.Int("merchant_id", merchantID), zap.Int("year", year))
+
+	res, err := s.merchantRepository.GetMonthlyAmountByMerchants(req)
 	if err != nil {
 		s.logger.Error("Failed to find monthly amount by merchant", zap.Error(err), zap.Int("merchantID", merchantID), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly amount by merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -332,16 +383,21 @@ func (s *merchantService) FindMonthlyAmountByMerchants(merchantID int, year int)
 	return so, nil
 }
 
-func (s *merchantService) FindYearlyAmountByMerchants(merchantID int, year int) ([]*response.MerchantResponseYearlyAmount, *response.ErrorResponse) {
+func (s *merchantService) FindYearlyAmountByMerchants(req *requests.MonthYearAmountMerchant) ([]*response.MerchantResponseYearlyAmount, *response.ErrorResponse) {
+	year := req.Year
+	merchantID := req.MerchantID
+
 	s.logger.Debug("Finding yearly amount by merchant", zap.Int("merchantID", merchantID), zap.Int("year", year))
 
-	res, err := s.merchantRepository.GetYearlyAmountByMerchants(merchantID, year)
+	res, err := s.merchantRepository.GetYearlyAmountByMerchants(req)
+
 	if err != nil {
 		s.logger.Error("Failed to find yearly amount by merchant", zap.Error(err), zap.Int("merchantID", merchantID), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly amount by merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -352,16 +408,21 @@ func (s *merchantService) FindYearlyAmountByMerchants(merchantID int, year int) 
 	return so, nil
 }
 
-func (s *merchantService) FindMonthlyTotalAmountByMerchants(merchantID int, year int) ([]*response.MerchantResponseMonthlyTotalAmount, *response.ErrorResponse) {
-	s.logger.Debug("Finding monthly amount by merchant", zap.Int("merchantID", merchantID), zap.Int("year", year))
+func (s *merchantService) FindMonthlyTotalAmountByMerchants(req *requests.MonthYearTotalAmountMerchant) ([]*response.MerchantResponseMonthlyTotalAmount, *response.ErrorResponse) {
+	year := req.Year
+	merchantID := req.MerchantID
 
-	res, err := s.merchantRepository.GetMonthlyTotalAmountByMerchants(merchantID, year)
+	s.logger.Debug("Finding monthly total amount by merchant", zap.Int("merchant_id", merchantID), zap.Int("year", year))
+
+	res, err := s.merchantRepository.GetMonthlyTotalAmountByMerchants(req)
+
 	if err != nil {
-		s.logger.Error("Failed to find monthly amount by merchant", zap.Error(err), zap.Int("merchantID", merchantID), zap.Int("year", year))
+		s.logger.Error("Failed to find monthly total amount by merchant", zap.Error(err), zap.Int("merchantID", merchantID), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to find monthly amount by merchant",
+			Message: "Failed to find monthly total amount by merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -369,21 +430,25 @@ func (s *merchantService) FindMonthlyTotalAmountByMerchants(merchantID int, year
 
 	so := s.mapping.ToMerchantMonthlyTotalAmounts(res)
 
-	s.logger.Debug("Successfully found monthly amount by merchant", zap.Int("merchantID", merchantID), zap.Int("year", year))
+	s.logger.Debug("Successfully found monthly total amount by merchant", zap.Int("merchantID", merchantID), zap.Int("year", year))
 
 	return so, nil
 }
 
-func (s *merchantService) FindYearlyTotalAmountByMerchants(merchantID int, year int) ([]*response.MerchantResponseYearlyTotalAmount, *response.ErrorResponse) {
+func (s *merchantService) FindYearlyTotalAmountByMerchants(req *requests.MonthYearTotalAmountMerchant) ([]*response.MerchantResponseYearlyTotalAmount, *response.ErrorResponse) {
+	year := req.Year
+	merchantID := req.MerchantID
+
 	s.logger.Debug("Finding yearly amount by merchant", zap.Int("merchantID", merchantID), zap.Int("year", year))
 
-	res, err := s.merchantRepository.GetYearlyTotalAmountByMerchants(merchantID, year)
+	res, err := s.merchantRepository.GetYearlyTotalAmountByMerchants(req)
 	if err != nil {
 		s.logger.Error("Failed to find yearly amount by merchant", zap.Error(err), zap.Int("merchantID", merchantID), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to find yearly amount by merchant",
+			Message: "Failed to find yearly total amount by merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -394,8 +459,12 @@ func (s *merchantService) FindYearlyTotalAmountByMerchants(merchantID int, year 
 	return so, nil
 }
 
-func (s *merchantService) FindAllTransactionsByApikey(api_key string, page int, pageSize int, search string) ([]*response.MerchantTransactionResponse, int, *response.ErrorResponse) {
-	s.logger.Debug("Fetching all merchant records",
+func (s *merchantService) FindAllTransactionsByApikey(req *requests.FindAllMerchantTransactionsByApiKey) ([]*response.MerchantTransactionResponse, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+
+	s.logger.Debug("Fetching all transaction merchant records",
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize),
 		zap.String("search", search))
@@ -408,36 +477,47 @@ func (s *merchantService) FindAllTransactionsByApikey(api_key string, page int, 
 		pageSize = 10
 	}
 
-	merchants, totalRecords, err := s.merchantRepository.FindAllTransactionsByApikey(api_key, search, page, pageSize)
+	merchants, totalRecords, err := s.merchantRepository.FindAllTransactionsByApikey(req)
 
 	if err != nil {
-		s.logger.Error("Failed to fetch merchant records", zap.Error(err))
-		return nil, 0, &response.ErrorResponse{
+		s.logger.Error("Failed to retrieve transaction merchant",
+			zap.Error(err),
+			zap.Int("page", req.Page),
+			zap.Int("pageSize", req.PageSize),
+			zap.String("search", req.Search))
+
+		return nil, nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to fetch merchant records",
+			Message: "Failed to retrieve transaction merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	merchantResponses := s.mapping.ToMerchantsTransactionResponse(merchants)
 
-	s.logger.Debug("Successfully all merchant records",
-		zap.Int("totalRecords", totalRecords),
+	s.logger.Debug("Successfully all transaction merchant records",
+		zap.Int("totalRecords", *totalRecords),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
 	return merchantResponses, totalRecords, nil
 }
 
-func (s *merchantService) FindMonthlyPaymentMethodByApikeys(api_key string, year int) ([]*response.MerchantResponseMonthlyPaymentMethod, *response.ErrorResponse) {
+func (s *merchantService) FindMonthlyPaymentMethodByApikeys(req *requests.MonthYearPaymentMethodApiKey) ([]*response.MerchantResponseMonthlyPaymentMethod, *response.ErrorResponse) {
+	api_key := req.Apikey
+	year := req.Year
+
 	s.logger.Debug("Finding monthly payment methods by merchant", zap.String("api_key", api_key), zap.Int("year", year))
 
-	res, err := s.merchantRepository.GetMonthlyPaymentMethodByApikey(api_key, year)
+	res, err := s.merchantRepository.GetMonthlyPaymentMethodByApikey(req)
+
 	if err != nil {
 		s.logger.Error("Failed to find monthly payment methods by merchant", zap.Error(err), zap.String("api_key", api_key), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly payment methods by merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -448,16 +528,21 @@ func (s *merchantService) FindMonthlyPaymentMethodByApikeys(api_key string, year
 	return so, nil
 }
 
-func (s *merchantService) FindYearlyPaymentMethodByApikeys(api_key string, year int) ([]*response.MerchantResponseYearlyPaymentMethod, *response.ErrorResponse) {
+func (s *merchantService) FindYearlyPaymentMethodByApikeys(req *requests.MonthYearPaymentMethodApiKey) ([]*response.MerchantResponseYearlyPaymentMethod, *response.ErrorResponse) {
+	api_key := req.Apikey
+	year := req.Year
+
 	s.logger.Debug("Finding yearly payment methods by merchant", zap.String("api_key", api_key), zap.Int("year", year))
 
-	res, err := s.merchantRepository.GetYearlyPaymentMethodByApikey(api_key, year)
+	res, err := s.merchantRepository.GetYearlyPaymentMethodByApikey(req)
+
 	if err != nil {
 		s.logger.Error("Failed to find yearly payment methods by merchant", zap.Error(err), zap.String("api_key", api_key), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly payment methods by merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -468,16 +553,21 @@ func (s *merchantService) FindYearlyPaymentMethodByApikeys(api_key string, year 
 	return so, nil
 }
 
-func (s *merchantService) FindMonthlyAmountByApikeys(api_key string, year int) ([]*response.MerchantResponseMonthlyAmount, *response.ErrorResponse) {
+func (s *merchantService) FindMonthlyAmountByApikeys(req *requests.MonthYearAmountApiKey) ([]*response.MerchantResponseMonthlyAmount, *response.ErrorResponse) {
+	api_key := req.Apikey
+	year := req.Year
+
 	s.logger.Debug("Finding monthly amount by merchant", zap.String("api_key", api_key), zap.Int("year", year))
 
-	res, err := s.merchantRepository.GetMonthlyAmountByApikey(api_key, year)
+	res, err := s.merchantRepository.GetMonthlyAmountByApikey(req)
+
 	if err != nil {
 		s.logger.Error("Failed to find monthly amount by merchant", zap.Error(err), zap.String("api_key", api_key), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly amount by merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -488,16 +578,21 @@ func (s *merchantService) FindMonthlyAmountByApikeys(api_key string, year int) (
 	return so, nil
 }
 
-func (s *merchantService) FindYearlyAmountByApikeys(api_key string, year int) ([]*response.MerchantResponseYearlyAmount, *response.ErrorResponse) {
+func (s *merchantService) FindYearlyAmountByApikeys(req *requests.MonthYearAmountApiKey) ([]*response.MerchantResponseYearlyAmount, *response.ErrorResponse) {
+	api_key := req.Apikey
+	year := req.Year
+
 	s.logger.Debug("Finding yearly amount by merchant", zap.String("api_key", api_key), zap.Int("year", year))
 
-	res, err := s.merchantRepository.GetYearlyAmountByApikey(api_key, year)
+	res, err := s.merchantRepository.GetYearlyAmountByApikey(req)
+
 	if err != nil {
 		s.logger.Error("Failed to find yearly amount by merchant", zap.Error(err), zap.String("api_key", api_key), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly amount by merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -508,20 +603,23 @@ func (s *merchantService) FindYearlyAmountByApikeys(api_key string, year int) ([
 	return so, nil
 }
 
-func (s *merchantService) FindMonthlyTotalAmountByApikeys(api_key string, year int) ([]*response.MerchantResponseMonthlyTotalAmount, *response.ErrorResponse) {
+func (s *merchantService) FindMonthlyTotalAmountByApikeys(req *requests.MonthYearTotalAmountApiKey) ([]*response.MerchantResponseMonthlyTotalAmount, *response.ErrorResponse) {
+	api_key := req.Apikey
+	year := req.Year
+
 	s.logger.Debug("Finding monthly amount by merchant", zap.String("api_key", api_key), zap.Int("year", year))
 
-	res, err := s.merchantRepository.GetMonthlyTotalAmountByApikey(api_key, year)
+	res, err := s.merchantRepository.GetMonthlyTotalAmountByApikey(req)
+
 	if err != nil {
 		s.logger.Error("Failed to find monthly amount by merchant", zap.Error(err), zap.String("api_key", api_key), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find monthly amount by merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
-
-	s.logger.Debug("Example", zap.Any("response month", res))
 
 	so := s.mapping.ToMerchantMonthlyTotalAmounts(res)
 
@@ -530,16 +628,21 @@ func (s *merchantService) FindMonthlyTotalAmountByApikeys(api_key string, year i
 	return so, nil
 }
 
-func (s *merchantService) FindYearlyTotalAmountByApikeys(api_key string, year int) ([]*response.MerchantResponseYearlyTotalAmount, *response.ErrorResponse) {
+func (s *merchantService) FindYearlyTotalAmountByApikeys(req *requests.MonthYearTotalAmountApiKey) ([]*response.MerchantResponseYearlyTotalAmount, *response.ErrorResponse) {
+	api_key := req.Apikey
+	year := req.Year
+
 	s.logger.Debug("Finding yearly amount by merchant", zap.String("api_key", api_key), zap.Int("year", year))
 
-	res, err := s.merchantRepository.GetYearlyTotalAmountByApikey(api_key, year)
+	res, err := s.merchantRepository.GetYearlyTotalAmountByApikey(req)
+
 	if err != nil {
 		s.logger.Error("Failed to find yearly amount by merchant", zap.Error(err), zap.String("api_key", api_key), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find yearly amount by merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -550,9 +653,11 @@ func (s *merchantService) FindYearlyTotalAmountByApikeys(api_key string, year in
 	return so, nil
 }
 
-//
+func (s *merchantService) FindByActive(req *requests.FindAllMerchants) ([]*response.MerchantResponseDeleteAt, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
 
-func (s *merchantService) FindByActive(page int, pageSize int, search string) ([]*response.MerchantResponseDeleteAt, int, *response.ErrorResponse) {
 	s.logger.Debug("Fetching all merchant active",
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize),
@@ -566,28 +671,37 @@ func (s *merchantService) FindByActive(page int, pageSize int, search string) ([
 		pageSize = 10
 	}
 
-	merchants, totalRecords, err := s.merchantRepository.FindByActive(search, page, pageSize)
+	merchants, totalRecords, err := s.merchantRepository.FindByActive(req)
 
 	if err != nil {
-		s.logger.Error("Failed to fetch active merchants", zap.Error(err))
+		s.logger.Error("Failed to retrieve active cashiers",
+			zap.Error(err),
+			zap.Int("page", page),
+			zap.Int("pageSize", pageSize),
+			zap.String("search", search))
 
-		return nil, 0, &response.ErrorResponse{
+		return nil, nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch active merchants",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	so := s.mapping.ToMerchantsResponseDeleteAt(merchants)
 
 	s.logger.Debug("Successfully fetched active merchants",
-		zap.Int("totalRecords", totalRecords),
+		zap.Int("totalRecords", *totalRecords),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
 	return so, totalRecords, nil
 }
 
-func (s *merchantService) FindByTrashed(page int, pageSize int, search string) ([]*response.MerchantResponseDeleteAt, int, *response.ErrorResponse) {
+func (s *merchantService) FindByTrashed(req *requests.FindAllMerchants) ([]*response.MerchantResponseDeleteAt, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+
 	s.logger.Debug("Fetching fetched trashed merchants",
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize),
@@ -601,7 +715,7 @@ func (s *merchantService) FindByTrashed(page int, pageSize int, search string) (
 		pageSize = 10
 	}
 
-	merchants, totalRecords, err := s.merchantRepository.FindByTrashed(search, page, pageSize)
+	merchants, totalRecords, err := s.merchantRepository.FindByTrashed(req)
 
 	if err != nil {
 		s.logger.Error("Failed to fetch trashed merchants",
@@ -610,16 +724,17 @@ func (s *merchantService) FindByTrashed(page int, pageSize int, search string) (
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search))
 
-		return nil, 0, &response.ErrorResponse{
+		return nil, nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch trashed merchants",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	so := s.mapping.ToMerchantsResponseDeleteAt(merchants)
 
 	s.logger.Debug("Successfully fetched trashed merchants",
-		zap.Int("totalRecords", totalRecords),
+		zap.Int("totalRecords", *totalRecords),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
@@ -630,12 +745,16 @@ func (s *merchantService) FindByApiKey(api_key string) (*response.MerchantRespon
 	s.logger.Debug("Finding merchant by API key", zap.String("api_key", api_key))
 
 	res, err := s.merchantRepository.FindByApiKey(api_key)
+
 	if err != nil {
-		s.logger.Error("Failed to find merchant by API key", zap.Error(err), zap.String("api_key", api_key))
+		s.logger.Error("Failed to retrieve merchant by api_key",
+			zap.Error(err),
+			zap.String("api_key", api_key))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Merchant not found by API key",
+			Message: "Failed to retrieve merchant by api_key",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -650,12 +769,16 @@ func (s *merchantService) FindByMerchantUserId(user_id int) ([]*response.Merchan
 	s.logger.Debug("Finding merchant by user ID", zap.Int("user_id", user_id))
 
 	res, err := s.merchantRepository.FindByMerchantUserId(user_id)
+
 	if err != nil {
-		s.logger.Error("Failed to find merchant by user ID", zap.Error(err), zap.Int("user_id", user_id))
+		s.logger.Error("Failed to retrieve merchant by user_id",
+			zap.Error(err),
+			zap.Int("user_id", user_id))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Merchant not found by user ID",
+			Message: "Failed to retrieve merchant by user_id",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -672,11 +795,14 @@ func (s *merchantService) CreateMerchant(request *requests.CreateMerchantRequest
 	res, err := s.merchantRepository.CreateMerchant(request)
 
 	if err != nil {
-		s.logger.Error("Failed to create merchant", zap.Error(err))
+		s.logger.Error("Failed to create new merchant",
+			zap.Error(err),
+			zap.Any("request", request))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to create merchant",
+			Message: "Failed to create new merchant record",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -688,27 +814,19 @@ func (s *merchantService) CreateMerchant(request *requests.CreateMerchantRequest
 }
 
 func (s *merchantService) UpdateMerchant(request *requests.UpdateMerchantRequest) (*response.MerchantResponse, *response.ErrorResponse) {
-	s.logger.Debug("Updating merchant", zap.Int("merchant_id", request.MerchantID))
-
-	_, err := s.merchantRepository.FindById(request.MerchantID)
-
-	if err != nil {
-		s.logger.Error("Merchant not found for update", zap.Error(err), zap.Int("merchant_id", request.MerchantID))
-
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Merchant not found",
-		}
-	}
+	s.logger.Debug("Updating merchant", zap.Int("merchant_id", *request.MerchantID))
 
 	res, err := s.merchantRepository.UpdateMerchant(request)
 
 	if err != nil {
-		s.logger.Error("Failed to update merchant", zap.Error(err))
+		s.logger.Error("Failed to update merchant",
+			zap.Error(err),
+			zap.Int("merchant", *request.MerchantID))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to update merchant",
+			Message: "Failed to update merchant record",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -729,6 +847,7 @@ func (s *merchantService) TrashedMerchant(merchant_id int) (*response.MerchantRe
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to trash merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -749,6 +868,7 @@ func (s *merchantService) RestoreMerchant(merchant_id int) (*response.MerchantRe
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to restore merchant",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 	s.logger.Debug("Successfully restored merchant", zap.Int("merchant_id", merchant_id))
@@ -765,9 +885,11 @@ func (s *merchantService) DeleteMerchantPermanent(merchant_id int) (bool, *respo
 
 	if err != nil {
 		s.logger.Error("Failed to delete merchant permanently", zap.Error(err), zap.Int("merchant_id", merchant_id))
+
 		return false, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to delete merchant permanently",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -786,7 +908,8 @@ func (s *merchantService) RestoreAllMerchant() (bool, *response.ErrorResponse) {
 
 		return false, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to restore all merchants: " + err.Error(),
+			Message: "Failed to restore all trashed merchants",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -804,7 +927,8 @@ func (s *merchantService) DeleteAllMerchantPermanent() (bool, *response.ErrorRes
 
 		return false, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to permanently delete all merchants: " + err.Error(),
+			Message: "Failed to permanently delete all trashed merchants",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 

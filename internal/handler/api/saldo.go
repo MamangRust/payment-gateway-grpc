@@ -94,6 +94,7 @@ func (h *saldoHandleApi) FindAll(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve saldo data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -122,6 +123,7 @@ func (h *saldoHandleApi) FindById(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid saldo ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -138,6 +140,7 @@ func (h *saldoHandleApi) FindById(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve saldo data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -169,6 +172,7 @@ func (h *saldoHandleApi) FindMonthlyTotalSaldoBalance(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -178,6 +182,7 @@ func (h *saldoHandleApi) FindMonthlyTotalSaldoBalance(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid month parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -192,6 +197,7 @@ func (h *saldoHandleApi) FindMonthlyTotalSaldoBalance(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly total saldo balance",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -220,6 +226,7 @@ func (h *saldoHandleApi) FindYearTotalSaldoBalance(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -233,6 +240,7 @@ func (h *saldoHandleApi) FindYearTotalSaldoBalance(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve year total saldo balance",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -261,6 +269,7 @@ func (h *saldoHandleApi) FindMonthlySaldoBalances(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -274,6 +283,7 @@ func (h *saldoHandleApi) FindMonthlySaldoBalances(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly saldo balances",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -302,6 +312,7 @@ func (h *saldoHandleApi) FindYearlySaldoBalances(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -315,6 +326,7 @@ func (h *saldoHandleApi) FindYearlySaldoBalances(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly saldo balances",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -349,6 +361,7 @@ func (h *saldoHandleApi) FindByCardNumber(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve saldo data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -397,6 +410,7 @@ func (h *saldoHandleApi) FindByActive(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve saldo data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -445,6 +459,7 @@ func (h *saldoHandleApi) FindByTrashed(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve saldo data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -472,6 +487,7 @@ func (h *saldoHandleApi) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -480,6 +496,7 @@ func (h *saldoHandleApi) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -495,6 +512,7 @@ func (h *saldoHandleApi) Create(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to create saldo: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -524,18 +542,18 @@ func (h *saldoHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
 	var body requests.UpdateSaldoRequest
-
-	body.SaldoID = idint
 
 	if err := c.Bind(&body); err != nil {
 		h.logger.Debug("Bad Request", zap.Error(err))
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -544,13 +562,14 @@ func (h *saldoHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: ",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
 	ctx := c.Request().Context()
 
 	res, err := h.saldo.UpdateSaldo(ctx, &pb.UpdateSaldoRequest{
-		SaldoId:      int32(body.SaldoID),
+		SaldoId:      int32(idint),
 		CardNumber:   body.CardNumber,
 		TotalBalance: int32(body.TotalBalance),
 	})
@@ -560,6 +579,7 @@ func (h *saldoHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update saldo: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -589,6 +609,7 @@ func (h *saldoHandleApi) TrashSaldo(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -603,6 +624,7 @@ func (h *saldoHandleApi) TrashSaldo(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to trashed saldo:",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -632,6 +654,7 @@ func (h *saldoHandleApi) RestoreSaldo(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -646,6 +669,7 @@ func (h *saldoHandleApi) RestoreSaldo(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to restore saldo:",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -675,6 +699,7 @@ func (h *saldoHandleApi) Delete(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -689,6 +714,7 @@ func (h *saldoHandleApi) Delete(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to delete saldo:",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -717,6 +743,7 @@ func (h *saldoHandleApi) RestoreAllSaldo(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to permanently restore all saldo",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -747,6 +774,7 @@ func (h *saldoHandleApi) DeleteAllSaldoPermanent(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to permanently delete all saldo",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 

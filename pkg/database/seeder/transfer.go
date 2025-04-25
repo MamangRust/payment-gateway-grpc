@@ -82,7 +82,7 @@ func (r *transferSeeder) Seed() error {
 		}
 
 		if i < 20 {
-			err = r.db.TrashTransfer(r.ctx, transfer.TransferID)
+			_, err = r.db.TrashTransfer(r.ctx, transfer.TransferID)
 			if err != nil {
 				r.logger.Error("failed to trash transfer", zap.Int("transfer", i+1), zap.Error(err))
 				return fmt.Errorf("failed to trash transfer %d: %w", i+1, err)

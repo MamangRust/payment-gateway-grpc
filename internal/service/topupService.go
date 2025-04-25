@@ -4,6 +4,7 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/service"
+	"net/http"
 
 	"MamangRust/paymentgatewaygrpc/internal/repository"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
@@ -34,7 +35,11 @@ func NewTopupService(cardRepository repository.CardRepository,
 	}
 }
 
-func (s *topupService) FindAll(page int, pageSize int, search string) ([]*response.TopupResponse, int, *response.ErrorResponse) {
+func (s *topupService) FindAll(req *requests.FindAllTopups) ([]*response.TopupResponse, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+
 	s.logger.Debug("Fetching topup",
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize),
@@ -47,7 +52,7 @@ func (s *topupService) FindAll(page int, pageSize int, search string) ([]*respon
 		pageSize = 10
 	}
 
-	topups, totalRecords, err := s.topupRepository.FindAllTopups(search, page, pageSize)
+	topups, totalRecords, err := s.topupRepository.FindAllTopups(req)
 
 	if err != nil {
 		s.logger.Error("Failed to fetch topup",
@@ -56,27 +61,35 @@ func (s *topupService) FindAll(page int, pageSize int, search string) ([]*respon
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search))
 
-		return nil, 0, &response.ErrorResponse{
+		return nil, nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to fetch topups",
+			Message: "Failed to retrieve topup list",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	so := s.mapping.ToTopupResponses(topups)
 
 	s.logger.Debug("Successfully fetched topup",
-		zap.Int("totalRecords", totalRecords),
+		zap.Int("totalRecords", *totalRecords),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
 	return so, totalRecords, nil
 }
 
-func (s *topupService) FindAllByCardNumber(card_number string, page int, pageSize int, search string) ([]*response.TopupResponse, int, *response.ErrorResponse) {
-	s.logger.Debug("Fetching topup",
+func (s *topupService) FindAllByCardNumber(req *requests.FindAllTopupsByCardNumber) ([]*response.TopupResponse, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+	card_number := req.CardNumber
+
+	s.logger.Debug("Fetching topup by card number",
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
+		zap.String("search", search),
+		zap.String("card_number", card_number),
+	)
 
 	if page <= 0 {
 		page = 1
@@ -85,25 +98,28 @@ func (s *topupService) FindAllByCardNumber(card_number string, page int, pageSiz
 		pageSize = 10
 	}
 
-	topups, totalRecords, err := s.topupRepository.FindAllTopupByCardNumber(card_number, search, page, pageSize)
+	topups, totalRecords, err := s.topupRepository.FindAllTopupByCardNumber(req)
 
 	if err != nil {
-		s.logger.Error("Failed to fetch topup",
+		s.logger.Error("Failed to fetch topup by card number",
 			zap.Error(err),
 			zap.Int("page", page),
 			zap.Int("pageSize", pageSize),
-			zap.String("search", search))
+			zap.String("search", search),
+			zap.String("card_number", card_number),
+		)
 
-		return nil, 0, &response.ErrorResponse{
+		return nil, nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to fetch topups",
+			Message: "Failed to retrieve topup by card number list",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	so := s.mapping.ToTopupResponses(topups)
 
 	s.logger.Debug("Successfully fetched topup",
-		zap.Int("totalRecords", totalRecords),
+		zap.Int("totalRecords", *totalRecords),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
@@ -121,6 +137,7 @@ func (s *topupService) FindById(topupID int) (*response.TopupResponse, *response
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Topup record not found",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -131,16 +148,21 @@ func (s *topupService) FindById(topupID int) (*response.TopupResponse, *response
 	return so, nil
 }
 
-func (s *topupService) FindMonthTopupStatusSuccess(year int, month int) ([]*response.TopupResponseMonthStatusSuccess, *response.ErrorResponse) {
+func (s *topupService) FindMonthTopupStatusSuccess(req *requests.MonthTopupStatus) ([]*response.TopupResponseMonthStatusSuccess, *response.ErrorResponse) {
+	year := req.Year
+	month := req.Month
+
 	s.logger.Debug("Fetching monthly topup status success", zap.Int("year", year), zap.Int("month", month))
 
-	records, err := s.topupRepository.GetMonthTopupStatusSuccess(year, month)
+	records, err := s.topupRepository.GetMonthTopupStatusSuccess(req)
+
 	if err != nil {
 		s.logger.Error("failed to fetch monthly topup status success", zap.Error(err))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch monthly topup status success",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -161,6 +183,7 @@ func (s *topupService) FindYearlyTopupStatusSuccess(year int) ([]*response.Topup
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch yearly topup status success",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -171,16 +194,20 @@ func (s *topupService) FindYearlyTopupStatusSuccess(year int) ([]*response.Topup
 	return so, nil
 }
 
-func (s *topupService) FindMonthTopupStatusFailed(year int, month int) ([]*response.TopupResponseMonthStatusFailed, *response.ErrorResponse) {
+func (s *topupService) FindMonthTopupStatusFailed(req *requests.MonthTopupStatus) ([]*response.TopupResponseMonthStatusFailed, *response.ErrorResponse) {
+	year := req.Year
+	month := req.Month
+
 	s.logger.Debug("Fetching monthly topup status Failed", zap.Int("year", year), zap.Int("month", month))
 
-	records, err := s.topupRepository.GetMonthTopupStatusFailed(year, month)
+	records, err := s.topupRepository.GetMonthTopupStatusFailed(req)
 	if err != nil {
 		s.logger.Error("failed to fetch monthly topup status Failed", zap.Error(err))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch monthly topup status Failed",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -201,6 +228,7 @@ func (s *topupService) FindYearlyTopupStatusFailed(year int) ([]*response.TopupR
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch yearly topup status Failed",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -211,16 +239,22 @@ func (s *topupService) FindYearlyTopupStatusFailed(year int) ([]*response.TopupR
 	return so, nil
 }
 
-func (s *topupService) FindMonthTopupStatusSuccessByCardNumber(card_number string, year int, month int) ([]*response.TopupResponseMonthStatusSuccess, *response.ErrorResponse) {
+func (s *topupService) FindMonthTopupStatusSuccessByCardNumber(req *requests.MonthTopupStatusCardNumber) ([]*response.TopupResponseMonthStatusSuccess, *response.ErrorResponse) {
+	card_number := req.CardNumber
+	year := req.Year
+	month := req.Month
+
 	s.logger.Debug("Fetching monthly topup status success", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
 
-	records, err := s.topupRepository.GetMonthTopupStatusSuccessByCardNumber(card_number, year, month)
+	records, err := s.topupRepository.GetMonthTopupStatusSuccessByCardNumber(req)
+
 	if err != nil {
 		s.logger.Error("failed to fetch monthly topup status success", zap.Error(err))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch monthly topup status success",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -231,16 +265,20 @@ func (s *topupService) FindMonthTopupStatusSuccessByCardNumber(card_number strin
 	return so, nil
 }
 
-func (s *topupService) FindYearlyTopupStatusSuccessByCardNumber(card_number string, year int) ([]*response.TopupResponseYearStatusSuccess, *response.ErrorResponse) {
+func (s *topupService) FindYearlyTopupStatusSuccessByCardNumber(req *requests.YearTopupStatusCardNumber) ([]*response.TopupResponseYearStatusSuccess, *response.ErrorResponse) {
+	card_number := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("Fetching yearly topup status success", zap.Int("year", year), zap.String("card_number", card_number))
 
-	records, err := s.topupRepository.GetYearlyTopupStatusSuccessByCardNumber(card_number, year)
+	records, err := s.topupRepository.GetYearlyTopupStatusSuccessByCardNumber(req)
 	if err != nil {
 		s.logger.Error("failed to fetch yearly topup status success", zap.Error(err))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch yearly topup status success",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -251,16 +289,21 @@ func (s *topupService) FindYearlyTopupStatusSuccessByCardNumber(card_number stri
 	return so, nil
 }
 
-func (s *topupService) FindMonthTopupStatusFailedByCardNumber(card_number string, year int, month int) ([]*response.TopupResponseMonthStatusFailed, *response.ErrorResponse) {
+func (s *topupService) FindMonthTopupStatusFailedByCardNumber(req *requests.MonthTopupStatusCardNumber) ([]*response.TopupResponseMonthStatusFailed, *response.ErrorResponse) {
+	card_number := req.CardNumber
+	year := req.Year
+	month := req.Month
+
 	s.logger.Debug("Fetching monthly topup status Failed", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
 
-	records, err := s.topupRepository.GetMonthTopupStatusFailedByCardNumber(card_number, year, month)
+	records, err := s.topupRepository.GetMonthTopupStatusFailedByCardNumber(req)
 	if err != nil {
 		s.logger.Error("failed to fetch monthly topup status Failed", zap.Error(err))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch monthly topup status Failed",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -271,16 +314,20 @@ func (s *topupService) FindMonthTopupStatusFailedByCardNumber(card_number string
 	return so, nil
 }
 
-func (s *topupService) FindYearlyTopupStatusFailedByCardNumber(card_number string, year int) ([]*response.TopupResponseYearStatusFailed, *response.ErrorResponse) {
+func (s *topupService) FindYearlyTopupStatusFailedByCardNumber(req *requests.YearTopupStatusCardNumber) ([]*response.TopupResponseYearStatusFailed, *response.ErrorResponse) {
+	card_number := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("Fetching yearly topup status Failed", zap.Int("year", year), zap.String("card_number", card_number))
 
-	records, err := s.topupRepository.GetYearlyTopupStatusFailedByCardNumber(card_number, year)
+	records, err := s.topupRepository.GetYearlyTopupStatusFailedByCardNumber(req)
 	if err != nil {
 		s.logger.Error("failed to fetch yearly topup status Failed", zap.Error(err))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch yearly topup status Failed",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -301,6 +348,7 @@ func (s *topupService) FindMonthlyTopupMethods(year int) ([]*response.TopupMonth
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch monthly topup methods",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -321,6 +369,7 @@ func (s *topupService) FindYearlyTopupMethods(year int) ([]*response.TopupYearly
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch yearly topup methods",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -341,6 +390,7 @@ func (s *topupService) FindMonthlyTopupAmounts(year int) ([]*response.TopupMonth
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch monthly topup amounts",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -361,6 +411,7 @@ func (s *topupService) FindYearlyTopupAmounts(year int) ([]*response.TopupYearly
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch yearly topup amounts",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -371,16 +422,20 @@ func (s *topupService) FindYearlyTopupAmounts(year int) ([]*response.TopupYearly
 	return responses, nil
 }
 
-func (s *topupService) FindMonthlyTopupMethodsByCardNumber(cardNumber string, year int) ([]*response.TopupMonthMethodResponse, *response.ErrorResponse) {
+func (s *topupService) FindMonthlyTopupMethodsByCardNumber(req *requests.YearMonthMethod) ([]*response.TopupMonthMethodResponse, *response.ErrorResponse) {
+	year := req.Year
+	cardNumber := req.CardNumber
+
 	s.logger.Debug("Fetching monthly topup methods by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
 
-	records, err := s.topupRepository.GetMonthlyTopupMethodsByCardNumber(cardNumber, year)
+	records, err := s.topupRepository.GetMonthlyTopupMethodsByCardNumber(req)
 	if err != nil {
 		s.logger.Error("Failed to fetch monthly topup methods by card number", zap.Error(err), zap.String("card_number", cardNumber), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch monthly topup methods by card number",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -391,16 +446,20 @@ func (s *topupService) FindMonthlyTopupMethodsByCardNumber(cardNumber string, ye
 	return responses, nil
 }
 
-func (s *topupService) FindYearlyTopupMethodsByCardNumber(cardNumber string, year int) ([]*response.TopupYearlyMethodResponse, *response.ErrorResponse) {
+func (s *topupService) FindYearlyTopupMethodsByCardNumber(req *requests.YearMonthMethod) ([]*response.TopupYearlyMethodResponse, *response.ErrorResponse) {
+	year := req.Year
+	cardNumber := req.CardNumber
+
 	s.logger.Debug("Fetching yearly topup methods by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
 
-	records, err := s.topupRepository.GetYearlyTopupMethodsByCardNumber(cardNumber, year)
+	records, err := s.topupRepository.GetYearlyTopupMethodsByCardNumber(req)
 	if err != nil {
 		s.logger.Error("Failed to fetch yearly topup methods by card number", zap.Error(err), zap.String("card_number", cardNumber), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch yearly topup methods by card number",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -411,16 +470,20 @@ func (s *topupService) FindYearlyTopupMethodsByCardNumber(cardNumber string, yea
 	return responses, nil
 }
 
-func (s *topupService) FindMonthlyTopupAmountsByCardNumber(cardNumber string, year int) ([]*response.TopupMonthAmountResponse, *response.ErrorResponse) {
+func (s *topupService) FindMonthlyTopupAmountsByCardNumber(req *requests.YearMonthMethod) ([]*response.TopupMonthAmountResponse, *response.ErrorResponse) {
+	year := req.Year
+	cardNumber := req.CardNumber
+
 	s.logger.Debug("Fetching monthly topup amounts by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
 
-	records, err := s.topupRepository.GetMonthlyTopupAmountsByCardNumber(cardNumber, year)
+	records, err := s.topupRepository.GetMonthlyTopupAmountsByCardNumber(req)
 	if err != nil {
 		s.logger.Error("Failed to fetch monthly topup amounts by card number", zap.Error(err), zap.String("card_number", cardNumber), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch monthly topup amounts by card number",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -431,16 +494,20 @@ func (s *topupService) FindMonthlyTopupAmountsByCardNumber(cardNumber string, ye
 	return responses, nil
 }
 
-func (s *topupService) FindYearlyTopupAmountsByCardNumber(cardNumber string, year int) ([]*response.TopupYearlyAmountResponse, *response.ErrorResponse) {
+func (s *topupService) FindYearlyTopupAmountsByCardNumber(req *requests.YearMonthMethod) ([]*response.TopupYearlyAmountResponse, *response.ErrorResponse) {
+	year := req.Year
+	cardNumber := req.CardNumber
+
 	s.logger.Debug("Fetching yearly topup amounts by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
 
-	records, err := s.topupRepository.GetYearlyTopupAmountsByCardNumber(cardNumber, year)
+	records, err := s.topupRepository.GetYearlyTopupAmountsByCardNumber(req)
 	if err != nil {
 		s.logger.Error("Failed to fetch yearly topup amounts by card number", zap.Error(err), zap.String("card_number", cardNumber), zap.Int("year", year))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch yearly topup amounts by card number",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -451,7 +518,11 @@ func (s *topupService) FindYearlyTopupAmountsByCardNumber(cardNumber string, yea
 	return responses, nil
 }
 
-func (s *topupService) FindByActive(page int, pageSize int, search string) ([]*response.TopupResponseDeleteAt, int, *response.ErrorResponse) {
+func (s *topupService) FindByActive(req *requests.FindAllTopups) ([]*response.TopupResponseDeleteAt, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+
 	s.logger.Debug("Fetching active topup",
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize),
@@ -464,7 +535,7 @@ func (s *topupService) FindByActive(page int, pageSize int, search string) ([]*r
 		pageSize = 10
 	}
 
-	topups, totalRecords, err := s.topupRepository.FindByActive(search, page, pageSize)
+	topups, totalRecords, err := s.topupRepository.FindByActive(req)
 
 	if err != nil {
 		s.logger.Error("Failed to fetch active topup",
@@ -473,23 +544,28 @@ func (s *topupService) FindByActive(page int, pageSize int, search string) ([]*r
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search))
 
-		return nil, 0, &response.ErrorResponse{
+		return nil, nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find active top-up records",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	so := s.mapping.ToTopupResponsesDeleteAt(topups)
 
 	s.logger.Debug("Successfully fetched active topup",
-		zap.Int("totalRecords", totalRecords),
+		zap.Int("totalRecords", *totalRecords),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
 	return so, totalRecords, nil
 }
 
-func (s *topupService) FindByTrashed(page int, pageSize int, search string) ([]*response.TopupResponseDeleteAt, int, *response.ErrorResponse) {
+func (s *topupService) FindByTrashed(req *requests.FindAllTopups) ([]*response.TopupResponseDeleteAt, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+
 	s.logger.Debug("Fetching trashed topup",
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize),
@@ -502,7 +578,7 @@ func (s *topupService) FindByTrashed(page int, pageSize int, search string) ([]*
 		pageSize = 10
 	}
 
-	topups, totalRecords, err := s.topupRepository.FindByTrashed(search, page, pageSize)
+	topups, totalRecords, err := s.topupRepository.FindByTrashed(req)
 
 	if err != nil {
 		s.logger.Error("Failed to fetch trashed topup",
@@ -511,16 +587,17 @@ func (s *topupService) FindByTrashed(page int, pageSize int, search string) ([]*
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search))
 
-		return nil, 0, &response.ErrorResponse{
+		return nil, nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find trashed top-up records",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	so := s.mapping.ToTopupResponsesDeleteAt(topups)
 
 	s.logger.Debug("Successfully fetched trashed topup",
-		zap.Int("totalRecords", totalRecords),
+		zap.Int("totalRecords", *totalRecords),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
@@ -534,40 +611,37 @@ func (s *topupService) CreateTopup(request *requests.CreateTopupRequest) (*respo
 	)
 
 	card, err := s.cardRepository.FindCardByCardNumber(request.CardNumber)
-
 	if err != nil {
 		s.logger.Error("failed to find card by number", zap.Error(err))
-
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Card not found",
+			Code:    http.StatusNotFound,
 		}
 	}
 
 	topup, err := s.topupRepository.CreateTopup(request)
-
 	if err != nil {
 		s.logger.Error("failed to create topup", zap.Error(err))
-
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to create topup record",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	saldo, err := s.saldoRepository.FindByCardNumber(request.CardNumber)
 	if err != nil {
 		s.logger.Error("failed to find saldo by user id", zap.Error(err))
-
 		req := requests.UpdateTopupStatus{
 			TopupID: topup.ID,
 			Status:  "failed",
 		}
-
 		s.topupRepository.UpdateTopupStatus(&req)
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch user's saldo",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -582,27 +656,26 @@ func (s *topupService) CreateTopup(request *requests.CreateTopupRequest) (*respo
 			TopupID: topup.ID,
 			Status:  "failed",
 		}
-
 		s.topupRepository.UpdateTopupStatus(&req)
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update saldo balance",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	expireDate, err := time.Parse("2006-01-02", card.ExpireDate)
 	if err != nil {
 		s.logger.Error("failed to parse expire date", zap.Error(err))
-
 		req := requests.UpdateTopupStatus{
 			TopupID: topup.ID,
 			Status:  "failed",
 		}
-
 		s.topupRepository.UpdateTopupStatus(&req)
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid expire date format",
+			Code:    http.StatusBadRequest,
 		}
 	}
 
@@ -620,11 +693,11 @@ func (s *topupService) CreateTopup(request *requests.CreateTopupRequest) (*respo
 			TopupID: topup.ID,
 			Status:  "failed",
 		}
-
 		s.topupRepository.UpdateTopupStatus(&req)
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update card expire date",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -639,6 +712,7 @@ func (s *topupService) CreateTopup(request *requests.CreateTopupRequest) (*respo
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update topup status to success",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -656,17 +730,16 @@ func (s *topupService) CreateTopup(request *requests.CreateTopupRequest) (*respo
 func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*response.TopupResponse, *response.ErrorResponse) {
 	s.logger.Debug("Starting UpdateTopup process",
 		zap.String("cardNumber", request.CardNumber),
-		zap.Int("topupID", request.TopupID),
+		zap.Int("topupID", *request.TopupID),
 		zap.Float64("newTopupAmount", float64(request.TopupAmount)),
 	)
 
 	_, err := s.cardRepository.FindCardByCardNumber(request.CardNumber)
-
 	if err != nil {
 		s.logger.Error("failed to find card by number", zap.Error(err))
 
 		req := requests.UpdateTopupStatus{
-			TopupID: request.TopupID,
+			TopupID: *request.TopupID,
 			Status:  "failed",
 		}
 
@@ -675,15 +748,16 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Card not found",
+			Code:    http.StatusNotFound,
 		}
 	}
 
-	existingTopup, err := s.topupRepository.FindById(request.TopupID)
+	existingTopup, err := s.topupRepository.FindById(*request.TopupID)
 	if err != nil || existingTopup == nil {
 		s.logger.Error("Failed to find topup by ID", zap.Error(err))
 
 		req := requests.UpdateTopupStatus{
-			TopupID: request.TopupID,
+			TopupID: *request.TopupID,
 			Status:  "failed",
 		}
 
@@ -691,6 +765,7 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Topup not found",
+			Code:    http.StatusNotFound,
 		}
 	}
 
@@ -701,7 +776,7 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 		s.logger.Error("Failed to update topup amount", zap.Error(err))
 
 		req := requests.UpdateTopupStatus{
-			TopupID: request.TopupID,
+			TopupID: *request.TopupID,
 			Status:  "failed",
 		}
 
@@ -709,6 +784,7 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to update topup amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -717,7 +793,7 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 		s.logger.Error("Failed to retrieve current saldo", zap.Error(err))
 
 		req := requests.UpdateTopupStatus{
-			TopupID: request.TopupID,
+			TopupID: *request.TopupID,
 			Status:  "failed",
 		}
 
@@ -726,6 +802,7 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve current saldo: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -733,7 +810,7 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 		s.logger.Error("No saldo found for card number", zap.String("card_number", request.CardNumber))
 
 		req := requests.UpdateTopupStatus{
-			TopupID: request.TopupID,
+			TopupID: *request.TopupID,
 			Status:  "failed",
 		}
 
@@ -742,6 +819,7 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Card not found",
+			Code:    http.StatusNotFound,
 		}
 	}
 
@@ -754,7 +832,7 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 		s.logger.Error("Failed to update saldo balance", zap.Error(err))
 
 		_, rollbackErr := s.topupRepository.UpdateTopupAmount(&requests.UpdateTopupAmount{
-			TopupID:     request.TopupID,
+			TopupID:     *request.TopupID,
 			TopupAmount: existingTopup.TopupAmount,
 		})
 		if rollbackErr != nil {
@@ -762,7 +840,7 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 		}
 
 		req := requests.UpdateTopupStatus{
-			TopupID: request.TopupID,
+			TopupID: *request.TopupID,
 			Status:  "failed",
 		}
 
@@ -770,16 +848,16 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to update saldo balance: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
-	updatedTopup, err := s.topupRepository.FindById(request.TopupID)
-
+	updatedTopup, err := s.topupRepository.FindById(*request.TopupID)
 	if err != nil || updatedTopup == nil {
 		s.logger.Error("Failed to find updated topup by ID", zap.Error(err))
 
 		req := requests.UpdateTopupStatus{
-			TopupID: request.TopupID,
+			TopupID: *request.TopupID,
 			Status:  "failed",
 		}
 
@@ -787,11 +865,12 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Updated topup not found",
+			Code:    http.StatusNotFound,
 		}
 	}
 
 	req := requests.UpdateTopupStatus{
-		TopupID: request.TopupID,
+		TopupID: *request.TopupID,
 		Status:  "success",
 	}
 
@@ -801,6 +880,7 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update topup status to success",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -808,7 +888,7 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 
 	s.logger.Debug("UpdateTopup process completed",
 		zap.String("cardNumber", request.CardNumber),
-		zap.Int("topupID", request.TopupID),
+		zap.Int("topupID", *request.TopupID),
 		zap.Float64("newTopupAmount", float64(request.TopupAmount)),
 		zap.Float64("newBalance", float64(newBalance)),
 	)
@@ -818,24 +898,27 @@ func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*respo
 
 func (s *topupService) TrashedTopup(topup_id int) (*response.TopupResponse, *response.ErrorResponse) {
 	s.logger.Debug("Starting TrashedTopup process",
-		zap.Int("topupID", topup_id),
+		zap.Int("topup_id", topup_id),
 	)
 
 	res, err := s.topupRepository.TrashedTopup(topup_id)
 
 	if err != nil {
-		s.logger.Error("Failed to trash topup", zap.Error(err))
+		s.logger.Error("Failed to move user to trash",
+			zap.Int("topup_id", topup_id),
+			zap.Error(err))
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: fmt.Sprintf("Failed to trash topup: %v", err),
+			Message: "Failed to move topup to trash",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	so := s.mapping.ToTopupResponse(res)
 
 	s.logger.Debug("TrashedTopup process completed",
-		zap.Int("topupID", topup_id),
+		zap.Int("topup_id", topup_id),
 	)
 
 	return so, nil
@@ -849,10 +932,14 @@ func (s *topupService) RestoreTopup(topup_id int) (*response.TopupResponse, *res
 	res, err := s.topupRepository.RestoreTopup(topup_id)
 
 	if err != nil {
-		s.logger.Error("Failed to restore topup", zap.Error(err))
+		s.logger.Error("Failed to restore topup from trash",
+			zap.Int("topup_id", topup_id),
+			zap.Error(err))
+
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: fmt.Sprintf("Failed to restore topup: %v", err),
+			Message: "Failed to restore topup from trash",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -877,7 +964,8 @@ func (s *topupService) DeleteTopupPermanent(topup_id int) (bool, *response.Error
 
 		return false, &response.ErrorResponse{
 			Status:  "error",
-			Message: fmt.Sprintf("Failed to delete topup permanently: %v", err),
+			Message: "Failed to permanently delete topup",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -897,7 +985,8 @@ func (s *topupService) RestoreAllTopup() (bool, *response.ErrorResponse) {
 		s.logger.Error("Failed to restore all topups", zap.Error(err))
 		return false, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to restore all topups: " + err.Error(),
+			Message: "Failed to restore all topups",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -914,7 +1003,8 @@ func (s *topupService) DeleteAllTopupPermanent() (bool, *response.ErrorResponse)
 		s.logger.Error("Failed to permanently delete all topups", zap.Error(err))
 		return false, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to permanently delete all topups: " + err.Error(),
+			Message: "Failed to permanently delete all topups",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 

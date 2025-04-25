@@ -5,6 +5,7 @@ import (
 	protomapper "MamangRust/paymentgatewaygrpc/internal/mapper/proto"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
 	"MamangRust/paymentgatewaygrpc/internal/service"
+	"MamangRust/paymentgatewaygrpc/pkg/errors_custom"
 	"context"
 	"math"
 
@@ -38,22 +39,32 @@ func (s *topupHandleGrpc) FindAllTopup(ctx context.Context, req *pb.FindAllTopup
 		pageSize = 10
 	}
 
-	topups, totalRecords, err := s.topupService.FindAll(page, pageSize, search)
-
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch topups: " + err.Message,
-		})
+	reqService := requests.FindAllTopups{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
 	}
 
-	totalPages := int(math.Ceil(float64(totalRecords) / float64(pageSize)))
+	topups, totalRecords, err := s.topupService.FindAll(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
+	}
+
+	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
 
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
 		TotalPages:   int32(totalPages),
-		TotalRecords: int32(totalRecords),
+		TotalRecords: int32(*totalRecords),
 	}
 	so := s.mapping.ToProtoResponsePaginationTopup(paginationMeta, "success", "Successfully fetch topups", topups)
 
@@ -73,22 +84,33 @@ func (s *topupHandleGrpc) FindAllTopupByCardNumber(ctx context.Context, req *pb.
 		pageSize = 10
 	}
 
-	topups, totalRecords, err := s.topupService.FindAllByCardNumber(card_number, page, pageSize, search)
-
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch topups: " + err.Message,
-		})
+	reqService := requests.FindAllTopupsByCardNumber{
+		CardNumber: card_number,
+		Page:       page,
+		PageSize:   pageSize,
+		Search:     search,
 	}
 
-	totalPages := int(math.Ceil(float64(totalRecords) / float64(pageSize)))
+	topups, totalRecords, err := s.topupService.FindAllByCardNumber(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
+	}
+
+	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
 
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
 		TotalPages:   int32(totalPages),
-		TotalRecords: int32(totalRecords),
+		TotalRecords: int32(*totalRecords),
 	}
 	so := s.mapping.ToProtoResponsePaginationTopup(paginationMeta, "success", "Successfully fetch topups", topups)
 
@@ -96,22 +118,30 @@ func (s *topupHandleGrpc) FindAllTopupByCardNumber(ctx context.Context, req *pb.
 }
 
 func (s *topupHandleGrpc) FindByIdTopup(ctx context.Context, req *pb.FindByIdTopupRequest) (*pb.ApiResponseTopup, error) {
-	if req.GetTopupId() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-		})
+	id := int(req.GetTopupId())
+
+	if id == 0 {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_request",
+				Message: "Valid topup ID is required",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	id := req.GetTopupId()
-
-	topup, err := s.topupService.FindById(int(id))
+	topup, err := s.topupService.FindById(id)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch topup: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopup("success", "Successfully fetch topup", topup)
@@ -120,22 +150,47 @@ func (s *topupHandleGrpc) FindByIdTopup(ctx context.Context, req *pb.FindByIdTop
 }
 
 func (s *topupHandleGrpc) FindMonthlyTopupStatusSuccess(ctx context.Context, req *pb.FindMonthlyTopupStatus) (*pb.ApiResponseTopupMonthStatusSuccess, error) {
-	if req.GetYear() <= 0 || req.GetMonth() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year or month",
-		})
+	year := int(req.GetYear())
+	month := int(req.GetMonth())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	year := req.GetYear()
-	month := req.GetMonth()
+	if month <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid month parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
 
-	records, errResponse := s.topupService.FindMonthTopupStatusSuccess(int(year), int(month))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly topup status success: " + errResponse.Message,
-		})
+	reqService := requests.MonthTopupStatus{
+		Year:  year,
+		Month: month,
+	}
+
+	records, err := s.topupService.FindMonthTopupStatusSuccess(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupMonthStatusSuccess("success", "Successfully fetched monthly topup status success", records)
@@ -144,21 +199,30 @@ func (s *topupHandleGrpc) FindMonthlyTopupStatusSuccess(ctx context.Context, req
 }
 
 func (s *topupHandleGrpc) FindYearlyTopupStatusSuccess(ctx context.Context, req *pb.FindYearTopupStatus) (*pb.ApiResponseTopupYearStatusSuccess, error) {
-	if req.GetYear() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-		})
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	year := req.GetYear()
+	records, err := s.topupService.FindYearlyTopupStatusSuccess(year)
 
-	records, errResponse := s.topupService.FindYearlyTopupStatusSuccess(int(year))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly topup status success: " + errResponse.Message,
-		})
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupYearStatusSuccess("success", "Successfully fetched yearly topup status success", records)
@@ -167,22 +231,47 @@ func (s *topupHandleGrpc) FindYearlyTopupStatusSuccess(ctx context.Context, req 
 }
 
 func (s *topupHandleGrpc) FindMonthlyTopupStatusFailed(ctx context.Context, req *pb.FindMonthlyTopupStatus) (*pb.ApiResponseTopupMonthStatusFailed, error) {
-	if req.GetYear() <= 0 || req.GetMonth() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year or month",
-		})
+	year := int(req.GetYear())
+	month := int(req.GetMonth())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	year := req.GetYear()
-	month := req.GetMonth()
+	if month <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid month parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
 
-	records, errResponse := s.topupService.FindMonthTopupStatusFailed(int(year), int(month))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly topup status Failed: " + errResponse.Message,
-		})
+	reqService := requests.MonthTopupStatus{
+		Year:  year,
+		Month: month,
+	}
+
+	records, err := s.topupService.FindMonthTopupStatusFailed(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupMonthStatusFailed("Successfully", "Successfully fetched monthly topup status Failed", records)
@@ -191,21 +280,30 @@ func (s *topupHandleGrpc) FindMonthlyTopupStatusFailed(ctx context.Context, req 
 }
 
 func (s *topupHandleGrpc) FindYearlyTopupStatusFailed(ctx context.Context, req *pb.FindYearTopupStatus) (*pb.ApiResponseTopupYearStatusFailed, error) {
-	if req.GetYear() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-		})
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	year := req.GetYear()
+	records, err := s.topupService.FindYearlyTopupStatusFailed(year)
 
-	records, errResponse := s.topupService.FindYearlyTopupStatusFailed(int(year))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly topup status Failed: " + errResponse.Message,
-		})
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupYearStatusFailed("Successfully", "Successfully fetched yearly topup status Failed", records)
@@ -214,23 +312,60 @@ func (s *topupHandleGrpc) FindYearlyTopupStatusFailed(ctx context.Context, req *
 }
 
 func (s *topupHandleGrpc) FindMonthlyTopupStatusSuccessByCardNumber(ctx context.Context, req *pb.FindMonthlyTopupStatusCardNumber) (*pb.ApiResponseTopupMonthStatusSuccess, error) {
-	if req.GetYear() <= 0 || req.GetMonth() <= 0 || req.GetCardNumber() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year, month, or card number",
-		})
-	}
-
-	year := req.GetYear()
-	month := req.GetMonth()
+	year := int(req.GetYear())
+	month := int(req.GetMonth())
 	cardNumber := req.GetCardNumber()
 
-	records, errResponse := s.topupService.FindMonthTopupStatusSuccessByCardNumber(cardNumber, int(year), int(month))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly topup status success: " + errResponse.Message,
-		})
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if month <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid month parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.MonthTopupStatusCardNumber{
+		Year:       year,
+		Month:      month,
+		CardNumber: cardNumber,
+	}
+
+	records, err := s.topupService.FindMonthTopupStatusSuccessByCardNumber(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupMonthStatusSuccess("success", "Successfully fetched monthly topup status success", records)
@@ -238,22 +373,47 @@ func (s *topupHandleGrpc) FindMonthlyTopupStatusSuccessByCardNumber(ctx context.
 }
 
 func (s *topupHandleGrpc) FindYearlyTopupStatusSuccessByCardNumber(ctx context.Context, req *pb.FindYearTopupStatusCardNumber) (*pb.ApiResponseTopupYearStatusSuccess, error) {
-	if req.GetYear() <= 0 || req.GetCardNumber() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year or card number",
-		})
-	}
-
-	year := req.GetYear()
+	year := int(req.GetYear())
 	cardNumber := req.GetCardNumber()
 
-	records, errResponse := s.topupService.FindYearlyTopupStatusSuccessByCardNumber(cardNumber, int(year))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly topup status success: " + errResponse.Message,
-		})
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.YearTopupStatusCardNumber{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	records, err := s.topupService.FindYearlyTopupStatusSuccessByCardNumber(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupYearStatusSuccess("success", "Successfully fetched yearly topup status success", records)
@@ -261,23 +421,60 @@ func (s *topupHandleGrpc) FindYearlyTopupStatusSuccessByCardNumber(ctx context.C
 }
 
 func (s *topupHandleGrpc) FindMonthlyTopupStatusFailedByCardNumber(ctx context.Context, req *pb.FindMonthlyTopupStatusCardNumber) (*pb.ApiResponseTopupMonthStatusFailed, error) {
-	if req.GetYear() <= 0 || req.GetMonth() <= 0 || req.GetCardNumber() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year, month, or card number",
-		})
-	}
-
-	year := req.GetYear()
-	month := req.GetMonth()
+	year := int(req.GetYear())
+	month := int(req.GetMonth())
 	cardNumber := req.GetCardNumber()
 
-	records, errResponse := s.topupService.FindMonthTopupStatusFailedByCardNumber(cardNumber, int(year), int(month))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly topup status failed: " + errResponse.Message,
-		})
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if month <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid month parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.MonthTopupStatusCardNumber{
+		Year:       year,
+		Month:      month,
+		CardNumber: cardNumber,
+	}
+
+	records, err := s.topupService.FindMonthTopupStatusFailedByCardNumber(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupMonthStatusFailed("success", "Successfully fetched monthly topup status failed", records)
@@ -285,22 +482,47 @@ func (s *topupHandleGrpc) FindMonthlyTopupStatusFailedByCardNumber(ctx context.C
 }
 
 func (s *topupHandleGrpc) FindYearlyTopupStatusFailedByCardNumber(ctx context.Context, req *pb.FindYearTopupStatusCardNumber) (*pb.ApiResponseTopupYearStatusFailed, error) {
-	if req.GetYear() <= 0 || req.GetCardNumber() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year or card number",
-		})
-	}
-
-	year := req.GetYear()
+	year := int(req.GetYear())
 	cardNumber := req.GetCardNumber()
 
-	records, errResponse := s.topupService.FindYearlyTopupStatusFailedByCardNumber(cardNumber, int(year))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly topup status failed: " + errResponse.Message,
-		})
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.YearTopupStatusCardNumber{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	records, err := s.topupService.FindYearlyTopupStatusFailedByCardNumber(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupYearStatusFailed("success", "Successfully fetched yearly topup status failed", records)
@@ -308,13 +530,30 @@ func (s *topupHandleGrpc) FindYearlyTopupStatusFailedByCardNumber(ctx context.Co
 }
 
 func (s *topupHandleGrpc) FindMonthlyTopupMethods(ctx context.Context, req *pb.FindYearTopupStatus) (*pb.ApiResponseTopupMonthMethod, error) {
-	methods, err := s.topupService.FindMonthlyTopupMethods(int(req.GetYear()))
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	methods, err := s.topupService.FindMonthlyTopupMethods(year)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly topup methods: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupMonthMethod("success", "Successfully fetched monthly topup methods", methods)
@@ -323,13 +562,30 @@ func (s *topupHandleGrpc) FindMonthlyTopupMethods(ctx context.Context, req *pb.F
 }
 
 func (s *topupHandleGrpc) FindYearlyTopupMethods(ctx context.Context, req *pb.FindYearTopupStatus) (*pb.ApiResponseTopupYearMethod, error) {
-	methods, err := s.topupService.FindYearlyTopupMethods(int(req.GetYear()))
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	methods, err := s.topupService.FindYearlyTopupMethods(year)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly topup methods: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupYearMethod("success", "Successfully fetched yearly topup methods", methods)
@@ -338,13 +594,30 @@ func (s *topupHandleGrpc) FindYearlyTopupMethods(ctx context.Context, req *pb.Fi
 }
 
 func (s *topupHandleGrpc) FindMonthlyTopupAmounts(ctx context.Context, req *pb.FindYearTopupStatus) (*pb.ApiResponseTopupMonthAmount, error) {
-	amounts, err := s.topupService.FindMonthlyTopupAmounts(int(req.GetYear()))
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	amounts, err := s.topupService.FindMonthlyTopupAmounts(year)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly topup amounts: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupMonthAmount("success", "Successfully fetched monthly topup amounts", amounts)
@@ -353,13 +626,30 @@ func (s *topupHandleGrpc) FindMonthlyTopupAmounts(ctx context.Context, req *pb.F
 }
 
 func (s *topupHandleGrpc) FindYearlyTopupAmounts(ctx context.Context, req *pb.FindYearTopupStatus) (*pb.ApiResponseTopupYearAmount, error) {
-	amounts, err := s.topupService.FindYearlyTopupAmounts(int(req.GetYear()))
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	amounts, err := s.topupService.FindYearlyTopupAmounts(year)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly topup amounts: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupYearAmount("success", "Successfully fetched yearly topup amounts", amounts)
@@ -368,13 +658,47 @@ func (s *topupHandleGrpc) FindYearlyTopupAmounts(ctx context.Context, req *pb.Fi
 }
 
 func (s *topupHandleGrpc) FindMonthlyTopupMethodsByCardNumber(ctx context.Context, req *pb.FindYearTopupCardNumber) (*pb.ApiResponseTopupMonthMethod, error) {
-	methods, err := s.topupService.FindMonthlyTopupMethodsByCardNumber(req.GetCardNumber(), int(req.GetYear()))
+	year := int(req.GetYear())
+	cardNumber := req.GetCardNumber()
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.YearMonthMethod{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	methods, err := s.topupService.FindMonthlyTopupMethodsByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly topup methods by card number: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupMonthMethod("success", "Successfully fetched monthly topup methods by card number", methods)
@@ -383,13 +707,47 @@ func (s *topupHandleGrpc) FindMonthlyTopupMethodsByCardNumber(ctx context.Contex
 }
 
 func (s *topupHandleGrpc) FindYearlyTopupMethodsByCardNumber(ctx context.Context, req *pb.FindYearTopupCardNumber) (*pb.ApiResponseTopupYearMethod, error) {
-	methods, err := s.topupService.FindYearlyTopupMethodsByCardNumber(req.GetCardNumber(), int(req.GetYear()))
+	year := int(req.GetYear())
+	cardNumber := req.GetCardNumber()
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.YearMonthMethod{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	methods, err := s.topupService.FindYearlyTopupMethodsByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly topup methods by card number: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupYearMethod("success", "Successfully fetched yearly topup methods by card number", methods)
@@ -398,13 +756,47 @@ func (s *topupHandleGrpc) FindYearlyTopupMethodsByCardNumber(ctx context.Context
 }
 
 func (s *topupHandleGrpc) FindMonthlyTopupAmountsByCardNumber(ctx context.Context, req *pb.FindYearTopupCardNumber) (*pb.ApiResponseTopupMonthAmount, error) {
-	amounts, err := s.topupService.FindMonthlyTopupAmountsByCardNumber(req.GetCardNumber(), int(req.GetYear()))
+	year := int(req.GetYear())
+	cardNumber := req.GetCardNumber()
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.YearMonthMethod{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	amounts, err := s.topupService.FindMonthlyTopupAmountsByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly topup amounts by card number: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupMonthAmount("success", "Successfully fetched monthly topup amounts by card number", amounts)
@@ -413,12 +805,46 @@ func (s *topupHandleGrpc) FindMonthlyTopupAmountsByCardNumber(ctx context.Contex
 }
 
 func (s *topupHandleGrpc) FindYearlyTopupAmountsByCardNumber(ctx context.Context, req *pb.FindYearTopupCardNumber) (*pb.ApiResponseTopupYearAmount, error) {
-	amounts, err := s.topupService.FindYearlyTopupAmountsByCardNumber(req.GetCardNumber(), int(req.GetYear()))
+	year := int(req.GetYear())
+	cardNumber := req.GetCardNumber()
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.YearMonthMethod{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	amounts, err := s.topupService.FindYearlyTopupAmountsByCardNumber(&reqService)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly topup amounts by card number: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupYearAmount("success", "Successfully fetched yearly topup amounts by card number", amounts)
@@ -438,22 +864,32 @@ func (s *topupHandleGrpc) FindByActive(ctx context.Context, req *pb.FindAllTopup
 		pageSize = 10
 	}
 
-	res, totalRecords, err := s.topupService.FindByActive(page, pageSize, search)
-
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch topups: " + err.Message,
-		})
+	reqService := requests.FindAllTopups{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
 	}
 
-	totalPages := int(math.Ceil(float64(totalRecords) / float64(pageSize)))
+	res, totalRecords, err := s.topupService.FindByActive(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
+	}
+
+	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
 
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
 		TotalPages:   int32(totalPages),
-		TotalRecords: int32(totalRecords),
+		TotalRecords: int32(*totalRecords),
 	}
 	so := s.mapping.ToProtoResponsePaginationTopupDeleteAt(paginationMeta, "success", "Successfully fetch topups", res)
 
@@ -472,22 +908,32 @@ func (s *topupHandleGrpc) FindByTrashed(ctx context.Context, req *pb.FindAllTopu
 		pageSize = 10
 	}
 
-	res, totalRecords, err := s.topupService.FindByTrashed(page, pageSize, search)
-
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch topups: " + err.Message,
-		})
+	reqService := requests.FindAllTopups{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
 	}
 
-	totalPages := int(math.Ceil(float64(totalRecords) / float64(pageSize)))
+	res, totalRecords, err := s.topupService.FindByTrashed(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
+	}
+
+	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
 
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
 		TotalPages:   int32(totalPages),
-		TotalRecords: int32(totalRecords),
+		TotalRecords: int32(*totalRecords),
 	}
 
 	so := s.mapping.ToProtoResponsePaginationTopupDeleteAt(paginationMeta, "success", "Successfully fetch topups", res)
@@ -502,13 +948,28 @@ func (s *topupHandleGrpc) CreateTopup(ctx context.Context, req *pb.CreateTopupRe
 		TopupMethod: req.GetTopupMethod(),
 	}
 
+	if err := request.Validate(); err != nil {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "validation_error",
+				Message: "Unable to create new topup. Please check your input.",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
 	res, err := s.topupService.CreateTopup(&request)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to create topup: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopup("success", "Successfully created topup", res)
@@ -517,27 +978,48 @@ func (s *topupHandleGrpc) CreateTopup(ctx context.Context, req *pb.CreateTopupRe
 }
 
 func (s *topupHandleGrpc) UpdateTopup(ctx context.Context, req *pb.UpdateTopupRequest) (*pb.ApiResponseTopup, error) {
-	if req.GetTopupId() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-		})
+	id := int(req.GetTopupId())
+
+	if id == 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "validation_error",
+				Message: "Topup ID parameter cannot be empty and must be a positive number",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
 	request := requests.UpdateTopupRequest{
-		TopupID:     int(req.GetTopupId()),
+		TopupID:     &id,
 		CardNumber:  req.GetCardNumber(),
 		TopupAmount: int(req.GetTopupAmount()),
 		TopupMethod: req.GetTopupMethod(),
 	}
 
+	if err := request.Validate(); err != nil {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "validation_error",
+				Message: "Unable to process topup update. Please review your data.",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
 	res, err := s.topupService.UpdateTopup(&request)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to update topup: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopup("success", "Successfully updated topup", res)
@@ -546,20 +1028,30 @@ func (s *topupHandleGrpc) UpdateTopup(ctx context.Context, req *pb.UpdateTopupRe
 }
 
 func (s *topupHandleGrpc) TrashedTopup(ctx context.Context, req *pb.FindByIdTopupRequest) (*pb.ApiResponseTopup, error) {
-	if req.GetTopupId() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-		})
+	id := int(req.GetTopupId())
+
+	if id == 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "validation_error",
+				Message: "Merchant ID parameter cannot be empty and must be a positive number",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	res, err := s.topupService.TrashedTopup(int(req.GetTopupId()))
+	res, err := s.topupService.TrashedTopup(id)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to trash topup: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopup("success", "Successfully trashed topup", res)
@@ -568,20 +1060,30 @@ func (s *topupHandleGrpc) TrashedTopup(ctx context.Context, req *pb.FindByIdTopu
 }
 
 func (s *topupHandleGrpc) RestoreTopup(ctx context.Context, req *pb.FindByIdTopupRequest) (*pb.ApiResponseTopup, error) {
-	if req.GetTopupId() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-		})
+	id := int(req.GetTopupId())
+
+	if id == 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "validation_error",
+				Message: "Merchant ID parameter cannot be empty and must be a positive number",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	res, err := s.topupService.RestoreTopup(int(req.GetTopupId()))
+	res, err := s.topupService.RestoreTopup(id)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to restore topup: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopup("success", "Successfully restored topup", res)
@@ -590,20 +1092,30 @@ func (s *topupHandleGrpc) RestoreTopup(ctx context.Context, req *pb.FindByIdTopu
 }
 
 func (s *topupHandleGrpc) DeleteTopupPermanent(ctx context.Context, req *pb.FindByIdTopupRequest) (*pb.ApiResponseTopupDelete, error) {
-	if req.GetTopupId() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-		})
+	id := int(req.GetTopupId())
+
+	if id == 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "validation_error",
+				Message: "Merchant ID parameter cannot be empty and must be a positive number",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	_, err := s.topupService.DeleteTopupPermanent(int(req.GetTopupId()))
+	_, err := s.topupService.DeleteTopupPermanent(id)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to delete topup permanently: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupDelete("success", "Successfully deleted topup permanently")
@@ -615,10 +1127,14 @@ func (s *topupHandleGrpc) RestoreAllTopup(ctx context.Context, _ *emptypb.Empty)
 	_, err := s.topupService.RestoreAllTopup()
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to restore all topup: ",
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupAll("success", "Successfully restore all topup")
@@ -630,10 +1146,14 @@ func (s *topupHandleGrpc) DeleteAllTopupPermanent(ctx context.Context, _ *emptyp
 	_, err := s.topupService.DeleteAllTopupPermanent()
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to delete topup permanent: ",
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTopupAll("success", "Successfully delete topup permanent")

@@ -66,7 +66,7 @@ func NewHandlerTransaction(transaction pb.TransactionServiceClient, merchant pb.
 	routerTransaction.POST("/trashed/:id", transactionHandler.TrashedTransaction)
 	routerTransaction.DELETE("/permanent/:id", transactionHandler.DeletePermanent)
 
-	routerTransaction.POST("/trashed/all", transactionHandler.RestoreAllTransaction)
+	routerTransaction.POST("/restore/all", transactionHandler.RestoreAllTransaction)
 	routerTransaction.POST("/permanent/all", transactionHandler.DeleteAllTransactionPermanent)
 
 	return &transactionHandler
@@ -113,6 +113,7 @@ func (h *transactionHandler) FindAll(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transaction data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -140,6 +141,7 @@ func (h *transactionHandler) FindAllTransactionByCardNumber(c echo.Context) erro
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Card number is required",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -172,6 +174,7 @@ func (h *transactionHandler) FindAllTransactionByCardNumber(c echo.Context) erro
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transaction data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -202,6 +205,7 @@ func (h *transactionHandler) FindById(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -217,6 +221,7 @@ func (h *transactionHandler) FindById(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transaction data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -247,6 +252,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusSuccess(c echo.Context)
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -255,6 +261,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusSuccess(c echo.Context)
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid month",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -271,6 +278,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusSuccess(c echo.Context)
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly Transaction status success: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -299,6 +307,7 @@ func (h *transactionHandler) FindYearlyTransactionStatusSuccess(c echo.Context) 
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -314,6 +323,7 @@ func (h *transactionHandler) FindYearlyTransactionStatusSuccess(c echo.Context) 
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly Transaction status success: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -344,6 +354,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusFailed(c echo.Context) 
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -352,6 +363,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusFailed(c echo.Context) 
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid month",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -368,6 +380,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusFailed(c echo.Context) 
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly Transaction status failed: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -396,6 +409,7 @@ func (h *transactionHandler) FindYearlyTransactionStatusFailed(c echo.Context) e
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -411,6 +425,7 @@ func (h *transactionHandler) FindYearlyTransactionStatusFailed(c echo.Context) e
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly Transaction status failed: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -443,6 +458,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusSuccessByCardNumber(c e
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -451,6 +467,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusSuccessByCardNumber(c e
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid month",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -468,6 +485,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusSuccessByCardNumber(c e
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly Transaction status success: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -498,6 +516,7 @@ func (h *transactionHandler) FindYearlyTransactionStatusSuccessByCardNumber(c ec
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -514,6 +533,7 @@ func (h *transactionHandler) FindYearlyTransactionStatusSuccessByCardNumber(c ec
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly Transaction status success: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -546,6 +566,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusFailedByCardNumber(c ec
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -554,6 +575,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusFailedByCardNumber(c ec
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid month",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -571,6 +593,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusFailedByCardNumber(c ec
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly Transaction status failed: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -601,6 +624,7 @@ func (h *transactionHandler) FindYearlyTransactionStatusFailedByCardNumber(c ech
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -617,6 +641,7 @@ func (h *transactionHandler) FindYearlyTransactionStatusFailedByCardNumber(c ech
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly Transaction status failed: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -645,6 +670,7 @@ func (h *transactionHandler) FindMonthlyPaymentMethods(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -658,6 +684,7 @@ func (h *transactionHandler) FindMonthlyPaymentMethods(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly payment methods",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -686,6 +713,7 @@ func (h *transactionHandler) FindYearlyPaymentMethods(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -699,6 +727,7 @@ func (h *transactionHandler) FindYearlyPaymentMethods(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly payment methods",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -727,6 +756,7 @@ func (h *transactionHandler) FindMonthlyAmounts(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -740,6 +770,7 @@ func (h *transactionHandler) FindMonthlyAmounts(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly amounts",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -768,6 +799,7 @@ func (h *transactionHandler) FindYearlyAmounts(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -781,6 +813,7 @@ func (h *transactionHandler) FindYearlyAmounts(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly amounts",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -812,6 +845,7 @@ func (h *transactionHandler) FindMonthlyPaymentMethodsByCardNumber(c echo.Contex
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -826,6 +860,7 @@ func (h *transactionHandler) FindMonthlyPaymentMethodsByCardNumber(c echo.Contex
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly payment methods by card number",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -856,6 +891,7 @@ func (h *transactionHandler) FindYearlyPaymentMethodsByCardNumber(c echo.Context
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -870,6 +906,7 @@ func (h *transactionHandler) FindYearlyPaymentMethodsByCardNumber(c echo.Context
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly payment methods by card number",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -901,6 +938,7 @@ func (h *transactionHandler) FindMonthlyAmountsByCardNumber(c echo.Context) erro
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -915,6 +953,7 @@ func (h *transactionHandler) FindMonthlyAmountsByCardNumber(c echo.Context) erro
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly amounts by card number",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -946,6 +985,7 @@ func (h *transactionHandler) FindYearlyAmountsByCardNumber(c echo.Context) error
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -960,6 +1000,7 @@ func (h *transactionHandler) FindYearlyAmountsByCardNumber(c echo.Context) error
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly amounts by card number",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -988,6 +1029,7 @@ func (h *transactionHandler) FindByTransactionMerchantId(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1005,6 +1047,7 @@ func (h *transactionHandler) FindByTransactionMerchantId(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transaction data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1054,6 +1097,7 @@ func (h *transactionHandler) FindByActiveTransaction(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transaction data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1103,6 +1147,7 @@ func (h *transactionHandler) FindByTrashedTransaction(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transaction data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1133,6 +1178,7 @@ func (h *transactionHandler) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid request body",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1142,6 +1188,7 @@ func (h *transactionHandler) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1162,6 +1209,7 @@ func (h *transactionHandler) Create(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to create transaction: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1189,6 +1237,7 @@ func (h *transactionHandler) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1202,6 +1251,7 @@ func (h *transactionHandler) Update(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid or missing API key",
+			Code:    http.StatusUnauthorized,
 		})
 	}
 
@@ -1210,6 +1260,7 @@ func (h *transactionHandler) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid request body",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1218,13 +1269,14 @@ func (h *transactionHandler) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
 	ctx := c.Request().Context()
 
 	res, err := h.transaction.UpdateTransaction(ctx, &pb.UpdateTransactionRequest{
-		TransactionId:   int32(body.TransactionID),
+		TransactionId:   int32(id),
 		CardNumber:      body.CardNumber,
 		ApiKey:          apiKey,
 		Amount:          int32(body.Amount),
@@ -1239,6 +1291,7 @@ func (h *transactionHandler) Update(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update transaction: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1269,6 +1322,7 @@ func (h *transactionHandler) TrashedTransaction(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1283,6 +1337,7 @@ func (h *transactionHandler) TrashedTransaction(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to trashed transaction:",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1313,6 +1368,7 @@ func (h *transactionHandler) RestoreTransaction(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1328,6 +1384,7 @@ func (h *transactionHandler) RestoreTransaction(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to restore transaction:",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1358,6 +1415,7 @@ func (h *transactionHandler) DeletePermanent(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1373,6 +1431,7 @@ func (h *transactionHandler) DeletePermanent(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to delete transaction:",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1401,6 +1460,7 @@ func (h *transactionHandler) RestoreAllTransaction(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to permanently restore all transaction",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1432,6 +1492,7 @@ func (h *transactionHandler) DeleteAllTransactionPermanent(c echo.Context) error
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to permanently delete all transaction",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 

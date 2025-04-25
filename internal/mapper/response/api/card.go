@@ -125,6 +125,11 @@ func (s *cardResponseMapper) mapCardResponses(cards []*pb.CardResponse) []*respo
 }
 
 func (s *cardResponseMapper) mapCardResponseDeleteAt(card *pb.CardResponseDeleteAt) *response.CardResponseDeleteAt {
+	var deletedAt string
+	if card.DeletedAt != nil {
+		deletedAt = card.DeletedAt.Value
+	}
+
 	return &response.CardResponseDeleteAt{
 		ID:           int(card.Id),
 		UserID:       int(card.UserId),
@@ -135,7 +140,7 @@ func (s *cardResponseMapper) mapCardResponseDeleteAt(card *pb.CardResponseDelete
 		CardProvider: card.CardProvider,
 		CreatedAt:    card.CreatedAt,
 		UpdatedAt:    card.UpdatedAt,
-		DeletedAt:    card.DeletedAt,
+		DeletedAt:    &deletedAt,
 	}
 }
 

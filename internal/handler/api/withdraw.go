@@ -106,6 +106,7 @@ func (h *withdrawHandleApi) FindAll(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve withdraw data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -165,6 +166,7 @@ func (h *withdrawHandleApi) FindAllByCardNumber(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve withdraw data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -193,6 +195,7 @@ func (h *withdrawHandleApi) FindById(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid withdraw ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -210,6 +213,7 @@ func (h *withdrawHandleApi) FindById(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve withdraw data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -240,6 +244,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusSuccess(c echo.Context) err
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -248,6 +253,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusSuccess(c echo.Context) err
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid month",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -264,6 +270,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusSuccess(c echo.Context) err
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly Withdraw status success: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -292,6 +299,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusSuccess(c echo.Context) erro
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -307,6 +315,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusSuccess(c echo.Context) erro
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly Withdraw status success: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -337,6 +346,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusFailed(c echo.Context) erro
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -345,6 +355,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusFailed(c echo.Context) erro
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid month",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -361,6 +372,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusFailed(c echo.Context) erro
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly Withdraw status Failed: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -389,6 +401,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusFailed(c echo.Context) error
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -404,6 +417,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusFailed(c echo.Context) error
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly Withdraw status Failed: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -436,6 +450,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusSuccessByCardNumber(c echo.
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -444,6 +459,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusSuccessByCardNumber(c echo.
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid month",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -461,6 +477,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusSuccessByCardNumber(c echo.
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly Withdraw status success: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -491,6 +508,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusSuccessByCardNumber(c echo.C
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -507,6 +525,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusSuccessByCardNumber(c echo.C
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly Withdraw status success: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -539,6 +558,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusFailedByCardNumber(c echo.C
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -547,6 +567,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusFailedByCardNumber(c echo.C
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid month",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -564,6 +585,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusFailedByCardNumber(c echo.C
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly Withdraw status Failed: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -594,6 +616,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusFailedByCardNumber(c echo.Co
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -610,6 +633,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusFailedByCardNumber(c echo.Co
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly Withdraw status Failed: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -638,6 +662,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdraws(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -651,6 +676,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdraws(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly withdraws",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -679,6 +705,7 @@ func (h *withdrawHandleApi) FindYearlyWithdraws(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -692,6 +719,7 @@ func (h *withdrawHandleApi) FindYearlyWithdraws(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly withdraws",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -722,6 +750,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawsByCardNumber(c echo.Context) err
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -736,6 +765,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawsByCardNumber(c echo.Context) err
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly withdraws by card number",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -766,6 +796,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawsByCardNumber(c echo.Context) erro
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -780,6 +811,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawsByCardNumber(c echo.Context) erro
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly withdraws by card number",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -816,6 +848,7 @@ func (h *withdrawHandleApi) FindByCardNumber(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve withdraw data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -862,6 +895,7 @@ func (h *withdrawHandleApi) FindByActive(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve withdraw data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -908,6 +942,7 @@ func (h *withdrawHandleApi) FindByTrashed(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve withdraw data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -936,6 +971,7 @@ func (h *withdrawHandleApi) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid request body",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -945,6 +981,7 @@ func (h *withdrawHandleApi) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -962,6 +999,7 @@ func (h *withdrawHandleApi) Create(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to create withdraw: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -991,6 +1029,7 @@ func (h *withdrawHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid withdraw ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1002,6 +1041,7 @@ func (h *withdrawHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid request body",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1011,6 +1051,7 @@ func (h *withdrawHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1029,6 +1070,7 @@ func (h *withdrawHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update withdraw: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1057,6 +1099,7 @@ func (h *withdrawHandleApi) TrashWithdraw(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid withdraw ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1072,6 +1115,7 @@ func (h *withdrawHandleApi) TrashWithdraw(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to trash withdraw: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1099,6 +1143,7 @@ func (h *withdrawHandleApi) RestoreWithdraw(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid withdraw ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1114,6 +1159,7 @@ func (h *withdrawHandleApi) RestoreWithdraw(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to restore withdraw: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1142,6 +1188,7 @@ func (h *withdrawHandleApi) DeleteWithdrawPermanent(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid withdraw ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1157,6 +1204,7 @@ func (h *withdrawHandleApi) DeleteWithdrawPermanent(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to delete withdraw permanently: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1185,6 +1233,7 @@ func (h *withdrawHandleApi) RestoreAllWithdraw(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to permanently restore all withdraw",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1216,6 +1265,7 @@ func (h *withdrawHandleApi) DeleteAllWithdrawPermanent(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to permanently delete all withdraw",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 

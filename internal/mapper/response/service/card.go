@@ -47,12 +47,7 @@ func (s *cardResponseMapper) ToCardResponseDeleteAt(card *record.CardRecord) *re
 		CardProvider: card.CardProvider,
 		CreatedAt:    card.CreatedAt,
 		UpdatedAt:    card.UpdatedAt,
-		DeletedAt: func() string {
-			if card.DeletedAt != nil {
-				return *card.DeletedAt
-			}
-			return ""
-		}(),
+		DeletedAt:    card.DeletedAt,
 	}
 }
 

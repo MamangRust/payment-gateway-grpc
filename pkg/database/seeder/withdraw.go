@@ -70,7 +70,7 @@ func (r *withdrawSeeder) Seed() error {
 			return fmt.Errorf("failed to seed withdraw %d: %w", i+1, err)
 		}
 
-		err = r.db.UpdateWithdrawStatus(r.ctx, db.UpdateWithdrawStatusParams{
+		_, err = r.db.UpdateWithdrawStatus(r.ctx, db.UpdateWithdrawStatusParams{
 			WithdrawID: withdraw.WithdrawID,
 			Status:     status,
 		})
@@ -81,7 +81,7 @@ func (r *withdrawSeeder) Seed() error {
 		}
 
 		if i < 20 {
-			err = r.db.TrashWithdraw(r.ctx, withdraw.WithdrawID)
+			_, err = r.db.TrashWithdraw(r.ctx, withdraw.WithdrawID)
 			if err != nil {
 				r.logger.Error("failed to trash withdraw", zap.Int("withdraw", i+1), zap.Error(err))
 				return fmt.Errorf("failed to trash withdraw %d: %w", i+1, err)

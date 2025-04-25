@@ -14,15 +14,7 @@ This system simulates a payment gateway handling operations such as card transac
 
 
 
-## Preview Relation Table, Swagger, Frontend(web || desktop)
-
-### Frontend
-
-#### Frontend Web
-<img src="./images/preview_payment.png" alt="relation-table" />
-
-#### Frontend Desktop
-<img src="./images/preview_payment_desktop.png" alt="relation-table" />
+# Preview Relation Table, Swagger, Frontend(web || desktop)
 
 ### Relation Table
 
@@ -30,3 +22,13 @@ This system simulates a payment gateway handling operations such as card transac
 
 ### Swagger
 <img src="./images/swagger_3.png" alt="swagger" />
+
+
+## Frontend
+
+#### Frontend Web
+<img src="./images/preview_payment.png" alt="relation-table" />
+
+#### Frontend Desktop
+<img src="./images/preview_payment_desktop.png" alt="relation-table" />
+

@@ -3,7 +3,8 @@ package protomapper
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
-	"fmt"
+
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type transferProtoMapper struct{}
@@ -132,7 +133,10 @@ func (t *transferProtoMapper) mapResponsesTransfer(transfers []*response.Transfe
 }
 
 func (t *transferProtoMapper) mapResponseTransferDeleteAt(transfer *response.TransferResponseDeleteAt) *pb.TransferResponseDeleteAt {
-	fmt.Println("transfer proto:", transfer)
+	var deletedAt *wrapperspb.StringValue
+	if transfer.DeletedAt != nil {
+		deletedAt = wrapperspb.String(*transfer.DeletedAt)
+	}
 
 	return &pb.TransferResponseDeleteAt{
 		Id:             int32(transfer.ID),
@@ -143,7 +147,7 @@ func (t *transferProtoMapper) mapResponseTransferDeleteAt(transfer *response.Tra
 		TransferTime:   transfer.TransferTime,
 		CreatedAt:      transfer.CreatedAt,
 		UpdatedAt:      transfer.UpdatedAt,
-		DeletedAt:      transfer.DeletedAt,
+		DeletedAt:      deletedAt,
 	}
 }
 

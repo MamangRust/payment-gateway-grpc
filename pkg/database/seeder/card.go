@@ -69,7 +69,7 @@ func (r *cardSeeder) Seed() error {
 		}
 
 		if i > activeCards {
-			err = r.db.TrashCard(r.ctx, card.CardID)
+			_, err = r.db.TrashCard(r.ctx, card.CardID)
 			if err != nil {
 				r.logger.Error("failed to trash card", zap.Int("card", i), zap.Error(err))
 				return fmt.Errorf("failed to trash card %d: %w", i, err)

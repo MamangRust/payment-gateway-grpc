@@ -62,7 +62,7 @@ func (r *saldoSeeder) Seed() error {
 		}
 
 		if i >= activeSaldos {
-			err = r.db.TrashSaldo(r.ctx, saldo.SaldoID)
+			_, err = r.db.TrashSaldo(r.ctx, saldo.SaldoID)
 			if err != nil {
 				r.logger.Error("failed to trash saldo", zap.Int("saldo", i+1), zap.String("card", card.CardNumber), zap.Error(err))
 				return fmt.Errorf("failed to trash saldo %d for card %s: %w", i+1, card.CardNumber, err)

@@ -7,6 +7,7 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/repository"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
 	"fmt"
+	"net/http"
 
 	"go.uber.org/zap"
 )
@@ -33,7 +34,11 @@ func NewCardService(
 	}
 }
 
-func (s *cardService) FindAll(page int, pageSize int, search string) ([]*response.CardResponse, int, *response.ErrorResponse) {
+func (s *cardService) FindAll(req *requests.FindAllCards) ([]*response.CardResponse, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+
 	s.logger.Debug("Fetching card records",
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize),
@@ -46,25 +51,111 @@ func (s *cardService) FindAll(page int, pageSize int, search string) ([]*respons
 		pageSize = 10
 	}
 
-	cards, totalRecords, err := s.cardRepository.FindAllCards(search, page, pageSize)
+	cards, totalRecords, err := s.cardRepository.FindAllCards(req)
 
 	if err != nil {
-		s.logger.Error("Failed to fetch card records",
+		s.logger.Error("Failed to fetch card",
 			zap.Error(err),
-			zap.Int("page", page),
-			zap.Int("pageSize", pageSize),
-			zap.String("search", search))
+			zap.Int("page", req.Page),
+			zap.Int("pageSize", req.PageSize),
+			zap.String("search", req.Search))
 
-		return nil, 0, &response.ErrorResponse{
+		return nil, nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to fetch card records",
+			Message: "Failed to retrieve card list",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	responseData := s.mapping.ToCardsResponse(cards)
 
 	s.logger.Debug("Successfully fetched card records",
-		zap.Int("totalRecords", totalRecords),
+		zap.Int("totalRecords", *totalRecords),
+		zap.Int("page", page),
+		zap.Int("pageSize", pageSize))
+
+	return responseData, totalRecords, nil
+}
+
+func (s *cardService) FindByActive(req *requests.FindAllCards) ([]*response.CardResponseDeleteAt, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+
+	s.logger.Debug("Fetching active card records",
+		zap.Int("page", page),
+		zap.Int("pageSize", pageSize),
+		zap.String("search", search))
+
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	res, totalRecords, err := s.cardRepository.FindByActive(req)
+
+	if err != nil {
+		s.logger.Error("Failed to fetch active card records",
+			zap.Error(err),
+			zap.Int("page", page),
+			zap.Int("pageSize", pageSize),
+			zap.String("search", search))
+
+		return nil, nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve active cards",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	responseData := s.mapping.ToCardsResponseDeleteAt(res)
+
+	s.logger.Debug("Successfully fetched active card records",
+		zap.Int("totalRecords", *totalRecords),
+		zap.Int("page", page),
+		zap.Int("pageSize", pageSize))
+
+	return responseData, totalRecords, nil
+}
+
+func (s *cardService) FindByTrashed(req *requests.FindAllCards) ([]*response.CardResponseDeleteAt, *int, *response.ErrorResponse) {
+	page := req.Page
+	pageSize := req.PageSize
+	search := req.Search
+
+	s.logger.Debug("Fetching trashed card records",
+		zap.Int("page", page),
+		zap.Int("pageSize", pageSize),
+		zap.String("search", search))
+
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	res, totalRecords, err := s.cardRepository.FindByTrashed(req)
+	if err != nil {
+		s.logger.Error("Failed to fetch trashed card records",
+			zap.Error(err),
+			zap.Int("page", page),
+			zap.Int("pageSize", pageSize),
+			zap.String("search", search))
+
+		return nil, nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve trashed card",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	responseData := s.mapping.ToCardsResponseDeleteAt(res)
+
+	s.logger.Debug("Successfully fetched trashed card records",
+		zap.Int("totalRecords", *totalRecords),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
@@ -77,10 +168,14 @@ func (s *cardService) FindById(card_id int) (*response.CardResponse, *response.E
 	res, err := s.cardRepository.FindById(card_id)
 
 	if err != nil {
-		s.logger.Error("Failed to fetch card by ID", zap.Error(err), zap.Int("card_id", card_id))
+		s.logger.Error("Failed to retrieve Card details",
+			zap.Error(err),
+			zap.Int("card_id", card_id))
+
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Card record not found",
+			Message: "Failed to retrieve Card details",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -91,22 +186,26 @@ func (s *cardService) FindById(card_id int) (*response.CardResponse, *response.E
 	return so, nil
 }
 
-func (s *cardService) FindByUserID(userID int) (*response.CardResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching card by user ID", zap.Int("userID", userID))
+func (s *cardService) FindByUserID(user_id int) (*response.CardResponse, *response.ErrorResponse) {
+	s.logger.Debug("Fetching card by user ID", zap.Int("user_id", user_id))
 
-	res, err := s.cardRepository.FindCardByUserId(userID)
+	res, err := s.cardRepository.FindCardByUserId(user_id)
 
 	if err != nil {
-		s.logger.Error("Failed to fetch cards by user ID", zap.Error(err), zap.Int("userID", userID))
+		s.logger.Error("Failed to retrieve Card details by user",
+			zap.Error(err),
+			zap.Int("user_id", user_id))
+
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to fetch cards by user ID",
+			Message: "Failed to retrieve Card details",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	so := s.mapping.ToCardResponse(res)
 
-	s.logger.Debug("Successfully fetched card records by user ID", zap.Int("userID", userID))
+	s.logger.Debug("Successfully fetched card records by user ID", zap.Int("user_id", user_id))
 
 	return so, nil
 }
@@ -122,6 +221,7 @@ func (s *cardService) DashboardCard() (*response.DashboardCard, *response.ErrorR
 		return nil, &response.ErrorResponse{
 			Message: "Failed to retrieve total balance",
 			Status:  "error",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -133,6 +233,7 @@ func (s *cardService) DashboardCard() (*response.DashboardCard, *response.ErrorR
 		return nil, &response.ErrorResponse{
 			Message: "Failed to retrieve total top-up amount",
 			Status:  "error",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -144,6 +245,7 @@ func (s *cardService) DashboardCard() (*response.DashboardCard, *response.ErrorR
 		return nil, &response.ErrorResponse{
 			Message: "Failed to retrieve total withdrawal amount",
 			Status:  "error",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -155,6 +257,7 @@ func (s *cardService) DashboardCard() (*response.DashboardCard, *response.ErrorR
 		return nil, &response.ErrorResponse{
 			Message: "Failed to retrieve total transaction amount",
 			Status:  "error",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -166,6 +269,7 @@ func (s *cardService) DashboardCard() (*response.DashboardCard, *response.ErrorR
 		return nil, &response.ErrorResponse{
 			Message: "Failed to retrieve total transfer amount",
 			Status:  "error",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -200,6 +304,7 @@ func (s *cardService) DashboardCardCardNumber(cardNumber string) (*response.Dash
 		return nil, &response.ErrorResponse{
 			Message: fmt.Sprintf("Failed to retrieve total balance for card %s", cardNumber),
 			Status:  "error",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -212,6 +317,7 @@ func (s *cardService) DashboardCardCardNumber(cardNumber string) (*response.Dash
 		return nil, &response.ErrorResponse{
 			Message: fmt.Sprintf("Failed to retrieve total top-up amount for card %s", cardNumber),
 			Status:  "error",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -224,6 +330,7 @@ func (s *cardService) DashboardCardCardNumber(cardNumber string) (*response.Dash
 		return nil, &response.ErrorResponse{
 			Message: fmt.Sprintf("Failed to retrieve total withdrawal amount for card %s", cardNumber),
 			Status:  "error",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -236,6 +343,7 @@ func (s *cardService) DashboardCardCardNumber(cardNumber string) (*response.Dash
 		return nil, &response.ErrorResponse{
 			Message: fmt.Sprintf("Failed to retrieve total transaction amount for card %s", cardNumber),
 			Status:  "error",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -248,6 +356,7 @@ func (s *cardService) DashboardCardCardNumber(cardNumber string) (*response.Dash
 		return nil, &response.ErrorResponse{
 			Message: fmt.Sprintf("Failed to retrieve total transfer amount sent by card %s", cardNumber),
 			Status:  "error",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -260,6 +369,7 @@ func (s *cardService) DashboardCardCardNumber(cardNumber string) (*response.Dash
 		return nil, &response.ErrorResponse{
 			Message: fmt.Sprintf("Failed to retrieve total transfer amount received by card %s", cardNumber),
 			Status:  "error",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -282,12 +392,18 @@ func (s *cardService) DashboardCardCardNumber(cardNumber string) (*response.Dash
 		TotalTransferReceiver: totalTransferReceived,
 	}, nil
 }
-
 func (s *cardService) FindMonthlyBalance(year int) ([]*response.CardResponseMonthBalance, *response.ErrorResponse) {
 	s.logger.Debug("FindMonthlyBalance called", zap.Int("year", year))
 
-	res, err := s.cardRepository.GetMonthlyBalance(year)
+	if year <= 0 {
+		return nil, &response.ErrorResponse{
+			Status:  "invalid_request",
+			Message: "Year must be a positive number",
+			Code:    http.StatusBadRequest,
+		}
+	}
 
+	res, err := s.cardRepository.GetMonthlyBalance(year)
 	if err != nil {
 		s.logger.Error("Failed to retrieve monthly balance",
 			zap.Int("year", year),
@@ -296,7 +412,8 @@ func (s *cardService) FindMonthlyBalance(year int) ([]*response.CardResponseMont
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve monthly balance: %v", err),
+			Message: "Failed to retrieve monthly balance data",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -313,8 +430,15 @@ func (s *cardService) FindMonthlyBalance(year int) ([]*response.CardResponseMont
 func (s *cardService) FindYearlyBalance(year int) ([]*response.CardResponseYearlyBalance, *response.ErrorResponse) {
 	s.logger.Debug("FindYearlyBalance called", zap.Int("year", year))
 
-	res, err := s.cardRepository.GetYearlyBalance(year)
+	if year <= 0 {
+		return nil, &response.ErrorResponse{
+			Status:  "invalid_request",
+			Message: "Year must be a positive number",
+			Code:    http.StatusBadRequest,
+		}
+	}
 
+	res, err := s.cardRepository.GetYearlyBalance(year)
 	if err != nil {
 		s.logger.Error("Failed to retrieve yearly balance",
 			zap.Int("year", year),
@@ -323,11 +447,23 @@ func (s *cardService) FindYearlyBalance(year int) ([]*response.CardResponseYearl
 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve yearly balance: %v", err),
+			Message: "Failed to retrieve yearly balance data",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	so := s.mapping.ToGetYearlyBalances(res)
+
+	if len(so) == 0 {
+		s.logger.Debug("No yearly balance data found",
+			zap.Int("year", year),
+		)
+		return nil, &response.ErrorResponse{
+			Status:  "not_found",
+			Message: fmt.Sprintf("No yearly balance data available for year %d", year),
+			Code:    http.StatusNotFound,
+		}
+	}
 
 	s.logger.Debug("Yearly balance retrieved successfully",
 		zap.Int("year", year),
@@ -340,7 +476,16 @@ func (s *cardService) FindYearlyBalance(year int) ([]*response.CardResponseYearl
 func (s *cardService) FindMonthlyTopupAmount(year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
 	s.logger.Debug("FindMonthlyTopupAmount called", zap.Int("year", year))
 
+	if year <= 0 {
+		return nil, &response.ErrorResponse{
+			Status:  "invalid_request",
+			Message: "Year must be a positive number",
+			Code:    http.StatusBadRequest,
+		}
+	}
+
 	res, err := s.cardRepository.GetMonthlyTopupAmount(year)
+
 	if err != nil {
 		s.logger.Error("Failed to retrieve monthly topup amount",
 			zap.Int("year", year),
@@ -350,6 +495,7 @@ func (s *cardService) FindMonthlyTopupAmount(year int) ([]*response.CardResponse
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly topup amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -366,7 +512,16 @@ func (s *cardService) FindMonthlyTopupAmount(year int) ([]*response.CardResponse
 func (s *cardService) FindYearlyTopupAmount(year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
 	s.logger.Debug("FindYearlyTopupAmount called", zap.Int("year", year))
 
+	if year <= 0 {
+		return nil, &response.ErrorResponse{
+			Status:  "invalid_request",
+			Message: "Year must be a positive number",
+			Code:    http.StatusBadRequest,
+		}
+	}
+
 	res, err := s.cardRepository.GetYearlyTopupAmount(year)
+
 	if err != nil {
 		s.logger.Error("Failed to retrieve yearly topup amount",
 			zap.Int("year", year),
@@ -376,6 +531,7 @@ func (s *cardService) FindYearlyTopupAmount(year int) ([]*response.CardResponseY
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly topup amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -392,7 +548,16 @@ func (s *cardService) FindYearlyTopupAmount(year int) ([]*response.CardResponseY
 func (s *cardService) FindMonthlyWithdrawAmount(year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
 	s.logger.Debug("FindMonthlyWithdrawAmount called", zap.Int("year", year))
 
+	if year <= 0 {
+		return nil, &response.ErrorResponse{
+			Status:  "invalid_request",
+			Message: "Year must be a positive number",
+			Code:    http.StatusBadRequest,
+		}
+	}
+
 	res, err := s.cardRepository.GetMonthlyWithdrawAmount(year)
+
 	if err != nil {
 		s.logger.Error("Failed to retrieve monthly withdraw amount",
 			zap.Int("year", year),
@@ -402,6 +567,7 @@ func (s *cardService) FindMonthlyWithdrawAmount(year int) ([]*response.CardRespo
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly withdraw amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -418,7 +584,16 @@ func (s *cardService) FindMonthlyWithdrawAmount(year int) ([]*response.CardRespo
 func (s *cardService) FindYearlyWithdrawAmount(year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
 	s.logger.Debug("FindYearlyWithdrawAmount called", zap.Int("year", year))
 
+	if year <= 0 {
+		return nil, &response.ErrorResponse{
+			Status:  "invalid_request",
+			Message: "Year must be a positive number",
+			Code:    http.StatusBadRequest,
+		}
+	}
+
 	res, err := s.cardRepository.GetYearlyWithdrawAmount(year)
+
 	if err != nil {
 		s.logger.Error("Failed to retrieve yearly withdraw amount",
 			zap.Int("year", year),
@@ -428,6 +603,7 @@ func (s *cardService) FindYearlyWithdrawAmount(year int) ([]*response.CardRespon
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly withdraw amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -444,7 +620,16 @@ func (s *cardService) FindYearlyWithdrawAmount(year int) ([]*response.CardRespon
 func (s *cardService) FindMonthlyTransactionAmount(year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
 	s.logger.Debug("FindMonthlyTransactionAmount called", zap.Int("year", year))
 
+	if year <= 0 {
+		return nil, &response.ErrorResponse{
+			Status:  "invalid_request",
+			Message: "Year must be a positive number",
+			Code:    http.StatusBadRequest,
+		}
+	}
+
 	res, err := s.cardRepository.GetMonthlyTransactionAmount(year)
+
 	if err != nil {
 		s.logger.Error("Failed to retrieve monthly transaction amount",
 			zap.Int("year", year),
@@ -454,6 +639,7 @@ func (s *cardService) FindMonthlyTransactionAmount(year int) ([]*response.CardRe
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly transaction amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -470,7 +656,16 @@ func (s *cardService) FindMonthlyTransactionAmount(year int) ([]*response.CardRe
 func (s *cardService) FindYearlyTransactionAmount(year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
 	s.logger.Debug("FindYearlyTransactionAmount called", zap.Int("year", year))
 
+	if year <= 0 {
+		return nil, &response.ErrorResponse{
+			Status:  "invalid_request",
+			Message: "Year must be a positive number",
+			Code:    http.StatusBadRequest,
+		}
+	}
+
 	res, err := s.cardRepository.GetYearlyTransactionAmount(year)
+
 	if err != nil {
 		s.logger.Error("Failed to retrieve yearly transaction amount",
 			zap.Int("year", year),
@@ -480,6 +675,7 @@ func (s *cardService) FindYearlyTransactionAmount(year int) ([]*response.CardRes
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly transaction amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -496,6 +692,14 @@ func (s *cardService) FindYearlyTransactionAmount(year int) ([]*response.CardRes
 func (s *cardService) FindMonthlyTransferAmountSender(year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
 	s.logger.Debug("FindMonthlyTransferAmountSender called", zap.Int("year", year))
 
+	if year <= 0 {
+		return nil, &response.ErrorResponse{
+			Status:  "invalid_request",
+			Message: "Year must be a positive number",
+			Code:    http.StatusBadRequest,
+		}
+	}
+
 	res, err := s.cardRepository.GetMonthlyTransferAmountSender(year)
 	if err != nil {
 		s.logger.Error("Failed to retrieve monthly transfer sender amount",
@@ -506,6 +710,7 @@ func (s *cardService) FindMonthlyTransferAmountSender(year int) ([]*response.Car
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly transfer sender amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -522,7 +727,16 @@ func (s *cardService) FindMonthlyTransferAmountSender(year int) ([]*response.Car
 func (s *cardService) FindYearlyTransferAmountSender(year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
 	s.logger.Debug("FindYearlyTransferAmountSender called", zap.Int("year", year))
 
+	if year <= 0 {
+		return nil, &response.ErrorResponse{
+			Status:  "invalid_request",
+			Message: "Year must be a positive number",
+			Code:    http.StatusBadRequest,
+		}
+	}
+
 	res, err := s.cardRepository.GetYearlyTransferAmountSender(year)
+
 	if err != nil {
 		s.logger.Error("Failed to retrieve yearly transfer sender amount",
 			zap.Int("year", year),
@@ -532,6 +746,7 @@ func (s *cardService) FindYearlyTransferAmountSender(year int) ([]*response.Card
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly transfer sender amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -548,7 +763,16 @@ func (s *cardService) FindYearlyTransferAmountSender(year int) ([]*response.Card
 func (s *cardService) FindMonthlyTransferAmountReceiver(year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
 	s.logger.Debug("FindMonthlyTransferAmountReceiver called", zap.Int("year", year))
 
+	if year <= 0 {
+		return nil, &response.ErrorResponse{
+			Status:  "invalid_request",
+			Message: "Year must be a positive number",
+			Code:    http.StatusBadRequest,
+		}
+	}
+
 	res, err := s.cardRepository.GetMonthlyTransferAmountReceiver(year)
+
 	if err != nil {
 		s.logger.Error("Failed to retrieve monthly transfer receiver amount",
 			zap.Int("year", year),
@@ -558,6 +782,7 @@ func (s *cardService) FindMonthlyTransferAmountReceiver(year int) ([]*response.C
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly transfer receiver amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -574,7 +799,16 @@ func (s *cardService) FindMonthlyTransferAmountReceiver(year int) ([]*response.C
 func (s *cardService) FindYearlyTransferAmountReceiver(year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
 	s.logger.Debug("FindYearlyTransferAmountReceiver called", zap.Int("year", year))
 
+	if year <= 0 {
+		return nil, &response.ErrorResponse{
+			Status:  "invalid_request",
+			Message: "Year must be a positive number",
+			Code:    http.StatusBadRequest,
+		}
+	}
+
 	res, err := s.cardRepository.GetYearlyTransferAmountReceiver(year)
+
 	if err != nil {
 		s.logger.Error("Failed to retrieve yearly transfer receiver amount",
 			zap.Int("year", year),
@@ -584,6 +818,7 @@ func (s *cardService) FindYearlyTransferAmountReceiver(year int) ([]*response.Ca
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly transfer receiver amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -597,10 +832,12 @@ func (s *cardService) FindYearlyTransferAmountReceiver(year int) ([]*response.Ca
 	return so, nil
 }
 
-func (s *cardService) FindMonthlyBalanceByCardNumber(card_number string, year int) ([]*response.CardResponseMonthBalance, *response.ErrorResponse) {
+func (s *cardService) FindMonthlyBalanceByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseMonthBalance, *response.ErrorResponse) {
+	year := req.Year
+
 	s.logger.Debug("FindMonthlyBalance called", zap.Int("year", year))
 
-	res, err := s.cardRepository.GetMonthlyBalancesByCardNumber(card_number, year)
+	res, err := s.cardRepository.GetMonthlyBalancesByCardNumber(req)
 
 	if err != nil {
 		s.logger.Error("Failed to retrieve monthly balance",
@@ -611,6 +848,7 @@ func (s *cardService) FindMonthlyBalanceByCardNumber(card_number string, year in
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly balance: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -624,10 +862,12 @@ func (s *cardService) FindMonthlyBalanceByCardNumber(card_number string, year in
 	return so, nil
 }
 
-func (s *cardService) FindYearlyBalanceByCardNumber(card_number string, year int) ([]*response.CardResponseYearlyBalance, *response.ErrorResponse) {
+func (s *cardService) FindYearlyBalanceByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseYearlyBalance, *response.ErrorResponse) {
+	year := req.Year
+
 	s.logger.Debug("FindYearlyBalance called", zap.Int("year", year))
 
-	res, err := s.cardRepository.GetYearlyBalanceByCardNumber(card_number, year)
+	res, err := s.cardRepository.GetYearlyBalanceByCardNumber(req)
 
 	if err != nil {
 		s.logger.Error("Failed to retrieve yearly balance",
@@ -638,6 +878,7 @@ func (s *cardService) FindYearlyBalanceByCardNumber(card_number string, year int
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly balance: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -651,13 +892,17 @@ func (s *cardService) FindYearlyBalanceByCardNumber(card_number string, year int
 	return so, nil
 }
 
-func (s *cardService) FindMonthlyTopupAmountByCardNumber(cardNumber string, year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
+func (s *cardService) FindMonthlyTopupAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
+	cardNumber := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("FindMonthlyTopupAmountByCardNumber called",
 		zap.String("card_number", cardNumber),
 		zap.Int("year", year),
 	)
 
-	res, err := s.cardRepository.GetMonthlyTopupAmountByCardNumber(cardNumber, year)
+	res, err := s.cardRepository.GetMonthlyTopupAmountByCardNumber(req)
+
 	if err != nil {
 		s.logger.Error("Failed to retrieve monthly topup amount by card number",
 			zap.String("card_number", cardNumber),
@@ -668,6 +913,7 @@ func (s *cardService) FindMonthlyTopupAmountByCardNumber(cardNumber string, year
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly topup amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -682,13 +928,16 @@ func (s *cardService) FindMonthlyTopupAmountByCardNumber(cardNumber string, year
 	return so, nil
 }
 
-func (s *cardService) FindYearlyTopupAmountByCardNumber(cardNumber string, year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
+func (s *cardService) FindYearlyTopupAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
+	cardNumber := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("FindYearlyTopupAmountByCardNumber called",
 		zap.String("card_number", cardNumber),
 		zap.Int("year", year),
 	)
 
-	res, err := s.cardRepository.GetYearlyTopupAmountByCardNumber(cardNumber, year)
+	res, err := s.cardRepository.GetYearlyTopupAmountByCardNumber(req)
 	if err != nil {
 		s.logger.Error("Failed to retrieve yearly topup amount by card number",
 			zap.String("card_number", cardNumber),
@@ -699,6 +948,7 @@ func (s *cardService) FindYearlyTopupAmountByCardNumber(cardNumber string, year 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly topup amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -713,13 +963,17 @@ func (s *cardService) FindYearlyTopupAmountByCardNumber(cardNumber string, year 
 	return so, nil
 }
 
-func (s *cardService) FindMonthlyWithdrawAmountByCardNumber(cardNumber string, year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
+func (s *cardService) FindMonthlyWithdrawAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
+	cardNumber := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("FindMonthlyWithdrawAmountByCardNumber called",
 		zap.String("card_number", cardNumber),
 		zap.Int("year", year),
 	)
 
-	res, err := s.cardRepository.GetMonthlyWithdrawAmountByCardNumber(cardNumber, year)
+	res, err := s.cardRepository.GetMonthlyWithdrawAmountByCardNumber(req)
+
 	if err != nil {
 		s.logger.Error("Failed to retrieve monthly withdraw amount by card number",
 			zap.String("card_number", cardNumber),
@@ -730,6 +984,7 @@ func (s *cardService) FindMonthlyWithdrawAmountByCardNumber(cardNumber string, y
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly withdraw amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -744,13 +999,16 @@ func (s *cardService) FindMonthlyWithdrawAmountByCardNumber(cardNumber string, y
 	return so, nil
 }
 
-func (s *cardService) FindYearlyWithdrawAmountByCardNumber(cardNumber string, year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
+func (s *cardService) FindYearlyWithdrawAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
+	cardNumber := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("FindYearlyWithdrawAmountByCardNumber called",
 		zap.String("card_number", cardNumber),
 		zap.Int("year", year),
 	)
 
-	res, err := s.cardRepository.GetYearlyWithdrawAmountByCardNumber(cardNumber, year)
+	res, err := s.cardRepository.GetYearlyWithdrawAmountByCardNumber(req)
 	if err != nil {
 		s.logger.Error("Failed to retrieve yearly withdraw amount by card number",
 			zap.String("card_number", cardNumber),
@@ -761,6 +1019,7 @@ func (s *cardService) FindYearlyWithdrawAmountByCardNumber(cardNumber string, ye
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly withdraw amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -775,13 +1034,17 @@ func (s *cardService) FindYearlyWithdrawAmountByCardNumber(cardNumber string, ye
 	return so, nil
 }
 
-func (s *cardService) FindMonthlyTransactionAmountByCardNumber(cardNumber string, year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
+func (s *cardService) FindMonthlyTransactionAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
+	cardNumber := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("FindMonthlyTransactionAmountByCardNumber called",
 		zap.String("card_number", cardNumber),
 		zap.Int("year", year),
 	)
 
-	res, err := s.cardRepository.GetMonthlyTransactionAmountByCardNumber(cardNumber, year)
+	res, err := s.cardRepository.GetMonthlyTransactionAmountByCardNumber(req)
+
 	if err != nil {
 		s.logger.Error("Failed to retrieve monthly transaction amount by card number",
 			zap.String("card_number", cardNumber),
@@ -792,6 +1055,7 @@ func (s *cardService) FindMonthlyTransactionAmountByCardNumber(cardNumber string
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly transaction amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -806,13 +1070,16 @@ func (s *cardService) FindMonthlyTransactionAmountByCardNumber(cardNumber string
 	return so, nil
 }
 
-func (s *cardService) FindYearlyTransactionAmountByCardNumber(cardNumber string, year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
+func (s *cardService) FindYearlyTransactionAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
+	cardNumber := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("FindYearlyTransactionAmountByCardNumber called",
 		zap.String("card_number", cardNumber),
 		zap.Int("year", year),
 	)
 
-	res, err := s.cardRepository.GetYearlyTransactionAmountByCardNumber(cardNumber, year)
+	res, err := s.cardRepository.GetYearlyTransactionAmountByCardNumber(req)
 	if err != nil {
 		s.logger.Error("Failed to retrieve yearly transaction amount by card number",
 			zap.String("card_number", cardNumber),
@@ -823,6 +1090,7 @@ func (s *cardService) FindYearlyTransactionAmountByCardNumber(cardNumber string,
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly transaction amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -837,13 +1105,17 @@ func (s *cardService) FindYearlyTransactionAmountByCardNumber(cardNumber string,
 	return so, nil
 }
 
-func (s *cardService) FindMonthlyTransferAmountBySender(cardNumber string, year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
+func (s *cardService) FindMonthlyTransferAmountBySender(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
+	cardNumber := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("FindMonthlyTransferAmountBySender called",
 		zap.String("card_number", cardNumber),
 		zap.Int("year", year),
 	)
 
-	res, err := s.cardRepository.GetMonthlyTransferAmountBySender(cardNumber, year)
+	res, err := s.cardRepository.GetMonthlyTransferAmountBySender(req)
+
 	if err != nil {
 		s.logger.Error("Failed to retrieve monthly transfer sender amount by card number",
 			zap.String("card_number", cardNumber),
@@ -854,6 +1126,7 @@ func (s *cardService) FindMonthlyTransferAmountBySender(cardNumber string, year 
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly transfer sender amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -868,13 +1141,16 @@ func (s *cardService) FindMonthlyTransferAmountBySender(cardNumber string, year 
 	return so, nil
 }
 
-func (s *cardService) FindYearlyTransferAmountBySender(cardNumber string, year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
+func (s *cardService) FindYearlyTransferAmountBySender(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
+	cardNumber := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("FindYearlyTransferAmountBySender called",
 		zap.String("card_number", cardNumber),
 		zap.Int("year", year),
 	)
 
-	res, err := s.cardRepository.GetYearlyTransferAmountBySender(cardNumber, year)
+	res, err := s.cardRepository.GetYearlyTransferAmountBySender(req)
 	if err != nil {
 		s.logger.Error("Failed to retrieve yearly transfer sender amount by card number",
 			zap.String("card_number", cardNumber),
@@ -885,6 +1161,7 @@ func (s *cardService) FindYearlyTransferAmountBySender(cardNumber string, year i
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly transfer sender amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -899,13 +1176,17 @@ func (s *cardService) FindYearlyTransferAmountBySender(cardNumber string, year i
 	return so, nil
 }
 
-func (s *cardService) FindMonthlyTransferAmountByReceiver(cardNumber string, year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
+func (s *cardService) FindMonthlyTransferAmountByReceiver(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
+	cardNumber := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("FindMonthlyTransferAmountByReceiver called",
 		zap.String("card_number", cardNumber),
 		zap.Int("year", year),
 	)
 
-	res, err := s.cardRepository.GetMonthlyTransferAmountByReceiver(cardNumber, year)
+	res, err := s.cardRepository.GetMonthlyTransferAmountByReceiver(req)
+
 	if err != nil {
 		s.logger.Error("Failed to retrieve monthly transfer receiver amount by card number",
 			zap.String("card_number", cardNumber),
@@ -916,6 +1197,7 @@ func (s *cardService) FindMonthlyTransferAmountByReceiver(cardNumber string, yea
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly transfer receiver amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -930,13 +1212,16 @@ func (s *cardService) FindMonthlyTransferAmountByReceiver(cardNumber string, yea
 	return so, nil
 }
 
-func (s *cardService) FindYearlyTransferAmountByReceiver(cardNumber string, year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
+func (s *cardService) FindYearlyTransferAmountByReceiver(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
+	cardNumber := req.CardNumber
+	year := req.Year
+
 	s.logger.Debug("FindYearlyTransferAmountByReceiver called",
 		zap.String("card_number", cardNumber),
 		zap.Int("year", year),
 	)
 
-	res, err := s.cardRepository.GetYearlyTransferAmountByReceiver(cardNumber, year)
+	res, err := s.cardRepository.GetYearlyTransferAmountByReceiver(req)
 	if err != nil {
 		s.logger.Error("Failed to retrieve yearly transfer receiver amount by card number",
 			zap.String("card_number", cardNumber),
@@ -947,6 +1232,7 @@ func (s *cardService) FindYearlyTransferAmountByReceiver(cardNumber string, year
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly transfer receiver amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -961,91 +1247,20 @@ func (s *cardService) FindYearlyTransferAmountByReceiver(cardNumber string, year
 	return so, nil
 }
 
-func (s *cardService) FindByActive(page int, pageSize int, search string) ([]*response.CardResponseDeleteAt, int, *response.ErrorResponse) {
-	s.logger.Debug("Fetching active card records",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
-
-	if page <= 0 {
-		page = 1
-	}
-	if pageSize <= 0 {
-		pageSize = 10
-	}
-
-	res, totalRecords, err := s.cardRepository.FindByActive(search, page, pageSize)
-
-	if err != nil {
-		s.logger.Error("Failed to fetch active card records",
-			zap.Error(err),
-			zap.Int("page", page),
-			zap.Int("pageSize", pageSize),
-			zap.String("search", search))
-
-		return nil, 0, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch active card records",
-		}
-	}
-
-	responseData := s.mapping.ToCardsResponseDeleteAt(res)
-
-	s.logger.Debug("Successfully fetched active card records",
-		zap.Int("totalRecords", totalRecords),
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize))
-
-	return responseData, totalRecords, nil
-}
-
-func (s *cardService) FindByTrashed(page int, pageSize int, search string) ([]*response.CardResponseDeleteAt, int, *response.ErrorResponse) {
-	s.logger.Debug("Fetching trashed card records",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
-
-	if page <= 0 {
-		page = 1
-	}
-	if pageSize <= 0 {
-		pageSize = 10
-	}
-
-	res, totalRecords, err := s.cardRepository.FindByTrashed(search, page, pageSize)
-	if err != nil {
-		s.logger.Error("Failed to fetch trashed card records",
-			zap.Error(err),
-			zap.Int("page", page),
-			zap.Int("pageSize", pageSize),
-			zap.String("search", search))
-
-		return nil, 0, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch trashed card records",
-		}
-	}
-
-	responseData := s.mapping.ToCardsResponseDeleteAt(res)
-
-	s.logger.Debug("Successfully fetched trashed card records",
-		zap.Int("totalRecords", totalRecords),
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize))
-
-	return responseData, totalRecords, nil
-}
-
 func (s *cardService) FindByCardNumber(card_number string) (*response.CardResponse, *response.ErrorResponse) {
 	s.logger.Debug("Fetching card record by card number", zap.String("card_number", card_number))
 
 	res, err := s.cardRepository.FindCardByCardNumber(card_number)
 
 	if err != nil {
-		s.logger.Error("Failed to fetch card by card number", zap.Error(err), zap.String("card_number", card_number))
+		s.logger.Error("Failed to retrieve find card",
+			zap.Error(err),
+			zap.String("card_number", card_number))
+
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Card record not found for the given card number",
+			Message: "Failed to retrieve card details",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -1062,10 +1277,14 @@ func (s *cardService) CreateCard(request *requests.CreateCardRequest) (*response
 	_, err := s.userRepository.FindById(request.UserID)
 
 	if err != nil {
-		s.logger.Error("Failed to find user by ID", zap.Error(err), zap.Int("userID", request.UserID))
+		s.logger.Error("Failed to retrieve find user",
+			zap.Error(err),
+			zap.Int("user_id", request.UserID))
+
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "User not found",
+			Message: "Failed to retrieve card details",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -1075,7 +1294,8 @@ func (s *cardService) CreateCard(request *requests.CreateCardRequest) (*response
 		s.logger.Error("Failed to create card", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to create card",
+			Message: "Failed to create new card record",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -1092,19 +1312,26 @@ func (s *cardService) UpdateCard(request *requests.UpdateCardRequest) (*response
 	_, err := s.userRepository.FindById(request.UserID)
 
 	if err != nil {
-		s.logger.Error("Failed to find user by ID", zap.Error(err), zap.Int("userID", request.UserID))
+		s.logger.Error("Failed to retrieve find user",
+			zap.Error(err),
+			zap.Int("user_id", request.UserID))
+
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "User not found",
+			Message: "Failed to retrieve card details",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	res, err := s.cardRepository.UpdateCard(request)
+
 	if err != nil {
 		s.logger.Error("Failed to update card", zap.Error(err), zap.Int("cardID", request.CardID))
+
 		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to update card",
+			Status:  "not_found",
+			Message: "card not found for update",
+			Code:    http.StatusNotFound,
 		}
 	}
 
@@ -1115,58 +1342,72 @@ func (s *cardService) UpdateCard(request *requests.UpdateCardRequest) (*response
 	return so, nil
 }
 
-func (s *cardService) TrashedCard(cardId int) (*response.CardResponse, *response.ErrorResponse) {
-	s.logger.Debug("Trashing card", zap.Int("cardID", cardId))
+func (s *cardService) TrashedCard(card_id int) (*response.CardResponse, *response.ErrorResponse) {
+	s.logger.Debug("Trashing card", zap.Int("card_id", card_id))
 
-	res, err := s.cardRepository.TrashedCard(cardId)
+	res, err := s.cardRepository.TrashedCard(card_id)
+
 	if err != nil {
-		s.logger.Error("Failed to trash card", zap.Error(err), zap.Int("cardID", cardId))
+		s.logger.Error("Failed to move card to trash",
+			zap.Error(err),
+			zap.Int("card_id", card_id))
+
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to trash card",
+			Message: "Failed to move card to trash",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	so := s.mapping.ToCardResponse(res)
 
-	s.logger.Debug("Successfully trashed card", zap.Int("cardID", so.ID))
+	s.logger.Debug("Successfully trashed card", zap.Int("card_id", so.ID))
 
 	return so, nil
 }
 
-func (s *cardService) RestoreCard(cardId int) (*response.CardResponse, *response.ErrorResponse) {
-	s.logger.Debug("Restoring card", zap.Int("cardID", cardId))
+func (s *cardService) RestoreCard(card_id int) (*response.CardResponse, *response.ErrorResponse) {
+	s.logger.Debug("Restoring card", zap.Int("card_id", card_id))
 
-	res, err := s.cardRepository.RestoreCard(cardId)
+	res, err := s.cardRepository.RestoreCard(card_id)
 
 	if err != nil {
-		s.logger.Error("Failed to restore card", zap.Error(err), zap.Int("cardID", cardId))
+		s.logger.Error("Failed to restore cashier from trash",
+			zap.Error(err),
+			zap.Int("card_id", card_id))
+
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to restore card",
+			Message: "Failed to move card to trash",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	so := s.mapping.ToCardResponse(res)
 
-	s.logger.Debug("Successfully restored card", zap.Int("cardID", so.ID))
+	s.logger.Debug("Successfully restored card", zap.Int("card_id", so.ID))
 
 	return so, nil
 }
 
-func (s *cardService) DeleteCardPermanent(cardId int) (bool, *response.ErrorResponse) {
-	s.logger.Debug("Permanently deleting card", zap.Int("cardID", cardId))
+func (s *cardService) DeleteCardPermanent(card_id int) (bool, *response.ErrorResponse) {
+	s.logger.Debug("Permanently deleting card", zap.Int("card_id", card_id))
 
-	_, err := s.cardRepository.DeleteCardPermanent(cardId)
+	_, err := s.cardRepository.DeleteCardPermanent(card_id)
+
 	if err != nil {
-		s.logger.Error("Failed to permanently delete card", zap.Error(err), zap.Int("cardID", cardId))
+		s.logger.Error("Failed to permanently delete card",
+			zap.Error(err),
+			zap.Int("card_id", card_id))
+
 		return false, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to permanently delete card: " + err.Error(),
+			Message: "Failed to permanently delete cashier",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
-	s.logger.Debug("Successfully deleted card permanently", zap.Int("cardID", cardId))
+	s.logger.Debug("Successfully deleted card permanently", zap.Int("card_id", card_id))
 
 	return true, nil
 }
@@ -1175,13 +1416,15 @@ func (s *cardService) RestoreAllCard() (bool, *response.ErrorResponse) {
 	s.logger.Debug("Restoring all cards")
 
 	_, err := s.cardRepository.RestoreAllCard()
-	if err != nil {
 
-		s.logger.Error("Failed to restore all cards", zap.Error(err))
+	if err != nil {
+		s.logger.Error("Failed to restore all trashed cards",
+			zap.Error(err))
 
 		return false, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to restore all cards: " + err.Error(),
+			Message: "Failed to restore all trashed cards",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -1195,10 +1438,12 @@ func (s *cardService) DeleteAllCardPermanent() (bool, *response.ErrorResponse) {
 	_, err := s.cardRepository.DeleteAllCardPermanent()
 
 	if err != nil {
-		s.logger.Error("Failed to permanently delete all cards", zap.Error(err))
+		s.logger.Error("Failed to permanently delete all trashed card",
+			zap.Error(err))
 		return false, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to permanently delete all cards: " + err.Error(),
+			Message: "Failed to permanently delete all trashed cashiers",
+			Code:    http.StatusInternalServerError,
 		}
 	}
 

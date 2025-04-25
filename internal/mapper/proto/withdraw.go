@@ -3,6 +3,8 @@ package protomapper
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
+
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type withdrawProtoMapper struct {
@@ -131,6 +133,11 @@ func (w *withdrawProtoMapper) mapResponsesWithdrawal(withdraws []*response.Withd
 }
 
 func (w *withdrawProtoMapper) mapResponseWithdrawalDeleteAt(withdraw *response.WithdrawResponseDeleteAt) *pb.WithdrawResponseDeleteAt {
+	var deletedAt *wrapperspb.StringValue
+	if withdraw.DeletedAt != nil {
+		deletedAt = wrapperspb.String(*withdraw.DeletedAt)
+	}
+
 	return &pb.WithdrawResponseDeleteAt{
 		WithdrawId:     int32(withdraw.ID),
 		WithdrawNo:     withdraw.WithdrawNo,
@@ -139,7 +146,7 @@ func (w *withdrawProtoMapper) mapResponseWithdrawalDeleteAt(withdraw *response.W
 		WithdrawTime:   withdraw.WithdrawTime,
 		CreatedAt:      withdraw.CreatedAt,
 		UpdatedAt:      withdraw.UpdatedAt,
-		DeletedAt:      withdraw.DeletedAt,
+		DeletedAt:      deletedAt,
 	}
 }
 

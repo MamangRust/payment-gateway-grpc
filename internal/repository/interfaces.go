@@ -7,11 +7,11 @@ import (
 
 //go:generate mockgen -source=interfaces.go -destination=mocks/mock.go
 type UserRepository interface {
-	FindAllUsers(search string, page, pageSize int) ([]*record.UserRecord, int, error)
+	FindAllUsers(req *requests.FindAllUsers) ([]*record.UserRecord, *int, error)
+	FindByActive(req *requests.FindAllUsers) ([]*record.UserRecord, *int, error)
+	FindByTrashed(req *requests.FindAllUsers) ([]*record.UserRecord, *int, error)
 	FindById(user_id int) (*record.UserRecord, error)
 	FindByEmail(email string) (*record.UserRecord, error)
-	FindByActive(search string, page, pageSize int) ([]*record.UserRecord, int, error)
-	FindByTrashed(search string, page, pageSize int) ([]*record.UserRecord, int, error)
 	CreateUser(request *requests.CreateUserRequest) (*record.UserRecord, error)
 	UpdateUser(request *requests.UpdateUserRequest) (*record.UserRecord, error)
 	TrashedUser(user_id int) (*record.UserRecord, error)
@@ -22,16 +22,15 @@ type UserRepository interface {
 }
 
 type RoleRepository interface {
-	FindAllRoles(page int, pageSize int, search string) ([]*record.RoleRecord, int, error)
+	FindAllRoles(req *requests.FindAllRoles) ([]*record.RoleRecord, *int, error)
+	FindByActiveRole(req *requests.FindAllRoles) ([]*record.RoleRecord, *int, error)
+	FindByTrashedRole(req *requests.FindAllRoles) ([]*record.RoleRecord, *int, error)
 	FindById(role_id int) (*record.RoleRecord, error)
 	FindByName(name string) (*record.RoleRecord, error)
 	FindByUserId(user_id int) ([]*record.RoleRecord, error)
-	FindByActiveRole(page int, pageSize int, search string) ([]*record.RoleRecord, int, error)
-	FindByTrashedRole(page int, pageSize int, search string) ([]*record.RoleRecord, int, error)
 	CreateRole(request *requests.CreateRoleRequest) (*record.RoleRecord, error)
 	UpdateRole(request *requests.UpdateRoleRequest) (*record.RoleRecord, error)
 	TrashedRole(role_id int) (*record.RoleRecord, error)
-
 	RestoreRole(role_id int) (*record.RoleRecord, error)
 	DeleteRolePermanent(role_id int) (bool, error)
 	RestoreAllRole() (bool, error)
@@ -53,11 +52,11 @@ type UserRoleRepository interface {
 }
 
 type CardRepository interface {
-	FindAllCards(search string, page, pageSize int) ([]*record.CardRecord, int, error)
+	FindAllCards(req *requests.FindAllCards) ([]*record.CardRecord, *int, error)
+	FindByActive(req *requests.FindAllCards) ([]*record.CardRecord, *int, error)
+	FindByTrashed(req *requests.FindAllCards) ([]*record.CardRecord, *int, error)
 	FindById(card_id int) (*record.CardRecord, error)
 	FindCardByUserId(user_id int) (*record.CardRecord, error)
-	FindByActive(search string, page, pageSize int) ([]*record.CardRecord, int, error)
-	FindByTrashed(search string, page, pageSize int) ([]*record.CardRecord, int, error)
 	FindCardByCardNumber(card_number string) (*record.CardRecord, error)
 
 	GetTotalBalances() (*int64, error)
@@ -86,18 +85,18 @@ type CardRepository interface {
 	GetMonthlyTransferAmountReceiver(year int) ([]*record.CardMonthAmount, error)
 	GetYearlyTransferAmountReceiver(year int) ([]*record.CardYearAmount, error)
 
-	GetMonthlyBalancesByCardNumber(card_number string, year int) ([]*record.CardMonthBalance, error)
-	GetYearlyBalanceByCardNumber(card_number string, year int) ([]*record.CardYearlyBalance, error)
-	GetMonthlyTopupAmountByCardNumber(cardNumber string, year int) ([]*record.CardMonthAmount, error)
-	GetYearlyTopupAmountByCardNumber(cardNumber string, year int) ([]*record.CardYearAmount, error)
-	GetMonthlyWithdrawAmountByCardNumber(cardNumber string, year int) ([]*record.CardMonthAmount, error)
-	GetYearlyWithdrawAmountByCardNumber(cardNumber string, year int) ([]*record.CardYearAmount, error)
-	GetMonthlyTransactionAmountByCardNumber(cardNumber string, year int) ([]*record.CardMonthAmount, error)
-	GetYearlyTransactionAmountByCardNumber(cardNumber string, year int) ([]*record.CardYearAmount, error)
-	GetMonthlyTransferAmountBySender(cardNumber string, year int) ([]*record.CardMonthAmount, error)
-	GetYearlyTransferAmountBySender(cardNumber string, year int) ([]*record.CardYearAmount, error)
-	GetMonthlyTransferAmountByReceiver(cardNumber string, year int) ([]*record.CardMonthAmount, error)
-	GetYearlyTransferAmountByReceiver(cardNumber string, year int) ([]*record.CardYearAmount, error)
+	GetMonthlyBalancesByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardMonthBalance, error)
+	GetYearlyBalanceByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardYearlyBalance, error)
+	GetMonthlyTopupAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardMonthAmount, error)
+	GetYearlyTopupAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardYearAmount, error)
+	GetMonthlyWithdrawAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardMonthAmount, error)
+	GetYearlyWithdrawAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardYearAmount, error)
+	GetMonthlyTransactionAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardMonthAmount, error)
+	GetYearlyTransactionAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardYearAmount, error)
+	GetMonthlyTransferAmountBySender(req *requests.MonthYearCardNumberCard) ([]*record.CardMonthAmount, error)
+	GetYearlyTransferAmountBySender(req *requests.MonthYearCardNumberCard) ([]*record.CardYearAmount, error)
+	GetMonthlyTransferAmountByReceiver(req *requests.MonthYearCardNumberCard) ([]*record.CardMonthAmount, error)
+	GetYearlyTransferAmountByReceiver(req *requests.MonthYearCardNumberCard) ([]*record.CardYearAmount, error)
 
 	CreateCard(request *requests.CreateCardRequest) (*record.CardRecord, error)
 	UpdateCard(request *requests.UpdateCardRequest) (*record.CardRecord, error)
@@ -109,35 +108,36 @@ type CardRepository interface {
 }
 
 type MerchantRepository interface {
-	FindAllMerchants(search string, page, pageSize int) ([]*record.MerchantRecord, int, error)
+	FindAllMerchants(req *requests.FindAllMerchants) ([]*record.MerchantRecord, *int, error)
+	FindByActive(req *requests.FindAllMerchants) ([]*record.MerchantRecord, *int, error)
+	FindByTrashed(req *requests.FindAllMerchants) ([]*record.MerchantRecord, *int, error)
+
 	FindById(merchant_id int) (*record.MerchantRecord, error)
 	GetMonthlyTotalAmountMerchant(year int) ([]*record.MerchantMonthlyTotalAmount, error)
 	GetYearlyTotalAmountMerchant(year int) ([]*record.MerchantYearlyTotalAmount, error)
 
-	FindAllTransactions(search string, page, pageSize int) ([]*record.MerchantTransactionsRecord, int, error)
+	FindAllTransactions(req *requests.FindAllMerchantTransactions) ([]*record.MerchantTransactionsRecord, *int, error)
 	GetMonthlyPaymentMethodsMerchant(year int) ([]*record.MerchantMonthlyPaymentMethod, error)
 	GetYearlyPaymentMethodMerchant(year int) ([]*record.MerchantYearlyPaymentMethod, error)
 	GetMonthlyAmountMerchant(year int) ([]*record.MerchantMonthlyAmount, error)
 	GetYearlyAmountMerchant(year int) ([]*record.MerchantYearlyAmount, error)
 
-	FindAllTransactionsByMerchant(merchant_id int, search string, page, pageSize int) ([]*record.MerchantTransactionsRecord, int, error)
-	GetMonthlyPaymentMethodByMerchants(merchantID int, year int) ([]*record.MerchantMonthlyPaymentMethod, error)
-	GetYearlyPaymentMethodByMerchants(merchantID int, year int) ([]*record.MerchantYearlyPaymentMethod, error)
-	GetMonthlyAmountByMerchants(merchantID int, year int) ([]*record.MerchantMonthlyAmount, error)
-	GetYearlyAmountByMerchants(merchantID int, year int) ([]*record.MerchantYearlyAmount, error)
-	GetMonthlyTotalAmountByMerchants(merchantID int, year int) ([]*record.MerchantMonthlyTotalAmount, error)
-	GetYearlyTotalAmountByMerchants(merchantID int, year int) ([]*record.MerchantYearlyTotalAmount, error)
+	FindAllTransactionsByMerchant(req *requests.FindAllMerchantTransactionsById) ([]*record.MerchantTransactionsRecord, *int, error)
+	GetMonthlyPaymentMethodByMerchants(req *requests.MonthYearPaymentMethodMerchant) ([]*record.MerchantMonthlyPaymentMethod, error)
+	GetYearlyPaymentMethodByMerchants(req *requests.MonthYearPaymentMethodMerchant) ([]*record.MerchantYearlyPaymentMethod, error)
+	GetMonthlyAmountByMerchants(req *requests.MonthYearAmountMerchant) ([]*record.MerchantMonthlyAmount, error)
+	GetYearlyAmountByMerchants(req *requests.MonthYearAmountMerchant) ([]*record.MerchantYearlyAmount, error)
+	GetMonthlyTotalAmountByMerchants(req *requests.MonthYearTotalAmountMerchant) ([]*record.MerchantMonthlyTotalAmount, error)
+	GetYearlyTotalAmountByMerchants(req *requests.MonthYearTotalAmountMerchant) ([]*record.MerchantYearlyTotalAmount, error)
 
-	FindAllTransactionsByApikey(api_key string, search string, page, pageSize int) ([]*record.MerchantTransactionsRecord, int, error)
-	GetMonthlyPaymentMethodByApikey(api_key string, year int) ([]*record.MerchantMonthlyPaymentMethod, error)
-	GetYearlyPaymentMethodByApikey(api_key string, year int) ([]*record.MerchantYearlyPaymentMethod, error)
-	GetMonthlyAmountByApikey(api_key string, year int) ([]*record.MerchantMonthlyAmount, error)
-	GetYearlyAmountByApikey(api_key string, year int) ([]*record.MerchantYearlyAmount, error)
-	GetMonthlyTotalAmountByApikey(api_key string, year int) ([]*record.MerchantMonthlyTotalAmount, error)
-	GetYearlyTotalAmountByApikey(api_key string, year int) ([]*record.MerchantYearlyTotalAmount, error)
+	FindAllTransactionsByApikey(req *requests.FindAllMerchantTransactionsByApiKey) ([]*record.MerchantTransactionsRecord, *int, error)
+	GetMonthlyPaymentMethodByApikey(req *requests.MonthYearPaymentMethodApiKey) ([]*record.MerchantMonthlyPaymentMethod, error)
+	GetYearlyPaymentMethodByApikey(req *requests.MonthYearPaymentMethodApiKey) ([]*record.MerchantYearlyPaymentMethod, error)
+	GetMonthlyAmountByApikey(req *requests.MonthYearAmountApiKey) ([]*record.MerchantMonthlyAmount, error)
+	GetYearlyAmountByApikey(req *requests.MonthYearAmountApiKey) ([]*record.MerchantYearlyAmount, error)
+	GetMonthlyTotalAmountByApikey(req *requests.MonthYearTotalAmountApiKey) ([]*record.MerchantMonthlyTotalAmount, error)
+	GetYearlyTotalAmountByApikey(req *requests.MonthYearTotalAmountApiKey) ([]*record.MerchantYearlyTotalAmount, error)
 
-	FindByActive(search string, page, pageSize int) ([]*record.MerchantRecord, int, error)
-	FindByTrashed(search string, page, pageSize int) ([]*record.MerchantRecord, int, error)
 	FindByApiKey(api_key string) (*record.MerchantRecord, error)
 	FindByName(name string) (*record.MerchantRecord, error)
 	FindByMerchantUserId(user_id int) ([]*record.MerchantRecord, error)
@@ -155,17 +155,17 @@ type MerchantRepository interface {
 }
 
 type SaldoRepository interface {
-	FindAllSaldos(search string, page, pageSize int) ([]*record.SaldoRecord, int, error)
+	FindAllSaldos(req *requests.FindAllSaldos) ([]*record.SaldoRecord, *int, error)
+	FindByActive(req *requests.FindAllSaldos) ([]*record.SaldoRecord, *int, error)
+	FindByTrashed(req *requests.FindAllSaldos) ([]*record.SaldoRecord, *int, error)
 	FindById(saldo_id int) (*record.SaldoRecord, error)
 
-	GetMonthlyTotalSaldoBalance(year int, month int) ([]*record.SaldoMonthTotalBalance, error)
+	GetMonthlyTotalSaldoBalance(req *requests.MonthTotalSaldoBalance) ([]*record.SaldoMonthTotalBalance, error)
 	GetYearTotalSaldoBalance(year int) ([]*record.SaldoYearTotalBalance, error)
 	GetMonthlySaldoBalances(year int) ([]*record.SaldoMonthSaldoBalance, error)
 	GetYearlySaldoBalances(year int) ([]*record.SaldoYearSaldoBalance, error)
 
 	FindByCardNumber(card_number string) (*record.SaldoRecord, error)
-	FindByActive(search string, page, pageSize int) ([]*record.SaldoRecord, int, error)
-	FindByTrashed(search string, page, pageSize int) ([]*record.SaldoRecord, int, error)
 	CreateSaldo(request *requests.CreateSaldoRequest) (*record.SaldoRecord, error)
 	UpdateSaldo(request *requests.UpdateSaldoRequest) (*record.SaldoRecord, error)
 	UpdateSaldoBalance(request *requests.UpdateSaldoBalance) (*record.SaldoRecord, error)
@@ -179,35 +179,34 @@ type SaldoRepository interface {
 }
 
 type TopupRepository interface {
-	FindAllTopups(search string, page, pageSize int) ([]*record.TopupRecord, int, error)
-	FindAllTopupByCardNumber(card_number string, search string, page, pageSize int) ([]*record.TopupRecord, int, error)
+	FindAllTopups(req *requests.FindAllTopups) ([]*record.TopupRecord, *int, error)
+	FindByActive(req *requests.FindAllTopups) ([]*record.TopupRecord, *int, error)
+	FindByTrashed(req *requests.FindAllTopups) ([]*record.TopupRecord, *int, error)
+	FindAllTopupByCardNumber(req *requests.FindAllTopupsByCardNumber) ([]*record.TopupRecord, *int, error)
 
 	FindById(topup_id int) (*record.TopupRecord, error)
 
-	GetMonthTopupStatusSuccess(year int, month int) ([]*record.TopupRecordMonthStatusSuccess, error)
+	GetMonthTopupStatusSuccess(req *requests.MonthTopupStatus) ([]*record.TopupRecordMonthStatusSuccess, error)
 	GetYearlyTopupStatusSuccess(year int) ([]*record.TopupRecordYearStatusSuccess, error)
 
-	GetMonthTopupStatusFailed(year int, month int) ([]*record.TopupRecordMonthStatusFailed, error)
+	GetMonthTopupStatusFailed(req *requests.MonthTopupStatus) ([]*record.TopupRecordMonthStatusFailed, error)
 	GetYearlyTopupStatusFailed(year int) ([]*record.TopupRecordYearStatusFailed, error)
 
-	GetMonthTopupStatusSuccessByCardNumber(card_number string, year int, month int) ([]*record.TopupRecordMonthStatusSuccess, error)
-	GetYearlyTopupStatusSuccessByCardNumber(card_number string, year int) ([]*record.TopupRecordYearStatusSuccess, error)
+	GetMonthTopupStatusSuccessByCardNumber(req *requests.MonthTopupStatusCardNumber) ([]*record.TopupRecordMonthStatusSuccess, error)
+	GetYearlyTopupStatusSuccessByCardNumber(req *requests.YearTopupStatusCardNumber) ([]*record.TopupRecordYearStatusSuccess, error)
 
-	GetMonthTopupStatusFailedByCardNumber(card_number string, year int, month int) ([]*record.TopupRecordMonthStatusFailed, error)
-	GetYearlyTopupStatusFailedByCardNumber(card_number string, year int) ([]*record.TopupRecordYearStatusFailed, error)
+	GetMonthTopupStatusFailedByCardNumber(req *requests.MonthTopupStatusCardNumber) ([]*record.TopupRecordMonthStatusFailed, error)
+	GetYearlyTopupStatusFailedByCardNumber(req *requests.YearTopupStatusCardNumber) ([]*record.TopupRecordYearStatusFailed, error)
 
 	GetMonthlyTopupMethods(year int) ([]*record.TopupMonthMethod, error)
 	GetYearlyTopupMethods(year int) ([]*record.TopupYearlyMethod, error)
 	GetMonthlyTopupAmounts(year int) ([]*record.TopupMonthAmount, error)
 	GetYearlyTopupAmounts(year int) ([]*record.TopupYearlyAmount, error)
 
-	GetMonthlyTopupMethodsByCardNumber(card_number string, year int) ([]*record.TopupMonthMethod, error)
-	GetYearlyTopupMethodsByCardNumber(card_number string, year int) ([]*record.TopupYearlyMethod, error)
-	GetMonthlyTopupAmountsByCardNumber(card_number string, year int) ([]*record.TopupMonthAmount, error)
-	GetYearlyTopupAmountsByCardNumber(card_number string, year int) ([]*record.TopupYearlyAmount, error)
-
-	FindByActive(search string, page, pageSize int) ([]*record.TopupRecord, int, error)
-	FindByTrashed(search string, page, pageSize int) ([]*record.TopupRecord, int, error)
+	GetMonthlyTopupMethodsByCardNumber(req *requests.YearMonthMethod) ([]*record.TopupMonthMethod, error)
+	GetYearlyTopupMethodsByCardNumber(req *requests.YearMonthMethod) ([]*record.TopupYearlyMethod, error)
+	GetMonthlyTopupAmountsByCardNumber(req *requests.YearMonthMethod) ([]*record.TopupMonthAmount, error)
+	GetYearlyTopupAmountsByCardNumber(req *requests.YearMonthMethod) ([]*record.TopupYearlyAmount, error)
 
 	CreateTopup(request *requests.CreateTopupRequest) (*record.TopupRecord, error)
 	UpdateTopup(request *requests.UpdateTopupRequest) (*record.TopupRecord, error)
@@ -224,33 +223,32 @@ type TopupRepository interface {
 }
 
 type TransactionRepository interface {
-	FindAllTransactions(search string, page, pageSize int) ([]*record.TransactionRecord, int, error)
-	FindAllTransactionByCardNumber(card_number string, search string, page, pageSize int) ([]*record.TransactionRecord, int, error)
+	FindAllTransactions(req *requests.FindAllTransactions) ([]*record.TransactionRecord, *int, error)
+	FindByActive(req *requests.FindAllTransactions) ([]*record.TransactionRecord, *int, error)
+	FindByTrashed(req *requests.FindAllTransactions) ([]*record.TransactionRecord, *int, error)
+	FindAllTransactionByCardNumber(req *requests.FindAllTransactionCardNumber) ([]*record.TransactionRecord, *int, error)
 
 	FindById(transaction_id int) (*record.TransactionRecord, error)
 
-	GetMonthTransactionStatusSuccess(year int, month int) ([]*record.TransactionRecordMonthStatusSuccess, error)
+	GetMonthTransactionStatusSuccess(req *requests.MonthStatusTransaction) ([]*record.TransactionRecordMonthStatusSuccess, error)
 	GetYearlyTransactionStatusSuccess(year int) ([]*record.TransactionRecordYearStatusSuccess, error)
-	GetMonthTransactionStatusFailed(year int, month int) ([]*record.TransactionRecordMonthStatusFailed, error)
+	GetMonthTransactionStatusFailed(req *requests.MonthStatusTransaction) ([]*record.TransactionRecordMonthStatusFailed, error)
 	GetYearlyTransactionStatusFailed(year int) ([]*record.TransactionRecordYearStatusFailed, error)
 
-	GetMonthTransactionStatusSuccessByCardNumber(card_number string, year int, month int) ([]*record.TransactionRecordMonthStatusSuccess, error)
-	GetYearlyTransactionStatusSuccessByCardNumber(card_number string, year int) ([]*record.TransactionRecordYearStatusSuccess, error)
-	GetMonthTransactionStatusFailedByCardNumber(card_number string, year int, month int) ([]*record.TransactionRecordMonthStatusFailed, error)
-	GetYearlyTransactionStatusFailedByCardNumber(card_number string, year int) ([]*record.TransactionRecordYearStatusFailed, error)
+	GetMonthTransactionStatusSuccessByCardNumber(req *requests.MonthStatusTransactionCardNumber) ([]*record.TransactionRecordMonthStatusSuccess, error)
+	GetYearlyTransactionStatusSuccessByCardNumber(req *requests.YearStatusTransactionCardNumber) ([]*record.TransactionRecordYearStatusSuccess, error)
+	GetMonthTransactionStatusFailedByCardNumber(req *requests.MonthStatusTransactionCardNumber) ([]*record.TransactionRecordMonthStatusFailed, error)
+	GetYearlyTransactionStatusFailedByCardNumber(req *requests.YearStatusTransactionCardNumber) ([]*record.TransactionRecordYearStatusFailed, error)
 
 	GetMonthlyPaymentMethods(year int) ([]*record.TransactionMonthMethod, error)
 	GetYearlyPaymentMethods(year int) ([]*record.TransactionYearMethod, error)
 	GetMonthlyAmounts(year int) ([]*record.TransactionMonthAmount, error)
 	GetYearlyAmounts(year int) ([]*record.TransactionYearlyAmount, error)
 
-	GetMonthlyPaymentMethodsByCardNumber(card_number string, year int) ([]*record.TransactionMonthMethod, error)
-	GetYearlyPaymentMethodsByCardNumber(card_number string, year int) ([]*record.TransactionYearMethod, error)
-	GetMonthlyAmountsByCardNumber(card_number string, year int) ([]*record.TransactionMonthAmount, error)
-	GetYearlyAmountsByCardNumber(card_number string, year int) ([]*record.TransactionYearlyAmount, error)
-
-	FindByActive(search string, page, pageSize int) ([]*record.TransactionRecord, int, error)
-	FindByTrashed(search string, page, pageSize int) ([]*record.TransactionRecord, int, error)
+	GetMonthlyPaymentMethodsByCardNumber(req *requests.MonthYearPaymentMethod) ([]*record.TransactionMonthMethod, error)
+	GetYearlyPaymentMethodsByCardNumber(req *requests.MonthYearPaymentMethod) ([]*record.TransactionYearMethod, error)
+	GetMonthlyAmountsByCardNumber(req *requests.MonthYearPaymentMethod) ([]*record.TransactionMonthAmount, error)
+	GetYearlyAmountsByCardNumber(req *requests.MonthYearPaymentMethod) ([]*record.TransactionYearlyAmount, error)
 
 	FindTransactionByMerchantId(merchant_id int) ([]*record.TransactionRecord, error)
 
@@ -266,28 +264,29 @@ type TransactionRepository interface {
 }
 
 type TransferRepository interface {
-	FindAll(search string, page, pageSize int) ([]*record.TransferRecord, int, error)
+	FindAll(req *requests.FindAllTranfers) ([]*record.TransferRecord, *int, error)
+	FindByActive(req *requests.FindAllTranfers) ([]*record.TransferRecord, *int, error)
+	FindByTrashed(req *requests.FindAllTranfers) ([]*record.TransferRecord, *int, error)
+
 	FindById(id int) (*record.TransferRecord, error)
 
-	GetMonthTransferStatusSuccess(year int, month int) ([]*record.TransferRecordMonthStatusSuccess, error)
+	GetMonthTransferStatusSuccess(req *requests.MonthStatusTransfer) ([]*record.TransferRecordMonthStatusSuccess, error)
 	GetYearlyTransferStatusSuccess(year int) ([]*record.TransferRecordYearStatusSuccess, error)
-	GetMonthTransferStatusFailed(year int, month int) ([]*record.TransferRecordMonthStatusFailed, error)
+	GetMonthTransferStatusFailed(req *requests.MonthStatusTransfer) ([]*record.TransferRecordMonthStatusFailed, error)
 	GetYearlyTransferStatusFailed(year int) ([]*record.TransferRecordYearStatusFailed, error)
 
-	GetMonthTransferStatusSuccessByCardNumber(cardNumber string, year int, month int) ([]*record.TransferRecordMonthStatusSuccess, error)
-	GetYearlyTransferStatusSuccessByCardNumber(cardNumber string, year int) ([]*record.TransferRecordYearStatusSuccess, error)
-	GetMonthTransferStatusFailedByCardNumber(cardNumber string, year int, month int) ([]*record.TransferRecordMonthStatusFailed, error)
-	GetYearlyTransferStatusFailedByCardNumber(cardNumber string, year int) ([]*record.TransferRecordYearStatusFailed, error)
+	GetMonthTransferStatusSuccessByCardNumber(req *requests.MonthStatusTransferCardNumber) ([]*record.TransferRecordMonthStatusSuccess, error)
+	GetYearlyTransferStatusSuccessByCardNumber(req *requests.YearStatusTransferCardNumber) ([]*record.TransferRecordYearStatusSuccess, error)
+	GetMonthTransferStatusFailedByCardNumber(req *requests.MonthStatusTransferCardNumber) ([]*record.TransferRecordMonthStatusFailed, error)
+	GetYearlyTransferStatusFailedByCardNumber(req *requests.YearStatusTransferCardNumber) ([]*record.TransferRecordYearStatusFailed, error)
 
 	GetMonthlyTransferAmounts(year int) ([]*record.TransferMonthAmount, error)
 	GetYearlyTransferAmounts(year int) ([]*record.TransferYearAmount, error)
-	GetMonthlyTransferAmountsBySenderCardNumber(cardNumber string, year int) ([]*record.TransferMonthAmount, error)
-	GetMonthlyTransferAmountsByReceiverCardNumber(cardNumber string, year int) ([]*record.TransferMonthAmount, error)
-	GetYearlyTransferAmountsBySenderCardNumber(cardNumber string, year int) ([]*record.TransferYearAmount, error)
-	GetYearlyTransferAmountsByReceiverCardNumber(cardNumber string, year int) ([]*record.TransferYearAmount, error)
+	GetMonthlyTransferAmountsBySenderCardNumber(req *requests.MonthYearCardNumber) ([]*record.TransferMonthAmount, error)
+	GetYearlyTransferAmountsBySenderCardNumber(req *requests.MonthYearCardNumber) ([]*record.TransferYearAmount, error)
+	GetMonthlyTransferAmountsByReceiverCardNumber(req *requests.MonthYearCardNumber) ([]*record.TransferMonthAmount, error)
+	GetYearlyTransferAmountsByReceiverCardNumber(req *requests.MonthYearCardNumber) ([]*record.TransferYearAmount, error)
 
-	FindByActive(search string, page, pageSize int) ([]*record.TransferRecord, int, error)
-	FindByTrashed(search string, page, pageSize int) ([]*record.TransferRecord, int, error)
 	FindTransferByTransferFrom(transfer_from string) ([]*record.TransferRecord, error)
 	FindTransferByTransferTo(transfer_to string) ([]*record.TransferRecord, error)
 
@@ -305,27 +304,27 @@ type TransferRepository interface {
 }
 
 type WithdrawRepository interface {
-	FindAll(search string, page, pageSize int) ([]*record.WithdrawRecord, int, error)
-	FindAllByCardNumber(card_number string, search string, page, pageSize int) ([]*record.WithdrawRecord, int, error)
+	FindAll(req *requests.FindAllWithdraws) ([]*record.WithdrawRecord, *int, error)
+	FindByActive(req *requests.FindAllWithdraws) ([]*record.WithdrawRecord, *int, error)
+	FindByTrashed(req *requests.FindAllWithdraws) ([]*record.WithdrawRecord, *int, error)
+	FindAllByCardNumber(req *requests.FindAllWithdrawCardNumber) ([]*record.WithdrawRecord, *int, error)
+
 	FindById(id int) (*record.WithdrawRecord, error)
 
-	GetMonthWithdrawStatusSuccess(year int, month int) ([]*record.WithdrawRecordMonthStatusSuccess, error)
+	GetMonthWithdrawStatusSuccess(req *requests.MonthStatusWithdraw) ([]*record.WithdrawRecordMonthStatusSuccess, error)
 	GetYearlyWithdrawStatusSuccess(year int) ([]*record.WithdrawRecordYearStatusSuccess, error)
-	GetMonthWithdrawStatusFailed(year int, month int) ([]*record.WithdrawRecordMonthStatusFailed, error)
+	GetMonthWithdrawStatusFailed(req *requests.MonthStatusWithdraw) ([]*record.WithdrawRecordMonthStatusFailed, error)
 	GetYearlyWithdrawStatusFailed(year int) ([]*record.WithdrawRecordYearStatusFailed, error)
 
-	GetMonthWithdrawStatusSuccessByCardNumber(card_number string, year int, month int) ([]*record.WithdrawRecordMonthStatusSuccess, error)
-	GetYearlyWithdrawStatusSuccessByCardNumber(card_number string, year int) ([]*record.WithdrawRecordYearStatusSuccess, error)
-	GetMonthWithdrawStatusFailedByCardNumber(card_number string, year int, month int) ([]*record.WithdrawRecordMonthStatusFailed, error)
-	GetYearlyWithdrawStatusFailedByCardNumber(card_number string, year int) ([]*record.WithdrawRecordYearStatusFailed, error)
+	GetMonthWithdrawStatusSuccessByCardNumber(req *requests.MonthStatusWithdrawCardNumber) ([]*record.WithdrawRecordMonthStatusSuccess, error)
+	GetYearlyWithdrawStatusSuccessByCardNumber(req *requests.YearStatusWithdrawCardNumber) ([]*record.WithdrawRecordYearStatusSuccess, error)
+	GetMonthWithdrawStatusFailedByCardNumber(req *requests.MonthStatusWithdrawCardNumber) ([]*record.WithdrawRecordMonthStatusFailed, error)
+	GetYearlyWithdrawStatusFailedByCardNumber(req *requests.YearStatusWithdrawCardNumber) ([]*record.WithdrawRecordYearStatusFailed, error)
 
 	GetMonthlyWithdraws(year int) ([]*record.WithdrawMonthlyAmount, error)
 	GetYearlyWithdraws(year int) ([]*record.WithdrawYearlyAmount, error)
-	GetMonthlyWithdrawsByCardNumber(cardNumber string, year int) ([]*record.WithdrawMonthlyAmount, error)
-	GetYearlyWithdrawsByCardNumber(cardNumber string, year int) ([]*record.WithdrawYearlyAmount, error)
-
-	FindByActive(search string, page, pageSize int) ([]*record.WithdrawRecord, int, error)
-	FindByTrashed(search string, page, pageSize int) ([]*record.WithdrawRecord, int, error)
+	GetMonthlyWithdrawsByCardNumber(req *requests.YearMonthCardNumber) ([]*record.WithdrawMonthlyAmount, error)
+	GetYearlyWithdrawsByCardNumber(req *requests.YearMonthCardNumber) ([]*record.WithdrawYearlyAmount, error)
 
 	CreateWithdraw(request *requests.CreateWithdrawRequest) (*record.WithdrawRecord, error)
 	UpdateWithdraw(request *requests.UpdateWithdrawRequest) (*record.WithdrawRecord, error)

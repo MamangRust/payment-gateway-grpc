@@ -40,7 +40,21 @@ type CreateTopupParams struct {
 	TopupTime   time.Time `json:"topup_time"`
 }
 
-// Create Topup
+// CreateTopup: Inserts a new topup transaction into the topups table
+// Purpose: Used when a user performs a topup action
+// Parameters:
+//
+//	$1: card_number - The card number receiving the topup
+//	$2: topup_amount - Amount of the topup
+//	$3: topup_method - Payment method used (e.g., 'e-wallet', 'bank_transfer')
+//	$4: topup_time - Timestamp of the actual topup transaction
+//
+// Returns:
+//
+//	Full topup record including auto-generated fields
+//
+// Business Logic:
+//   - Automatically sets created_at and updated_at to current timestamp
 func (q *Queries) CreateTopup(ctx context.Context, arg CreateTopupParams) (*Topup, error) {
 	row := q.db.QueryRowContext(ctx, createTopup,
 		arg.CardNumber,
@@ -70,7 +84,11 @@ WHERE
     deleted_at IS NOT NULL
 `
 
-// Delete All Trashed Saldos Permanently
+// DeleteAllPermanentTopups: Permanently deletes all soft-deleted topups
+// Purpose: Bulk cleanup of trashed topup records
+// Business Logic:
+//   - Cannot be undone; this is a hard delete
+//   - Use for permanent data purging
 func (q *Queries) DeleteAllPermanentTopups(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, deleteAllPermanentTopups)
 	return err
@@ -80,7 +98,15 @@ const deleteTopupPermanently = `-- name: DeleteTopupPermanently :exec
 DELETE FROM topups WHERE topup_id = $1
 `
 
-// Delete Topup Permanently
+// DeleteTopupPermanently: Permanently deletes a topup record from the database
+// Purpose: Irrecoverably removes topup data
+// Parameters:
+//
+//	$1: topup_id - ID of the topup to delete
+//
+// Business Logic:
+//   - No soft-delete; data is permanently erased
+//   - Use with caution
 func (q *Queries) DeleteTopupPermanently(ctx context.Context, topupID int32) error {
 	_, err := q.db.ExecContext(ctx, deleteTopupPermanently, topupID)
 	return err
@@ -125,7 +151,23 @@ type GetActiveTopupsRow struct {
 	TotalCount  int64        `json:"total_count"`
 }
 
-// Get All Active Topups with Pagination and Search
+// GetActiveTopups: Retrieves paginated list of active (non-deleted) topups with search
+// Purpose: Display only active topups for admin or user dashboards
+// Parameters:
+//
+//	$1: search_term - Optional text to filter by card_number, topup_no, or topup_method
+//	$2: limit - Max records to return
+//	$3: offset - Number of rows to skip
+//
+// Returns:
+//
+//	All active topup fields and total_count
+//
+// Business Logic:
+//   - Filters out soft-deleted topups (deleted_at IS NULL)
+//   - Supports partial, case-insensitive search across multiple fields
+//   - Results sorted by topup_time (most recent first)
+//   - total_count is used for frontend pagination
 func (q *Queries) GetActiveTopups(ctx context.Context, arg GetActiveTopupsParams) ([]*GetActiveTopupsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getActiveTopups, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -237,6 +279,29 @@ type GetMonthTopupStatusFailedRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetMonthTopupStatusFailed: Retrieves monthly failed metrics for topups
+// Purpose: Analyze failedful topup trends across comparison periods
+// Parameters:
+//
+//	$1: period1_start - Start date of first comparison period
+//	$2: period1_end - End date of first comparison period
+//	$3: period2_start - Start date of second comparison period
+//	$4: period2_end - End date of second comparison period
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	total_failed: Count of failedful topups
+//	total_amount: Sum of failedful topup amounts
+//
+// Business Logic:
+//   - Only includes failedful topups (status = 'failed')
+//   - Covers two customizable time periods for comparison
+//   - Zero-fills months with no activity
+//   - Formats output for consistent visualization
+//   - Orders by year and month (newest first)
+//   - Useful for identifying seasonal topup patterns
 func (q *Queries) GetMonthTopupStatusFailed(ctx context.Context, arg GetMonthTopupStatusFailedParams) ([]*GetMonthTopupStatusFailedRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthTopupStatusFailed,
 		arg.Column1,
@@ -348,6 +413,30 @@ type GetMonthTopupStatusFailedCardNumberRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetMonthTopupStatusFailedCardNumber: Retrieves monthly failed metrics for topups
+// Purpose: Analyze failedful topup trends across comparison periods
+// Parameters:
+//
+//	$1: card_number       - Optional filter by card_number (NULL to ignore filter)
+//	$2: period1_start - Start date of first comparison period
+//	$3: period1_end - End date of first comparison period
+//	$4: period2_start - Start date of second comparison period
+//	$5: period2_end - End date of second comparison period
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	total_failed: Count of failedful topups
+//	total_amount: Sum of failedful topup amounts
+//
+// Business Logic:
+//   - Only includes failedful topups (status = 'failed')
+//   - Covers two customizable time periods for comparison
+//   - Zero-fills months with no activity
+//   - Formats output for consistent visualization
+//   - Orders by year and month (newest first)
+//   - Useful for identifying seasonal topup patterns
 func (q *Queries) GetMonthTopupStatusFailedCardNumber(ctx context.Context, arg GetMonthTopupStatusFailedCardNumberParams) ([]*GetMonthTopupStatusFailedCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthTopupStatusFailedCardNumber,
 		arg.CardNumber,
@@ -458,6 +547,29 @@ type GetMonthTopupStatusSuccessRow struct {
 	TotalAmount  int32  `json:"total_amount"`
 }
 
+// GetMonthTopupStatusSuccess: Retrieves monthly success metrics for topups
+// Purpose: Analyze successful topup trends across comparison periods
+// Parameters:
+//
+//	$1: period1_start - Start date of first comparison period
+//	$2: period1_end - End date of first comparison period
+//	$3: period2_start - Start date of second comparison period
+//	$4: period2_end - End date of second comparison period
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	total_success: Count of successful topups
+//	total_amount: Sum of successful topup amounts
+//
+// Business Logic:
+//   - Only includes successful topups (status = 'success')
+//   - Covers two customizable time periods for comparison
+//   - Zero-fills months with no activity
+//   - Formats output for consistent visualization
+//   - Orders by year and month (newest first)
+//   - Useful for identifying seasonal topup patterns
 func (q *Queries) GetMonthTopupStatusSuccess(ctx context.Context, arg GetMonthTopupStatusSuccessParams) ([]*GetMonthTopupStatusSuccessRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthTopupStatusSuccess,
 		arg.Column1,
@@ -569,6 +681,30 @@ type GetMonthTopupStatusSuccessCardNumberRow struct {
 	TotalAmount  int32  `json:"total_amount"`
 }
 
+// GetMonthTopupStatusSuccessCardNumber: Retrieves monthly success metrics for topups
+// Purpose: Analyze successful topup trends across comparison periods
+// Parameters:
+//
+//	$1: card_number       - Optional filter by card_number (NULL to ignore filter)
+//	$2: period1_start - Start date of first comparison period
+//	$3: period1_end - End date of first comparison period
+//	$4: period2_start - Start date of second comparison period
+//	$5: period2_end - End date of second comparison period
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	total_success: Count of successful topups
+//	total_amount: Sum of successful topup amounts
+//
+// Business Logic:
+//   - Only includes successful topups (status = 'success')
+//   - Covers two customizable time periods for comparison
+//   - Zero-fills months with no activity
+//   - Formats output for consistent visualization
+//   - Orders by year and month (newest first)
+//   - Useful for identifying seasonal topup patterns
 func (q *Queries) GetMonthTopupStatusSuccessCardNumber(ctx context.Context, arg GetMonthTopupStatusSuccessCardNumberParams) ([]*GetMonthTopupStatusSuccessCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthTopupStatusSuccessCardNumber,
 		arg.CardNumber,
@@ -631,6 +767,21 @@ type GetMonthlyTopupAmountsRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetMonthlyTopupAmounts: Retrieves total topup amounts per month for the selected year
+// Purpose: Visualize total topup volume across months in a given year
+// Parameters:
+//
+//	$1: reference_date - Any date within the target year
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation
+//	total_amount: Sum of all topup amounts per month
+//
+// Business Logic:
+//   - Filters soft-deleted entries (deleted_at IS NULL)
+//   - Uses LEFT JOIN to ensure months with no topups are still included with amount = 0
+//   - Useful for monthly topup charts or dashboards
 func (q *Queries) GetMonthlyTopupAmounts(ctx context.Context, dollar_1 time.Time) ([]*GetMonthlyTopupAmountsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyTopupAmounts, dollar_1)
 	if err != nil {
@@ -688,6 +839,22 @@ type GetMonthlyTopupAmountsByCardNumberRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetMonthlyTopupAmountsByCardNumber: Retrieves total topup amounts per month for the selected year
+// Purpose: Visualize total topup volume across months in a given year
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: reference_date - Any date within the target year
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation
+//	total_amount: Sum of all topup amounts per month
+//
+// Business Logic:
+//   - Filters soft-deleted entries (deleted_at IS NULL)
+//   - Uses LEFT JOIN to ensure months with no topups are still included with amount = 0
+//   - Useful for monthly topup charts or dashboards
 func (q *Queries) GetMonthlyTopupAmountsByCardNumber(ctx context.Context, arg GetMonthlyTopupAmountsByCardNumberParams) ([]*GetMonthlyTopupAmountsByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyTopupAmountsByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -753,6 +920,24 @@ type GetMonthlyTopupMethodsRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetMonthlyTopupMethods: Retrieves monthly breakdown of topup usage by method
+// Purpose: Track topup method distribution and amounts over each month of the selected year
+// Parameters:
+//
+//	$1: reference_date - Any date within the target year (used to define monthly range)
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	topup_method: Method used for topup (e.g., 'bank_transfer', 'e-wallet')
+//	total_topups: Count of topups using the method in that month
+//	total_amount: Sum of topup amounts using the method in that month
+//
+// Business Logic:
+//   - Ensures every topup method is shown for every month (even with 0 data)
+//   - Filters out soft-deleted records (deleted_at IS NULL)
+//   - Uses CROSS JOIN to combine months with all available methods
+//   - Useful for visualizing adoption trends of each topup method monthly
 func (q *Queries) GetMonthlyTopupMethods(ctx context.Context, dollar_1 time.Time) ([]*GetMonthlyTopupMethodsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyTopupMethods, dollar_1)
 	if err != nil {
@@ -829,6 +1014,25 @@ type GetMonthlyTopupMethodsByCardNumberRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetMonthlyTopupMethodsByCardNumber: Retrieves monthly breakdown of topup usage by method
+// Purpose: Track topup method distribution and amounts over each month of the selected year
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: reference_date - Any date within the target year (used to define monthly range)
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	topup_method: Method used for topup (e.g., 'bank_transfer', 'e-wallet')
+//	total_topups: Count of topups using the method in that month
+//	total_amount: Sum of topup amounts using the method in that month
+//
+// Business Logic:
+//   - Ensures every topup method is shown for every month (even with 0 data)
+//   - Filters out soft-deleted records (deleted_at IS NULL)
+//   - Uses CROSS JOIN to combine months with all available methods
+//   - Useful for visualizing adoption trends of each topup method monthly
 func (q *Queries) GetMonthlyTopupMethodsByCardNumber(ctx context.Context, arg GetMonthlyTopupMethodsByCardNumberParams) ([]*GetMonthlyTopupMethodsByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyTopupMethodsByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -861,7 +1065,18 @@ const getTopupByID = `-- name: GetTopupByID :one
 SELECT topup_id, topup_no, card_number, topup_amount, topup_method, topup_time, status, created_at, updated_at, deleted_at FROM topups WHERE topup_id = $1 AND deleted_at IS NULL
 `
 
-// Get Topup by ID
+// GetTopupByID: Retrieves a specific topup by ID
+// Purpose: Used to display details of a single topup transaction
+// Parameters:
+//
+//	$1: topup_id - Unique identifier of the topup
+//
+// Returns:
+//
+//	Topup record matching the ID (if not soft-deleted)
+//
+// Business Logic:
+//   - Only returns record if it is active (deleted_at IS NULL)
 func (q *Queries) GetTopupByID(ctx context.Context, topupID int32) (*Topup, error) {
 	row := q.db.QueryRowContext(ctx, getTopupByID, topupID)
 	var i Topup
@@ -920,7 +1135,23 @@ type GetTopupsRow struct {
 	TotalCount  int64        `json:"total_count"`
 }
 
-// Search Topups with Pagination
+// GetTopups: Retrieves paginated list of active topups with search capability
+// Purpose: Provide admin or user access to topup history with search support
+// Parameters:
+//
+//	$1: search_term - Optional filter to match card_number, topup_no, topup_method, or status (NULL for no filter)
+//	$2: limit - Max number of records to return
+//	$3: offset - Records to skip for pagination
+//
+// Returns:
+//
+//	All topup fields and total_count of matching records
+//
+// Business Logic:
+//   - Filters out soft-deleted topups (deleted_at IS NULL)
+//   - Supports partial, case-insensitive search across multiple fields
+//   - Results sorted by topup_time (most recent first)
+//   - total_count is used for frontend pagination
 func (q *Queries) GetTopups(ctx context.Context, arg GetTopupsParams) ([]*GetTopupsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getTopups, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -997,7 +1228,22 @@ type GetTopupsByCardNumberRow struct {
 	TotalCount  int64        `json:"total_count"`
 }
 
-// Get Topups by Card Number
+// GetTopupsByCardNumber: Retrieves paginated topups based on card number and optional search keyword
+// Purpose: View all topups for a specific card, with filtering and pagination
+// Parameters:
+//
+//	$1: card_number - Exact card number match
+//	$2: keyword - Optional keyword (nullable), filters topup_no, method, status
+//	$3: limit - Number of records to return
+//	$4: offset - Offset for pagination
+//
+// Returns:
+//
+//	All matching topup records with total_count using window function
+//
+// Business Logic:
+//   - Skips soft-deleted records
+//   - Ordered by topup_time descending
 func (q *Queries) GetTopupsByCardNumber(ctx context.Context, arg GetTopupsByCardNumberParams) ([]*GetTopupsByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getTopupsByCardNumber,
 		arg.CardNumber,
@@ -1046,7 +1292,15 @@ WHERE
     AND deleted_at IS NOT NULL
 `
 
-// Get Trashed By Topup ID
+// GetTrashedTopupByID: Retrieves a topup that has been soft-deleted
+// Purpose: Preview or manage trashed entries (e.g., for restore)
+// Parameters:
+//
+//	$1: topup_id - ID of the soft-deleted topup
+//
+// Returns:
+//
+//	Full topup record if found and deleted_at IS NOT NULL
 func (q *Queries) GetTrashedTopupByID(ctx context.Context, topupID int32) (*Topup, error) {
 	row := q.db.QueryRowContext(ctx, getTrashedTopupByID, topupID)
 	var i Topup
@@ -1104,7 +1358,22 @@ type GetTrashedTopupsRow struct {
 	TotalCount  int64        `json:"total_count"`
 }
 
-// Get Trashed Topups with Pagination and Search
+// GetTrashedTopups: Retrieves trashed (soft-deleted) topups with pagination and search
+// Purpose: Allow recovery or permanent deletion of topups
+// Parameters:
+//
+//	$1: search_term - Optional filter to match card_number, topup_no, or topup_method
+//	$2: limit - Max records to return
+//	$3: offset - Rows to skip
+//
+// Returns:
+//
+//	Trashed topup records with total_count
+//
+// Business Logic:
+//   - Only includes topups where deleted_at IS NOT NULL
+//   - Supports flexible search
+//   - Results sorted by topup_time descending
 func (q *Queries) GetTrashedTopups(ctx context.Context, arg GetTrashedTopupsParams) ([]*GetTrashedTopupsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getTrashedTopups, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -1161,6 +1430,21 @@ type GetYearlyTopupAmountsRow struct {
 	TotalAmount int64  `json:"total_amount"`
 }
 
+// GetYearlyTopupAmounts: Retrieves yearly total of topup amounts
+// Purpose: Analyze yearly growth or decline in topup volume
+// Parameters:
+//
+//	$1: current_year - The latest year to include (e.g., 2024), includes 5-year span (current_year - 4)
+//
+// Returns:
+//
+//	year: Year extracted from topup_time
+//	total_amount: Sum of all topup amounts in the year
+//
+// Business Logic:
+//   - Includes topup data from current year and 4 years prior
+//   - Excludes soft-deleted records (deleted_at IS NULL)
+//   - Ideal for trend lines or comparative bar charts by year
 func (q *Queries) GetYearlyTopupAmounts(ctx context.Context, dollar_1 interface{}) ([]*GetYearlyTopupAmountsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTopupAmounts, dollar_1)
 	if err != nil {
@@ -1211,6 +1495,22 @@ type GetYearlyTopupAmountsByCardNumberRow struct {
 	TotalAmount int64  `json:"total_amount"`
 }
 
+// GetYearlyTopupAmountsByCardNumber: Retrieves yearly total of topup amounts
+// Purpose: Analyze yearly growth or decline in topup volume
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: current_year - The latest year to include (e.g., 2024), includes 5-year span (current_year - 4)
+//
+// Returns:
+//
+//	year: Year extracted from topup_time
+//	total_amount: Sum of all topup amounts in the year
+//
+// Business Logic:
+//   - Includes topup data from current year and 4 years prior
+//   - Excludes soft-deleted records (deleted_at IS NULL)
+//   - Ideal for trend lines or comparative bar charts by year
 func (q *Queries) GetYearlyTopupAmountsByCardNumber(ctx context.Context, arg GetYearlyTopupAmountsByCardNumberParams) ([]*GetYearlyTopupAmountsByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTopupAmountsByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -1260,6 +1560,23 @@ type GetYearlyTopupMethodsRow struct {
 	TotalAmount int64  `json:"total_amount"`
 }
 
+// GetYearlyTopupMethods: Retrieves yearly breakdown of topup usage by method
+// Purpose: Analyze how different topup methods perform over the past 5 years
+// Parameters:
+//
+//	$1: current_year - The final year to include (e.g., 2024), includes 5-year span (current_year - 4)
+//
+// Returns:
+//
+//	year: Year extracted from topup_time
+//	topup_method: Method used for topup
+//	total_topups: Number of topups using that method in the year
+//	total_amount: Total topup amount for the method in the year
+//
+// Business Logic:
+//   - Filters to topups within a 5-year window up to the given year
+//   - Filters out soft-deleted data (deleted_at IS NULL)
+//   - Useful for detecting long-term trends across payment methods
 func (q *Queries) GetYearlyTopupMethods(ctx context.Context, dollar_1 interface{}) ([]*GetYearlyTopupMethodsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTopupMethods, dollar_1)
 	if err != nil {
@@ -1320,6 +1637,24 @@ type GetYearlyTopupMethodsByCardNumberRow struct {
 	TotalAmount int64  `json:"total_amount"`
 }
 
+// GetYearlyTopupMethodsByCardNumber: Retrieves yearly breakdown of topup usage by method
+// Purpose: Analyze how different topup methods perform over the past 5 years
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: current_year - The final year to include (e.g., 2024), includes 5-year span (current_year - 4)
+//
+// Returns:
+//
+//	year: Year extracted from topup_time
+//	topup_method: Method used for topup
+//	total_topups: Number of topups using that method in the year
+//	total_amount: Total topup amount for the method in the year
+//
+// Business Logic:
+//   - Filters to topups within a 5-year window up to the given year
+//   - Filters out soft-deleted data (deleted_at IS NULL)
+//   - Useful for detecting long-term trends across payment methods
 func (q *Queries) GetYearlyTopupMethodsByCardNumber(ctx context.Context, arg GetYearlyTopupMethodsByCardNumberParams) ([]*GetYearlyTopupMethodsByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTopupMethodsByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -1408,6 +1743,24 @@ type GetYearlyTopupStatusFailedRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetYearlyTopupStatusFailed: Retrieves yearly failed metrics for topups
+// Purpose: Compare annual failedful topup performance
+// Parameters:
+//
+//	$1: current_year - The target year (includes this year and previous)
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	total_failed: Count of failedful topups
+//	total_amount: Sum of failedful topup amounts
+//
+// Business Logic:
+//   - Only includes failedful topups (status = 'failed')
+//   - Compares current year with previous year
+//   - Zero-fills years with no activity
+//   - Orders by year (newest first)
+//   - Useful for year-over-year growth analysis
 func (q *Queries) GetYearlyTopupStatusFailed(ctx context.Context, dollar_1 int32) ([]*GetYearlyTopupStatusFailedRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTopupStatusFailed, dollar_1)
 	if err != nil {
@@ -1497,6 +1850,25 @@ type GetYearlyTopupStatusFailedCardNumberRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetYearlyTopupStatusFailedCardNumber: Retrieves yearly failed metrics for topups
+// Purpose: Compare annual failedful topup performance
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: current_year - The target year (includes this year and previous)
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	total_failed: Count of failedful topups
+//	total_amount: Sum of failedful topup amounts
+//
+// Business Logic:
+//   - Only includes failedful topups (status = 'failed')
+//   - Compares current year with previous year
+//   - Zero-fills years with no activity
+//   - Orders by year (newest first)
+//   - Useful for year-over-year growth analysis
 func (q *Queries) GetYearlyTopupStatusFailedCardNumber(ctx context.Context, arg GetYearlyTopupStatusFailedCardNumberParams) ([]*GetYearlyTopupStatusFailedCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTopupStatusFailedCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -1580,6 +1952,24 @@ type GetYearlyTopupStatusSuccessRow struct {
 	TotalAmount  int32  `json:"total_amount"`
 }
 
+// GetYearlyTopupStatusSuccess: Retrieves yearly success metrics for topups
+// Purpose: Compare annual successful topup performance
+// Parameters:
+//
+//	$1: current_year - The target year (includes this year and previous)
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	total_success: Count of successful topups
+//	total_amount: Sum of successful topup amounts
+//
+// Business Logic:
+//   - Only includes successful topups (status = 'success')
+//   - Compares current year with previous year
+//   - Zero-fills years with no activity
+//   - Orders by year (newest first)
+//   - Useful for year-over-year growth analysis
 func (q *Queries) GetYearlyTopupStatusSuccess(ctx context.Context, dollar_1 int32) ([]*GetYearlyTopupStatusSuccessRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTopupStatusSuccess, dollar_1)
 	if err != nil {
@@ -1669,6 +2059,25 @@ type GetYearlyTopupStatusSuccessCardNumberRow struct {
 	TotalAmount  int32  `json:"total_amount"`
 }
 
+// GetYearlyTopupStatusSuccess: Retrieves yearly success metrics for topups
+// Purpose: Compare annual successful topup performance
+// Parameters:
+//
+//	$1: card_number       - Optional filter by card_number (NULL to ignore filter)
+//	$2: current_year - The target year (includes this year and previous)
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	total_success: Count of successful topups
+//	total_amount: Sum of successful topup amounts
+//
+// Business Logic:
+//   - Only includes successful topups (status = 'success')
+//   - Compares current year with previous year
+//   - Zero-fills years with no activity
+//   - Orders by year (newest first)
+//   - Useful for year-over-year growth analysis
 func (q *Queries) GetYearlyTopupStatusSuccessCardNumber(ctx context.Context, arg GetYearlyTopupStatusSuccessCardNumberParams) ([]*GetYearlyTopupStatusSuccessCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTopupStatusSuccessCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -1700,43 +2109,89 @@ WHERE
     deleted_at IS NOT NULL
 `
 
-// Restore All Trashed Saldos
+// RestoreAllTopups: Restores all soft-deleted topups in bulk
+// Purpose: Batch recovery of trashed topup data
+// Business Logic:
+//   - Sets deleted_at to NULL for all where it was not null
 func (q *Queries) RestoreAllTopups(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, restoreAllTopups)
 	return err
 }
 
-const restoreTopup = `-- name: RestoreTopup :exec
+const restoreTopup = `-- name: RestoreTopup :one
 UPDATE topups
 SET
     deleted_at = NULL
 WHERE
     topup_id = $1
     AND deleted_at IS NOT NULL
+RETURNING topup_id, topup_no, card_number, topup_amount, topup_method, topup_time, status, created_at, updated_at, deleted_at
 `
 
-// Restore Trashed Topup
-func (q *Queries) RestoreTopup(ctx context.Context, topupID int32) error {
-	_, err := q.db.ExecContext(ctx, restoreTopup, topupID)
-	return err
+// RestoreTopup: Restores a soft-deleted topup by nullifying deleted_at
+// Purpose: Reactivate a previously trashed topup
+// Parameters:
+//
+//	$1: topup_id - ID of the topup to restore
+//
+// Business Logic:
+//   - Only applies to records where deleted_at IS NOT NULL
+func (q *Queries) RestoreTopup(ctx context.Context, topupID int32) (*Topup, error) {
+	row := q.db.QueryRowContext(ctx, restoreTopup, topupID)
+	var i Topup
+	err := row.Scan(
+		&i.TopupID,
+		&i.TopupNo,
+		&i.CardNumber,
+		&i.TopupAmount,
+		&i.TopupMethod,
+		&i.TopupTime,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }
 
-const trashTopup = `-- name: TrashTopup :exec
+const trashTopup = `-- name: TrashTopup :one
 UPDATE topups
 SET
     deleted_at = current_timestamp
 WHERE
     topup_id = $1
     AND deleted_at IS NULL
+RETURNING topup_id, topup_no, card_number, topup_amount, topup_method, topup_time, status, created_at, updated_at, deleted_at
 `
 
-// Trash Topup
-func (q *Queries) TrashTopup(ctx context.Context, topupID int32) error {
-	_, err := q.db.ExecContext(ctx, trashTopup, topupID)
-	return err
+// TrashTopup: Soft deletes a topup by setting deleted_at
+// Purpose: Moves topup to trash without losing data
+// Parameters:
+//
+//	$1: topup_id - ID of the topup to soft-delete
+//
+// Business Logic:
+//   - Only active (non-deleted) records can be trashed
+//   - Allows restore in future
+func (q *Queries) TrashTopup(ctx context.Context, topupID int32) (*Topup, error) {
+	row := q.db.QueryRowContext(ctx, trashTopup, topupID)
+	var i Topup
+	err := row.Scan(
+		&i.TopupID,
+		&i.TopupNo,
+		&i.CardNumber,
+		&i.TopupAmount,
+		&i.TopupMethod,
+		&i.TopupTime,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }
 
-const updateTopup = `-- name: UpdateTopup :exec
+const updateTopup = `-- name: UpdateTopup :one
 UPDATE topups
 SET
     card_number = $2,
@@ -1747,6 +2202,7 @@ SET
 WHERE
     topup_id = $1
     AND deleted_at IS NULL
+RETURNING topup_id, topup_no, card_number, topup_amount, topup_method, topup_time, status, created_at, updated_at, deleted_at
 `
 
 type UpdateTopupParams struct {
@@ -1757,19 +2213,44 @@ type UpdateTopupParams struct {
 	TopupTime   time.Time `json:"topup_time"`
 }
 
-// Update Topup
-func (q *Queries) UpdateTopup(ctx context.Context, arg UpdateTopupParams) error {
-	_, err := q.db.ExecContext(ctx, updateTopup,
+// UpdateTopup: Updates an existing topup transaction
+// Purpose: Modify existing topup information by ID
+// Parameters:
+//
+//	$1: topup_id - ID of the topup to update
+//	$2: card_number - Updated card number
+//	$3: topup_amount - Updated amount
+//	$4: topup_method - Updated payment method
+//	$5: topup_time - Updated transaction time
+//
+// Business Logic:
+//   - Skips soft-deleted records (deleted_at IS NULL)
+//   - Updates updated_at automatically
+func (q *Queries) UpdateTopup(ctx context.Context, arg UpdateTopupParams) (*Topup, error) {
+	row := q.db.QueryRowContext(ctx, updateTopup,
 		arg.TopupID,
 		arg.CardNumber,
 		arg.TopupAmount,
 		arg.TopupMethod,
 		arg.TopupTime,
 	)
-	return err
+	var i Topup
+	err := row.Scan(
+		&i.TopupID,
+		&i.TopupNo,
+		&i.CardNumber,
+		&i.TopupAmount,
+		&i.TopupMethod,
+		&i.TopupTime,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }
 
-const updateTopupAmount = `-- name: UpdateTopupAmount :exec
+const updateTopupAmount = `-- name: UpdateTopupAmount :one
 UPDATE topups
 SET
     topup_amount = $2,
@@ -1777,6 +2258,7 @@ SET
 WHERE
     topup_id = $1
     AND deleted_at IS NULL
+RETURNING topup_id, topup_no, card_number, topup_amount, topup_method, topup_time, status, created_at, updated_at, deleted_at
 `
 
 type UpdateTopupAmountParams struct {
@@ -1784,13 +2266,35 @@ type UpdateTopupAmountParams struct {
 	TopupAmount int32 `json:"topup_amount"`
 }
 
-// Update Topup Amount
-func (q *Queries) UpdateTopupAmount(ctx context.Context, arg UpdateTopupAmountParams) error {
-	_, err := q.db.ExecContext(ctx, updateTopupAmount, arg.TopupID, arg.TopupAmount)
-	return err
+// UpdateTopupAmount: Updates only the topup_amount field for a specific topup
+// Purpose: Allow adjustment of topup amount without affecting other fields
+// Parameters:
+//
+//	$1: topup_id - ID of the target topup
+//	$2: new topup amount
+//
+// Business Logic:
+//   - Ignores deleted entries
+//   - Automatically updates the updated_at timestamp
+func (q *Queries) UpdateTopupAmount(ctx context.Context, arg UpdateTopupAmountParams) (*Topup, error) {
+	row := q.db.QueryRowContext(ctx, updateTopupAmount, arg.TopupID, arg.TopupAmount)
+	var i Topup
+	err := row.Scan(
+		&i.TopupID,
+		&i.TopupNo,
+		&i.CardNumber,
+		&i.TopupAmount,
+		&i.TopupMethod,
+		&i.TopupTime,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }
 
-const updateTopupStatus = `-- name: UpdateTopupStatus :exec
+const updateTopupStatus = `-- name: UpdateTopupStatus :one
 UPDATE topups
 SET
     status = $2,
@@ -1798,6 +2302,7 @@ SET
 WHERE
     topup_id = $1
     AND deleted_at IS NULL
+RETURNING topup_id, topup_no, card_number, topup_amount, topup_method, topup_time, status, created_at, updated_at, deleted_at
 `
 
 type UpdateTopupStatusParams struct {
@@ -1805,8 +2310,30 @@ type UpdateTopupStatusParams struct {
 	Status  string `json:"status"`
 }
 
-// Update Topup Status
-func (q *Queries) UpdateTopupStatus(ctx context.Context, arg UpdateTopupStatusParams) error {
-	_, err := q.db.ExecContext(ctx, updateTopupStatus, arg.TopupID, arg.Status)
-	return err
+// UpdateTopupStatus: Updates the status of a specific topup
+// Purpose: Mark topup as 'success', 'failed', etc.
+// Parameters:
+//
+//	$1: topup_id - ID of the topup
+//	$2: new status value (e.g., 'success', 'failed')
+//
+// Business Logic:
+//   - Applies only to active (non-deleted) records
+//   - updated_at is refreshed
+func (q *Queries) UpdateTopupStatus(ctx context.Context, arg UpdateTopupStatusParams) (*Topup, error) {
+	row := q.db.QueryRowContext(ctx, updateTopupStatus, arg.TopupID, arg.Status)
+	var i Topup
+	err := row.Scan(
+		&i.TopupID,
+		&i.TopupNo,
+		&i.CardNumber,
+		&i.TopupAmount,
+		&i.TopupMethod,
+		&i.TopupTime,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }

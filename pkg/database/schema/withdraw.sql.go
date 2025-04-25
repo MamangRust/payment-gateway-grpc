@@ -38,7 +38,23 @@ type CreateWithdrawParams struct {
 	CreatedAt      sql.NullTime `json:"created_at"`
 }
 
-// Create Withdraw
+// CreateWithdraw: Records a new cash withdrawal
+// Purpose: Create a withdrawal transaction in the system
+// Parameters:
+//
+//	$1: card_number - The card used for withdrawal
+//	$2: withdraw_amount - The amount withdrawn
+//	$3: withdraw_time - When the withdrawal occurred
+//	$4: created_at - Timestamp of record creation
+//
+// Returns:
+//
+//	The newly created withdrawal record with all fields
+//
+// Business Logic:
+//   - Sets creation and update timestamps automatically
+//   - Used for recording ATM/branch cash withdrawals
+//   - Typically triggered after successful cash dispense
 func (q *Queries) CreateWithdraw(ctx context.Context, arg CreateWithdrawParams) (*Withdraw, error) {
 	row := q.db.QueryRowContext(ctx, createWithdraw,
 		arg.CardNumber,
@@ -67,7 +83,14 @@ WHERE
     deleted_at IS NOT NULL
 `
 
-// Delete All Trashed Withdraws Permanently
+// DeleteAllPermanentWithdraws: Permanently removes all trashed withdrawals
+// Purpose: Clean up all soft-deleted withdrawal records
+// Business Logic:
+//   - Irreversible bulk deletion
+//   - Only affects records marked as deleted
+//   - Frees database space from old records
+//   - Typically used during maintenance periods
+//   - Requires admin privileges
 func (q *Queries) DeleteAllPermanentWithdraws(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, deleteAllPermanentWithdraws)
 	return err
@@ -77,7 +100,17 @@ const deleteWithdrawPermanently = `-- name: DeleteWithdrawPermanently :exec
 DELETE FROM withdraws WHERE withdraw_id = $1 AND deleted_at IS NOT NULL
 `
 
-// Delete Withdraw Permanently
+// DeleteWithdrawPermanently: Hard-deletes a withdrawal
+// Purpose: Permanently remove a withdrawal from the system
+// Parameters:
+//
+//	$1: withdraw_id - ID of withdrawal to delete
+//
+// Business Logic:
+//   - Physical deletion from database
+//   - Only works on already trashed withdrawals
+//   - Irreversible operation
+//   - Used after retention period expires
 func (q *Queries) DeleteWithdrawPermanently(ctx context.Context, withdrawID int32) error {
 	_, err := q.db.ExecContext(ctx, deleteWithdrawPermanently, withdrawID)
 	return err
@@ -111,6 +144,21 @@ type FindAllWithdrawsByCardNumberRow struct {
 	DeletedAt      sql.NullTime `json:"deleted_at"`
 }
 
+// FindAllWithdrawsByCardNumber: Retrieves all withdrawals for a specific card
+// Purpose: Get complete withdrawal history for a card
+// Parameters:
+//
+//	$1: card_number - The card number to filter withdrawals
+//
+// Returns:
+//
+//	Selected withdrawal fields for all matching records
+//
+// Business Logic:
+//   - Only includes active withdrawals (deleted_at IS NULL)
+//   - Returns all withdrawals without pagination
+//   - Orders by withdraw_time (newest first)
+//   - Useful for complete withdrawal history exports
 func (q *Queries) FindAllWithdrawsByCardNumber(ctx context.Context, cardNumber string) ([]*FindAllWithdrawsByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, findAllWithdrawsByCardNumber, cardNumber)
 	if err != nil {
@@ -180,7 +228,24 @@ type GetActiveWithdrawsRow struct {
 	TotalCount     int64        `json:"total_count"`
 }
 
-// Get Active Withdraws with Search, Pagination, and Total Count
+// GetActiveWithdraws: Retrieves paginated active withdrawals with search
+// Purpose: List all non-deleted withdrawals with filtering options
+// Parameters:
+//
+//	$1: search_term - Optional text to filter withdrawals
+//	$2: limit - Maximum records to return per page
+//	$3: offset - Records to skip for pagination
+//
+// Returns:
+//
+//	All withdrawal fields plus total_count of matching active records
+//
+// Business Logic:
+//   - Only includes active withdrawals (deleted_at IS NULL)
+//   - Same comprehensive filtering as GetWithdraws
+//   - Orders by withdraw_time (newest first)
+//   - Provides pagination metadata
+//   - Used in withdrawal management interfaces
 func (q *Queries) GetActiveWithdraws(ctx context.Context, arg GetActiveWithdrawsParams) ([]*GetActiveWithdrawsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getActiveWithdraws, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -291,6 +356,29 @@ type GetMonthWithdrawStatusFailedRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetMonthWithdrawStatusFailed: Retrieves monthly failed metrics for withdrawals
+// Purpose: Analyze failed withdrawal trends across comparison periods
+// Parameters:
+//
+//	$1: period1_start - Start date of first comparison period (timestamp)
+//	$2: period1_end - End date of first comparison period (timestamp)
+//	$3: period2_start - Start date of second comparison period (timestamp)
+//	$4: period2_end - End date of second comparison period (timestamp)
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	total_failed: Count of failed withdrawals
+//	total_amount: Sum of failed withdrawal amounts
+//
+// Business Logic:
+//   - Only includes failed withdrawals (status = 'failed')
+//   - Covers two customizable time periods for comparison
+//   - Zero-fills months with no withdrawal activity
+//   - Formats output for consistent visualization (year as text, month as 'Mon')
+//   - Orders by year and month (newest first)
+//   - Useful for identifying seasonal cash withdrawal patterns
 func (q *Queries) GetMonthWithdrawStatusFailed(ctx context.Context, arg GetMonthWithdrawStatusFailedParams) ([]*GetMonthWithdrawStatusFailedRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthWithdrawStatusFailed,
 		arg.Column1,
@@ -402,6 +490,30 @@ type GetMonthWithdrawStatusFailedCardNumberRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetMonthWithdrawStatusFailedCardNumber: Retrieves monthly failed metrics for withdrawals
+// Purpose: Analyze failed withdrawal trends across comparison periods
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: period1_start - Start date of first comparison period (timestamp)
+//	$3: period1_end - End date of first comparison period (timestamp)
+//	$4: period2_start - Start date of second comparison period (timestamp)
+//	$5: period2_end - End date of second comparison period (timestamp)
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	total_failed: Count of failed withdrawals
+//	total_amount: Sum of failed withdrawal amounts
+//
+// Business Logic:
+//   - Only includes failed withdrawals (status = 'failed')
+//   - Covers two customizable time periods for comparison
+//   - Zero-fills months with no withdrawal activity
+//   - Formats output for consistent visualization (year as text, month as 'Mon')
+//   - Orders by year and month (newest first)
+//   - Useful for identifying seasonal cash withdrawal patterns
 func (q *Queries) GetMonthWithdrawStatusFailedCardNumber(ctx context.Context, arg GetMonthWithdrawStatusFailedCardNumberParams) ([]*GetMonthWithdrawStatusFailedCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthWithdrawStatusFailedCardNumber,
 		arg.CardNumber,
@@ -512,6 +624,29 @@ type GetMonthWithdrawStatusSuccessRow struct {
 	TotalAmount  int32  `json:"total_amount"`
 }
 
+// GetMonthWithdrawStatusSuccess: Retrieves monthly success metrics for withdrawals
+// Purpose: Analyze successful withdrawal trends across comparison periods
+// Parameters:
+//
+//	$1: period1_start - Start date of first comparison period (timestamp)
+//	$2: period1_end - End date of first comparison period (timestamp)
+//	$3: period2_start - Start date of second comparison period (timestamp)
+//	$4: period2_end - End date of second comparison period (timestamp)
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	total_success: Count of successful withdrawals
+//	total_amount: Sum of successful withdrawal amounts
+//
+// Business Logic:
+//   - Only includes successful withdrawals (status = 'success')
+//   - Covers two customizable time periods for comparison
+//   - Zero-fills months with no withdrawal activity
+//   - Formats output for consistent visualization (year as text, month as 'Mon')
+//   - Orders by year and month (newest first)
+//   - Useful for identifying seasonal cash withdrawal patterns
 func (q *Queries) GetMonthWithdrawStatusSuccess(ctx context.Context, arg GetMonthWithdrawStatusSuccessParams) ([]*GetMonthWithdrawStatusSuccessRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthWithdrawStatusSuccess,
 		arg.Column1,
@@ -685,6 +820,24 @@ type GetMonthlyWithdrawsRow struct {
 	TotalWithdrawAmount int32  `json:"total_withdraw_amount"`
 }
 
+// GetMonthlyWithdraws: Retrieves monthly withdrawal totals for a given year
+// Purpose: Analyze monthly cash withdrawal patterns and trends
+// Parameters:
+//
+//	$1: reference_date - Any date within the target year (used to define the year range)
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	total_withdraw_amount: Sum of withdrawal amounts for that month (0 if no withdrawals)
+//
+// Business Logic:
+//   - Generates complete monthly series for the specified year
+//   - Includes all withdrawals regardless of card or status
+//   - Filters out soft-deleted records (deleted_at IS NULL)
+//   - Zero-fills months with no withdrawal activity
+//   - Orders results chronologically by month
+//   - Useful for cash flow analysis and ATM/branch planning
 func (q *Queries) GetMonthlyWithdraws(ctx context.Context, dollar_1 time.Time) ([]*GetMonthlyWithdrawsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyWithdraws, dollar_1)
 	if err != nil {
@@ -742,6 +895,24 @@ type GetMonthlyWithdrawsByCardNumberRow struct {
 	TotalWithdrawAmount int32  `json:"total_withdraw_amount"`
 }
 
+// GetMonthlyWithdrawsByCardNumber: Retrieves monthly withdrawals for a specific card
+// Purpose: Track monthly cash usage patterns for individual cardholders
+// Parameters:
+//
+//	$1: card_number - The card number to filter withdrawals
+//	$2: reference_date - Any date within the target year
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation
+//	total_withdraw_amount: Sum of withdrawals for that card by month
+//
+// Business Logic:
+//   - Generates complete monthly series for the year
+//   - Filters withdrawals by specific card number
+//   - Zero-fills months with no activity for that card
+//   - Orders chronologically
+//   - Useful for individual spending pattern analysis
 func (q *Queries) GetMonthlyWithdrawsByCardNumber(ctx context.Context, arg GetMonthlyWithdrawsByCardNumberParams) ([]*GetMonthlyWithdrawsByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyWithdrawsByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -773,7 +944,19 @@ WHERE
     AND deleted_at IS NOT NULL
 `
 
-// Get Trashed By Withdraw ID
+// GetTrashedWithdrawByID: Retrieves a single soft-deleted withdrawal by ID
+// Purpose: View details of a deleted withdrawal for recovery or audit
+// Parameters:
+//
+//	$1: withdraw_id - The ID of the withdrawal to retrieve
+//
+// Returns:
+//
+//	All fields for the specified trashed withdrawal or NULL if not found/active
+//
+// Business Logic:
+//   - Only returns soft-deleted withdrawals (deleted_at IS NOT NULL)
+//   - Used in admin interfaces for withdrawal recovery
 func (q *Queries) GetTrashedWithdrawByID(ctx context.Context, withdrawID int32) (*Withdraw, error) {
 	row := q.db.QueryRowContext(ctx, getTrashedWithdrawByID, withdrawID)
 	var i Withdraw
@@ -829,7 +1012,23 @@ type GetTrashedWithdrawsRow struct {
 	TotalCount     int64        `json:"total_count"`
 }
 
-// Get Trashed Withdraws with Search, Pagination, and Total Count
+// GetTrashedWithdraws: Retrieves paginated soft-deleted withdrawals
+// Purpose: List all deleted withdrawals for recovery or audit purposes
+// Parameters:
+//
+//	$1: search_term - Optional text to filter deleted withdrawals
+//	$2: limit - Maximum records to return per page
+//	$3: offset - Records to skip for pagination
+//
+// Returns:
+//
+//	All withdrawal fields plus total_count of matching deleted records
+//
+// Business Logic:
+//   - Only includes soft-deleted withdrawals (deleted_at IS NOT NULL)
+//   - Same filtering capabilities as active withdrawals
+//   - Maintains newest-first ordering
+//   - Used in admin interfaces for withdrawal recovery
 func (q *Queries) GetTrashedWithdraws(ctx context.Context, arg GetTrashedWithdrawsParams) ([]*GetTrashedWithdrawsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getTrashedWithdraws, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -872,7 +1071,19 @@ WHERE
     AND deleted_at IS NULL
 `
 
-// Get Withdraw by ID
+// GetWithdrawByID: Retrieves a single withdrawal by its ID
+// Purpose: Get detailed information about a specific withdrawal
+// Parameters:
+//
+//	$1: withdraw_id - The ID of the withdrawal to retrieve
+//
+// Returns:
+//
+//	All fields for the specified withdrawal or NULL if not found/deleted
+//
+// Business Logic:
+//   - Only returns active withdrawals (deleted_at IS NULL)
+//   - Useful for withdrawal details viewing and verification
 func (q *Queries) GetWithdrawByID(ctx context.Context, withdrawID int32) (*Withdraw, error) {
 	row := q.db.QueryRowContext(ctx, getWithdrawByID, withdrawID)
 	var i Withdraw
@@ -928,7 +1139,28 @@ type GetWithdrawsRow struct {
 	TotalCount     int64        `json:"total_count"`
 }
 
-// Search Withdraws with Pagination
+// GetWithdraws: Retrieves paginated withdrawal records with search capability
+// Purpose: List all withdrawals for management UI with filtering options
+// Parameters:
+//
+//	$1: search_term - Optional text to filter withdrawals by various fields (NULL for no filter)
+//	$2: limit - Maximum number of records to return per page
+//	$3: offset - Number of records to skip for pagination
+//
+// Returns:
+//
+//	All withdrawal fields plus total_count of matching records
+//
+// Business Logic:
+//   - Excludes soft-deleted withdrawals (deleted_at IS NULL)
+//   - Supports partial text matching on multiple fields (case-insensitive):
+//   - card_number
+//   - withdraw_amount (converted to text)
+//   - withdraw_time (converted to text)
+//   - status
+//   - Orders by withdraw_time (newest withdrawals first)
+//   - Provides total_count for pagination calculations
+//   - Useful for withdrawal monitoring and auditing
 func (q *Queries) GetWithdraws(ctx context.Context, arg GetWithdrawsParams) ([]*GetWithdrawsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getWithdraws, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -1003,7 +1235,28 @@ type GetWithdrawsByCardNumberRow struct {
 	TotalCount     int64        `json:"total_count"`
 }
 
-// Search Withdraws by Card Number with Pagination
+// GetWithdrawsByCardNumber: Retrieves paginated withdrawals for a specific card with search
+// Purpose: List all withdrawals associated with a particular card
+// Parameters:
+//
+//	$1: card_number - The card number to filter withdrawals
+//	$2: search_term - Optional text to filter by amount, time, or status
+//	$3: limit - Maximum number of records to return per page
+//	$4: offset - Number of records to skip for pagination
+//
+// Returns:
+//
+//	All withdrawal fields plus total_count of matching records
+//
+// Business Logic:
+//   - Only includes active withdrawals (deleted_at IS NULL)
+//   - Strict card number matching combined with optional search filters:
+//   - withdraw_amount (converted to text for searching)
+//   - withdraw_time (formatted as string for searching)
+//   - status
+//   - Orders by withdraw_time (newest first)
+//   - Provides pagination support with total_count
+//   - Useful for cardholder withdrawal history
 func (q *Queries) GetWithdrawsByCardNumber(ctx context.Context, arg GetWithdrawsByCardNumberParams) ([]*GetWithdrawsByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getWithdrawsByCardNumber,
 		arg.CardNumber,
@@ -1103,6 +1356,25 @@ type GetYearlyWithdrawStatusFailedRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetYearlyWithdrawStatusFailed: Retrieves yearly failed metrics for withdrawals
+// Purpose: Compare annual failedful withdrawal performance year-over-year
+// Parameters:
+//
+//	$1: current_year - The target year (includes this year and previous)
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	total_failed: Count of failedful withdrawals
+//	total_amount: Sum of failedful withdrawal amounts
+//
+// Business Logic:
+//   - Only includes failedful withdrawals (status = 'failed')
+//   - Compares current year with previous year
+//   - Zero-fills years with no withdrawal activity
+//   - Orders by year (newest first)
+//   - Useful for year-over-year cash flow analysis
+//   - Helps identify annual withdrawal patterns and liquidity trends
 func (q *Queries) GetYearlyWithdrawStatusFailed(ctx context.Context, dollar_1 int32) ([]*GetYearlyWithdrawStatusFailedRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyWithdrawStatusFailed, dollar_1)
 	if err != nil {
@@ -1192,6 +1464,26 @@ type GetYearlyWithdrawStatusFailedCardNumberRow struct {
 	TotalAmount int32  `json:"total_amount"`
 }
 
+// GetYearlyWithdrawStatusFailedCardNumber: Retrieves yearly failed metrics for withdrawals
+// Purpose: Compare annual failedful withdrawal performance year-over-year
+// Parameters:
+//
+//	$1: card_number  - filter by card_number
+//	$2: current_year - The target year (includes this year and previous)
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	total_failed: Count of failedful withdrawals
+//	total_amount: Sum of failedful withdrawal amounts
+//
+// Business Logic:
+//   - Only includes failedful withdrawals (status = 'failed')
+//   - Compares current year with previous year
+//   - Zero-fills years with no withdrawal activity
+//   - Orders by year (newest first)
+//   - Useful for year-over-year cash flow analysis
+//   - Helps identify annual withdrawal patterns and liquidity trends
 func (q *Queries) GetYearlyWithdrawStatusFailedCardNumber(ctx context.Context, arg GetYearlyWithdrawStatusFailedCardNumberParams) ([]*GetYearlyWithdrawStatusFailedCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyWithdrawStatusFailedCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -1275,6 +1567,25 @@ type GetYearlyWithdrawStatusSuccessRow struct {
 	TotalAmount  int32  `json:"total_amount"`
 }
 
+// GetYearlyWithdrawStatusSuccess: Retrieves yearly success metrics for withdrawals
+// Purpose: Compare annual successful withdrawal performance year-over-year
+// Parameters:
+//
+//	$1: current_year - The target year (includes this year and previous)
+//
+// Returns:
+//
+//	year: Year as text (e.g., '2023')
+//	total_success: Count of successful withdrawals
+//	total_amount: Sum of successful withdrawal amounts
+//
+// Business Logic:
+//   - Only includes successful withdrawals (status = 'success')
+//   - Compares current year with previous year
+//   - Zero-fills years with no withdrawal activity
+//   - Orders by year (newest first)
+//   - Useful for year-over-year cash flow analysis
+//   - Helps identify annual withdrawal patterns and liquidity trends
 func (q *Queries) GetYearlyWithdrawStatusSuccess(ctx context.Context, dollar_1 int32) ([]*GetYearlyWithdrawStatusSuccessRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyWithdrawStatusSuccess, dollar_1)
 	if err != nil {
@@ -1408,6 +1719,23 @@ type GetYearlyWithdrawsRow struct {
 	TotalWithdrawAmount int64  `json:"total_withdraw_amount"`
 }
 
+// GetYearlyWithdraws: Retrieves yearly withdrawal totals for a 5-year period
+// Purpose: Analyze long-term withdrawal trends
+// Parameters:
+//
+//	$1: current_year - The final year to include (includes this year and previous 4 years)
+//
+// Returns:
+//
+//	year: 4-digit year
+//	total_withdraw_amount: Sum of withdrawal amounts for that year
+//
+// Business Logic:
+//   - Covers a 5-year rolling window (current_year-4 to current_year)
+//   - Only includes active withdrawal records
+//   - Groups by calendar year
+//   - Orders results chronologically
+//   - Useful for identifying annual cash usage patterns
 func (q *Queries) GetYearlyWithdraws(ctx context.Context, dollar_1 interface{}) ([]*GetYearlyWithdrawsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyWithdraws, dollar_1)
 	if err != nil {
@@ -1458,6 +1786,25 @@ type GetYearlyWithdrawsByCardNumberRow struct {
 	TotalWithdrawAmount int64  `json:"total_withdraw_amount"`
 }
 
+// GetYearlyWithdrawsByCardNumber: Retrieves yearly withdrawals for a specific card
+// Purpose: Analyze long-term cash usage for individual cardholders
+// Parameters:
+//
+//	$1: card_number - The card number to filter withdrawals
+//	$2: current_year - The final year to include (5-year window)
+//
+// Returns:
+//
+//	year: 4-digit year
+//	total_withdraw_amount: Sum of withdrawals for that card by year
+//
+// Business Logic:
+//   - Covers 5-year period (current_year-4 to current_year)
+//   - Filters by specific card number
+//   - Only includes active withdrawals
+//   - Groups by calendar year
+//   - Orders chronologically
+//   - Useful for customer spending habit analysis
 func (q *Queries) GetYearlyWithdrawsByCardNumber(ctx context.Context, arg GetYearlyWithdrawsByCardNumberParams) ([]*GetYearlyWithdrawsByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyWithdrawsByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -1489,43 +1836,94 @@ WHERE
     deleted_at IS NOT NULL
 `
 
-// Restore All Trashed Withdraws
+// RestoreAllWithdraws: Recovers all trashed withdrawals
+// Purpose: Mass restoration of deleted withdrawals
+// Business Logic:
+//   - Clears deleted_at for all trashed withdrawals
+//   - Useful for system recovery scenarios
+//   - Should be used cautiously in production
+//   - Admin-level operation
 func (q *Queries) RestoreAllWithdraws(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, restoreAllWithdraws)
 	return err
 }
 
-const restoreWithdraw = `-- name: RestoreWithdraw :exec
+const restoreWithdraw = `-- name: RestoreWithdraw :one
 UPDATE withdraws
 SET
     deleted_at = NULL
 WHERE
     withdraw_id = $1
     AND deleted_at IS NOT NULL
+RETURNING withdraw_id, withdraw_no, card_number, withdraw_amount, withdraw_time, status, created_at, updated_at, deleted_at
 `
 
-// Restore Withdraw (Undelete)
-func (q *Queries) RestoreWithdraw(ctx context.Context, withdrawID int32) error {
-	_, err := q.db.ExecContext(ctx, restoreWithdraw, withdrawID)
-	return err
+// RestoreWithdraw: Recovers a soft-deleted withdrawal
+// Purpose: Reactivate a previously deleted withdrawal
+// Parameters:
+//
+//	$1: withdraw_id - ID of withdrawal to restore
+//
+// Business Logic:
+//   - Clears the deleted_at timestamp (sets to NULL)
+//   - Only works on currently trashed withdrawals
+//   - Used for data recovery purposes
+func (q *Queries) RestoreWithdraw(ctx context.Context, withdrawID int32) (*Withdraw, error) {
+	row := q.db.QueryRowContext(ctx, restoreWithdraw, withdrawID)
+	var i Withdraw
+	err := row.Scan(
+		&i.WithdrawID,
+		&i.WithdrawNo,
+		&i.CardNumber,
+		&i.WithdrawAmount,
+		&i.WithdrawTime,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }
 
-const trashWithdraw = `-- name: TrashWithdraw :exec
+const trashWithdraw = `-- name: TrashWithdraw :one
 UPDATE withdraws
 SET
     deleted_at = current_timestamp
 WHERE
     withdraw_id = $1
     AND deleted_at IS NULL
+RETURNING withdraw_id, withdraw_no, card_number, withdraw_amount, withdraw_time, status, created_at, updated_at, deleted_at
 `
 
-// Trash Withdraw (Soft Delete)
-func (q *Queries) TrashWithdraw(ctx context.Context, withdrawID int32) error {
-	_, err := q.db.ExecContext(ctx, trashWithdraw, withdrawID)
-	return err
+// TrashWithdraw: Soft-deletes a withdrawal record
+// Purpose: Remove withdrawal from active view without permanent deletion
+// Parameters:
+//
+//	$1: withdraw_id - ID of withdrawal to trash
+//
+// Business Logic:
+//   - Sets deleted_at timestamp to current time
+//   - Only affects active withdrawals
+//   - Preserves data for audit/recovery purposes
+//   - Withdrawal remains in database but hidden
+func (q *Queries) TrashWithdraw(ctx context.Context, withdrawID int32) (*Withdraw, error) {
+	row := q.db.QueryRowContext(ctx, trashWithdraw, withdrawID)
+	var i Withdraw
+	err := row.Scan(
+		&i.WithdrawID,
+		&i.WithdrawNo,
+		&i.CardNumber,
+		&i.WithdrawAmount,
+		&i.WithdrawTime,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }
 
-const updateWithdraw = `-- name: UpdateWithdraw :exec
+const updateWithdraw = `-- name: UpdateWithdraw :one
 UPDATE withdraws
 SET
     card_number = $2,
@@ -1535,6 +1933,7 @@ SET
 WHERE
     withdraw_id = $1
     AND deleted_at IS NULL
+RETURNING withdraw_id, withdraw_no, card_number, withdraw_amount, withdraw_time, status, created_at, updated_at, deleted_at
 `
 
 type UpdateWithdrawParams struct {
@@ -1544,18 +1943,43 @@ type UpdateWithdrawParams struct {
 	WithdrawTime   time.Time `json:"withdraw_time"`
 }
 
-// Update Withdraw
-func (q *Queries) UpdateWithdraw(ctx context.Context, arg UpdateWithdrawParams) error {
-	_, err := q.db.ExecContext(ctx, updateWithdraw,
+// UpdateWithdraw: Modifies withdrawal details
+// Purpose: Update withdrawal information
+// Parameters:
+//
+//	$1: withdraw_id - ID of withdrawal to update
+//	$2: card_number - Updated card number
+//	$3: withdraw_amount - Updated withdrawal amount
+//	$4: withdraw_time - Updated withdrawal timestamp
+//
+// Business Logic:
+//   - Only updates active withdrawals (non-deleted)
+//   - Updates modification timestamp automatically
+//   - Used for correcting withdrawal records
+//   - Requires original withdrawal record exists
+func (q *Queries) UpdateWithdraw(ctx context.Context, arg UpdateWithdrawParams) (*Withdraw, error) {
+	row := q.db.QueryRowContext(ctx, updateWithdraw,
 		arg.WithdrawID,
 		arg.CardNumber,
 		arg.WithdrawAmount,
 		arg.WithdrawTime,
 	)
-	return err
+	var i Withdraw
+	err := row.Scan(
+		&i.WithdrawID,
+		&i.WithdrawNo,
+		&i.CardNumber,
+		&i.WithdrawAmount,
+		&i.WithdrawTime,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }
 
-const updateWithdrawStatus = `-- name: UpdateWithdrawStatus :exec
+const updateWithdrawStatus = `-- name: UpdateWithdrawStatus :one
 UPDATE withdraws
 SET
     status = $2,
@@ -1563,6 +1987,7 @@ SET
 WHERE
     withdraw_id = $1
     AND deleted_at IS NULL
+RETURNING withdraw_id, withdraw_no, card_number, withdraw_amount, withdraw_time, status, created_at, updated_at, deleted_at
 `
 
 type UpdateWithdrawStatusParams struct {
@@ -1570,8 +1995,31 @@ type UpdateWithdrawStatusParams struct {
 	Status     string `json:"status"`
 }
 
-// Update Withdraw Status
-func (q *Queries) UpdateWithdrawStatus(ctx context.Context, arg UpdateWithdrawStatusParams) error {
-	_, err := q.db.ExecContext(ctx, updateWithdrawStatus, arg.WithdrawID, arg.Status)
-	return err
+// UpdateWithdrawStatus: Changes withdrawal status
+// Purpose: Update processing status of a withdrawal
+// Parameters:
+//
+//	$1: withdraw_id - ID of withdrawal to update
+//	$2: status - New status (e.g., 'completed', 'failed', 'pending')
+//
+// Business Logic:
+//   - Only updates active withdrawals
+//   - Updates modification timestamp
+//   - Used to reflect withdrawal processing outcomes
+//   - Important for reconciliation purposes
+func (q *Queries) UpdateWithdrawStatus(ctx context.Context, arg UpdateWithdrawStatusParams) (*Withdraw, error) {
+	row := q.db.QueryRowContext(ctx, updateWithdrawStatus, arg.WithdrawID, arg.Status)
+	var i Withdraw
+	err := row.Scan(
+		&i.WithdrawID,
+		&i.WithdrawNo,
+		&i.CardNumber,
+		&i.WithdrawAmount,
+		&i.WithdrawTime,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }

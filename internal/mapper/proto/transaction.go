@@ -3,6 +3,8 @@ package protomapper
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
+
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type transactionProtoMapper struct{}
@@ -150,6 +152,11 @@ func (m *transactionProtoMapper) mapResponsesTransaction(transactions []*respons
 }
 
 func (m *transactionProtoMapper) mapResponseTransactionDeleteAt(transaction *response.TransactionResponseDeleteAt) *pb.TransactionResponseDeleteAt {
+	var deletedAt *wrapperspb.StringValue
+	if transaction.DeletedAt != nil {
+		deletedAt = wrapperspb.String(*transaction.DeletedAt)
+	}
+
 	return &pb.TransactionResponseDeleteAt{
 		Id:              int32(transaction.ID),
 		TransactionNo:   transaction.TransactionNo,
@@ -160,7 +167,7 @@ func (m *transactionProtoMapper) mapResponseTransactionDeleteAt(transaction *res
 		MerchantId:      int32(transaction.MerchantID),
 		CreatedAt:       transaction.CreatedAt,
 		UpdatedAt:       transaction.UpdatedAt,
-		DeletedAt:       transaction.DeletedAt,
+		DeletedAt:       deletedAt,
 	}
 
 }

@@ -1,0 +1,1472 @@
+{
+	"info": {
+		"_postman_id": "d2cd2cd9-a65e-4a3e-a582-30bb5049b895",
+		"name": "Transaction",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12455638"
+	},
+	"item": [
+		{
+			"name": "By Card",
+			"item": [
+				{
+					"name": "Month Success by card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/monthly-success-by-card?year=2025&month=07&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"monthly-success-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "month",
+									"value": "07"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/monthly-success-by-card?year=2025&month=07&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Success by card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer YOUR_JWT_TOKEN"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/yearly-success-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"yearly-success-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/yearly-success-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month Failed by card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/monthly-failed-by-card?year=2025&month=07&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"monthly-failed-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "month",
+									"value": "07"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/monthly-failed-by-card?year=2025&month=07&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month Method By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/monthly-methods-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"monthly-methods-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/monthly-methods-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Year Method By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/yearly-methods-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"yearly-methods-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/yearly-methods-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month Amount By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/monthly-amounts-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"monthly-amounts-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/monthly-amounts-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Amount By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/yearly-amounts-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"yearly-amounts-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/yearly-amounts-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Failed by card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer YOUR_JWT_TOKEN"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/yearly-failed-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"yearly-failed-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/yearly-failed-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Sender",
+			"item": [
+				{
+					"name": "Find All Transaction",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions?page=1&page_size=10&search=test",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "test"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions?page=1&page_size=10&search=test\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Transaction By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/card-number/1234567890?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"card-number",
+								"1234567890"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/card-number/1234567890?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Transaction By id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Transaction By Merchant ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/merchant/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"merchant",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/merchant/456\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find All Active",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/active?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"active"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/active?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find All Trashed",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/trashed?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"trashed"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/trashed?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Create Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Api-Key",
+								"value": "ed0165e90780d797d0a99bdea765e3e5c75925d3322b9a5a623b4e8064d9d074"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"card_number\": \"1234567890\",\n    \"amount\": 50000,\n    \"payment_method\": \"credit_card\",\n    \"merchant_id\": 456,\n    \"transaction_time\": \"2025-07-15T14:30:00Z\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"create"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transactions/create\" \\\n  -H \"X-Api-Key: YOUR_MERCHANT_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"card_number\": \"1234567890\",\n    \"amount\": 50000,\n    \"payment_method\": \"credit_card\",\n    \"merchant_id\": 456,\n    \"transaction_time\": \"2025-07-15T14:30:00Z\"\n  }'\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Api-Key",
+								"value": "ed0165e90780d797d0a99bdea765e3e5c75925d3322b9a5a623b4e8064d9d074"
+							},
+							{
+								"key": "Content-Type",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transaction_id\": 123,\n    \"card_number\": \"1234567890\",\n    \"amount\": 75000,\n    \"payment_method\": \"credit_card\",\n    \"merchant_id\": 456,\n    \"transaction_time\": \"2025-07-15T14:30:00Z\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/update/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"update",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transactions/update/123\" \\\n  -H \"X-Api-Key: YOUR_MERCHANT_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"transaction_id\": 123,\n    \"card_number\": \"1234567890\",\n    \"amount\": 75000,\n    \"payment_method\": \"credit_card\",\n    \"merchant_id\": 456,\n    \"transaction_time\": \"2025-07-15T14:30:00Z\"\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/restore/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"restore",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transactions/restore/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Trash Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/trashed/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"trashed",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transactions/trashed/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Permanent Transaction",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/permanent/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"permanent",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X DELETE \"http://localhost:5000/api/transactions/permanent/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Restore All",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/restore/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"restore",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transactions/trashed/all\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete all Permanent",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/permanent/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"permanent",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transactions/permanent/all\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Receiver",
+			"item": [
+				{
+					"name": "Find All Transaction",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions?page=1&page_size=10&search=test",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "test"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions?page=1&page_size=10&search=test\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Transaction By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/card-number/1234567890?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"card-number",
+								"1234567890"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/card-number/1234567890?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Transaction By id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Transaction By Merchant ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/merchant/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"merchant",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/merchant/456\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find All Active",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/active?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"active"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/active?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find All Trashed",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/trashed?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"trashed"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/trashed?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Create Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Api-Key",
+								"value": "ed0165e90780d797d0a99bdea765e3e5c75925d3322b9a5a623b4e8064d9d074"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"card_number\": \"1234567890\",\n    \"amount\": 50000,\n    \"payment_method\": \"credit_card\",\n    \"merchant_id\": 456,\n    \"transaction_time\": \"2025-07-15T14:30:00Z\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"create"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transactions/create\" \\\n  -H \"X-Api-Key: YOUR_MERCHANT_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"card_number\": \"1234567890\",\n    \"amount\": 50000,\n    \"payment_method\": \"credit_card\",\n    \"merchant_id\": 456,\n    \"transaction_time\": \"2025-07-15T14:30:00Z\"\n  }'\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Api-Key",
+								"value": "ed0165e90780d797d0a99bdea765e3e5c75925d3322b9a5a623b4e8064d9d074"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transaction_id\": 123,\n    \"card_number\": \"1234567890\",\n    \"amount\": 75000,\n    \"payment_method\": \"credit_card\",\n    \"merchant_id\": 456,\n    \"transaction_time\": \"2025-07-15T14:30:00Z\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/update/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"update",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transactions/update/123\" \\\n  -H \"X-Api-Key: YOUR_MERCHANT_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"transaction_id\": 123,\n    \"card_number\": \"1234567890\",\n    \"amount\": 75000,\n    \"payment_method\": \"credit_card\",\n    \"merchant_id\": 456,\n    \"transaction_time\": \"2025-07-15T14:30:00Z\"\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/restore/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"restore",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transactions/restore/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Trash Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/trashed/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"trashed",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transactions/trashed/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Permanent Transaction",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/permanent/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"permanent",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X DELETE \"http://localhost:5000/api/transactions/permanent/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Restore All",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/restore/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"restore",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transactions/trashed/all\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete all Permanent",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/transactions/permanent/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"transactions",
+								"permanent",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/transactions/permanent/all\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Month Success",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/transactions/monthly-success?year=2025&month=07",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"transactions",
+						"monthly-success"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						},
+						{
+							"key": "month",
+							"value": "07"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/monthly-success?year=2025&month=07\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Success",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/transactions/yearly-success?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"transactions",
+						"yearly-success"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/yearly-success?year=2025\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		},
+		{
+			"name": "Month Failed",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/transactions/monthly-failed?year=2025&month=07",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"transactions",
+						"monthly-failed"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						},
+						{
+							"key": "month",
+							"value": "07"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/monthly-failed?year=2025&month=07\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Failed",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/transactions/yearly-failed?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"transactions",
+						"yearly-failed"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/yearly-failed?year=2025\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Payment Method",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/transactions/yearly-methods?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"transactions",
+						"yearly-methods"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/yearly-methods?year=2025\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		},
+		{
+			"name": "Month Payment Method",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/transactions/monthly-methods?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"transactions",
+						"monthly-methods"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/monthly-methods?year=2025\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		},
+		{
+			"name": "Month Amount",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/transactions/monthly-amounts?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"transactions",
+						"monthly-amounts"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/monthly-amounts?year=2025\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Amount",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/transactions/yearly-amounts?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"transactions",
+						"yearly-amounts"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/transactions/yearly-amounts?year=2025\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		}
+	]
+}

@@ -44,7 +44,7 @@ func (r *roleSeeder) Seed() error {
 		}
 
 		if i >= activeRoles {
-			err = r.db.TrashRole(r.ctx, role.RoleID)
+			_, err = r.db.TrashRole(r.ctx, role.RoleID)
 			if err != nil {
 				r.logger.Error("failed to trash role", zap.Int("role", i+1), zap.String("roleName", roleName), zap.Error(err))
 				return fmt.Errorf("failed to trash role %d (%s): %w", i+1, roleName, err)

@@ -86,6 +86,7 @@ func (h *userHandleApi) FindAllUser(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve user data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -113,6 +114,7 @@ func (h *userHandleApi) FindById(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid user ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -129,6 +131,7 @@ func (h *userHandleApi) FindById(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve user data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -177,6 +180,7 @@ func (h *userHandleApi) FindByActive(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve user data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -226,6 +230,7 @@ func (h *userHandleApi) FindByTrashed(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve user data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -254,6 +259,7 @@ func (h *userHandleApi) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid request body",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -262,6 +268,7 @@ func (h *userHandleApi) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -282,6 +289,7 @@ func (h *userHandleApi) Create(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to create user: ",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -297,12 +305,26 @@ func (h *userHandleApi) Create(c echo.Context) error {
 // @Description Update an existing user record with the provided details
 // @Accept json
 // @Produce json
+// @Param id path int true "User ID"
 // @Param UpdateUserRequest body requests.UpdateUserRequest true "Update user request"
 // @Success 200 {object} response.ApiResponseUser "Successfully updated user"
 // @Failure 400 {object} response.ErrorResponse "Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to update user"
 // @Router /api/user/update/{id} [post]
 func (h *userHandleApi) Update(c echo.Context) error {
+	id := c.Param("id")
+
+	idInt, err := strconv.Atoi(id)
+
+	if err != nil {
+		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Status:  "error",
+			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
+		})
+	}
+
 	var body requests.UpdateUserRequest
 
 	if err := c.Bind(&body); err != nil {
@@ -310,6 +332,7 @@ func (h *userHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid request body",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -318,13 +341,14 @@ func (h *userHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
 	ctx := c.Request().Context()
 
 	req := &pb.UpdateUserRequest{
-		Id:              int32(body.UserID),
+		Id:              int32(idInt),
 		Firstname:       body.FirstName,
 		Lastname:        body.LastName,
 		Email:           body.Email,
@@ -339,6 +363,7 @@ func (h *userHandleApi) Update(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update user: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -367,6 +392,7 @@ func (h *userHandleApi) TrashedUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid user ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -383,6 +409,7 @@ func (h *userHandleApi) TrashedUser(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to trashed user: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -411,6 +438,7 @@ func (h *userHandleApi) RestoreUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid user ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -427,6 +455,7 @@ func (h *userHandleApi) RestoreUser(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to restore user: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -455,6 +484,7 @@ func (h *userHandleApi) DeleteUserPermanent(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid user ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -471,6 +501,7 @@ func (h *userHandleApi) DeleteUserPermanent(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to delete user: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -501,6 +532,7 @@ func (h *userHandleApi) RestoreAllUser(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to permanently restore all user",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -534,6 +566,7 @@ func (h *userHandleApi) DeleteAllUserPermanent(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to permanently delete all user",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 

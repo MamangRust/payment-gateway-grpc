@@ -10,18 +10,6 @@ import (
 	"database/sql"
 )
 
-const countActiveUsers = `-- name: CountActiveUsers :one
-SELECT COUNT(*) FROM users WHERE deleted_at IS NULL
-`
-
-// Count All Active Users
-func (q *Queries) CountActiveUsers(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countActiveUsers)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const createUser = `-- name: CreateUser :one
 INSERT INTO
     users (
@@ -49,7 +37,20 @@ type CreateUserParams struct {
 	Password  string `json:"password"`
 }
 
-// Create User
+// CreateUser: Insert a new user into the users table
+// Purpose: Add a new user to the system.
+// Parameters:
+//
+//	$1: firstname - The first name of the user.
+//	$2: lastname - The last name of the user.
+//	$3: email - The email address of the user.
+//	$4: password - The password of the user (hashed).
+//
+// Returns:
+//   - The newly created user record.
+//
+// Business Logic:
+//   - Inserts a new user record into the `users` table with the current timestamp for `created_at` and `updated_at`.
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (*User, error) {
 	row := q.db.QueryRowContext(ctx, createUser,
 		arg.Firstname,
@@ -77,7 +78,10 @@ WHERE
     deleted_at IS NOT NULL
 `
 
-// Delete All Trashed Users Permanently
+// DeleteAllPermanentUsers: Permanently delete all trashed users
+// Purpose: Permanently delete all trashed user records from the database.
+// Business Logic:
+//   - Deletes all users who have been trashed (soft-deleted), i.e., where `deleted_at` is not NULL.
 func (q *Queries) DeleteAllPermanentUsers(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, deleteAllPermanentUsers)
 	return err
@@ -87,7 +91,15 @@ const deleteUserPermanently = `-- name: DeleteUserPermanently :exec
 DELETE FROM users WHERE user_id = $1 AND deleted_at IS NOT NULL
 `
 
-// Delete User Permanently
+// DeleteUserPermanently: Permanently delete a trashed user from the system
+// Purpose: Permanently delete a trashed user record.
+// Parameters:
+//
+//	$1: user_id - The ID of the trashed user to delete permanently.
+//
+// Business Logic:
+//   - Deletes the user record from the `users` table permanently.
+//   - Only deletes users who have been trashed (`deleted_at IS NOT NULL`).
 func (q *Queries) DeleteUserPermanently(ctx context.Context, userID int32) error {
 	_, err := q.db.ExecContext(ctx, deleteUserPermanently, userID)
 	return err
@@ -122,7 +134,23 @@ type GetActiveUsersWithPaginationRow struct {
 	TotalCount int64        `json:"total_count"`
 }
 
-// Get Active Users with Pagination and Total Count
+// GetActiveUsersWithPagination: Get Active Users with Pagination and Total Count
+// Purpose: Retrieve active (non-deleted) users with pagination and total count
+// Parameters:
+//
+//	$1: search_term - A search term to filter active users by firstname, lastname, or email
+//	$2: limit - The maximum number of active users to return per page
+//	$3: offset - The number of active users to skip (for pagination)
+//
+// Returns:
+//   - Active user records matching the search term, including firstname, lastname, and email
+//   - A total count of active users, including all pages (using COUNT(*) OVER())
+//
+// Business Logic:
+//   - Filters users where `deleted_at` is NULL (only active users).
+//   - Allows filtering by search term across firstname, lastname, or email.
+//   - Returns paginated active users, ordered by `created_at` in descending order.
+//   - The total count of active users is calculated, including those that are not currently on the current page.
 func (q *Queries) GetActiveUsersWithPagination(ctx context.Context, arg GetActiveUsersWithPaginationParams) ([]*GetActiveUsersWithPaginationRow, error) {
 	rows, err := q.db.QueryContext(ctx, getActiveUsersWithPagination, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -164,7 +192,18 @@ WHERE
     AND deleted_at IS NOT NULL
 `
 
-// Get Trashed By User ID
+// GetTrashedUserByID: Retrieve trashed user by their ID
+// Purpose: Fetch a trashed (soft-deleted) user based on their user_id.
+// Parameters:
+//
+//	$1: user_id - The ID of the trashed user to fetch.
+//
+// Returns:
+//   - User record matching the user_id where `deleted_at` is not NULL (indicating the user is trashed).
+//
+// Business Logic:
+//   - Filters the users table to find a trashed user based on their `user_id`.
+//   - Checks that `deleted_at` is NOT NULL to ensure the user is trashed.
 func (q *Queries) GetTrashedUserByID(ctx context.Context, userID int32) (*User, error) {
 	row := q.db.QueryRowContext(ctx, getTrashedUserByID, userID)
 	var i User
@@ -210,7 +249,23 @@ type GetTrashedUsersWithPaginationRow struct {
 	TotalCount int64        `json:"total_count"`
 }
 
-// Get Trashed Users with Pagination and Total Count
+// GetTrashedUsersWithPagination: Get Trashed Users with Pagination and Total Count
+// Purpose: Retrieve trashed (soft-deleted) users with pagination and total count
+// Parameters:
+//
+//	$1: search_term - A search term to filter trashed users by firstname, lastname, or email
+//	$2: limit - The maximum number of trashed users to return per page
+//	$3: offset - The number of trashed users to skip (for pagination)
+//
+// Returns:
+//   - Trashed user records matching the search term, including firstname, lastname, and email
+//   - A total count of trashed users, including all pages (using COUNT(*) OVER())
+//
+// Business Logic:
+//   - Filters users where `deleted_at` is NOT NULL (only trashed users).
+//   - Allows filtering by search term across firstname, lastname, or email.
+//   - Returns paginated trashed users, ordered by `created_at` in descending order.
+//   - The total count of trashed users is calculated, including those that are not currently on the current page.
 func (q *Queries) GetTrashedUsersWithPagination(ctx context.Context, arg GetTrashedUsersWithPaginationParams) ([]*GetTrashedUsersWithPaginationRow, error) {
 	rows, err := q.db.QueryContext(ctx, getTrashedUsersWithPagination, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -248,7 +303,18 @@ const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT user_id, firstname, lastname, email, password, created_at, updated_at, deleted_at FROM users WHERE email = $1 AND deleted_at IS NULL
 `
 
-// Get User by Email
+// GetUserByEmail: Retrieve a user by their email
+// Purpose: Fetch a specific user based on their email.
+// Parameters:
+//
+//	$1: email - The email of the user to fetch.
+//
+// Returns:
+//   - User record matching the provided email with `deleted_at` being NULL (active user).
+//
+// Business Logic:
+//   - Filters the users table by email to find a user.
+//   - Ensures that the `deleted_at` field is NULL, so only active users are returned.
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (*User, error) {
 	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
 	var i User
@@ -269,7 +335,18 @@ const getUserByID = `-- name: GetUserByID :one
 SELECT user_id, firstname, lastname, email, password, created_at, updated_at, deleted_at FROM users WHERE user_id = $1 AND deleted_at IS NULL
 `
 
-// Get User by ID
+// GetUserByID: Retrieve a user by their ID
+// Purpose: Fetch details of a specific user by their unique user_id.
+// Parameters:
+//
+//	$1: user_id - The ID of the user to fetch.
+//
+// Returns:
+//   - User record matching the user_id with the `deleted_at` column being NULL (indicating the user is active).
+//
+// Business Logic:
+//   - Filters the users table to find a user based on their `user_id`.
+//   - Ensures the user is active by checking that `deleted_at` is NULL.
 func (q *Queries) GetUserByID(ctx context.Context, userID int32) (*User, error) {
 	row := q.db.QueryRowContext(ctx, getUserByID, userID)
 	var i User
@@ -315,7 +392,22 @@ type GetUsersWithPaginationRow struct {
 	TotalCount int64        `json:"total_count"`
 }
 
-// Search Users with Pagination and Total Count
+// GetUsersWithPagination: Search Users with Pagination and Total Count
+// Purpose: Retrieve users with pagination and total count of users matching the search criteria
+// Parameters:
+//
+//	$1: search_term - A search term to filter users by firstname, lastname, or email
+//	$2: limit - The maximum number of users to return per page
+//	$3: offset - The number of users to skip (for pagination)
+//
+// Returns:
+//   - User records matching the search term, including firstname, lastname, and email
+//   - A total count of matching users, including all pages (using COUNT(*) OVER())
+//
+// Business Logic:
+//   - Filters users by search_term (if provided), allowing case-insensitive search.
+//   - Returns paginated results, ordered by `created_at` in descending order.
+//   - The total count includes the entire dataset, not limited by pagination.
 func (q *Queries) GetUsersWithPagination(ctx context.Context, arg GetUsersWithPaginationParams) ([]*GetUsersWithPaginationRow, error) {
 	rows, err := q.db.QueryContext(ctx, getUsersWithPagination, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -357,25 +449,51 @@ WHERE
     deleted_at IS NOT NULL
 `
 
-// Restore All Trashed Users
+// RestoreAllUsers: Restore all trashed users
+// Purpose: Restore all soft-deleted users by clearing their `deleted_at` field.
+// Business Logic:
+//   - Clears the `deleted_at` field for all trashed users, effectively restoring them.
 func (q *Queries) RestoreAllUsers(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, restoreAllUsers)
 	return err
 }
 
-const restoreUser = `-- name: RestoreUser :exec
+const restoreUser = `-- name: RestoreUser :one
 UPDATE users
 SET
     deleted_at = NULL
 WHERE
     user_id = $1
     AND deleted_at IS NOT NULL
+    RETURNING user_id, firstname, lastname, email, password, created_at, updated_at, deleted_at
 `
 
-// Restore Trashed User
-func (q *Queries) RestoreUser(ctx context.Context, userID int32) error {
-	_, err := q.db.ExecContext(ctx, restoreUser, userID)
-	return err
+// RestoreUser: Recovers a soft-deleted user
+// Purpose: Reactivate a previously deactivated user
+// Parameters:
+//
+//	$1: user_id - ID of user to restore
+//
+// Returns: The restored user record
+// Business Logic:
+//   - Nullifies the deleted_at field
+//   - Only works on previously deleted users
+//   - Restores full account access
+//   - Maintains all original user data
+func (q *Queries) RestoreUser(ctx context.Context, userID int32) (*User, error) {
+	row := q.db.QueryRowContext(ctx, restoreUser, userID)
+	var i User
+	err := row.Scan(
+		&i.UserID,
+		&i.Firstname,
+		&i.Lastname,
+		&i.Email,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }
 
 const searchUsersByEmail = `-- name: SearchUsersByEmail :many
@@ -387,7 +505,19 @@ WHERE
 ORDER BY created_at DESC
 `
 
-// Search Users by Email
+// SearchUsersByEmail: Search users by email with case-insensitive matching
+// Purpose: Allows searching for users whose email matches a given search term (case-insensitive).
+// Parameters:
+//
+//	$1: email_search_term - A partial or full email address to search for.
+//
+// Returns:
+//   - List of users whose emails match the search term.
+//   - The results are ordered by the `created_at` column in descending order.
+//
+// Business Logic:
+//   - Uses `ILIKE` to perform a case-insensitive search on the `email` column.
+//   - Only returns active users (`deleted_at IS NULL`).
 func (q *Queries) SearchUsersByEmail(ctx context.Context, dollar_1 sql.NullString) ([]*User, error) {
 	rows, err := q.db.QueryContext(ctx, searchUsersByEmail, dollar_1)
 	if err != nil {
@@ -420,22 +550,45 @@ func (q *Queries) SearchUsersByEmail(ctx context.Context, dollar_1 sql.NullStrin
 	return items, nil
 }
 
-const trashUser = `-- name: TrashUser :exec
+const trashUser = `-- name: TrashUser :one
 UPDATE users
 SET
     deleted_at = current_timestamp
 WHERE
     user_id = $1
     AND deleted_at IS NULL
+    RETURNING user_id, firstname, lastname, email, password, created_at, updated_at, deleted_at
 `
 
-// Trash User
-func (q *Queries) TrashUser(ctx context.Context, userID int32) error {
-	_, err := q.db.ExecContext(ctx, trashUser, userID)
-	return err
+// TrashUser: Soft-deletes a user account
+// Purpose: Deactivate user without permanent deletion
+// Parameters:
+//
+//	$1: user_id - ID of user to deactivate
+//
+// Returns: The soft-deleted user record
+// Business Logic:
+//   - Sets deleted_at timestamp to current time
+//   - Only processes currently active users
+//   - Preserves all user data for potential restoration
+//   - Prevents login while deleted
+func (q *Queries) TrashUser(ctx context.Context, userID int32) (*User, error) {
+	row := q.db.QueryRowContext(ctx, trashUser, userID)
+	var i User
+	err := row.Scan(
+		&i.UserID,
+		&i.Firstname,
+		&i.Lastname,
+		&i.Email,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }
 
-const updateUser = `-- name: UpdateUser :exec
+const updateUser = `-- name: UpdateUser :one
 UPDATE users
 SET
     firstname = $2,
@@ -446,6 +599,7 @@ SET
 WHERE
     user_id = $1
     AND deleted_at IS NULL
+    RETURNING user_id, firstname, lastname, email, password, created_at, updated_at, deleted_at
 `
 
 type UpdateUserParams struct {
@@ -456,14 +610,40 @@ type UpdateUserParams struct {
 	Password  string `json:"password"`
 }
 
-// Update User
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.db.ExecContext(ctx, updateUser,
+// UpdateUser: Modifies user account information
+// Purpose: Update user profile details
+// Parameters:
+//
+//	$1: user_id - ID of user to update
+//	$2: firstname - Updated first name
+//	$3: lastname - Updated last name
+//	$4: email - Updated email address
+//	$5: password - New hashed password (optional)
+//
+// Returns: Updated user record
+// Business Logic:
+//   - Auto-updates updated_at timestamp
+//   - Only modifies active (non-deleted) users
+//   - Validates email uniqueness
+//   - Password field optional (can maintain existing)
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (*User, error) {
+	row := q.db.QueryRowContext(ctx, updateUser,
 		arg.UserID,
 		arg.Firstname,
 		arg.Lastname,
 		arg.Email,
 		arg.Password,
 	)
-	return err
+	var i User
+	err := row.Scan(
+		&i.UserID,
+		&i.Firstname,
+		&i.Lastname,
+		&i.Email,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }

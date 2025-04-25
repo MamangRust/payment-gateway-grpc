@@ -149,6 +149,11 @@ func (t *topupResponseMapper) mapResponsesTopup(topups []*pb.TopupResponse) []*r
 }
 
 func (t *topupResponseMapper) mapResponseTopupDeleteAt(topup *pb.TopupResponseDeleteAt) *response.TopupResponseDeleteAt {
+	var deletedAt string
+	if topup.DeletedAt != nil {
+		deletedAt = topup.DeletedAt.Value
+	}
+
 	return &response.TopupResponseDeleteAt{
 		ID:          int(topup.Id),
 		CardNumber:  topup.CardNumber,
@@ -158,7 +163,7 @@ func (t *topupResponseMapper) mapResponseTopupDeleteAt(topup *pb.TopupResponseDe
 		TopupTime:   topup.TopupTime,
 		CreatedAt:   topup.CreatedAt,
 		UpdatedAt:   topup.UpdatedAt,
-		DeletedAt:   topup.DeletedAt,
+		DeletedAt:   &deletedAt,
 	}
 }
 

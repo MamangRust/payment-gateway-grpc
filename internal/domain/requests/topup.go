@@ -7,6 +7,40 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+type MonthTopupStatus struct {
+	Year  int `json:"year" validate:"required"`
+	Month int `json:"month" validate:"required"`
+}
+
+type MonthTopupStatusCardNumber struct {
+	CardNumber string `json:"card_number" validate:"required,min=1"`
+	Year       int    `json:"year" validate:"required"`
+	Month      int    `json:"month" validate:"required"`
+}
+
+type YearTopupStatusCardNumber struct {
+	CardNumber string `json:"card_number" validate:"required,min=1"`
+	Year       int    `json:"year" validate:"required"`
+}
+
+type YearMonthMethod struct {
+	CardNumber string `json:"card_number" validate:"required,min=1"`
+	Year       int    `json:"year" validate:"required"`
+}
+
+type FindAllTopups struct {
+	Search   string `json:"search" validate:"required"`
+	Page     int    `json:"page" validate:"min=1"`
+	PageSize int    `json:"page_size" validate:"min=1,max=100"`
+}
+
+type FindAllTopupsByCardNumber struct {
+	CardNumber string `json:"card_number" validate:"required,min=1"`
+	Search     string `json:"search" validate:"required"`
+	Page       int    `json:"page" validate:"min=1"`
+	PageSize   int    `json:"page_size" validate:"min=1,max=100"`
+}
+
 type CreateTopupRequest struct {
 	CardNumber  string `json:"card_number" validate:"required,min=1"`
 	TopupAmount int    `json:"topup_amount" validate:"required,min=50000"`
@@ -15,7 +49,7 @@ type CreateTopupRequest struct {
 
 type UpdateTopupRequest struct {
 	CardNumber  string `json:"card_number" validate:"required,min=1"`
-	TopupID     int    `json:"topup_id" validate:"required,min=1"`
+	TopupID     *int   `json:"topup_id"`
 	TopupAmount int    `json:"topup_amount" validate:"required,min=50000"`
 	TopupMethod string `json:"topup_method" validate:"required"`
 }
@@ -59,7 +93,7 @@ func (r *UpdateTopupRequest) Validate() error {
 		return err
 	}
 
-	if r.TopupID <= 0 {
+	if *r.TopupID <= 0 {
 		return errors.New("top-up ID must be a positive integer")
 	}
 

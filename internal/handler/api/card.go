@@ -125,6 +125,7 @@ func (h *cardHandleApi) FindAll(c echo.Context) error {
 			return c.JSON(http.StatusUnauthorized, response.ErrorResponse{
 				Status:  "error",
 				Message: "Unauthorized",
+				Code:    http.StatusUnauthorized,
 			})
 		}
 
@@ -132,6 +133,7 @@ func (h *cardHandleApi) FindAll(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch card records: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -159,6 +161,7 @@ func (h *cardHandleApi) FindById(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid card ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -175,6 +178,7 @@ func (h *cardHandleApi) FindById(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch card record: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -197,9 +201,10 @@ func (h *cardHandleApi) FindById(c echo.Context) error {
 func (h *cardHandleApi) FindByUserID(c echo.Context) error {
 	userID, ok := c.Get("user_id").(int32)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to parse UserID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -216,6 +221,7 @@ func (h *cardHandleApi) FindByUserID(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch card record: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -241,6 +247,7 @@ func (h *cardHandleApi) DashboardCard(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve dashboard card: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -269,6 +276,7 @@ func (h *cardHandleApi) DashboardCardCardNumber(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Card number is required",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -281,6 +289,7 @@ func (h *cardHandleApi) DashboardCardCardNumber(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve dashboard card for card number %s: %v", cardNumber, err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -308,6 +317,7 @@ func (h *cardHandleApi) FindMonthlyBalance(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -323,6 +333,7 @@ func (h *cardHandleApi) FindMonthlyBalance(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly balance: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -351,6 +362,7 @@ func (h *cardHandleApi) FindYearlyBalance(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -366,6 +378,7 @@ func (h *cardHandleApi) FindYearlyBalance(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly balance: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -394,6 +407,7 @@ func (h *cardHandleApi) FindMonthlyTopupAmount(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -408,6 +422,7 @@ func (h *cardHandleApi) FindMonthlyTopupAmount(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly topup amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -436,6 +451,7 @@ func (h *cardHandleApi) FindYearlyTopupAmount(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -450,6 +466,7 @@ func (h *cardHandleApi) FindYearlyTopupAmount(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly topup amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -478,6 +495,7 @@ func (h *cardHandleApi) FindMonthlyWithdrawAmount(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -492,6 +510,7 @@ func (h *cardHandleApi) FindMonthlyWithdrawAmount(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly withdraw amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -520,6 +539,7 @@ func (h *cardHandleApi) FindYearlyWithdrawAmount(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -534,6 +554,7 @@ func (h *cardHandleApi) FindYearlyWithdrawAmount(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly withdraw amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -562,6 +583,7 @@ func (h *cardHandleApi) FindMonthlyTransactionAmount(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -576,6 +598,7 @@ func (h *cardHandleApi) FindMonthlyTransactionAmount(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly transaction amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -604,6 +627,7 @@ func (h *cardHandleApi) FindYearlyTransactionAmount(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -618,6 +642,7 @@ func (h *cardHandleApi) FindYearlyTransactionAmount(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly transaction amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -646,6 +671,7 @@ func (h *cardHandleApi) FindMonthlyTransferSenderAmount(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -660,6 +686,7 @@ func (h *cardHandleApi) FindMonthlyTransferSenderAmount(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly transfer sender amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -688,6 +715,7 @@ func (h *cardHandleApi) FindYearlyTransferSenderAmount(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -702,6 +730,7 @@ func (h *cardHandleApi) FindYearlyTransferSenderAmount(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly transfer sender amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -730,6 +759,7 @@ func (h *cardHandleApi) FindMonthlyTransferReceiverAmount(c echo.Context) error 
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -744,6 +774,7 @@ func (h *cardHandleApi) FindMonthlyTransferReceiverAmount(c echo.Context) error 
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly transfer receiver amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -772,6 +803,7 @@ func (h *cardHandleApi) FindYearlyTransferReceiverAmount(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -786,6 +818,7 @@ func (h *cardHandleApi) FindYearlyTransferReceiverAmount(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly transfer receiver amount: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -815,6 +848,7 @@ func (h *cardHandleApi) FindMonthlyBalanceByCardNumber(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -823,6 +857,7 @@ func (h *cardHandleApi) FindMonthlyBalanceByCardNumber(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Card number is required",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -838,6 +873,7 @@ func (h *cardHandleApi) FindMonthlyBalanceByCardNumber(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly balance: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -867,6 +903,7 @@ func (h *cardHandleApi) FindYearlyBalanceByCardNumber(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -875,6 +912,7 @@ func (h *cardHandleApi) FindYearlyBalanceByCardNumber(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Card number is required",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -890,6 +928,7 @@ func (h *cardHandleApi) FindYearlyBalanceByCardNumber(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly balance: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -919,6 +958,7 @@ func (h *cardHandleApi) FindMonthlyTopupAmountByCardNumber(c echo.Context) error
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -927,6 +967,7 @@ func (h *cardHandleApi) FindMonthlyTopupAmountByCardNumber(c echo.Context) error
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Card number is required",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -942,6 +983,7 @@ func (h *cardHandleApi) FindMonthlyTopupAmountByCardNumber(c echo.Context) error
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly topup amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -971,6 +1013,7 @@ func (h *cardHandleApi) FindYearlyTopupAmountByCardNumber(c echo.Context) error 
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -980,6 +1023,7 @@ func (h *cardHandleApi) FindYearlyTopupAmountByCardNumber(c echo.Context) error 
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Card number is required",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -995,6 +1039,7 @@ func (h *cardHandleApi) FindYearlyTopupAmountByCardNumber(c echo.Context) error 
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly topup amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1023,6 +1068,7 @@ func (h *cardHandleApi) FindMonthlyWithdrawAmountByCardNumber(c echo.Context) er
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1031,6 +1077,7 @@ func (h *cardHandleApi) FindMonthlyWithdrawAmountByCardNumber(c echo.Context) er
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Card number is required",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1046,6 +1093,7 @@ func (h *cardHandleApi) FindMonthlyWithdrawAmountByCardNumber(c echo.Context) er
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly withdraw amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1075,6 +1123,7 @@ func (h *cardHandleApi) FindYearlyWithdrawAmountByCardNumber(c echo.Context) err
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1085,6 +1134,7 @@ func (h *cardHandleApi) FindYearlyWithdrawAmountByCardNumber(c echo.Context) err
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Card number is required",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1100,6 +1150,7 @@ func (h *cardHandleApi) FindYearlyWithdrawAmountByCardNumber(c echo.Context) err
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly withdraw amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1129,6 +1180,7 @@ func (h *cardHandleApi) FindMonthlyTransactionAmountByCardNumber(c echo.Context)
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1138,6 +1190,7 @@ func (h *cardHandleApi) FindMonthlyTransactionAmountByCardNumber(c echo.Context)
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Card number is required",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1153,6 +1206,7 @@ func (h *cardHandleApi) FindMonthlyTransactionAmountByCardNumber(c echo.Context)
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly transaction amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1182,6 +1236,7 @@ func (h *cardHandleApi) FindYearlyTransactionAmountByCardNumber(c echo.Context) 
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1191,6 +1246,7 @@ func (h *cardHandleApi) FindYearlyTransactionAmountByCardNumber(c echo.Context) 
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Card number is required",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1206,6 +1262,7 @@ func (h *cardHandleApi) FindYearlyTransactionAmountByCardNumber(c echo.Context) 
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly transaction amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1235,6 +1292,7 @@ func (h *cardHandleApi) FindMonthlyTransferSenderAmountByCardNumber(c echo.Conte
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1243,6 +1301,7 @@ func (h *cardHandleApi) FindMonthlyTransferSenderAmountByCardNumber(c echo.Conte
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Card number is required",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1258,6 +1317,7 @@ func (h *cardHandleApi) FindMonthlyTransferSenderAmountByCardNumber(c echo.Conte
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly transfer sender amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1288,6 +1348,7 @@ func (h *cardHandleApi) FindYearlyTransferSenderAmountByCardNumber(c echo.Contex
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1296,6 +1357,7 @@ func (h *cardHandleApi) FindYearlyTransferSenderAmountByCardNumber(c echo.Contex
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Card number is required",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1311,6 +1373,7 @@ func (h *cardHandleApi) FindYearlyTransferSenderAmountByCardNumber(c echo.Contex
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly transfer sender amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1341,6 +1404,7 @@ func (h *cardHandleApi) FindMonthlyTransferReceiverAmountByCardNumber(c echo.Con
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1350,6 +1414,7 @@ func (h *cardHandleApi) FindMonthlyTransferReceiverAmountByCardNumber(c echo.Con
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Card number is required",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1365,6 +1430,7 @@ func (h *cardHandleApi) FindMonthlyTransferReceiverAmountByCardNumber(c echo.Con
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve monthly transfer receiver amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1395,6 +1461,7 @@ func (h *cardHandleApi) FindYearlyTransferReceiverAmountByCardNumber(c echo.Cont
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year format",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1404,6 +1471,7 @@ func (h *cardHandleApi) FindYearlyTransferReceiverAmountByCardNumber(c echo.Cont
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Card number is required",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1419,6 +1487,7 @@ func (h *cardHandleApi) FindYearlyTransferReceiverAmountByCardNumber(c echo.Cont
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Failed to retrieve yearly transfer receiver amount by card number: %v", err),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1465,6 +1534,7 @@ func (h *cardHandleApi) FindByActive(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch card record: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1513,6 +1583,7 @@ func (h *cardHandleApi) FindByTrashed(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch card record: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1529,6 +1600,7 @@ func (h *cardHandleApi) FindByTrashed(c echo.Context) error {
 // @Produce json
 // @Param card_number path string true "Card number"
 // @Success 200 {object} response.ApiResponseCard "Card data"
+// @Failure 400 {object} response.ErrorResponse "Failed to fetch card record"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/{card_number} [get]
 func (h *cardHandleApi) FindByCardNumber(c echo.Context) error {
@@ -1547,6 +1619,7 @@ func (h *cardHandleApi) FindByCardNumber(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to fetch card record: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1574,6 +1647,7 @@ func (h *cardHandleApi) CreateCard(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1582,6 +1656,7 @@ func (h *cardHandleApi) CreateCard(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: ",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1602,6 +1677,7 @@ func (h *cardHandleApi) CreateCard(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to create card: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1632,6 +1708,7 @@ func (h *cardHandleApi) UpdateCard(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1642,6 +1719,7 @@ func (h *cardHandleApi) UpdateCard(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1650,6 +1728,7 @@ func (h *cardHandleApi) UpdateCard(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1671,6 +1750,7 @@ func (h *cardHandleApi) UpdateCard(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update card: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1700,6 +1780,7 @@ func (h *cardHandleApi) TrashedCard(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1716,6 +1797,7 @@ func (h *cardHandleApi) TrashedCard(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to trashed card: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1745,6 +1827,7 @@ func (h *cardHandleApi) RestoreCard(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1761,6 +1844,7 @@ func (h *cardHandleApi) RestoreCard(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to restore card: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1790,6 +1874,7 @@ func (h *cardHandleApi) DeleteCardPermanent(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1806,6 +1891,7 @@ func (h *cardHandleApi) DeleteCardPermanent(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to delete card: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1832,6 +1918,7 @@ func (h *cardHandleApi) RestoreAllCard(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to permanently restore all cards",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1861,6 +1948,7 @@ func (h *cardHandleApi) DeleteAllCardPermanent(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to permanently delete all cards",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 

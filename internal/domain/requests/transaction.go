@@ -8,6 +8,40 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+type MonthYearPaymentMethod struct {
+	CardNumber string `json:"card_number" validate:"required,min=1"`
+	Year       int    `json:"year" validate:"required"`
+}
+
+type MonthStatusTransaction struct {
+	Year  int `json:"year" validate:"required"`
+	Month int `json:"month" validate:"required"`
+}
+
+type YearStatusTransactionCardNumber struct {
+	CardNumber string `json:"card_number" validate:"required,min=1"`
+	Year       int    `json:"year" validate:"required"`
+}
+
+type MonthStatusTransactionCardNumber struct {
+	CardNumber string `json:"card_number" validate:"required,min=1"`
+	Year       int    `json:"year" validate:"required"`
+	Month      int    `json:"month" validate:"required"`
+}
+
+type FindAllTransactions struct {
+	Search   string `json:"search" validate:"required"`
+	Page     int    `json:"page" validate:"min=1"`
+	PageSize int    `json:"page_size" validate:"min=1,max=100"`
+}
+
+type FindAllTransactionCardNumber struct {
+	CardNumber string `json:"card_number" validate:"required,min=1"`
+	Search     string `json:"search" validate:"required"`
+	Page       int    `json:"page" validate:"min=1"`
+	PageSize   int    `json:"page_size" validate:"min=1,max=100"`
+}
+
 type CreateTransactionRequest struct {
 	CardNumber      string    `json:"card_number" validate:"required,min=1"`
 	Amount          int       `json:"amount" validate:"required,min=50000"`
@@ -17,7 +51,7 @@ type CreateTransactionRequest struct {
 }
 
 type UpdateTransactionRequest struct {
-	TransactionID   int       `json:"transaction_id" validate:"required,min=1"`
+	TransactionID   *int      `json:"transaction_id"`
 	CardNumber      string    `json:"card_number" validate:"required,min=1"`
 	Amount          int       `json:"amount" validate:"required,min=50000"`
 	PaymentMethod   string    `json:"payment_method" validate:"required"`

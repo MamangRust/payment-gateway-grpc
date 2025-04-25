@@ -5,6 +5,7 @@ import (
 	protomapper "MamangRust/paymentgatewaygrpc/internal/mapper/proto"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
 	"MamangRust/paymentgatewaygrpc/internal/service"
+	"MamangRust/paymentgatewaygrpc/pkg/errors_custom"
 	"context"
 	"math"
 
@@ -38,22 +39,32 @@ func (t *transactionHandleGrpc) FindAllTransaction(ctx context.Context, request 
 		pageSize = 10
 	}
 
-	transactions, totalRecords, err := t.transactionService.FindAll(page, pageSize, search)
-
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch transactions: " + err.Message,
-		})
+	reqService := requests.FindAllTransactions{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
 	}
 
-	totalPages := int(math.Ceil(float64(totalRecords) / float64(pageSize)))
+	transactions, totalRecords, err := t.transactionService.FindAll(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
+	}
+
+	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
 
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
 		TotalPages:   int32(totalPages),
-		TotalRecords: int32(totalRecords),
+		TotalRecords: int32(*totalRecords),
 	}
 	so := t.mapping.ToProtoResponsePaginationTransaction(paginationMeta, "", "", transactions)
 
@@ -72,46 +83,64 @@ func (t *transactionHandleGrpc) FindAllTransactionByCardNumber(ctx context.Conte
 	if pageSize <= 0 {
 		pageSize = 10
 	}
-
-	transactions, totalRecords, err := t.transactionService.FindAllByCardNumber(card_number, page, pageSize, search)
-
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch transactions: " + err.Message,
-		})
+	reqService := requests.FindAllTransactionCardNumber{
+		CardNumber: card_number,
+		Page:       page,
+		PageSize:   pageSize,
+		Search:     search,
 	}
 
-	totalPages := int(math.Ceil(float64(totalRecords) / float64(pageSize)))
+	transactions, totalRecords, err := t.transactionService.FindAllByCardNumber(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
+	}
+
+	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
 
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
 		TotalPages:   int32(totalPages),
-		TotalRecords: int32(totalRecords),
+		TotalRecords: int32(*totalRecords),
 	}
 	so := t.mapping.ToProtoResponsePaginationTransaction(paginationMeta, "", "", transactions)
 
 	return so, nil
 }
 
-func (t *transactionHandleGrpc) FindByIdTransaction(ctx context.Context, request *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransaction, error) {
-	if request.GetTransactionId() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-		})
+func (t *transactionHandleGrpc) FindByIdTransaction(ctx context.Context, req *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransaction, error) {
+	id := int(req.GetTransactionId())
+
+	if id == 0 {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_request",
+				Message: "Valid merchant ID is required",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	id := request.GetTransactionId()
-
-	transaction, err := t.transactionService.FindById(int(id))
+	transaction, err := t.transactionService.FindById(id)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch transaction: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransaction("success", "Transaction fetched successfully", transaction)
@@ -120,22 +149,46 @@ func (t *transactionHandleGrpc) FindByIdTransaction(ctx context.Context, request
 }
 
 func (s *transactionHandleGrpc) FindMonthlyTransactionStatusSuccess(ctx context.Context, req *pb.FindMonthlyTransactionStatus) (*pb.ApiResponseTransactionMonthStatusSuccess, error) {
-	if req.GetYear() <= 0 || req.GetMonth() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year or month",
-		})
+	year := int(req.GetYear())
+	month := int(req.GetMonth())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	year := req.GetYear()
-	month := req.GetMonth()
+	if month <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid month parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
 
-	records, errResponse := s.transactionService.FindMonthTransactionStatusSuccess(int(year), int(month))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly Transaction status success: " + errResponse.Message,
-		})
+	reqService := requests.MonthStatusTransaction{
+		Year:  year,
+		Month: month,
+	}
+
+	records, err := s.transactionService.FindMonthTransactionStatusSuccess(&reqService)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTransactionMonthStatusSuccess("success", "Successfully fetched monthly Transaction status success", records)
@@ -144,21 +197,29 @@ func (s *transactionHandleGrpc) FindMonthlyTransactionStatusSuccess(ctx context.
 }
 
 func (s *transactionHandleGrpc) FindYearlyTransactionStatusSuccess(ctx context.Context, req *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionYearStatusSuccess, error) {
-	if req.GetYear() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-		})
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	year := req.GetYear()
-
-	records, errResponse := s.transactionService.FindYearlyTransactionStatusSuccess(int(year))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly Transaction status success: " + errResponse.Message,
-		})
+	records, err := s.transactionService.FindYearlyTransactionStatusSuccess(year)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTransactionYearStatusSuccess("success", "Successfully fetched yearly Transaction status success", records)
@@ -167,22 +228,47 @@ func (s *transactionHandleGrpc) FindYearlyTransactionStatusSuccess(ctx context.C
 }
 
 func (s *transactionHandleGrpc) FindMonthlyTransactionStatusFailed(ctx context.Context, req *pb.FindMonthlyTransactionStatus) (*pb.ApiResponseTransactionMonthStatusFailed, error) {
-	if req.GetYear() <= 0 || req.GetMonth() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year or month",
-		})
+	year := int(req.GetYear())
+	month := int(req.GetMonth())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	year := req.GetYear()
-	month := req.GetMonth()
+	if month <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid month parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
 
-	records, errResponse := s.transactionService.FindMonthTransactionStatusFailed(int(year), int(month))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly Transaction status Failed: " + errResponse.Message,
-		})
+	reqService := requests.MonthStatusTransaction{
+		Year:  year,
+		Month: month,
+	}
+
+	records, err := s.transactionService.FindMonthTransactionStatusFailed(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTransactionMonthStatusFailed("success", "success fetched monthly Transaction status Failed", records)
@@ -191,21 +277,30 @@ func (s *transactionHandleGrpc) FindMonthlyTransactionStatusFailed(ctx context.C
 }
 
 func (s *transactionHandleGrpc) FindYearlyTransactionStatusFailed(ctx context.Context, req *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionYearStatusFailed, error) {
-	if req.GetYear() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-		})
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	year := req.GetYear()
+	records, err := s.transactionService.FindYearlyTransactionStatusFailed(year)
 
-	records, errResponse := s.transactionService.FindYearlyTransactionStatusFailed(int(year))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly Transaction status Failed: " + errResponse.Message,
-		})
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTransactionYearStatusFailed("success", "success fetched yearly Transaction status Failed", records)
@@ -214,23 +309,60 @@ func (s *transactionHandleGrpc) FindYearlyTransactionStatusFailed(ctx context.Co
 }
 
 func (s *transactionHandleGrpc) FindMonthlyTransactionStatusSuccessByCardNumber(ctx context.Context, req *pb.FindMonthlyTransactionStatusCardNumber) (*pb.ApiResponseTransactionMonthStatusSuccess, error) {
-	if req.GetYear() <= 0 || req.GetMonth() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year or month",
-		})
-	}
-
-	year := req.GetYear()
-	month := req.GetMonth()
+	year := int(req.GetYear())
+	month := int(req.GetMonth())
 	cardNumber := req.GetCardNumber()
 
-	records, errResponse := s.transactionService.FindMonthTransactionStatusSuccessByCardNumber(cardNumber, int(year), int(month))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly Transaction status success: " + errResponse.Message,
-		})
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if month <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid month parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.MonthStatusTransactionCardNumber{
+		CardNumber: cardNumber,
+		Year:       year,
+		Month:      month,
+	}
+
+	records, err := s.transactionService.FindMonthTransactionStatusSuccessByCardNumber(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTransactionMonthStatusSuccess("success", "Successfully fetched monthly Transaction status success", records)
@@ -239,22 +371,47 @@ func (s *transactionHandleGrpc) FindMonthlyTransactionStatusSuccessByCardNumber(
 }
 
 func (s *transactionHandleGrpc) FindYearlyTransactionStatusSuccessByCardNumber(ctx context.Context, req *pb.FindYearTransactionStatusCardNumber) (*pb.ApiResponseTransactionYearStatusSuccess, error) {
-	if req.GetYear() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-		})
-	}
-
-	year := req.GetYear()
+	year := int(req.GetYear())
 	cardNumber := req.GetCardNumber()
 
-	records, errResponse := s.transactionService.FindYearlyTransactionStatusSuccessByCardNumber(cardNumber, int(year))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly Transaction status success: " + errResponse.Message,
-		})
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.YearStatusTransactionCardNumber{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	records, err := s.transactionService.FindYearlyTransactionStatusSuccessByCardNumber(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTransactionYearStatusSuccess("success", "Successfully fetched yearly Transaction status success", records)
@@ -263,23 +420,60 @@ func (s *transactionHandleGrpc) FindYearlyTransactionStatusSuccessByCardNumber(c
 }
 
 func (s *transactionHandleGrpc) FindMonthlyTransactionStatusFailedByCardNumber(ctx context.Context, req *pb.FindMonthlyTransactionStatusCardNumber) (*pb.ApiResponseTransactionMonthStatusFailed, error) {
-	if req.GetYear() <= 0 || req.GetMonth() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year or month",
-		})
-	}
-
-	year := req.GetYear()
-	month := req.GetMonth()
+	year := int(req.GetYear())
+	month := int(req.GetMonth())
 	cardNumber := req.GetCardNumber()
 
-	records, errResponse := s.transactionService.FindMonthTransactionStatusFailedByCardNumber(cardNumber, int(year), int(month))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly Transaction status Failed: " + errResponse.Message,
-		})
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if month <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid month parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.MonthStatusTransactionCardNumber{
+		CardNumber: cardNumber,
+		Year:       year,
+		Month:      month,
+	}
+
+	records, err := s.transactionService.FindMonthTransactionStatusFailedByCardNumber(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTransactionMonthStatusFailed("success", "success fetched monthly Transaction status Failed", records)
@@ -288,22 +482,47 @@ func (s *transactionHandleGrpc) FindMonthlyTransactionStatusFailedByCardNumber(c
 }
 
 func (s *transactionHandleGrpc) FindYearlyTransactionStatusFailedByCardNumber(ctx context.Context, req *pb.FindYearTransactionStatusCardNumber) (*pb.ApiResponseTransactionYearStatusFailed, error) {
-	if req.GetYear() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-		})
-	}
-
-	year := req.GetYear()
+	year := int(req.GetYear())
 	cardNumber := req.GetCardNumber()
 
-	records, errResponse := s.transactionService.FindYearlyTransactionStatusFailedByCardNumber(cardNumber, int(year))
-	if errResponse != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly Transaction status Failed: " + errResponse.Message,
-		})
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.YearStatusTransactionCardNumber{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	records, err := s.transactionService.FindYearlyTransactionStatusFailedByCardNumber(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := s.mapping.ToProtoResponseTransactionYearStatusFailed("success", "success fetched yearly Transaction status Failed", records)
@@ -312,13 +531,30 @@ func (s *transactionHandleGrpc) FindYearlyTransactionStatusFailedByCardNumber(ct
 }
 
 func (t *transactionHandleGrpc) FindMonthlyPaymentMethods(ctx context.Context, req *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionMonthMethod, error) {
-	methods, err := t.transactionService.FindMonthlyPaymentMethods(int(req.GetYear()))
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	methods, err := t.transactionService.FindMonthlyPaymentMethods(year)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly payment methods: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransactionMonthMethod("success", "Successfully fetched monthly payment methods", methods)
@@ -327,13 +563,30 @@ func (t *transactionHandleGrpc) FindMonthlyPaymentMethods(ctx context.Context, r
 }
 
 func (t *transactionHandleGrpc) FindYearlyPaymentMethods(ctx context.Context, req *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionYearMethod, error) {
-	methods, err := t.transactionService.FindYearlyPaymentMethods(int(req.GetYear()))
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	methods, err := t.transactionService.FindYearlyPaymentMethods(year)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly payment methods: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransactionYearMethod("success", "Successfully fetched yearly payment methods", methods)
@@ -342,13 +595,30 @@ func (t *transactionHandleGrpc) FindYearlyPaymentMethods(ctx context.Context, re
 }
 
 func (t *transactionHandleGrpc) FindMonthlyAmounts(ctx context.Context, req *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionMonthAmount, error) {
-	amounts, err := t.transactionService.FindMonthlyAmounts(int(req.GetYear()))
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	amounts, err := t.transactionService.FindMonthlyAmounts(year)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly amounts: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransactionMonthAmount("success", "Successfully fetched monthly amounts", amounts)
@@ -357,13 +627,30 @@ func (t *transactionHandleGrpc) FindMonthlyAmounts(ctx context.Context, req *pb.
 }
 
 func (t *transactionHandleGrpc) FindYearlyAmounts(ctx context.Context, req *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionYearAmount, error) {
-	amounts, err := t.transactionService.FindYearlyAmounts(int(req.GetYear()))
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	amounts, err := t.transactionService.FindYearlyAmounts(year)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly amounts: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransactionYearAmount("success", "Successfully fetched yearly amounts", amounts)
@@ -372,13 +659,46 @@ func (t *transactionHandleGrpc) FindYearlyAmounts(ctx context.Context, req *pb.F
 }
 
 func (t *transactionHandleGrpc) FindMonthlyPaymentMethodsByCardNumber(ctx context.Context, req *pb.FindByYearCardNumberTransactionRequest) (*pb.ApiResponseTransactionMonthMethod, error) {
-	methods, err := t.transactionService.FindMonthlyPaymentMethodsByCardNumber(req.GetCardNumber(), int(req.GetYear()))
+	year := int(req.GetYear())
+	cardNumber := req.GetCardNumber()
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.MonthYearPaymentMethod{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	methods, err := t.transactionService.FindMonthlyPaymentMethodsByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly payment methods by card number: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransactionMonthMethod("success", "Successfully fetched monthly payment methods by card number", methods)
@@ -387,13 +707,46 @@ func (t *transactionHandleGrpc) FindMonthlyPaymentMethodsByCardNumber(ctx contex
 }
 
 func (t *transactionHandleGrpc) FindYearlyPaymentMethodsByCardNumber(ctx context.Context, req *pb.FindByYearCardNumberTransactionRequest) (*pb.ApiResponseTransactionYearMethod, error) {
-	methods, err := t.transactionService.FindYearlyPaymentMethodsByCardNumber(req.GetCardNumber(), int(req.GetYear()))
+	year := int(req.GetYear())
+	cardNumber := req.GetCardNumber()
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.MonthYearPaymentMethod{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	methods, err := t.transactionService.FindYearlyPaymentMethodsByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly payment methods by card number: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransactionYearMethod("success", "Successfully fetched yearly payment methods by card number", methods)
@@ -402,13 +755,47 @@ func (t *transactionHandleGrpc) FindYearlyPaymentMethodsByCardNumber(ctx context
 }
 
 func (t *transactionHandleGrpc) FindMonthlyAmountsByCardNumber(ctx context.Context, req *pb.FindByYearCardNumberTransactionRequest) (*pb.ApiResponseTransactionMonthAmount, error) {
-	amounts, err := t.transactionService.FindMonthlyAmountsByCardNumber(req.GetCardNumber(), int(req.GetYear()))
+	year := int(req.GetYear())
+	cardNumber := req.GetCardNumber()
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.MonthYearPaymentMethod{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	amounts, err := t.transactionService.FindMonthlyAmountsByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly amounts by card number: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransactionMonthAmount("success", "Successfully fetched monthly amounts by card number", amounts)
@@ -417,7 +804,37 @@ func (t *transactionHandleGrpc) FindMonthlyAmountsByCardNumber(ctx context.Conte
 }
 
 func (t *transactionHandleGrpc) FindYearlyAmountsByCardNumber(ctx context.Context, req *pb.FindByYearCardNumberTransactionRequest) (*pb.ApiResponseTransactionYearAmount, error) {
-	amounts, err := t.transactionService.FindYearlyAmountsByCardNumber(req.GetCardNumber(), int(req.GetYear()))
+	year := int(req.GetYear())
+	cardNumber := req.GetCardNumber()
+
+	if year <= 0 {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid year parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	if cardNumber == "" {
+		return nil, status.Errorf(
+			codes.Code(codes.InvalidArgument),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_input",
+				Message: "Invalid card_number parameter",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
+	reqService := requests.MonthYearPaymentMethod{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	amounts, err := t.transactionService.FindYearlyAmountsByCardNumber(&reqService)
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
@@ -431,23 +848,31 @@ func (t *transactionHandleGrpc) FindYearlyAmountsByCardNumber(ctx context.Contex
 	return so, nil
 }
 
-func (t *transactionHandleGrpc) FindTransactionByMerchantIdRequest(ctx context.Context, request *pb.FindTransactionByMerchantIdRequest) (*pb.ApiResponseTransactions, error) {
-	if request.GetMerchantId() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-		})
+func (t *transactionHandleGrpc) FindTransactionByMerchantIdRequest(ctx context.Context, req *pb.FindTransactionByMerchantIdRequest) (*pb.ApiResponseTransactions, error) {
+	id := int(req.GetMerchantId())
+
+	if id == 0 {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "invalid_request",
+				Message: "Valid merchant ID is required",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	merchantId := request.GetMerchantId()
-
-	transactions, err := t.transactionService.FindTransactionByMerchantId(int(merchantId))
+	transactions, err := t.transactionService.FindTransactionByMerchantId(id)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch transactions: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransactions("success", "Successfully fetch transactions", transactions)
@@ -467,22 +892,32 @@ func (t *transactionHandleGrpc) FindByActiveTransaction(ctx context.Context, req
 		pageSize = 10
 	}
 
-	transactions, totalRecords, err := t.transactionService.FindByActive(page, pageSize, search)
-
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch transactions: " + err.Message,
-		})
+	reqService := requests.FindAllTransactions{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
 	}
 
-	totalPages := int(math.Ceil(float64(totalRecords) / float64(pageSize)))
+	transactions, totalRecords, err := t.transactionService.FindByActive(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
+	}
+
+	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
 
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
 		TotalPages:   int32(totalPages),
-		TotalRecords: int32(totalRecords),
+		TotalRecords: int32(*totalRecords),
 	}
 	so := t.mapping.ToProtoResponsePaginationTransactionDeleteAt(paginationMeta, "success", "Successfully fetch transactions", transactions)
 
@@ -501,22 +936,32 @@ func (t *transactionHandleGrpc) FindByTrashedTransaction(ctx context.Context, re
 		pageSize = 10
 	}
 
-	transactions, totalRecords, err := t.transactionService.FindByTrashed(page, pageSize, search)
-
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch transactions: " + err.Message,
-		})
+	reqService := requests.FindAllTransactions{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
 	}
 
-	totalPages := int(math.Ceil(float64(totalRecords) / float64(pageSize)))
+	transactions, totalRecords, err := t.transactionService.FindByTrashed(&reqService)
+
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
+	}
+
+	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
 
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
 		TotalPages:   int32(totalPages),
-		TotalRecords: int32(totalRecords),
+		TotalRecords: int32(*totalRecords),
 	}
 	so := t.mapping.ToProtoResponsePaginationTransactionDeleteAt(paginationMeta, "success", "Successfully fetch transactions", transactions)
 
@@ -535,12 +980,27 @@ func (t *transactionHandleGrpc) CreateTransaction(ctx context.Context, request *
 		TransactionTime: transactionTime,
 	}
 
+	if err := req.Validate(); err != nil {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "validation_error",
+				Message: "Unable to create new merchant. Please check your input.",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
+
 	res, err := t.transactionService.Create(request.ApiKey, &req)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to create transaction: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransaction("success", "Successfully created transaction", res)
@@ -549,18 +1009,23 @@ func (t *transactionHandleGrpc) CreateTransaction(ctx context.Context, request *
 }
 
 func (t *transactionHandleGrpc) UpdateTransaction(ctx context.Context, request *pb.UpdateTransactionRequest) (*pb.ApiResponseTransaction, error) {
-	if request.GetTransactionId() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-		})
-	}
+	id := int(request.GetTransactionId())
 
+	if id == 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "validation_error",
+				Message: "Merchant ID parameter cannot be empty and must be a positive number",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
+	}
 	transactionTime := request.GetTransactionTime().AsTime()
 	merchantID := int(request.GetMerchantId())
 
 	req := requests.UpdateTransactionRequest{
-		TransactionID:   int(request.GetTransactionId()),
+		TransactionID:   &id,
 		CardNumber:      request.GetCardNumber(),
 		Amount:          int(request.GetAmount()),
 		PaymentMethod:   request.GetPaymentMethod(),
@@ -570,10 +1035,14 @@ func (t *transactionHandleGrpc) UpdateTransaction(ctx context.Context, request *
 
 	res, err := t.transactionService.Update(request.ApiKey, &req)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to update transaction: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransaction("success", "Successfully updated transaction", res)
@@ -582,20 +1051,30 @@ func (t *transactionHandleGrpc) UpdateTransaction(ctx context.Context, request *
 }
 
 func (t *transactionHandleGrpc) TrashedTransaction(ctx context.Context, request *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransaction, error) {
-	if request.GetTransactionId() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-		})
+	id := int(request.GetTransactionId())
+
+	if id == 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "validation_error",
+				Message: "Merchant ID parameter cannot be empty and must be a positive number",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
 	res, err := t.transactionService.TrashedTransaction(int(request.GetTransactionId()))
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch transaction: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransaction("success", "Successfully trashed transaction", res)
@@ -604,20 +1083,30 @@ func (t *transactionHandleGrpc) TrashedTransaction(ctx context.Context, request 
 }
 
 func (t *transactionHandleGrpc) RestoreTransaction(ctx context.Context, request *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransaction, error) {
-	if request.GetTransactionId() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-		})
+	id := int(request.GetTransactionId())
+
+	if id == 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "validation_error",
+				Message: "Merchant ID parameter cannot be empty and must be a positive number",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	res, err := t.transactionService.RestoreTransaction(int(request.GetTransactionId()))
+	res, err := t.transactionService.RestoreTransaction(id)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch transaction: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransaction("success", "Successfully restored transaction", res)
@@ -626,20 +1115,30 @@ func (t *transactionHandleGrpc) RestoreTransaction(ctx context.Context, request 
 }
 
 func (t *transactionHandleGrpc) DeleteTransaction(ctx context.Context, request *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransactionDelete, error) {
-	if request.GetTransactionId() <= 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-		})
+	id := int(request.GetTransactionId())
+
+	if id == 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  "validation_error",
+				Message: "Merchant ID parameter cannot be empty and must be a positive number",
+				Code:    int32(codes.InvalidArgument),
+			}),
+		)
 	}
 
-	_, err := t.transactionService.DeleteTransactionPermanent(int(request.GetTransactionId()))
+	_, err := t.transactionService.DeleteTransactionPermanent(id)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch transaction: " + err.Message,
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransactionDelete("success", "Successfully deleted transaction")
@@ -652,10 +1151,14 @@ func (t *transactionHandleGrpc) RestoreAllTransaction(ctx context.Context, _ *em
 	_, err := t.transactionService.RestoreAllTransaction()
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to restore all transaction: ",
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransactionAll("success", "Successfully restore all transaction")
@@ -667,10 +1170,14 @@ func (t *transactionHandleGrpc) DeleteAllMerchantPermanent(ctx context.Context, 
 	_, err := t.transactionService.DeleteAllTransactionPermanent()
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to delete transaction permanent: ",
-		})
+		return nil, status.Errorf(
+			codes.Code(err.Code),
+			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
+				Status:  err.Status,
+				Message: err.Message,
+				Code:    int32(err.Code),
+			}),
+		)
 	}
 
 	so := t.mapping.ToProtoResponseTransactionAll("success", "Successfully delete transaction permanent")

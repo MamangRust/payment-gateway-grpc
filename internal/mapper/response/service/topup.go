@@ -45,12 +45,7 @@ func (s *topupResponseMapper) ToTopupResponseDeleteAt(topup *record.TopupRecord)
 		TopupTime:   topup.TopupTime,
 		CreatedAt:   topup.CreatedAt,
 		UpdatedAt:   topup.UpdatedAt,
-		DeletedAt: func() string {
-			if topup.DeletedAt != nil {
-				return *topup.DeletedAt
-			}
-			return ""
-		}(),
+		DeletedAt:   topup.DeletedAt,
 	}
 }
 

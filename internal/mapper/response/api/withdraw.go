@@ -131,6 +131,11 @@ func (w *withdrawResponseMapper) mapResponsesWithdrawal(withdraws []*pb.Withdraw
 }
 
 func (w *withdrawResponseMapper) mapResponseWithdrawalDeleteAt(withdraw *pb.WithdrawResponseDeleteAt) *response.WithdrawResponseDeleteAt {
+	var deletedAt string
+	if withdraw.DeletedAt != nil {
+		deletedAt = withdraw.DeletedAt.Value
+	}
+
 	return &response.WithdrawResponseDeleteAt{
 		ID:             int(withdraw.WithdrawId),
 		WithdrawNo:     withdraw.WithdrawNo,
@@ -139,7 +144,7 @@ func (w *withdrawResponseMapper) mapResponseWithdrawalDeleteAt(withdraw *pb.With
 		WithdrawTime:   withdraw.WithdrawTime,
 		CreatedAt:      withdraw.CreatedAt,
 		UpdatedAt:      withdraw.UpdatedAt,
-		DeletedAt:      withdraw.DeletedAt,
+		DeletedAt:      &deletedAt,
 	}
 }
 

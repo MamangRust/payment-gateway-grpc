@@ -115,6 +115,11 @@ func (s *saldoResponse) mapResponsesSaldo(saldos []*pb.SaldoResponse) []*respons
 }
 
 func (s *saldoResponse) mapResponseSaldoDeleteAt(saldo *pb.SaldoResponseDeleteAt) *response.SaldoResponseDeleteAt {
+	var deletedAt string
+	if saldo.DeletedAt != nil {
+		deletedAt = saldo.DeletedAt.Value
+	}
+
 	return &response.SaldoResponseDeleteAt{
 		ID:             int(saldo.SaldoId),
 		CardNumber:     saldo.CardNumber,
@@ -123,7 +128,7 @@ func (s *saldoResponse) mapResponseSaldoDeleteAt(saldo *pb.SaldoResponseDeleteAt
 		WithdrawAmount: int(saldo.WithdrawAmount),
 		CreatedAt:      saldo.CreatedAt,
 		UpdatedAt:      saldo.UpdatedAt,
-		DeletedAt:      saldo.DeletedAt,
+		DeletedAt:      &deletedAt,
 	}
 }
 

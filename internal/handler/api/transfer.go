@@ -108,6 +108,7 @@ func (h *transferHandleApi) FindAll(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transfer data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -138,6 +139,7 @@ func (h *transferHandleApi) FindById(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 
 	}
@@ -154,6 +156,7 @@ func (h *transferHandleApi) FindById(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transfer data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -184,6 +187,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusSuccess(c echo.Context) err
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -192,6 +196,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusSuccess(c echo.Context) err
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid month",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -208,6 +213,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusSuccess(c echo.Context) err
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly Transfer status success: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -236,6 +242,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusSuccess(c echo.Context) erro
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -251,6 +258,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusSuccess(c echo.Context) erro
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly Transfer status success: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -281,6 +289,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusFailed(c echo.Context) erro
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -289,6 +298,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusFailed(c echo.Context) erro
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid month",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -305,6 +315,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusFailed(c echo.Context) erro
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly Transfer status Failed: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -333,6 +344,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusFailed(c echo.Context) error
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -348,6 +360,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusFailed(c echo.Context) error
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly Transfer status Failed: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -379,6 +392,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusSuccessByCardNumber(c echo.
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -387,6 +401,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusSuccessByCardNumber(c echo.
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid month",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -404,6 +419,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusSuccessByCardNumber(c echo.
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly Transfer status success: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -434,6 +450,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusSuccessByCardNumber(c echo.C
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -450,6 +467,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusSuccessByCardNumber(c echo.C
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly Transfer status success: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -482,6 +500,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusFailedByCardNumber(c echo.C
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -490,6 +509,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusFailedByCardNumber(c echo.C
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid month",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -507,6 +527,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusFailedByCardNumber(c echo.C
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly Transfer status Failed: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -537,6 +558,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusFailedByCardNumber(c echo.Co
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid year",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -553,6 +575,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusFailedByCardNumber(c echo.Co
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly Transfer status Failed: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -581,6 +604,7 @@ func (h *transferHandleApi) FindMonthlyTransferAmounts(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -594,6 +618,7 @@ func (h *transferHandleApi) FindMonthlyTransferAmounts(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly transfer amounts",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -622,6 +647,7 @@ func (h *transferHandleApi) FindYearlyTransferAmounts(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -635,6 +661,7 @@ func (h *transferHandleApi) FindYearlyTransferAmounts(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly transfer amounts",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -665,6 +692,7 @@ func (h *transferHandleApi) FindMonthlyTransferAmountsBySenderCardNumber(c echo.
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -679,6 +707,7 @@ func (h *transferHandleApi) FindMonthlyTransferAmountsBySenderCardNumber(c echo.
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly transfer amounts by sender card number",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -709,6 +738,7 @@ func (h *transferHandleApi) FindMonthlyTransferAmountsByReceiverCardNumber(c ech
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -723,6 +753,7 @@ func (h *transferHandleApi) FindMonthlyTransferAmountsByReceiverCardNumber(c ech
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve monthly transfer amounts by receiver card number",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -753,6 +784,7 @@ func (h *transferHandleApi) FindYearlyTransferAmountsBySenderCardNumber(c echo.C
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -767,6 +799,7 @@ func (h *transferHandleApi) FindYearlyTransferAmountsBySenderCardNumber(c echo.C
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly transfer amounts by sender card number",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -799,6 +832,7 @@ func (h *transferHandleApi) FindYearlyTransferAmountsByReceiverCardNumber(c echo
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid year parameter",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -813,6 +847,7 @@ func (h *transferHandleApi) FindYearlyTransferAmountsByReceiverCardNumber(c echo
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve yearly transfer amounts by receiver card number",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -846,6 +881,7 @@ func (h *transferHandleApi) FindByTransferByTransferFrom(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transfer data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -879,6 +915,7 @@ func (h *transferHandleApi) FindByTransferByTransferTo(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transfer data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -929,6 +966,7 @@ func (h *transferHandleApi) FindByActiveTransfer(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transfer data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -978,6 +1016,7 @@ func (h *transferHandleApi) FindByTrashedTransfer(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to retrieve transfer data: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1006,6 +1045,7 @@ func (h *transferHandleApi) CreateTransfer(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid request body",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1015,6 +1055,7 @@ func (h *transferHandleApi) CreateTransfer(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1032,6 +1073,7 @@ func (h *transferHandleApi) CreateTransfer(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to create transfer: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1062,6 +1104,7 @@ func (h *transferHandleApi) UpdateTransfer(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1073,6 +1116,7 @@ func (h *transferHandleApi) UpdateTransfer(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Invalid request body",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1082,6 +1126,7 @@ func (h *transferHandleApi) UpdateTransfer(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1100,6 +1145,7 @@ func (h *transferHandleApi) UpdateTransfer(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to update transfer: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1130,6 +1176,7 @@ func (h *transferHandleApi) TrashTransfer(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 
 	}
@@ -1146,6 +1193,7 @@ func (h *transferHandleApi) TrashTransfer(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to trash transfer:",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1176,6 +1224,7 @@ func (h *transferHandleApi) RestoreTransfer(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1191,6 +1240,7 @@ func (h *transferHandleApi) RestoreTransfer(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to restore transfer:",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1221,6 +1271,7 @@ func (h *transferHandleApi) DeleteTransferPermanent(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid ID",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -1234,6 +1285,7 @@ func (h *transferHandleApi) DeleteTransferPermanent(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to delete transfer:",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1262,6 +1314,7 @@ func (h *transferHandleApi) RestoreAllTransfer(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to permanently restore all transfer",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -1294,6 +1347,7 @@ func (h *transferHandleApi) DeleteAllTransferPermanent(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to permanently delete all transfer",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 

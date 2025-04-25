@@ -67,7 +67,7 @@ func RunClient() {
 	e.Use(limiter.Limit)
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:1420"},
+		AllowOrigins: []string{"http://localhost:1420", "http://localhost:33451"},
 		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions},
 		AllowHeaders: []string{
 			echo.HeaderOrigin,

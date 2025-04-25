@@ -91,7 +91,7 @@ func (r *transactionSeeder) Seed() error {
 			return fmt.Errorf("failed to seed transaction %d: %w", i+1, err)
 		}
 
-		err = r.db.UpdateTransactionStatus(r.ctx, db.UpdateTransactionStatusParams{
+		_, err = r.db.UpdateTransactionStatus(r.ctx, db.UpdateTransactionStatusParams{
 			TransactionID: transaction.TransactionID,
 			Status:        status,
 		})
@@ -102,7 +102,7 @@ func (r *transactionSeeder) Seed() error {
 		}
 
 		if i < 20 {
-			err = r.db.TrashTransaction(r.ctx, transaction.TransactionID)
+			_, err = r.db.TrashTransaction(r.ctx, transaction.TransactionID)
 			if err != nil {
 				r.logger.Error("failed to trash transaction", zap.Int("transaction", i+1), zap.Error(err))
 				return fmt.Errorf("failed to trash transaction %d: %w", i+1, err)

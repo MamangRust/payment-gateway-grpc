@@ -552,7 +552,7 @@ curl -X GET "http://0.0.0.0:5000/api/saldo" \
 
 ```sh
 curl -X GET "http://0.0.0.0:5000/api/saldo/2" \
--H "Authorization: Bearer <YOUR_BEARER_TOKEN>" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMSIsImF1ZCI6WyJhY2Nlc3MiXSwiZXhwIjoxNzM1ODI5MDk0fQ.0MAChuYO1G458hK_HqVmFYAOdOnmeYkqFbTjbY0QDi8" \
 -H "Content-Type: application/json"
 ```
 

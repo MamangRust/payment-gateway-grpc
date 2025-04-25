@@ -131,6 +131,11 @@ func (t *transferResponseMapper) mapResponsesTransfer(transfers []*pb.TransferRe
 }
 
 func (t *transferResponseMapper) mapResponseTransferDeleteAt(transfer *pb.TransferResponseDeleteAt) *response.TransferResponseDeleteAt {
+	var deletedAt string
+	if transfer.DeletedAt != nil {
+		deletedAt = transfer.DeletedAt.Value
+	}
+
 	return &response.TransferResponseDeleteAt{
 		ID:             int(transfer.Id),
 		TransferNo:     transfer.TransferNo,
@@ -140,7 +145,7 @@ func (t *transferResponseMapper) mapResponseTransferDeleteAt(transfer *pb.Transf
 		TransferTime:   transfer.TransferTime,
 		CreatedAt:      transfer.CreatedAt,
 		UpdatedAt:      transfer.UpdatedAt,
-		DeletedAt:      transfer.DeletedAt,
+		DeletedAt:      &deletedAt,
 	}
 }
 

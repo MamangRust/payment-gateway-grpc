@@ -44,7 +44,21 @@ type CreateCardParams struct {
 	CardProvider string    `json:"card_provider"`
 }
 
-// Create Card
+// CreateCard: Creates a new card record
+// Purpose: Add a new card to the system for a specific user
+// Parameters:
+//
+//	$1: user_id - Owner of the card
+//	$2: card_number - Unique number of the card
+//	$3: card_type - Type of the card (e.g., debit, credit)
+//	$4: expire_date - Expiration date of the card
+//	$5: cvv - Card verification value
+//	$6: card_provider - Provider/issuer of the card
+//
+// Returns: Complete created card record
+// Business Logic:
+//   - Automatically sets created_at and updated_at timestamps
+//   - Requires all fields to be provided
 func (q *Queries) CreateCard(ctx context.Context, arg CreateCardParams) (*Card, error) {
 	row := q.db.QueryRowContext(ctx, createCard,
 		arg.UserID,
@@ -76,7 +90,12 @@ WHERE
     deleted_at IS NOT NULL
 `
 
-// Delete All Trashed Cards Permanently
+// DeleteAllPermanentCards: Permanently deletes all trashed cards
+// Purpose: Bulk-delete all cards that have been soft-deleted
+// Parameters: None
+// Returns: Nothing
+// Business Logic:
+//   - Deletes only cards with deleted_at set
 func (q *Queries) DeleteAllPermanentCards(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, deleteAllPermanentCards)
 	return err
@@ -86,7 +105,15 @@ const deleteCardPermanently = `-- name: DeleteCardPermanently :exec
 DELETE FROM cards WHERE card_id = $1 AND deleted_at IS NOT NULL
 `
 
-// Delete Card Permanently
+// DeleteCardPermanently: Removes a trashed card from the database
+// Purpose: Permanently delete a card that has been soft-deleted
+// Parameters:
+//
+//	$1: card_id - Identifier of the card to permanently delete
+//
+// Returns: Nothing
+// Business Logic:
+//   - Only deletes cards that are currently trashed
 func (q *Queries) DeleteCardPermanently(ctx context.Context, cardID int32) error {
 	_, err := q.db.ExecContext(ctx, deleteCardPermanently, cardID)
 	return err
@@ -123,6 +150,23 @@ type GetActiveCardsWithCountRow struct {
 	TotalCount   int64        `json:"total_count"`
 }
 
+// GetActiveCardsWithCount: Retrieves paginated list of active cards with search capability
+// Purpose: List all active cards for management UI (alternative to GetCards with same functionality)
+// Parameters:
+//
+//	$1: search_term - Optional text to filter cards by number, type or provider (NULL for no filter)
+//	$2: limit - Maximum number of records to return
+//	$3: offset - Number of records to skip for pagination
+//
+// Returns:
+//
+//	All card fields plus total_count of matching records
+//
+// Business Logic:
+//   - Excludes soft-deleted cards (deleted_at IS NULL)
+//   - Supports partial text matching on card_number, card_type and card_provider fields (case-insensitive)
+//   - Returns cards ordered by card_id
+//   - Provides total_count for pagination calculations
 func (q *Queries) GetActiveCardsWithCount(ctx context.Context, arg GetActiveCardsWithCountParams) ([]*GetActiveCardsWithCountRow, error) {
 	rows, err := q.db.QueryContext(ctx, getActiveCardsWithCount, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -162,7 +206,20 @@ const getCardByCardNumber = `-- name: GetCardByCardNumber :one
 SELECT card_id, user_id, card_number, card_type, expire_date, cvv, card_provider, created_at, updated_at, deleted_at FROM cards WHERE card_number = $1 AND deleted_at IS NULL
 `
 
-// Get Card by Card Number
+// GetCardByCardNumber: Retrieves a single active card by its card number
+// Purpose: Lookup card information using the physical card number
+// Parameters:
+//
+//	$1: card_number - The exact card number to search for
+//
+// Returns:
+//
+//	All fields for the matching card or NULL if not found or deleted
+//
+// Business Logic:
+//   - Only returns active cards (deleted_at IS NULL)
+//   - Performs exact match on card_number field (case-sensitive)
+//   - Useful for card verification during transactions
 func (q *Queries) GetCardByCardNumber(ctx context.Context, cardNumber string) (*Card, error) {
 	row := q.db.QueryRowContext(ctx, getCardByCardNumber, cardNumber)
 	var i Card
@@ -185,7 +242,19 @@ const getCardByID = `-- name: GetCardByID :one
 SELECT card_id, user_id, card_number, card_type, expire_date, cvv, card_provider, created_at, updated_at, deleted_at FROM cards WHERE card_id = $1 AND deleted_at IS NULL
 `
 
-// Get Card by ID
+// GetCardByID: Retrieves a single card by its ID
+// Purpose: Get detailed information about a specific card
+// Parameters:
+//
+//	$1: card_id - The ID of the card to retrieve
+//
+// Returns:
+//
+//	All fields for the specified card
+//
+// Business Logic:
+//   - Only returns active cards (deleted_at IS NULL)
+//   - Returns NULL if card is not found or has been soft-deleted
 func (q *Queries) GetCardByID(ctx context.Context, cardID int32) (*Card, error) {
 	row := q.db.QueryRowContext(ctx, getCardByID, cardID)
 	var i Card
@@ -213,7 +282,20 @@ WHERE
 LIMIT 1
 `
 
-// Get a single Card by User ID
+// GetCardByUserID: Retrieves a single active card associated with a specific user
+// Purpose: Get the card information for a particular user
+// Parameters:
+//
+//	$1: user_id - The ID of the user whose card should be retrieved
+//
+// Returns:
+//
+//	All fields for the user's card or NULL if no active card exists
+//
+// Business Logic:
+//   - Only returns active cards (deleted_at IS NULL)
+//   - Returns at most one card (LIMIT 1) even if multiple cards exist for the user
+//   - Useful for displaying a user's primary/default card
 func (q *Queries) GetCardByUserID(ctx context.Context, userID int32) (*Card, error) {
 	row := q.db.QueryRowContext(ctx, getCardByUserID, userID)
 	var i Card
@@ -263,7 +345,23 @@ type GetCardsRow struct {
 	TotalCount   int64        `json:"total_count"`
 }
 
-// Search Cards with Pagination and Total Count
+// GetCards: Retrieves paginated list of active cards with search capability
+// Purpose: List all active cards for management UI
+// Parameters:
+//
+//	$1: search_term - Optional text to filter cards by number, type or provider (NULL for no filter)
+//	$2: limit - Maximum number of records to return
+//	$3: offset - Number of records to skip for pagination
+//
+// Returns:
+//
+//	All card fields plus total_count of matching records
+//
+// Business Logic:
+//   - Excludes soft-deleted cards (deleted_at IS NULL)
+//   - Supports partial text matching on card_number, card_type and card_provider fields (case-insensitive)
+//   - Returns cards ordered by card_id
+//   - Provides total_count for pagination calculations
 func (q *Queries) GetCards(ctx context.Context, arg GetCardsParams) ([]*GetCardsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getCards, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -330,6 +428,23 @@ type GetMonthlyBalancesRow struct {
 	TotalBalance int32  `json:"total_balance"`
 }
 
+// GetMonthlyBalances: Retrieves monthly balance totals for a given year
+// Purpose: Provide monthly balance trends for dashboard visualizations
+// Parameters:
+//
+//	$1: reference_date - A date used to determine the year to analyze
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	total_balance: Sum of balances for that month (zero if no data)
+//
+// Business Logic:
+//   - Generates a complete 12-month series for the year
+//   - Includes only active saldos and cards (deleted_at IS NULL)
+//   - Uses LEFT JOIN to ensure all months appear in results
+//   - COALESCE returns 0 for months with no data
+//   - Results ordered chronologically
 func (q *Queries) GetMonthlyBalances(ctx context.Context, dollar_1 time.Time) ([]*GetMonthlyBalancesRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyBalances, dollar_1)
 	if err != nil {
@@ -390,6 +505,24 @@ type GetMonthlyBalancesByCardNumberRow struct {
 	TotalBalance int32  `json:"total_balance"`
 }
 
+// GetMonthlyBalancesByCardNumber: Retrieves monthly balance history for a specific card
+// Purpose: Track monthly balance trends for individual card statements
+// Parameters:
+//
+//	$1: reference_date - Date to determine the analysis year
+//	$2: card_number - Specific card to analyze
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation (e.g., 'Jan')
+//	total_balance: Monthly balance total (0 if no data)
+//
+// Business Logic:
+//   - Generates complete 12-month series for the year
+//   - Filters for specific card number
+//   - Only includes active saldos and cards
+//   - Ensures all months appear with COALESCE default
+//   - Useful for cardholder spending pattern analysis
 func (q *Queries) GetMonthlyBalancesByCardNumber(ctx context.Context, arg GetMonthlyBalancesByCardNumberParams) ([]*GetMonthlyBalancesByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyBalancesByCardNumber, arg.Column1, arg.CardNumber)
 	if err != nil {
@@ -444,6 +577,23 @@ type GetMonthlyTopupAmountRow struct {
 	TotalTopupAmount int32  `json:"total_topup_amount"`
 }
 
+// GetMonthlyTopupAmount: Retrieves monthly top-up totals for a given year
+// Purpose: Analyze monthly top-up patterns and trends
+// Parameters:
+//
+//	$1: reference_date - A date used to determine the year to analyze
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation
+//	total_topup_amount: Sum of top-ups for that month (zero if no data)
+//
+// Business Logic:
+//   - Generates complete 12-month series
+//   - Only includes active topups and cards
+//   - Uses LEFT JOIN to ensure all months appear
+//   - COALESCE returns 0 for months with no activity
+//   - Results ordered chronologically
 func (q *Queries) GetMonthlyTopupAmount(ctx context.Context, dollar_1 time.Time) ([]*GetMonthlyTopupAmountRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyTopupAmount, dollar_1)
 	if err != nil {
@@ -504,6 +654,24 @@ type GetMonthlyTopupAmountByCardNumberRow struct {
 	TotalTopupAmount int32  `json:"total_topup_amount"`
 }
 
+// GetMonthlyTopupAmountByCardNumber: Retrieves monthly top-up history for a card
+// Purpose: Analyze monthly top-up patterns for individual cards
+// Parameters:
+//
+//	$1: card_number - Specific card to analyze
+//	$2: reference_date - Date to determine analysis year
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation
+//	total_topup_amount: Monthly top-up total (0 if none)
+//
+// Business Logic:
+//   - Complete 12-month coverage
+//   - Card-specific filtering
+//   - Active records only
+//   - Zero-filled for missing months
+//   - Helps identify top-up habit seasonality
 func (q *Queries) GetMonthlyTopupAmountByCardNumber(ctx context.Context, arg GetMonthlyTopupAmountByCardNumberParams) ([]*GetMonthlyTopupAmountByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyTopupAmountByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -558,6 +726,23 @@ type GetMonthlyTransactionAmountRow struct {
 	TotalTransactionAmount int32  `json:"total_transaction_amount"`
 }
 
+// GetMonthlyTransactionAmount: Retrieves monthly transaction totals for a given year
+// Purpose: Analyze monthly transaction patterns and trends
+// Parameters:
+//
+//	$1: reference_date - A date used to determine the year to analyze
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation
+//	total_transaction_amount: Sum of transactions for that month (zero if no data)
+//
+// Business Logic:
+//   - Generates complete 12-month series
+//   - Only includes active transactions and cards
+//   - Uses LEFT JOIN to ensure all months appear
+//   - COALESCE returns 0 for months with no activity
+//   - Results ordered chronologically
 func (q *Queries) GetMonthlyTransactionAmount(ctx context.Context, dollar_1 time.Time) ([]*GetMonthlyTransactionAmountRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyTransactionAmount, dollar_1)
 	if err != nil {
@@ -618,6 +803,24 @@ type GetMonthlyTransactionAmountByCardNumberRow struct {
 	TotalTransactionAmount int32  `json:"total_transaction_amount"`
 }
 
+// GetMonthlyTransactionAmountByCardNumber: Retrieves monthly transaction history for a card
+// Purpose: Analyze monthly transaction patterns for individual cards
+// Parameters:
+//
+//	$1: card_number - Specific card to analyze
+//	$2: reference_date - Date to determine analysis year
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation
+//	total_transaction_amount: Monthly transaction total (0 if none)
+//
+// Business Logic:
+//   - Complete 12-month coverage
+//   - Card-specific filtering
+//   - Active records only
+//   - Zero-filled for missing months
+//   - Helps identify transaction habit seasonality
 func (q *Queries) GetMonthlyTransactionAmountByCardNumber(ctx context.Context, arg GetMonthlyTransactionAmountByCardNumberParams) ([]*GetMonthlyTransactionAmountByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyTransactionAmountByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -675,6 +878,24 @@ type GetMonthlyTransferAmountByReceiverRow struct {
 	TotalReceivedAmount int32  `json:"total_received_amount"`
 }
 
+// GetMonthlyTransferAmountByReceiver: Retrieves monthly transfer history for a card
+// Purpose: Analyze monthly transfer patterns for individual cards
+// Parameters:
+//
+//	$1: card_number - Specific card to analyze
+//	$2: reference_date - Date to determine analysis year
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation
+//	total_sent_amount: Monthly transfer total (0 if none)
+//
+// Business Logic:
+//   - Complete 12-month coverage
+//   - Card-specific filtering
+//   - Active records only
+//   - Zero-filled for missing months
+//   - Helps identify transfer habit seasonality
 func (q *Queries) GetMonthlyTransferAmountByReceiver(ctx context.Context, arg GetMonthlyTransferAmountByReceiverParams) ([]*GetMonthlyTransferAmountByReceiverRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyTransferAmountByReceiver, arg.TransferTo, arg.Column2)
 	if err != nil {
@@ -732,6 +953,24 @@ type GetMonthlyTransferAmountBySenderRow struct {
 	TotalSentAmount int32  `json:"total_sent_amount"`
 }
 
+// GetMonthlyTransferAmountBySender: Retrieves monthly transfer history for a card
+// Purpose: Analyze monthly transfer patterns for individual cards
+// Parameters:
+//
+//	$1: card_number - Specific card to analyze
+//	$2: reference_date - Date to determine analysis year
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation
+//	total_sent_amount: Monthly transfer total (0 if none)
+//
+// Business Logic:
+//   - Complete 12-month coverage
+//   - Card-specific filtering
+//   - Active records only
+//   - Zero-filled for missing months
+//   - Helps identify transfer habit seasonality
 func (q *Queries) GetMonthlyTransferAmountBySender(ctx context.Context, arg GetMonthlyTransferAmountBySenderParams) ([]*GetMonthlyTransferAmountBySenderRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyTransferAmountBySender, arg.TransferFrom, arg.Column2)
 	if err != nil {
@@ -783,6 +1022,23 @@ type GetMonthlyTransferAmountReceiverRow struct {
 	TotalReceivedAmount int32  `json:"total_received_amount"`
 }
 
+// GetMonthlyTransferAmountReceiver: Retrieves monthly transfer totals for a given year
+// Purpose: Analyze monthly transfer patterns and trends
+// Parameters:
+//
+//	$1: reference_date - A date used to determine the year to analyze
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation
+//	total_received_amount: Sum of transfers for that month (zero if no data)
+//
+// Business Logic:
+//   - Generates complete 12-month series
+//   - Only includes active transfers and cards
+//   - Uses LEFT JOIN to ensure all months appear
+//   - COALESCE returns 0 for months with no activity
+//   - Results ordered chronologically
 func (q *Queries) GetMonthlyTransferAmountReceiver(ctx context.Context, dollar_1 time.Time) ([]*GetMonthlyTransferAmountReceiverRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyTransferAmountReceiver, dollar_1)
 	if err != nil {
@@ -834,6 +1090,23 @@ type GetMonthlyTransferAmountSenderRow struct {
 	TotalSentAmount int32  `json:"total_sent_amount"`
 }
 
+// GetMonthlyTransferAmountSender: Retrieves monthly transfer totals for a given year
+// Purpose: Analyze monthly transfer patterns and trends
+// Parameters:
+//
+//	$1: reference_date - A date used to determine the year to analyze
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation
+//	total_sent_amount: Sum of transfers for that month (zero if no data)
+//
+// Business Logic:
+//   - Generates complete 12-month series
+//   - Only includes active transfers and cards
+//   - Uses LEFT JOIN to ensure all months appear
+//   - COALESCE returns 0 for months with no activity
+//   - Results ordered chronologically
 func (q *Queries) GetMonthlyTransferAmountSender(ctx context.Context, dollar_1 time.Time) ([]*GetMonthlyTransferAmountSenderRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyTransferAmountSender, dollar_1)
 	if err != nil {
@@ -888,6 +1161,23 @@ type GetMonthlyWithdrawAmountRow struct {
 	TotalWithdrawAmount int32  `json:"total_withdraw_amount"`
 }
 
+// GetMonthlyWithdrawAmount: Retrieves monthly withdraw totals for a given year
+// Purpose: Analyze monthly withdraw patterns and trends
+// Parameters:
+//
+//	$1: reference_date - A date used to determine the year to analyze
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation
+//	total_withdraw_amount: Sum of withdraws for that month (zero if no data)
+//
+// Business Logic:
+//   - Generates complete 12-month series
+//   - Only includes active withdraws and cards
+//   - Uses LEFT JOIN to ensure all months appear
+//   - COALESCE returns 0 for months with no activity
+//   - Results ordered chronologically
 func (q *Queries) GetMonthlyWithdrawAmount(ctx context.Context, dollar_1 time.Time) ([]*GetMonthlyWithdrawAmountRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyWithdrawAmount, dollar_1)
 	if err != nil {
@@ -948,6 +1238,24 @@ type GetMonthlyWithdrawAmountByCardNumberRow struct {
 	TotalWithdrawAmount int32  `json:"total_withdraw_amount"`
 }
 
+// GetMonthlyWithdrawAmountByCardNumber: Retrieves monthly withdraw history for a card
+// Purpose: Analyze monthly withdraw patterns for individual cards
+// Parameters:
+//
+//	$1: card_number - Specific card to analyze
+//	$2: reference_date - Date to determine analysis year
+//
+// Returns:
+//
+//	month: 3-letter month abbreviation
+//	total_withdraw_amount: Monthly withdraw total (0 if none)
+//
+// Business Logic:
+//   - Complete 12-month coverage
+//   - Card-specific filtering
+//   - Active records only
+//   - Zero-filled for missing months
+//   - Helps identify withdraw habit seasonality
 func (q *Queries) GetMonthlyWithdrawAmountByCardNumber(ctx context.Context, arg GetMonthlyWithdrawAmountByCardNumberParams) ([]*GetMonthlyWithdrawAmountByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMonthlyWithdrawAmountByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -982,6 +1290,17 @@ WHERE
     s.deleted_at IS NULL AND c.deleted_at IS NULL
 `
 
+// GetTotalBalance: Calculates the sum of all active card balances
+// Purpose: Get the total balance across all active cards in the system
+// Returns:
+//
+//	Single column 'total_balance' containing the sum of all non-deleted card balances
+//
+// Business Logic:
+//   - Only includes balances from active saldos records (s.deleted_at IS NULL)
+//   - Only includes balances from active cards (c.deleted_at IS NULL)
+//   - Useful for financial dashboards and system health monitoring
+//   - Returns NULL if no active balances exist
 func (q *Queries) GetTotalBalance(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, getTotalBalance)
 	var total_balance int64
@@ -1001,6 +1320,21 @@ WHERE
     AND c.card_number = $1
 `
 
+// GetTotalBalanceByCardNumber: Calculates the total balance for a specific card
+// Purpose: Get the current balance of a particular active card
+// Parameters:
+//
+//	$1: card_number - The card number to query balance for
+//
+// Returns:
+//
+//	Single column 'total_balance' containing the sum balance for the specified card
+//
+// Business Logic:
+//   - Only includes balance from active saldos records (s.deleted_at IS NULL)
+//   - Only includes balance if card is active (c.deleted_at IS NULL)
+//   - Returns NULL if card doesn't exist or has been deleted
+//   - Useful for displaying individual card balances
 func (q *Queries) GetTotalBalanceByCardNumber(ctx context.Context, cardNumber string) (int64, error) {
 	row := q.db.QueryRowContext(ctx, getTotalBalanceByCardNumber, cardNumber)
 	var total_balance int64
@@ -1019,6 +1353,17 @@ WHERE
     t.deleted_at IS NULL AND c.deleted_at IS NULL
 `
 
+// GetTotalTopupAmount: Calculates the sum of all top-up transactions
+// Purpose: Get the total amount ever topped up across all active cards
+// Returns:
+//
+//	Single column 'total_topup_amount' containing sum of all non-deleted topups
+//
+// Business Logic:
+//   - Only includes amounts from active topups (t.deleted_at IS NULL)
+//   - Only includes amounts from active cards (c.deleted_at IS NULL)
+//   - Useful for financial reporting and reconciliation
+//   - Returns NULL if no topups exist
 func (q *Queries) GetTotalTopupAmount(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, getTotalTopupAmount)
 	var total_topup_amount int64
@@ -1038,6 +1383,20 @@ WHERE
     AND c.card_number = $1
 `
 
+// GetTotalTopupAmountByCardNumber: Calculates total top-ups for a specific card
+// Purpose: Get the lifetime top-up amount for a particular card
+// Parameters:
+//
+//	$1: card_number - The card number to query top-ups for
+//
+// Returns:
+//
+//	Single column 'total_topup_amount' containing sum of all top-ups
+//
+// Business Logic:
+//   - Only includes active topup records (t.deleted_at IS NULL)
+//   - Only includes amounts when card is active (c.deleted_at IS NULL)
+//   - Useful for card activity analysis and user statements
 func (q *Queries) GetTotalTopupAmountByCardNumber(ctx context.Context, cardNumber string) (int64, error) {
 	row := q.db.QueryRowContext(ctx, getTotalTopupAmountByCardNumber, cardNumber)
 	var total_topup_amount int64
@@ -1056,6 +1415,17 @@ WHERE
     t.deleted_at IS NULL AND c.deleted_at IS NULL
 `
 
+// GetTotalTransactionAmount: Calculates the sum of all payment transactions
+// Purpose: Get the total amount processed through all card transactions
+// Returns:
+//
+//	Single column 'total_transaction_amount' containing sum of all non-deleted transactions
+//
+// Business Logic:
+//   - Only includes amounts from active transactions (t.deleted_at IS NULL)
+//   - Only includes amounts from active cards (c.deleted_at IS NULL)
+//   - Useful for sales reporting and revenue analysis
+//   - Returns NULL if no transactions exist
 func (q *Queries) GetTotalTransactionAmount(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, getTotalTransactionAmount)
 	var total_transaction_amount int64
@@ -1075,6 +1445,20 @@ WHERE
     AND c.card_number = $1
 `
 
+// GetTotalTransactionAmountByCardNumber: Calculates total transactions for a card
+// Purpose: Get the lifetime transaction amount for a specific card
+// Parameters:
+//
+//	$1: card_number - The card number to query transactions for
+//
+// Returns:
+//
+//	Single column 'total_transaction_amount' containing sum of all transactions
+//
+// Business Logic:
+//   - Only includes active transaction records (t.deleted_at IS NULL)
+//   - Only includes amounts when card is active (c.deleted_at IS NULL)
+//   - Useful for spending analysis and card statements
 func (q *Queries) GetTotalTransactionAmountByCardNumber(ctx context.Context, cardNumber string) (int64, error) {
 	row := q.db.QueryRowContext(ctx, getTotalTransactionAmountByCardNumber, cardNumber)
 	var total_transaction_amount int64
@@ -1102,6 +1486,22 @@ FROM (
 ) AS transfer_data
 `
 
+// GetTotalTransferAmount: Calculates the sum of all transfer transactions
+// Purpose: Get the total amount transferred between accounts
+// Returns:
+//
+//	Single column 'total_transfer_amount' containing sum of all non-deleted transfers
+//
+// Business Logic:
+//   - Includes amounts from both sides of transfers (using UNION ALL)
+//   - Only includes active transfer records (deleted_at IS NULL)
+//   - Counts both outgoing and incoming transfers in the total
+//   - Useful for monitoring money movement in the system
+//   - Returns NULL if no transfers exist
+//
+// Note: The current implementation appears to double-count transfers by including
+//
+//	the same table twice in the UNION ALL. This may need review.
 func (q *Queries) GetTotalTransferAmount(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, getTotalTransferAmount)
 	var total_transfer_amount int64
@@ -1119,6 +1519,19 @@ WHERE
     AND deleted_at IS NULL
 `
 
+// GetTotalTransferAmountByReceiver: Calculates total incoming transfers to an account
+// Purpose: Get the total amount received by a specific card/account
+// Parameters:
+//
+//	$1: transfer_to - The account/card number that received transfers
+//
+// Returns:
+//
+//	Single column 'total_transfer_amount' containing sum of all incoming transfers
+//
+// Business Logic:
+//   - Only includes active transfer records (deleted_at IS NULL)
+//   - Useful for tracking money received by a particular account
 func (q *Queries) GetTotalTransferAmountByReceiver(ctx context.Context, transferTo string) (int64, error) {
 	row := q.db.QueryRowContext(ctx, getTotalTransferAmountByReceiver, transferTo)
 	var total_transfer_amount int64
@@ -1136,6 +1549,19 @@ WHERE
     AND deleted_at IS NULL
 `
 
+// GetTotalTransferAmountBySender: Calculates total outgoing transfers from an account
+// Purpose: Get the total amount sent from a specific card/account
+// Parameters:
+//
+//	$1: transfer_from - The account/card number that initiated transfers
+//
+// Returns:
+//
+//	Single column 'total_transfer_amount' containing sum of all outgoing transfers
+//
+// Business Logic:
+//   - Only includes active transfer records (deleted_at IS NULL)
+//   - Useful for tracking money sent by a particular account
 func (q *Queries) GetTotalTransferAmountBySender(ctx context.Context, transferFrom string) (int64, error) {
 	row := q.db.QueryRowContext(ctx, getTotalTransferAmountBySender, transferFrom)
 	var total_transfer_amount int64
@@ -1154,6 +1580,17 @@ WHERE
     s.deleted_at IS NULL AND c.deleted_at IS NULL
 `
 
+// GetTotalWithdrawAmount: Calculates the sum of all withdrawal transactions
+// Purpose: Get the total amount ever withdrawn from all active cards
+// Returns:
+//
+//	Single column 'total_withdraw_amount' containing sum of all non-deleted withdrawals
+//
+// Business Logic:
+//   - Only includes amounts from active withdrawals (s.deleted_at IS NULL)
+//   - Only includes amounts from active cards (c.deleted_at IS NULL)
+//   - Useful for cash flow analysis and auditing
+//   - Returns NULL if no withdrawals exist
 func (q *Queries) GetTotalWithdrawAmount(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, getTotalWithdrawAmount)
 	var total_withdraw_amount int64
@@ -1173,6 +1610,22 @@ WHERE
     AND c.card_number = $1
 `
 
+// GetTotalWithdrawAmountByCardNumber: Calculates total withdrawals for a card
+// Purpose: Get the lifetime withdrawal amount for a specific card
+// Parameters:
+//
+//	$1: card_number - The card number to query withdrawals for
+//
+// Returns:
+//
+//	Single column 'total_withdraw_amount' containing sum of all withdrawals
+//
+// Business Logic:
+//   - Only includes active withdrawal records (s.deleted_at IS NULL)
+//   - Only includes amounts when card is active (c.deleted_at IS NULL)
+//   - Useful for cash flow analysis per card
+//
+// Note: Verify table name consistency (saldos vs withdraws)
 func (q *Queries) GetTotalWithdrawAmountByCardNumber(ctx context.Context, cardNumber string) (int64, error) {
 	row := q.db.QueryRowContext(ctx, getTotalWithdrawAmountByCardNumber, cardNumber)
 	var total_withdraw_amount int64
@@ -1184,7 +1637,20 @@ const getTrashedCardByID = `-- name: GetTrashedCardByID :one
 SELECT card_id, user_id, card_number, card_type, expire_date, cvv, card_provider, created_at, updated_at, deleted_at FROM cards WHERE card_id = $1 AND deleted_at IS NOT NULL
 `
 
-// Get Trashed By Card ID
+// GetTrashedCardByID: Retrieves a single soft-deleted card by its ID
+// Purpose: View details of a specific trashed card for recovery or audit
+// Parameters:
+//
+//	$1: card_id - The ID of the card to retrieve
+//
+// Returns:
+//
+//	All fields for the specified trashed card or NULL if not found or not deleted
+//
+// Business Logic:
+//   - Only returns soft-deleted cards (deleted_at IS NOT NULL)
+//   - Useful for admin interfaces showing deleted items
+//   - Can be used before restoring a deleted card
 func (q *Queries) GetTrashedCardByID(ctx context.Context, cardID int32) (*Card, error) {
 	row := q.db.QueryRowContext(ctx, getTrashedCardByID, cardID)
 	var i Card
@@ -1234,6 +1700,23 @@ type GetTrashedCardsWithCountRow struct {
 	TotalCount   int64        `json:"total_count"`
 }
 
+// GetTrashedCardsWithCount: Retrieves paginated list of soft-deleted cards with search capability
+// Purpose: List all trashed (soft-deleted) cards for recovery or audit purposes
+// Parameters:
+//
+//	$1: search_term - Optional text to filter cards by number, type or provider (NULL for no filter)
+//	$2: limit - Maximum number of records to return
+//	$3: offset - Number of records to skip for pagination
+//
+// Returns:
+//
+//	All card fields plus total_count of matching records
+//
+// Business Logic:
+//   - Includes only soft-deleted cards (deleted_at IS NOT NULL)
+//   - Supports partial text matching on card_number, card_type and card_provider fields (case-insensitive)
+//   - Returns cards ordered by card_id
+//   - Provides total_count for pagination calculations
 func (q *Queries) GetTrashedCardsWithCount(ctx context.Context, arg GetTrashedCardsWithCountParams) ([]*GetTrashedCardsWithCountRow, error) {
 	rows, err := q.db.QueryContext(ctx, getTrashedCardsWithCount, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
@@ -1299,6 +1782,22 @@ type GetYearlyBalancesRow struct {
 	TotalBalance int64  `json:"total_balance"`
 }
 
+// GetYearlyBalances: Retrieves yearly balance totals for last 5 years
+// Purpose: Provide annual balance trends for financial reporting
+// Parameters:
+//
+//	$1: reference_year - The target year (includes this year plus previous 4)
+//
+// Returns:
+//
+//	year: The 4-digit year
+//	total_balance: Sum of balances for that year
+//
+// Business Logic:
+//   - Covers a 5-year rolling window (reference_year-4 to reference_year)
+//   - Only includes active saldos and cards
+//   - Groups by calendar year
+//   - Results ordered chronologically
 func (q *Queries) GetYearlyBalances(ctx context.Context, dollar_1 interface{}) ([]*GetYearlyBalancesRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyBalances, dollar_1)
 	if err != nil {
@@ -1358,6 +1857,23 @@ type GetYearlyBalancesByCardNumberRow struct {
 	TotalBalance int64  `json:"total_balance"`
 }
 
+// GetYearlyBalancesByCardNumber: Retrieves 5-year balance history for a specific card
+// Purpose: Show annual balance trends for individual cardholders
+// Parameters:
+//
+//	$1: reference_year - Central year for 5-year window
+//	$2: card_number - Specific card to analyze
+//
+// Returns:
+//
+//	year: 4-digit year
+//	total_balance: Annual balance total
+//
+// Business Logic:
+//   - Covers reference_year-4 to reference_year (5 years)
+//   - Strictly filters for specified card
+//   - Only includes active records
+//   - Useful for long-term financial planning
 func (q *Queries) GetYearlyBalancesByCardNumber(ctx context.Context, arg GetYearlyBalancesByCardNumberParams) ([]*GetYearlyBalancesByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyBalancesByCardNumber, arg.Column1, arg.CardNumber)
 	if err != nil {
@@ -1412,6 +1928,23 @@ type GetYearlyTopupAmountRow struct {
 	TotalTopupAmount int64  `json:"total_topup_amount"`
 }
 
+// GetYearlyTopupAmount: Retrieves yearly top-up totals for last 5 years
+// Purpose: Analyze long-term top-up trends and growth
+// Parameters:
+//
+//	$1: reference_year - The target year (includes this year plus previous 4)
+//
+// Returns:
+//
+//	year: The 4-digit year
+//	total_topup_amount: Sum of top-ups for that year
+//
+// Business Logic:
+//   - Covers a 5-year rolling window
+//   - Only includes active topups and cards
+//   - Groups by calendar year
+//   - Results ordered chronologically
+//   - Useful for identifying annual growth patterns
 func (q *Queries) GetYearlyTopupAmount(ctx context.Context, dollar_1 interface{}) ([]*GetYearlyTopupAmountRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTopupAmount, dollar_1)
 	if err != nil {
@@ -1472,6 +2005,24 @@ type GetYearlyTopupAmountByCardNumberRow struct {
 	TotalTopupAmount int64  `json:"total_topup_amount"`
 }
 
+// GetYearlyTopupAmountByCardNumber: Retrieves 5-year top-up history for a card
+// Purpose: Track long-term top-up trends for individual cards
+// Parameters:
+//
+//	$1: card_number - Specific card to analyze
+//	$2: reference_year - Central year for 5-year window
+//
+// Returns:
+//
+//	year: 4-digit year
+//	total_topup_amount: Annual top-up total
+//
+// Business Logic:
+//   - 5-year rolling window analysis
+//   - Strict card number filtering
+//   - Active records only
+//   - Chronological ordering
+//   - Useful for identifying annual top-up growth/decline
 func (q *Queries) GetYearlyTopupAmountByCardNumber(ctx context.Context, arg GetYearlyTopupAmountByCardNumberParams) ([]*GetYearlyTopupAmountByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTopupAmountByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -1526,6 +2077,23 @@ type GetYearlyTransactionAmountRow struct {
 	TotalTransactionAmount int64  `json:"total_transaction_amount"`
 }
 
+// GetYearlyTransactionAmount: Retrieves yearly transaction totals for last 5 years
+// Purpose: Analyze long-term transaction trends and growth
+// Parameters:
+//
+//	$1: reference_year - The target year (includes this year plus previous 4)
+//
+// Returns:
+//
+//	year: The 4-digit year
+//	total_transaction_amount: Sum of transactions for that year
+//
+// Business Logic:
+//   - Covers a 5-year rolling window
+//   - Only includes active transactions and cards
+//   - Groups by calendar year
+//   - Results ordered chronologically
+//   - Useful for identifying annual growth patterns
 func (q *Queries) GetYearlyTransactionAmount(ctx context.Context, dollar_1 interface{}) ([]*GetYearlyTransactionAmountRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTransactionAmount, dollar_1)
 	if err != nil {
@@ -1586,6 +2154,24 @@ type GetYearlyTransactionAmountByCardNumberRow struct {
 	TotalTransactionAmount int64  `json:"total_transaction_amount"`
 }
 
+// GetYearlyTransactionAmountByCardNumber: Retrieves 5-year transaction history for a card
+// Purpose: Track long-term transaction trends for individual cards
+// Parameters:
+//
+//	$1: card_number - Specific card to analyze
+//	$2: reference_year - Central year for 5-year window
+//
+// Returns:
+//
+//	year: 4-digit year
+//	total_transaction_amount: Annual transaction total
+//
+// Business Logic:
+//   - 5-year rolling window analysis
+//   - Strict card number filtering
+//   - Active records only
+//   - Chronological ordering
+//   - Useful for identifying annual transaction growth/decline
 func (q *Queries) GetYearlyTransactionAmountByCardNumber(ctx context.Context, arg GetYearlyTransactionAmountByCardNumberParams) ([]*GetYearlyTransactionAmountByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTransactionAmountByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -1643,6 +2229,24 @@ type GetYearlyTransferAmountByReceiverRow struct {
 	TotalReceivedAmount int64  `json:"total_received_amount"`
 }
 
+// GetYearlyTransferAmountByReceiver: Retrieves 5-year transfer history for a card
+// Purpose: Track long-term transfer trends for individual cards
+// Parameters:
+//
+//	$1: card_number - Specific card to analyze
+//	$2: reference_year - Central year for 5-year window
+//
+// Returns:
+//
+//	year: 4-digit year
+//	total_sent_amount: Annual transfer total
+//
+// Business Logic:
+//   - 5-year rolling window analysis
+//   - Strict card number filtering
+//   - Active records only
+//   - Chronological ordering
+//   - Useful for identifying annual transfer growth/decline
 func (q *Queries) GetYearlyTransferAmountByReceiver(ctx context.Context, arg GetYearlyTransferAmountByReceiverParams) ([]*GetYearlyTransferAmountByReceiverRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTransferAmountByReceiver, arg.TransferTo, arg.Column2)
 	if err != nil {
@@ -1700,6 +2304,24 @@ type GetYearlyTransferAmountBySenderRow struct {
 	TotalSentAmount int64  `json:"total_sent_amount"`
 }
 
+// GetYearlyTransferAmountBySender: Retrieves 5-year transfer history for a card
+// Purpose: Track long-term transfer trends for individual cards
+// Parameters:
+//
+//	$1: card_number - Specific card to analyze
+//	$2: reference_year - Central year for 5-year window
+//
+// Returns:
+//
+//	year: 4-digit year
+//	total_sent_amount: Annual transfer total
+//
+// Business Logic:
+//   - 5-year rolling window analysis
+//   - Strict card number filtering
+//   - Active records only
+//   - Chronological ordering
+//   - Useful for identifying annual transfer growth/decline
 func (q *Queries) GetYearlyTransferAmountBySender(ctx context.Context, arg GetYearlyTransferAmountBySenderParams) ([]*GetYearlyTransferAmountBySenderRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTransferAmountBySender, arg.TransferFrom, arg.Column2)
 	if err != nil {
@@ -1751,6 +2373,23 @@ type GetYearlyTransferAmountReceiverRow struct {
 	TotalReceivedAmount int64  `json:"total_received_amount"`
 }
 
+// GetYearlyTransferAmountReceiver: Retrieves yearly transfer totals for last 5 years
+// Purpose: Analyze long-term transfer trends and growth
+// Parameters:
+//
+//	$1: reference_year - The target year (includes this year plus previous 4)
+//
+// Returns:
+//
+//	year: The 4-digit year
+//	total_received_amount: Sum of transfers for that year
+//
+// Business Logic:
+//   - Covers a 5-year rolling window
+//   - Only includes active topups and cards
+//   - Groups by calendar year
+//   - Results ordered chronologically
+//   - Useful for identifying annual growth patterns
 func (q *Queries) GetYearlyTransferAmountReceiver(ctx context.Context, dollar_1 interface{}) ([]*GetYearlyTransferAmountReceiverRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTransferAmountReceiver, dollar_1)
 	if err != nil {
@@ -1802,6 +2441,23 @@ type GetYearlyTransferAmountSenderRow struct {
 	TotalSentAmount int64  `json:"total_sent_amount"`
 }
 
+// GetYearlyTransferAmountSender: Retrieves yearly transfer totals for last 5 years
+// Purpose: Analyze long-term transfer trends and growth
+// Parameters:
+//
+//	$1: reference_year - The target year (includes this year plus previous 4)
+//
+// Returns:
+//
+//	year: The 4-digit year
+//	total_sent_amount: Sum of transfers for that year
+//
+// Business Logic:
+//   - Covers a 5-year rolling window
+//   - Only includes active topups and cards
+//   - Groups by calendar year
+//   - Results ordered chronologically
+//   - Useful for identifying annual growth patterns
 func (q *Queries) GetYearlyTransferAmountSender(ctx context.Context, dollar_1 interface{}) ([]*GetYearlyTransferAmountSenderRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyTransferAmountSender, dollar_1)
 	if err != nil {
@@ -1856,6 +2512,23 @@ type GetYearlyWithdrawAmountRow struct {
 	TotalWithdrawAmount int64  `json:"total_withdraw_amount"`
 }
 
+// GetYearlyWithdrawAmount: Retrieves yearly withdraw totals for last 5 years
+// Purpose: Analyze long-term withdraw trends and growth
+// Parameters:
+//
+//	$1: reference_year - The target year (includes this year plus previous 4)
+//
+// Returns:
+//
+//	year: The 4-digit year
+//	total_withdraw_amount: Sum of withdraws for that year
+//
+// Business Logic:
+//   - Covers a 5-year rolling window
+//   - Only includes active withdraws and cards
+//   - Groups by calendar year
+//   - Results ordered chronologically
+//   - Useful for identifying annual growth patterns
 func (q *Queries) GetYearlyWithdrawAmount(ctx context.Context, dollar_1 interface{}) ([]*GetYearlyWithdrawAmountRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyWithdrawAmount, dollar_1)
 	if err != nil {
@@ -1916,6 +2589,24 @@ type GetYearlyWithdrawAmountByCardNumberRow struct {
 	TotalWithdrawAmount int64  `json:"total_withdraw_amount"`
 }
 
+// GetYearlyWithdrawAmountByCardNumber: Retrieves 5-year withdraw history for a card
+// Purpose: Track long-term withdraw trends for individual cards
+// Parameters:
+//
+//	$1: card_number - Specific card to analyze
+//	$2: reference_year - Central year for 5-year window
+//
+// Returns:
+//
+//	year: 4-digit year
+//	total_withdraw_amount: Annual withdraw total
+//
+// Business Logic:
+//   - 5-year rolling window analysis
+//   - Strict card number filtering
+//   - Active records only
+//   - Chronological ordering
+//   - Useful for identifying annual withdraw growth/decline
 func (q *Queries) GetYearlyWithdrawAmountByCardNumber(ctx context.Context, arg GetYearlyWithdrawAmountByCardNumberParams) ([]*GetYearlyWithdrawAmountByCardNumberRow, error) {
 	rows, err := q.db.QueryContext(ctx, getYearlyWithdrawAmountByCardNumber, arg.CardNumber, arg.Column2)
 	if err != nil {
@@ -1947,43 +2638,94 @@ WHERE
     deleted_at IS NOT NULL
 `
 
-// Restore All Trashed Cards
+// RestoreAllCards: Restores all trashed cards
+// Purpose: Bulk-restore all soft-deleted cards
+// Parameters: None
+// Returns: Nothing
+// Business Logic:
+//   - Sets deleted_at to NULL for all trashed cards
 func (q *Queries) RestoreAllCards(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, restoreAllCards)
 	return err
 }
 
-const restoreCard = `-- name: RestoreCard :exec
+const restoreCard = `-- name: RestoreCard :one
 UPDATE cards
 SET
     deleted_at = NULL
 WHERE
     card_id = $1
     AND deleted_at IS NOT NULL
+RETURNING card_id, user_id, card_number, card_type, expire_date, cvv, card_provider, created_at, updated_at, deleted_at
 `
 
-// Restore Trashed Card
-func (q *Queries) RestoreCard(ctx context.Context, cardID int32) error {
-	_, err := q.db.ExecContext(ctx, restoreCard, cardID)
-	return err
+// RestoreCard: Restores a previously trashed card
+// Purpose: Undo soft-delete of a card
+// Parameters:
+//
+//	$1: card_id - Identifier of the card to restore
+//
+// Returns: Nothing
+// Business Logic:
+//   - Sets deleted_at to NULL
+//   - Only affects cards that are currently trashed
+func (q *Queries) RestoreCard(ctx context.Context, cardID int32) (*Card, error) {
+	row := q.db.QueryRowContext(ctx, restoreCard, cardID)
+	var i Card
+	err := row.Scan(
+		&i.CardID,
+		&i.UserID,
+		&i.CardNumber,
+		&i.CardType,
+		&i.ExpireDate,
+		&i.Cvv,
+		&i.CardProvider,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }
 
-const trashCard = `-- name: TrashCard :exec
+const trashCard = `-- name: TrashCard :one
 UPDATE cards
 SET
     deleted_at = current_timestamp
 WHERE
     card_id = $1
     AND deleted_at IS NULL
+RETURNING card_id, user_id, card_number, card_type, expire_date, cvv, card_provider, created_at, updated_at, deleted_at
 `
 
-// Trash Card
-func (q *Queries) TrashCard(ctx context.Context, cardID int32) error {
-	_, err := q.db.ExecContext(ctx, trashCard, cardID)
-	return err
+// TrashCard: Soft-deletes a card by marking deleted_at
+// Purpose: Temporarily remove a card without deleting it permanently
+// Parameters:
+//
+//	$1: card_id - Identifier of the card to be trashed
+//
+// Returns: Nothing
+// Business Logic:
+//   - Sets deleted_at to current timestamp
+//   - Only affects cards not already trashed
+func (q *Queries) TrashCard(ctx context.Context, cardID int32) (*Card, error) {
+	row := q.db.QueryRowContext(ctx, trashCard, cardID)
+	var i Card
+	err := row.Scan(
+		&i.CardID,
+		&i.UserID,
+		&i.CardNumber,
+		&i.CardType,
+		&i.ExpireDate,
+		&i.Cvv,
+		&i.CardProvider,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }
 
-const updateCard = `-- name: UpdateCard :exec
+const updateCard = `-- name: UpdateCard :one
 UPDATE cards
 SET
     card_type = $2,
@@ -1994,6 +2736,7 @@ SET
 WHERE
     card_id = $1
     AND deleted_at IS NULL
+RETURNING card_id, user_id, card_number, card_type, expire_date, cvv, card_provider, created_at, updated_at, deleted_at
 `
 
 type UpdateCardParams struct {
@@ -2004,14 +2747,40 @@ type UpdateCardParams struct {
 	CardProvider string    `json:"card_provider"`
 }
 
-// Update Card
-func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) error {
-	_, err := q.db.ExecContext(ctx, updateCard,
+// UpdateCard: Updates an existing card's details
+// Purpose: Modify card attributes for a specific card
+// Parameters:
+//
+//	$1: card_id - Identifier of the card to update
+//	$2: card_type - New card type
+//	$3: expire_date - New expiration date
+//	$4: cvv - New CVV
+//	$5: card_provider - New card provider
+//
+// Returns: Nothing
+// Business Logic:
+//   - Automatically updates updated_at timestamp
+//   - Only updates cards that are not soft-deleted
+func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) (*Card, error) {
+	row := q.db.QueryRowContext(ctx, updateCard,
 		arg.CardID,
 		arg.CardType,
 		arg.ExpireDate,
 		arg.Cvv,
 		arg.CardProvider,
 	)
-	return err
+	var i Card
+	err := row.Scan(
+		&i.CardID,
+		&i.UserID,
+		&i.CardNumber,
+		&i.CardType,
+		&i.ExpireDate,
+		&i.Cvv,
+		&i.CardProvider,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
 }

@@ -6,6 +6,33 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+type MonthYearCardNumber struct {
+	CardNumber string `json:"card_number" validate:"required,min=1"`
+	Year       int    `json:"year" validate:"required"`
+}
+
+type MonthStatusTransferCardNumber struct {
+	CardNumber string `json:"card_number" validate:"required,min=1"`
+	Year       int    `json:"year" validate:"required"`
+	Month      int    `json:"month" validate:"required"`
+}
+
+type YearStatusTransferCardNumber struct {
+	CardNumber string `json:"card_number" validate:"required,min=1"`
+	Year       int    `json:"year" validate:"required"`
+}
+
+type MonthStatusTransfer struct {
+	Year  int `json:"year" validate:"required"`
+	Month int `json:"month" validate:"required"`
+}
+
+type FindAllTranfers struct {
+	Search   string `json:"search" validate:"required"`
+	Page     int    `json:"page" validate:"min=1"`
+	PageSize int    `json:"page_size" validate:"min=1,max=100"`
+}
+
 type CreateTransferRequest struct {
 	TransferFrom   string `json:"transfer_from" validate:"required"`
 	TransferTo     string `json:"transfer_to" validate:"required,min=1"`
@@ -13,7 +40,7 @@ type CreateTransferRequest struct {
 }
 
 type UpdateTransferRequest struct {
-	TransferID     int    `json:"transfer_id" validate:"required,min=1"`
+	TransferID     *int   `json:"transfer_id"`
 	TransferFrom   string `json:"transfer_from" validate:"required"`
 	TransferTo     string `json:"transfer_to" validate:"required,min=1"`
 	TransferAmount int    `json:"transfer_amount" validate:"required,min=50000"`
@@ -48,7 +75,7 @@ func (r *UpdateTransferRequest) Validate() error {
 		return err
 	}
 
-	if r.TransferID <= 0 {
+	if *r.TransferID <= 0 {
 		return errors.New("transfer ID must be a positive integer")
 	}
 

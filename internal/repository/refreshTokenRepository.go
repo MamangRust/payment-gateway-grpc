@@ -71,23 +71,17 @@ func (r *refreshTokenRepository) UpdateRefreshToken(req *requests.UpdateRefreshT
 		return nil, fmt.Errorf("failed to parse expiration date: %w", err)
 	}
 
-	err = r.db.UpdateRefreshTokenByUserId(r.ctx, db.UpdateRefreshTokenByUserIdParams{
+	res, err := r.db.UpdateRefreshTokenByUserId(r.ctx, db.UpdateRefreshTokenByUserIdParams{
 		UserID:     int32(req.UserId),
 		Token:      req.Token,
 		Expiration: expirationTime,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to update refresh token expiration: %w", err)
+		return nil, fmt.Errorf("failed to update refresh token: token not found or invalid update data")
 	}
 
-	refreshToken, err := r.FindByUserId(req.UserId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve updated refresh token: %w", err)
-	}
-
-	return refreshToken, nil
+	return r.mapping.ToRefreshTokenRecord(res), nil
 }
-
 func (r *refreshTokenRepository) DeleteRefreshToken(token string) error {
 	err := r.db.DeleteRefreshToken(r.ctx, token)
 

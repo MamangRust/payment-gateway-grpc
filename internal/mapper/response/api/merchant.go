@@ -139,6 +139,11 @@ func (m *merchantResponse) mapMerchantResponses(r []*pb.MerchantResponse) []*res
 }
 
 func (m *merchantResponse) mapMerchantResponseDeleteAt(merchant *pb.MerchantResponseDeleteAt) *response.MerchantResponseDeleteAt {
+	var deletedAt string
+	if merchant.DeletedAt != nil {
+		deletedAt = merchant.DeletedAt.Value
+	}
+
 	return &response.MerchantResponseDeleteAt{
 		ID:        int(merchant.Id),
 		Name:      merchant.Name,
@@ -147,7 +152,7 @@ func (m *merchantResponse) mapMerchantResponseDeleteAt(merchant *pb.MerchantResp
 		ApiKey:    merchant.ApiKey,
 		CreatedAt: merchant.CreatedAt,
 		UpdatedAt: merchant.UpdatedAt,
-		DeletedAt: merchant.DeletedAt,
+		DeletedAt: &deletedAt,
 	}
 }
 

@@ -66,6 +66,7 @@ func (h *authHandleApi) Register(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: ",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -74,6 +75,7 @@ func (h *authHandleApi) Register(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: ",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -94,6 +96,7 @@ func (h *authHandleApi) Register(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Internal Server Error: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -121,6 +124,7 @@ func (h *authHandleApi) Login(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: ",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -129,6 +133,7 @@ func (h *authHandleApi) Login(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: ",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -147,6 +152,7 @@ func (h *authHandleApi) Login(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Internal Server Error: ",
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -175,6 +181,7 @@ func (h *authHandleApi) RefreshToken(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Bad Request: Invalid request body",
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -183,6 +190,7 @@ func (h *authHandleApi) RefreshToken(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
 			Status:  "error",
 			Message: "Validation Error: " + err.Error(),
+			Code:    http.StatusBadRequest,
 		})
 	}
 
@@ -195,6 +203,7 @@ func (h *authHandleApi) RefreshToken(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Internal Server Error: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 
@@ -224,6 +233,7 @@ func (h *authHandleApi) GetMe(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, response.ErrorResponse{
 			Status:  "error",
 			Message: "Unauthorized: Missing or invalid Authorization header",
+			Code:    http.StatusUnauthorized,
 		})
 	}
 
@@ -238,6 +248,7 @@ func (h *authHandleApi) GetMe(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Status:  "error",
 			Message: "Internal Server Error: " + err.Error(),
+			Code:    http.StatusInternalServerError,
 		})
 	}
 

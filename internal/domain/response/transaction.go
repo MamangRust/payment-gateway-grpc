@@ -13,16 +13,16 @@ type TransactionResponse struct {
 }
 
 type TransactionResponseDeleteAt struct {
-	ID              int    `json:"id"`
-	TransactionNo   string `json:"transaction_no"`
-	CardNumber      string `json:"card_number"`
-	Amount          int    `json:"amount"`
-	PaymentMethod   string `json:"payment_method"`
-	MerchantID      int    `json:"merchant_id"`
-	TransactionTime string `json:"transaction_time"`
-	CreatedAt       string `json:"created_at"`
-	UpdatedAt       string `json:"updated_at"`
-	DeletedAt       string `json:"deleted_at"`
+	ID              int     `json:"id"`
+	TransactionNo   string  `json:"transaction_no"`
+	CardNumber      string  `json:"card_number"`
+	Amount          int     `json:"amount"`
+	PaymentMethod   string  `json:"payment_method"`
+	MerchantID      int     `json:"merchant_id"`
+	TransactionTime string  `json:"transaction_time"`
+	CreatedAt       string  `json:"created_at"`
+	UpdatedAt       string  `json:"updated_at"`
+	DeletedAt       *string `json:"deleted_at"`
 }
 
 type TransactionResponseMonthStatusSuccess struct {

@@ -43,12 +43,7 @@ func (s *saldoResponseMapper) ToSaldoResponseDeleteAt(saldo *record.SaldoRecord)
 		WithdrawTime:   saldo.WithdrawTime,
 		CreatedAt:      saldo.CreatedAt,
 		UpdatedAt:      saldo.UpdatedAt,
-		DeletedAt: func() string {
-			if saldo.DeletedAt != nil {
-				return *saldo.DeletedAt
-			}
-			return ""
-		}(),
+		DeletedAt:      saldo.DeletedAt,
 	}
 }
 

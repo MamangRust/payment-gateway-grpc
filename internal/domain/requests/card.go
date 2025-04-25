@@ -8,8 +8,19 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+type MonthYearCardNumberCard struct {
+	CardNumber string `json:"card_number" validate:"required"`
+	Year       int    `json:"year" validate:"required"`
+}
+
+type FindAllCards struct {
+	Search   string `json:"search" validate:"required"`
+	Page     int    `json:"page" validate:"min=1"`
+	PageSize int    `json:"page_size" validate:"min=1,max=100"`
+}
+
 type CreateCardRequest struct {
-	UserID       int       `json:"user_id" validate:"required,min=1"`
+	UserID       int       `json:"user_id"`
 	CardType     string    `json:"card_type" validate:"required"`
 	ExpireDate   time.Time `json:"expire_date" validate:"required"`
 	CVV          string    `json:"cvv" validate:"required"`

@@ -1,0 +1,1777 @@
+{
+	"info": {
+		"_postman_id": "801532a5-563f-4e1c-bfcd-dfad9a749470",
+		"name": "Card",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12455638"
+	},
+	"item": [
+		{
+			"name": "Sender",
+			"item": [
+				{
+					"name": "Find All Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://0.0.0.0:5000/api/card",
+							"protocol": "http",
+							"host": [
+								"0",
+								"0",
+								"0",
+								"0"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://0.0.0.0:5000/api/card\" \\\n-H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMSIsImF1ZCI6WyJhY2Nlc3MiXSwiZXhwIjoxNzM1OTk2Mjk5fQ.m_2bE3hpoTdwQ2_B9AjxchbUFAqcxls5vIrh4le2Yyo\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Active All",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/active",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"active"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://0.0.0.0:5000/api/card/active\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find All Trashed",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/trashed",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"trashed"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://0.0.0.0:5000/api/card/trashed\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/card_number/4550493906860020",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"card_number",
+								"4550493906860020"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://0.0.0.0:5000/api/card/card_number/1234567890\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Create Card",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": 1,\n  \"card_type\": \"Credit\",\n  \"expire_date\": \"2025-12-31T00:00:00Z\",\n  \"cvv\": \"123\",\n  \"card_provider\": \"Visa\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/card/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"create"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://0.0.0.0:5000/api/card/create\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\" \\\n-d '{\n  \"user_id\": 1,\n  \"card_type\": \"Credit\",\n  \"expire_date\": \"2025-12-31T00:00:00Z\",\n  \"cvv\": \"123\",\n  \"card_provider\": \"Visa\"\n}'"
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Card",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer{{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/restore/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"restore",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://0.0.0.0:5000/api/card/restore/1\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Update Card",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"card_id\": 1,\n  \"user_id\": 1,\n  \"card_type\": \"Debit\",\n  \"expire_date\": \"2026-06-30T00:00:00Z\",\n  \"cvv\": \"456\",\n  \"card_provider\": \"MasterCard\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/card/update/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"update",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://0.0.0.0:5000/api/card/update/1\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\" \\\n-d '{\n  \"card_id\": 1,\n  \"user_id\": 1,\n  \"card_type\": \"Debit\",\n  \"expire_date\": \"2026-06-30T00:00:00Z\",\n  \"cvv\": \"456\",\n  \"card_provider\": \"MasterCard\"\n}'"
+					},
+					"response": []
+				},
+				{
+					"name": "Trashed",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/trashed/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"trashed",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://0.0.0.0:5000/api/card/trashed/1\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Permanent Card",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/permanent/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"permanent",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X DELETE \"http://0.0.0.0:5000/api/card/permanent/1\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find User Id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/user",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"user"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://0.0.0.0:5000/api/card/user\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Id Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://0.0.0.0:5000/api/card/1\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Restore All Card",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/restore/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"restore",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X PUT \"http://localhost:5000/api/role/restore-all \\\n     -H 'Content-Type: application/json' \\\n     -H 'Authorization: Bearer {{vault:json-web-token}}'"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete All Permanent Card",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/permanent/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"permanent",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X DELETE \"http://localhost:5000/api/role/permanent-all \\\n     -H 'Content-Type: application/json' \\\n     -H 'Authorization: Bearer {{vault:json-web-token}}'"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Receiver",
+			"item": [
+				{
+					"name": "Find All Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://0.0.0.0:5000/api/card\" \\\n-H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMSIsImF1ZCI6WyJhY2Nlc3MiXSwiZXhwIjoxNzM1OTk2Mjk5fQ.m_2bE3hpoTdwQ2_B9AjxchbUFAqcxls5vIrh4le2Yyo\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Active Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/active",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"active"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://0.0.0.0:5000/api/card/active\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Trashed Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/trashed",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"trashed"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://0.0.0.0:5000/api/card/trashed\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/card_number/1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"card_number",
+								"1234567890"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://0.0.0.0:5000/api/card/card_number/1234567890\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Create Card",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": 1,\n  \"card_type\": \"Credit\",\n  \"expire_date\": \"2025-12-31T00:00:00Z\",\n  \"cvv\": \"123\",\n  \"card_provider\": \"Visa\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/card/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"create"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://0.0.0.0:5000/api/card/create\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\" \\\n-d '{\n  \"user_id\": 1,\n  \"card_type\": \"Credit\",\n  \"expire_date\": \"2025-12-31T00:00:00Z\",\n  \"cvv\": \"123\",\n  \"card_provider\": \"Visa\"\n}'"
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Card",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/restore/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"restore",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://0.0.0.0:5000/api/card/restore/1\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Update Card",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"card_id\": 1,\n  \"user_id\": 1,\n  \"card_type\": \"Debit\",\n  \"expire_date\": \"2026-06-30T00:00:00Z\",\n  \"cvv\": \"456\",\n  \"card_provider\": \"MasterCard\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/card/update/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"update",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://0.0.0.0:5000/api/card/update/1\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\" \\\n-d '{\n  \"card_id\": 1,\n  \"user_id\": 1,\n  \"card_type\": \"Debit\",\n  \"expire_date\": \"2026-06-30T00:00:00Z\",\n  \"cvv\": \"456\",\n  \"card_provider\": \"MasterCard\"\n}'"
+					},
+					"response": []
+				},
+				{
+					"name": "Trashed Card",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/trashed/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"trashed",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://0.0.0.0:5000/api/card/trashed/1\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Permanent Card",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/permanent/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"permanent",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X DELETE \"http://0.0.0.0:5000/api/card/permanent/1\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find User Id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/user",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"user"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://0.0.0.0:5000/api/card/user\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Id Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://0.0.0.0:5000/api/card/1\" \\\n-H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\" \\\n-H \"Content-Type: application/json\""
+					},
+					"response": []
+				},
+				{
+					"name": "Restore All Card",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/restore/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"restore",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X PUT \"http://localhost:5000/api/role/restore-all \\\n     -H 'Content-Type: application/json' \\\n     -H 'Authorization: Bearer {{vault:json-web-token}}'"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete All Permanent Card",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/permanent/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"permanent",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X DELETE \"http://localhost:5000/api/role/permanent-all \\\n     -H 'Content-Type: application/json' \\\n     -H 'Authorization: Bearer {{vault:json-web-token}}'"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "By Card Number",
+			"item": [
+				{
+					"name": "Month Topup Amount Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/monthly-topup-amount-by-card?year=2025&card_number=2003039399393",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"monthly-topup-amount-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "2003039399393"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/monthly-topup-amount-by-card?year=2025&card_number=2003039399393\" \\\n  -H \"Authorization: Bearer $JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month Transfer Receiver Amount By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/monthly-transfer-receiver-amount-by-card?year=2025&card_number=2003039399393",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"monthly-transfer-receiver-amount-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "2003039399393"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/monthly-transfer-receiver-amount-by-card?year=2025&card_number=2003039399393\" \\\n  -H \"Authorization: Bearer $JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month Withdraw By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/monthly-withdraw-amount-by-card?year=2025&card_number=2003039399393",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"monthly-withdraw-amount-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "2003039399393"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/monthly-withdraw-amount-by-card?year=2025&card_number=2003039399393\" \\\n  -H \"Authorization: Bearer $JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month Transfer Sender Amount By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/monthly-transfer-sender-amount-by-card?year=2025&card_number=2003039399393",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"monthly-transfer-sender-amount-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "2003039399393"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/monthly-transfer-sender-amount-by-card?year=2025&card_number=2003039399393\" \\\n  -H \"Authorization: Bearer $JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month Balance By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/monthly-balance-by-card?year=2025&card_number=2003039399393",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"monthly-balance-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "2003039399393"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/monthly-balance-by-card?year=2025&card_number=2003039399393\" \\\n  -H \"Authorization: Bearer $JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Transfer Sender By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/yearly-transfer-sender-amount-by-card?year=2025&card_number=2003039399393",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"yearly-transfer-sender-amount-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "2003039399393"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/yearly-transfer-sender-amount-by-card?year=2025&card_number=2003039399393\" \\\n  -H \"Authorization: Bearer $JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month Transaction Amount By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/monthly-transaction-amount-by-card?year=2025&card_number=2003039399393",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"monthly-transaction-amount-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "2003039399393"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/monthly-transaction-amount-by-card?year=2025&card_number=2003039399393\" \\\n  -H \"Authorization: Bearer $JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Withdraw By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/yearly-withdraw-amount-by-card?year=2025&card_number=2003039399393",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"yearly-withdraw-amount-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "2003039399393"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/yearly-withdraw-amount-by-card?year=2025&card_number=2003039399393\" \\\n  -H \"Authorization: Bearer $JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Transfer Receiver Amount By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/yearly-transfer-receiver-amount-by-card?year=2025&card_number=2003039399393",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"yearly-transfer-receiver-amount-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "2003039399393"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/yearly-transfer-receiver-amount-by-card?year=2025&card_number=2003039399393\" \\\n  -H \"Authorization: Bearer $JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Transaction By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/yearly-transaction-amount-by-card?year=2025&card_number=2003039399393",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"yearly-transaction-amount-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "2003039399393"
+								}
+							]
+						},
+						"description": "Generated from cURL: \ncurl -X GET \"http://localhost:5000/api/card/yearly-transaction-amount-by-card?year=2025&card_number=2003039399393\" \\\n  -H \"Authorization: Bearer $JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Topup Amount Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/yearly-topup-amount-by-card?year=2025&card_number=2003039399393",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"yearly-topup-amount-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "2003039399393"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/yearly-topup-amount-by-card?year=2025&card_number=2003039399393\" \\\n  -H \"Authorization: Bearer $JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Balance By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/card/yearly-balance-by-card?year=2025&card_number=2003039399393",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"card",
+								"yearly-balance-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "2003039399393"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/yearly-balance-by-card?year=2025&card_number=2003039399393\" \\\n  -H \"Authorization: Bearer $JWT_TOKEN\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Dashboard Card",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/card/dashboard",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"card",
+						"dashboard"
+					]
+				},
+				"description": "Generated from cURL: curl -X GET http://localhost:5000/api/card/dashboard \\\n  -H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\""
+			},
+			"response": []
+		},
+		{
+			"name": "Dashboard Card By Card Number",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/card/dashboard/1234567890",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"card",
+						"dashboard",
+						"1234567890"
+					]
+				},
+				"description": "Generated from cURL: curl -X GET http://localhost:5000/api/card/dashboard/1234567890 \\\n  -H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\"\n"
+			},
+			"response": []
+		},
+		{
+			"name": "Month Balance",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/card/monthly-balance?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"card",
+						"monthly-balance"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/monthly-balance?year=2025\" \\\n  -H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\"\n"
+			},
+			"response": []
+		},
+		{
+			"name": "Year Balance",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/card/yearly-balance?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"card",
+						"yearly-balance"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/yearly-balance?year=2025\" \\\n  -H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\""
+			},
+			"response": []
+		},
+		{
+			"name": "Month Topup Amount",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/card/monthly-topup-amount?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"card",
+						"monthly-topup-amount"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/monthly-topup-amount?year=2025\" \\\n  -H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Topup Amount",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/card/yearly-topup-amount?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"card",
+						"yearly-topup-amount"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/yearly-topup-amount?year=2025\" \\\n  -H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\""
+			},
+			"response": []
+		},
+		{
+			"name": "Month Withdraw Amount",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/card/monthly-withdraw-amount?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"card",
+						"monthly-withdraw-amount"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/monthly-withdraw-amount?year=2025\" \\\n  -H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Withdraw Amount",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/card/yearly-withdraw-amount?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"card",
+						"yearly-withdraw-amount"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/yearly-withdraw-amount?year=2025\" \\\n  -H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\""
+			},
+			"response": []
+		},
+		{
+			"name": "Month Transaction Amount",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/card/monthly-transaction-amount?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"card",
+						"monthly-transaction-amount"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/monthly-transaction-amount?year=2025\" \\\n  -H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Transaction Amount",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/card/yearly-transaction-amount?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"card",
+						"yearly-transaction-amount"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/yearly-transaction-amount?year=2025\" \\\n  -H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\"\n"
+			},
+			"response": []
+		},
+		{
+			"name": "Month Transfer Sender",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/card/monthly-transfer-sender-amount?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"card",
+						"monthly-transfer-sender-amount"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/monthly-transfer-sender-amount?year=2025\" \\\n  -H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Transfer Sender",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/card/yearly-transfer-sender-amount?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"card",
+						"yearly-transfer-sender-amount"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/yearly-transfer-sender-amount?year=2025\" \\\n  -H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\"\n"
+			},
+			"response": []
+		},
+		{
+			"name": "Month Transfer Receiver",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/card/monthly-transfer-receiver-amount?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"card",
+						"monthly-transfer-receiver-amount"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/card/monthly-transfer-receiver-amount?year=2025\" \\\n  -H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Transfer Receiver",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/card/yearly-transfer-receiver-amount?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"card",
+						"yearly-transfer-receiver-amount"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: \ncurl -X GET \"http://localhost:5000/api/card/yearly-transfer-receiver-amount?year=2025\" \\\n  -H \"Authorization: Bearer <YOUR_BEARER_TOKEN>\"\n"
+			},
+			"response": []
+		}
+	]
+}
