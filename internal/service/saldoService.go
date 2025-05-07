@@ -5,11 +5,9 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/service"
 	"MamangRust/paymentgatewaygrpc/internal/repository"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/card_errors"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/saldo_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
-	"database/sql"
-	"errors"
-	"fmt"
-	"net/http"
 
 	"go.uber.org/zap"
 )
@@ -58,11 +56,7 @@ func (s *saldoService) FindAll(req *requests.FindAllSaldos) ([]*response.SaldoRe
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search))
 
-		return nil, nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve saldo list",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, nil, saldo_errors.ErrFailedFindAllSaldos
 	}
 
 	so := s.mapping.ToSaldoResponses(res)
@@ -101,11 +95,7 @@ func (s *saldoService) FindByActive(req *requests.FindAllSaldos) ([]*response.Sa
 			zap.Int("page_size", pageSize),
 			zap.String("search", search))
 
-		return nil, nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve active saldo",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, nil, saldo_errors.ErrFailedFindActiveSaldos
 	}
 
 	so := s.mapping.ToSaldoResponsesDeleteAt(res)
@@ -144,11 +134,7 @@ func (s *saldoService) FindByTrashed(req *requests.FindAllSaldos) ([]*response.S
 			zap.Int("page_size", pageSize),
 			zap.String("search", search))
 
-		return nil, nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve trashed saldo",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, nil, saldo_errors.ErrFailedFindTrashedSaldos
 	}
 
 	s.logger.Debug("Successfully fetched trashed saldo",
@@ -171,18 +157,7 @@ func (s *saldoService) FindById(saldo_id int) (*response.SaldoResponse, *respons
 			zap.Int("saldo_id", saldo_id),
 			zap.Error(err))
 
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &response.ErrorResponse{
-				Status:  "not_found",
-				Message: fmt.Sprintf("Saldo with ID %d not found", saldo_id),
-				Code:    http.StatusNotFound,
-			}
-		}
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve saldo details",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, saldo_errors.ErrFailedSaldoNotFound
 	}
 
 	so := s.mapping.ToSaldoResponse(res)
@@ -202,18 +177,10 @@ func (s *saldoService) FindMonthlyTotalSaldoBalance(req *requests.MonthTotalSald
 	if err != nil {
 		s.logger.Error("Failed to fetch monthly total saldo balance", zap.Error(err), zap.Int("year", year), zap.Int("month", month))
 
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly total saldo balance",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, saldo_errors.ErrFailedFindMonthlyTotalSaldoBalance
 	}
 
 	responses := s.mapping.ToSaldoMonthTotalBalanceResponses(res)
-
-	for i, row := range responses {
-		fmt.Printf("Row %d: %+v\n", i, *row)
-	}
 
 	s.logger.Debug("Successfully fetched monthly total saldo balance", zap.Int("year", year), zap.Int("month", month))
 
@@ -228,11 +195,7 @@ func (s *saldoService) FindYearTotalSaldoBalance(year int) ([]*response.SaldoYea
 	if err != nil {
 		s.logger.Error("Failed to fetch yearly total saldo balance", zap.Error(err), zap.Int("year", year))
 
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly total saldo balance",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, saldo_errors.ErrFailedFindYearTotalSaldoBalance
 	}
 
 	s.logger.Debug("Successfully fetched yearly total saldo balance", zap.Int("year", year))
@@ -250,11 +213,7 @@ func (s *saldoService) FindMonthlySaldoBalances(year int) ([]*response.SaldoMont
 	if err != nil {
 		s.logger.Error("Failed to fetch monthly saldo balances", zap.Error(err), zap.Int("year", year))
 
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly saldo balances",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, saldo_errors.ErrFailedFindMonthlySaldoBalances
 	}
 
 	responses := s.mapping.ToSaldoMonthBalanceResponses(res)
@@ -272,11 +231,7 @@ func (s *saldoService) FindYearlySaldoBalances(year int) ([]*response.SaldoYearB
 	if err != nil {
 		s.logger.Error("Failed to fetch yearly saldo balances", zap.Error(err), zap.Int("year", year))
 
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly saldo balances",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, saldo_errors.ErrFailedFindYearlySaldoBalances
 	}
 
 	responses := s.mapping.ToSaldoYearBalanceResponses(res)
@@ -296,18 +251,7 @@ func (s *saldoService) FindByCardNumber(card_number string) (*response.SaldoResp
 			zap.String("card_number", card_number),
 			zap.Error(err))
 
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &response.ErrorResponse{
-				Status:  "not_found",
-				Message: fmt.Sprintf("saldo with card_number %s not found", card_number),
-				Code:    http.StatusNotFound,
-			}
-		}
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve saldo details",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, saldo_errors.ErrFailedSaldoNotFound
 	}
 
 	so := s.mapping.ToSaldoResponse(res)
@@ -327,11 +271,7 @@ func (s *saldoService) CreateSaldo(request *requests.CreateSaldoRequest) (*respo
 			zap.Error(err),
 			zap.Any("request", request))
 
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to create new saldo",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, card_errors.ErrCardNotFoundRes
 	}
 
 	res, err := s.saldoRepository.CreateSaldo(request)
@@ -340,11 +280,7 @@ func (s *saldoService) CreateSaldo(request *requests.CreateSaldoRequest) (*respo
 		s.logger.Error("Failed to create saldo record",
 			zap.Error(err))
 
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to create saldo",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, saldo_errors.ErrFailedCreateSaldo
 	}
 
 	so := s.mapping.ToSaldoResponse(res)
@@ -364,28 +300,14 @@ func (s *saldoService) UpdateSaldo(request *requests.UpdateSaldoRequest) (*respo
 			zap.String("card_number", request.CardNumber),
 			zap.Error(err))
 
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &response.ErrorResponse{
-				Status:  "not_found",
-				Message: fmt.Sprintf("Card with ID %d not found", request.CardNumber),
-				Code:    http.StatusNotFound,
-			}
-		}
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to verify Card",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, card_errors.ErrCardNotFoundRes
 	}
 
 	res, err := s.saldoRepository.UpdateSaldo(request)
 
 	if err != nil {
 		s.logger.Error("Failed to update saldo", zap.Error(err), zap.String("card_number", request.CardNumber))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to update saldo",
-		}
+		return nil, saldo_errors.ErrFailedUpdateSaldo
 	}
 
 	so := s.mapping.ToSaldoResponse(res)
@@ -405,11 +327,7 @@ func (s *saldoService) TrashSaldo(saldo_id int) (*response.SaldoResponse, *respo
 			zap.Int("saldo", saldo_id),
 			zap.Error(err))
 
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to move saldo to trash",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, saldo_errors.ErrFailedTrashSaldo
 	}
 	so := s.mapping.ToSaldoResponse(res)
 
@@ -428,11 +346,7 @@ func (s *saldoService) RestoreSaldo(saldo_id int) (*response.SaldoResponse, *res
 			zap.Int("saldo_id", saldo_id),
 			zap.Error(err))
 
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to restore saldo from trash",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, saldo_errors.ErrFailedRestoreSaldo
 	}
 
 	so := s.mapping.ToSaldoResponse(res)
@@ -452,11 +366,7 @@ func (s *saldoService) DeleteSaldoPermanent(saldo_id int) (bool, *response.Error
 			zap.Int("saldo_id", saldo_id),
 			zap.Error(err))
 
-		return false, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently delete saldo",
-			Code:    http.StatusInternalServerError,
-		}
+		return false, saldo_errors.ErrFailedDeleteSaldoPermanent
 	}
 
 	s.logger.Debug("Successfully deleted saldo permanently", zap.Int("saldo_id", saldo_id))
@@ -471,11 +381,7 @@ func (s *saldoService) RestoreAllSaldo() (bool, *response.ErrorResponse) {
 
 	if err != nil {
 		s.logger.Error("Failed to restore all saldo", zap.Error(err))
-		return false, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to restore all saldo",
-			Code:    http.StatusInternalServerError,
-		}
+		return false, saldo_errors.ErrFailedRestoreAllSaldo
 	}
 
 	s.logger.Debug("Successfully restored all saldo")
@@ -489,11 +395,7 @@ func (s *saldoService) DeleteAllSaldoPermanent() (bool, *response.ErrorResponse)
 
 	if err != nil {
 		s.logger.Error("Failed to permanently delete all saldo", zap.Error(err))
-		return false, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently delete all saldo",
-			Code:    http.StatusInternalServerError,
-		}
+		return false, saldo_errors.ErrFailedDeleteAllSaldoPermanent
 	}
 
 	s.logger.Debug("Successfully deleted all saldo permanently")

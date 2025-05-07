@@ -5,10 +5,8 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	recordmapper "MamangRust/paymentgatewaygrpc/internal/mapper/record"
 	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/transaction_errors"
 	"context"
-	"database/sql"
-	"errors"
-	"fmt"
 	"time"
 )
 
@@ -38,10 +36,7 @@ func (r *transactionRepository) FindAllTransactions(req *requests.FindAllTransac
 	transactions, err := r.db.GetTransactions(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no transaction found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-		return nil, nil, fmt.Errorf("failed to retrieve transaction (page %d, size %d, search '%s'): %w", req.Page, req.PageSize, req.Search, err)
+		return nil, nil, transaction_errors.ErrFindAllTransactionsFailed
 	}
 
 	var totalCount int
@@ -67,10 +62,7 @@ func (r *transactionRepository) FindAllTransactionByCardNumber(req *requests.Fin
 	transactions, err := r.db.GetTransactionsByCardNumber(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no active transaction found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-		return nil, nil, fmt.Errorf("failed to find active transaction (page %d, size %d, search '%s'): %w", req.Page, req.PageSize, req.Search, err)
+		return nil, nil, transaction_errors.ErrFindTransactionsByCardNumberFailed
 	}
 
 	var totalCount int
@@ -95,10 +87,7 @@ func (r *transactionRepository) FindByActive(req *requests.FindAllTransactions) 
 	res, err := r.db.GetActiveTransactions(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no active transaction found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-		return nil, nil, fmt.Errorf("failed to find active transaction (page %d, size %d, search '%s'): %w", req.Page, req.PageSize, req.Search, err)
+		return nil, nil, transaction_errors.ErrFindActiveTransactionsFailed
 	}
 
 	var totalCount int
@@ -123,10 +112,7 @@ func (r *transactionRepository) FindByTrashed(req *requests.FindAllTransactions)
 	res, err := r.db.GetTrashedTransactions(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no trashed transaction found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-		return nil, nil, fmt.Errorf("failed to find trashed transaction (page %d, size %d, search '%s'): %w", req.Page, req.PageSize, req.Search, err)
+		return nil, nil, transaction_errors.ErrFindTrashedTransactionsFailed
 	}
 
 	var totalCount int
@@ -143,10 +129,7 @@ func (r *transactionRepository) FindById(transaction_id int) (*record.Transactio
 	res, err := r.db.GetTransactionByID(r.ctx, int32(transaction_id))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("transaction not found with ID: %d", transaction_id)
-		}
-		return nil, fmt.Errorf("failed to get transaction by ID %d: %w", transaction_id, err)
+		return nil, transaction_errors.ErrFindTransactionByIdFailed
 	}
 
 	return r.mapping.ToTransactionRecord(res), nil
@@ -156,10 +139,7 @@ func (r *transactionRepository) FindTransactionByMerchantId(merchant_id int) ([]
 	res, err := r.db.GetTransactionsByMerchantID(r.ctx, int32(merchant_id))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("transaction not found with merchant_id: %d", merchant_id)
-		}
-		return nil, fmt.Errorf("failed to get transaction by merchant_id %d: %w", merchant_id, err)
+		return nil, transaction_errors.ErrFindTransactionByMerchantIdFailed
 	}
 
 	return r.mapping.ToTransactionsRecord(res), nil
@@ -180,10 +160,7 @@ func (r *transactionRepository) GetMonthTransactionStatusSuccess(req *requests.M
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no transaction data for success status found for year %d, month %d", req.Year, req.Month)
-		}
-		return nil, fmt.Errorf("failed to get monthly transaction status success for year %d, month %d: %w", req.Year, req.Month, err)
+		return nil, transaction_errors.ErrGetMonthTransactionStatusSuccessFailed
 	}
 
 	so := r.mapping.ToTransactionRecordsMonthStatusSuccess(res)
@@ -195,10 +172,7 @@ func (r *transactionRepository) GetYearlyTransactionStatusSuccess(year int) ([]*
 	res, err := r.db.GetYearlyTransactionStatusSuccess(r.ctx, int32(year))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transaction success found for year %d", year)
-		}
-		return nil, fmt.Errorf("failed to get yearly transaction status success for year %d: %w", year, err)
+		return nil, transaction_errors.ErrGetYearlyTransactionStatusSuccessFailed
 	}
 
 	so := r.mapping.ToTransactionRecordsYearStatusSuccess(res)
@@ -221,10 +195,7 @@ func (r *transactionRepository) GetMonthTransactionStatusFailed(req *requests.Mo
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no month transaction failed found for year %d and month %d", req.Year, req.Month)
-		}
-		return nil, fmt.Errorf("failed to get month transaction status failed for year %d and month %d: %w", req.Year, req.Month, err)
+		return nil, transaction_errors.ErrGetMonthTransactionStatusFailedFailed
 	}
 
 	so := r.mapping.ToTransactionRecordsMonthStatusFailed(res)
@@ -236,10 +207,7 @@ func (r *transactionRepository) GetYearlyTransactionStatusFailed(year int) ([]*r
 	res, err := r.db.GetYearlyTransactionStatusFailed(r.ctx, int32(year))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transaction failed found for year %d", year)
-		}
-		return nil, fmt.Errorf("failed to get yearly transaction status failed for year %d: %w", year, err)
+		return nil, transaction_errors.ErrGetYearlyTransactionStatusFailedFailed
 	}
 
 	so := r.mapping.ToTransactionRecordsYearStatusFailed(res)
@@ -263,10 +231,7 @@ func (r *transactionRepository) GetMonthTransactionStatusSuccessByCardNumber(req
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no month transaction success found for year %d, month %d and card_number %s", req.Year, req.Month, req.CardNumber)
-		}
-		return nil, fmt.Errorf("failed to get month transaction status success for year %d, month %d and card_number %s: %w", req.Year, req.Month, req.CardNumber, err)
+		return nil, transaction_errors.ErrGetMonthTransactionStatusSuccessByCardFailed
 	}
 
 	so := r.mapping.ToTransactionRecordsMonthStatusSuccessCardNumber(res)
@@ -281,10 +246,7 @@ func (r *transactionRepository) GetYearlyTransactionStatusSuccessByCardNumber(re
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transaction success found for year %d and card_number %s", req.Year, req.CardNumber)
-		}
-		return nil, fmt.Errorf("failed to get yearly transaction status success for year %d and card_number %s: %w", req.Year, req.CardNumber, err)
+		return nil, transaction_errors.ErrGetYearlyTransactionStatusSuccessByCardFailed
 	}
 
 	so := r.mapping.ToTransactionRecordsYearStatusSuccessCardNumber(res)
@@ -308,10 +270,7 @@ func (r *transactionRepository) GetMonthTransactionStatusFailedByCardNumber(req 
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no month transaction failed found for year %d, month %d and card_number %s", req.Year, req.Month, req.CardNumber)
-		}
-		return nil, fmt.Errorf("failed to get month transaction status failed for year %d, month %d and card_number %s: %w", req.Year, req.Month, req.CardNumber, err)
+		return nil, transaction_errors.ErrGetMonthTransactionStatusFailedByCardFailed
 	}
 
 	so := r.mapping.ToTransactionRecordsMonthStatusFailedCardNumber(res)
@@ -326,10 +285,7 @@ func (r *transactionRepository) GetYearlyTransactionStatusFailedByCardNumber(req
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transaction failed found for year %d and card_number %s", req.Year, req.CardNumber)
-		}
-		return nil, fmt.Errorf("failed to get yearly transaction status failed for year %d and card_number %s: %w", req.Year, req.CardNumber, err)
+		return nil, transaction_errors.ErrGetYearlyTransactionStatusFailedByCardFailed
 	}
 
 	so := r.mapping.ToTransactionRecordsYearStatusFailedCardNumber(res)
@@ -343,10 +299,7 @@ func (r *transactionRepository) GetMonthlyPaymentMethods(year int) ([]*record.Tr
 	res, err := r.db.GetMonthlyPaymentMethods(r.ctx, yearStart)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no monthly transaction payment method found")
-		}
-		return nil, fmt.Errorf("failed to get monthly transaction payment method: %w", err)
+		return nil, transaction_errors.ErrGetMonthlyPaymentMethodsFailed
 	}
 
 	return r.mapping.ToTransactionMonthlyMethods(res), nil
@@ -356,10 +309,7 @@ func (r *transactionRepository) GetYearlyPaymentMethods(year int) ([]*record.Tra
 	res, err := r.db.GetYearlyPaymentMethods(r.ctx, year)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transaction payment method found")
-		}
-		return nil, fmt.Errorf("failed to get yearly transaction payment method: %w", err)
+		return nil, transaction_errors.ErrGetYearlyPaymentMethodsFailed
 	}
 
 	return r.mapping.ToTransactionYearlyMethods(res), nil
@@ -371,10 +321,7 @@ func (r *transactionRepository) GetMonthlyAmounts(year int) ([]*record.Transacti
 	res, err := r.db.GetMonthlyAmounts(r.ctx, yearStart)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no monthly transaction amount found")
-		}
-		return nil, fmt.Errorf("failed to get monthly transaction amount: %w", err)
+		return nil, transaction_errors.ErrGetMonthlyAmountsFailed
 	}
 
 	return r.mapping.ToTransactionMonthlyAmounts(res), nil
@@ -384,10 +331,7 @@ func (r *transactionRepository) GetYearlyAmounts(year int) ([]*record.Transactio
 	res, err := r.db.GetYearlyAmounts(r.ctx, year)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transaction amounts found")
-		}
-		return nil, fmt.Errorf("failed to get yearly transaction amounts: %w", err)
+		return nil, transaction_errors.ErrGetYearlyAmountsFailed
 	}
 
 	return r.mapping.ToTransactionYearlyAmounts(res), nil
@@ -403,10 +347,7 @@ func (r *transactionRepository) GetMonthlyPaymentMethodsByCardNumber(req *reques
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no monthly transaction payment method card number %s and year %d found", cardNumber, year)
-		}
-		return nil, fmt.Errorf("failed to get monthly transaction payment method card number %s and year %d: %w", cardNumber, year, err)
+		return nil, transaction_errors.ErrGetMonthlyPaymentMethodsByCardFailed
 	}
 
 	return r.mapping.ToTransactionMonthlyMethodsByCardNumber(res), nil
@@ -417,15 +358,12 @@ func (r *transactionRepository) GetYearlyPaymentMethodsByCardNumber(req *request
 	cardNumber := req.CardNumber
 
 	res, err := r.db.GetYearlyPaymentMethodsByCardNumber(r.ctx, db.GetYearlyPaymentMethodsByCardNumberParams{
-		CardNumber: req.CardNumber,
-		Column2:    req.Year,
+		CardNumber: cardNumber,
+		Column2:    year,
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transfer payment method card number %s and year %d found", cardNumber, year)
-		}
-		return nil, fmt.Errorf("failed to get yearly transfer payment method card number %s and year %d: %w", cardNumber, year, err)
+		return nil, transaction_errors.ErrGetYearlyPaymentMethodsByCardFailed
 	}
 
 	return r.mapping.ToTransactionYearlyMethodsByCardNumber(res), nil
@@ -436,14 +374,11 @@ func (r *transactionRepository) GetMonthlyAmountsByCardNumber(req *requests.Mont
 	year := req.Year
 
 	res, err := r.db.GetMonthlyAmountsByCardNumber(r.ctx, db.GetMonthlyAmountsByCardNumberParams{
-		CardNumber: req.CardNumber,
-		Column2:    time.Date(req.Year, 1, 1, 0, 0, 0, 0, time.UTC),
+		CardNumber: cardNumber,
+		Column2:    time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC),
 	})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no monthly transaction payment method card number %s and year %d found", cardNumber, year)
-		}
-		return nil, fmt.Errorf("failed to get monthly transaction payment method card number %s and year %d: %w", cardNumber, year, err)
+		return nil, transaction_errors.ErrGetMonthlyAmountsByCardFailed
 	}
 
 	return r.mapping.ToTransactionMonthlyAmountsByCardNumber(res), nil
@@ -454,14 +389,11 @@ func (r *transactionRepository) GetYearlyAmountsByCardNumber(req *requests.Month
 	year := req.Year
 
 	res, err := r.db.GetYearlyAmountsByCardNumber(r.ctx, db.GetYearlyAmountsByCardNumberParams{
-		CardNumber: req.CardNumber,
-		Column2:    req.Year,
+		CardNumber: cardNumber,
+		Column2:    year,
 	})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transaction amounts card number %s and year %d found", cardNumber, year)
-		}
-		return nil, fmt.Errorf("failed to get yearly transaction amounts card number %s and year %d: %w", cardNumber, year, err)
+		return nil, transaction_errors.ErrGetYearlyAmountsByCardFailed
 	}
 
 	return r.mapping.ToTransactionYearlyAmountsByCardNumber(res), nil
@@ -479,10 +411,7 @@ func (r *transactionRepository) CreateTransaction(request *requests.CreateTransa
 	res, err := r.db.CreateTransaction(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("invalid transaction data: %w", err)
-		}
-		return nil, fmt.Errorf("failed to create transaction: invalid or incomplete transaction data: %w", err)
+		return nil, transaction_errors.ErrCreateTransactionFailed
 	}
 
 	return r.mapping.ToTransactionRecord(res), nil
@@ -501,10 +430,7 @@ func (r *transactionRepository) UpdateTransaction(request *requests.UpdateTransa
 	res, err := r.db.UpdateTransaction(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("transaction ID %d not found for update", request.TransactionID)
-		}
-		return nil, fmt.Errorf("failed to update transaction ID %d: transaction not found or invalid update data", request.TransactionID)
+		return nil, transaction_errors.ErrUpdateTransactionFailed
 	}
 
 	return r.mapping.ToTransactionRecord(res), nil
@@ -519,10 +445,7 @@ func (r *transactionRepository) UpdateTransactionStatus(request *requests.Update
 	res, err := r.db.UpdateTransactionStatus(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("transaction ID %d not found for update", request.TransactionID)
-		}
-		return nil, fmt.Errorf("failed to update transaction ID %d: transaction not found or invalid update data", request.TransactionID)
+		return nil, transaction_errors.ErrUpdateTransactionStatusFailed
 	}
 
 	return r.mapping.ToTransactionRecord(res), nil
@@ -531,10 +454,7 @@ func (r *transactionRepository) UpdateTransactionStatus(request *requests.Update
 func (r *transactionRepository) TrashedTransaction(transaction_id int) (*record.TransactionRecord, error) {
 	res, err := r.db.TrashTransaction(r.ctx, int32(transaction_id))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("transaction ID %d not found or already trashed", transaction_id)
-		}
-		return nil, fmt.Errorf("failed to trash transaction ID %d: %w", transaction_id, err)
+		return nil, transaction_errors.ErrTrashedTransactionFailed
 	}
 	return r.mapping.ToTransactionRecord(res), nil
 }
@@ -542,10 +462,7 @@ func (r *transactionRepository) TrashedTransaction(transaction_id int) (*record.
 func (r *transactionRepository) RestoreTransaction(transaction_id int) (*record.TransactionRecord, error) {
 	res, err := r.db.RestoreTransaction(r.ctx, int32(transaction_id))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("transaction ID %d not found in trash", transaction_id)
-		}
-		return nil, fmt.Errorf("failed to restore transaction ID %d: %w", transaction_id, err)
+		return nil, transaction_errors.ErrRestoreTransactionFailed
 	}
 	return r.mapping.ToTransactionRecord(res), nil
 }
@@ -553,10 +470,8 @@ func (r *transactionRepository) RestoreTransaction(transaction_id int) (*record.
 func (r *transactionRepository) DeleteTransactionPermanent(transaction_id int) (bool, error) {
 	err := r.db.DeleteTransactionPermanently(r.ctx, int32(transaction_id))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("transaction ID %d not found or already deleted", transaction_id)
-		}
-		return false, fmt.Errorf("failed to permanently delete transaction ID %d: %w", transaction_id, err)
+
+		return false, transaction_errors.ErrDeleteTransactionPermanentFailed
 	}
 	return true, nil
 }
@@ -565,10 +480,7 @@ func (r *transactionRepository) RestoreAllTransaction() (bool, error) {
 	err := r.db.RestoreAllTransactions(r.ctx)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("no trashed transaction available to restore")
-		}
-		return false, fmt.Errorf("failed to restore trashed transaction: %w", err)
+		return false, transaction_errors.ErrRestoreAllTransactionsFailed
 	}
 
 	return true, nil
@@ -578,10 +490,7 @@ func (r *transactionRepository) DeleteAllTransactionPermanent() (bool, error) {
 	err := r.db.DeleteAllPermanentTransactions(r.ctx)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("no trashed transaction available to delete permanently")
-		}
-		return false, fmt.Errorf("failed to permanently delete transaction: %w", err)
+		return false, transaction_errors.ErrDeleteAllTransactionsPermanentFailed
 	}
 	return true, nil
 }

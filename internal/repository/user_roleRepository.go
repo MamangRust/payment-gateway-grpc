@@ -5,10 +5,8 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	recordmapper "MamangRust/paymentgatewaygrpc/internal/mapper/record"
 	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
+	userrole_errors "MamangRust/paymentgatewaygrpc/pkg/errors/user_role_errors"
 	"context"
-	"database/sql"
-	"errors"
-	"fmt"
 )
 
 type userRoleRepository struct {
@@ -32,10 +30,7 @@ func (r *userRoleRepository) AssignRoleToUser(req *requests.CreateUserRoleReques
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("cannot assign role: user ID %d or role ID %d not found", req.UserId, req.RoleId)
-		}
-		return nil, fmt.Errorf("failed to assign role to user ID %d and role ID %d: %w", req.UserId, req.RoleId, err)
+		return nil, userrole_errors.ErrAssignRoleToUser
 	}
 
 	return r.mapping.ToUserRoleRecord(res), nil
@@ -48,10 +43,7 @@ func (r *userRoleRepository) RemoveRoleFromUser(req *requests.RemoveUserRoleRequ
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("cannot remove role: no assignment found for user ID %d and role ID %d", req.UserId, req.RoleId)
-		}
-		return fmt.Errorf("failed to remove role from user ID %d and role ID %d: %w", req.UserId, req.RoleId, err)
+		return userrole_errors.ErrRemoveRole
 	}
 
 	return nil

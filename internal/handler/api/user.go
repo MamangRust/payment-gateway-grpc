@@ -2,9 +2,9 @@ package api
 
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/user_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
 	"net/http"
 	"strconv"
@@ -83,11 +83,7 @@ func (h *userHandleApi) FindAllUser(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve user data", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve user data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return user_errors.ErrApiFailedFindAll(c)
 	}
 
 	so := h.mapping.ToApiResponsePaginationUser(res)
@@ -111,11 +107,7 @@ func (h *userHandleApi) FindById(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Invalid user ID", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid user ID",
-			Code:    http.StatusBadRequest,
-		})
+		return user_errors.ErrApiUserInvalidId(c)
 	}
 
 	ctx := c.Request().Context()
@@ -128,11 +120,7 @@ func (h *userHandleApi) FindById(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve user data", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve user data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return user_errors.ErrApiUserNotFound(c)
 	}
 
 	so := h.mapping.ToApiResponseUser(user)
@@ -177,11 +165,7 @@ func (h *userHandleApi) FindByActive(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve user data", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve user data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return user_errors.ErrApiFailedFindActive(c)
 	}
 
 	so := h.mapping.ToApiResponsePaginationUserDeleteAt(res)
@@ -227,11 +211,7 @@ func (h *userHandleApi) FindByTrashed(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve user data", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve user data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return user_errors.ErrApiFailedFindTrashed(c)
 	}
 
 	so := h.mapping.ToApiResponsePaginationUserDeleteAt(res)
@@ -256,20 +236,12 @@ func (h *userHandleApi) Create(c echo.Context) error {
 
 	if err := c.Bind(&body); err != nil {
 		h.logger.Debug("Invalid request body", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid request body",
-			Code:    http.StatusBadRequest,
-		})
+		return user_errors.ErrApiBindCreateUser(c)
 	}
 
 	if err := body.Validate(); err != nil {
 		h.logger.Debug("Validation Error", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Validation Error: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return user_errors.ErrApiValidateCreateUser(c)
 	}
 
 	ctx := c.Request().Context()
@@ -286,11 +258,7 @@ func (h *userHandleApi) Create(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to create user", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to create user: ",
-			Code:    http.StatusBadRequest,
-		})
+		return user_errors.ErrApiFailedCreateUser(c)
 	}
 
 	so := h.mapping.ToApiResponseUser(res)
@@ -317,32 +285,20 @@ func (h *userHandleApi) Update(c echo.Context) error {
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
-		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		h.logger.Debug("Invalid request body", zap.Error(err))
+		return user_errors.ErrApiUserInvalidId(c)
 	}
 
 	var body requests.UpdateUserRequest
 
 	if err := c.Bind(&body); err != nil {
 		h.logger.Debug("Invalid request body", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid request body",
-			Code:    http.StatusBadRequest,
-		})
+		return user_errors.ErrApiBindUpdateUser(c)
 	}
 
 	if err := body.Validate(); err != nil {
 		h.logger.Debug("Validation Error", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Validation Error: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return user_errors.ErrApiValidateUpdateUser(c)
 	}
 
 	ctx := c.Request().Context()
@@ -360,11 +316,7 @@ func (h *userHandleApi) Update(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to update user", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to update user: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return user_errors.ErrApiFailedUpdateUser(c)
 	}
 
 	so := h.mapping.ToApiResponseUser(res)
@@ -389,11 +341,7 @@ func (h *userHandleApi) TrashedUser(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Invalid user ID", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid user ID",
-			Code:    http.StatusBadRequest,
-		})
+		return user_errors.ErrApiUserInvalidId(c)
 	}
 
 	ctx := c.Request().Context()
@@ -406,14 +354,10 @@ func (h *userHandleApi) TrashedUser(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to trashed user", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to trashed user: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return user_errors.ErrApiFailedTrashedUser(c)
 	}
 
-	so := h.mapping.ToApiResponseUser(user)
+	so := h.mapping.ToApiResponseUserDeleteAt(user)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -435,11 +379,7 @@ func (h *userHandleApi) RestoreUser(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Invalid user ID", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid user ID",
-			Code:    http.StatusBadRequest,
-		})
+		return user_errors.ErrApiUserInvalidId(c)
 	}
 
 	ctx := c.Request().Context()
@@ -452,14 +392,10 @@ func (h *userHandleApi) RestoreUser(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to restore user", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to restore user: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return user_errors.ErrApiFailedRestoreUser(c)
 	}
 
-	so := h.mapping.ToApiResponseUser(user)
+	so := h.mapping.ToApiResponseUserDeleteAt(user)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -481,11 +417,7 @@ func (h *userHandleApi) DeleteUserPermanent(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Invalid user ID", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid user ID",
-			Code:    http.StatusBadRequest,
-		})
+		return user_errors.ErrApiUserInvalidId(c)
 	}
 
 	ctx := c.Request().Context()
@@ -498,11 +430,7 @@ func (h *userHandleApi) DeleteUserPermanent(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to delete user", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to delete user: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return user_errors.ErrApiFailedDeletePermanent(c)
 	}
 
 	so := h.mapping.ToApiResponseUserDelete(user)
@@ -529,11 +457,7 @@ func (h *userHandleApi) RestoreAllUser(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Error("Failed to restore all user", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently restore all user",
-			Code:    http.StatusInternalServerError,
-		})
+		return user_errors.ErrApiFailedRestoreAll(c)
 	}
 
 	h.logger.Debug("Successfully restored all user")
@@ -563,11 +487,7 @@ func (h *userHandleApi) DeleteAllUserPermanent(c echo.Context) error {
 	if err != nil {
 		h.logger.Error("Failed to permanently delete all user", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently delete all user",
-			Code:    http.StatusInternalServerError,
-		})
+		return user_errors.ErrApiFailedDeleteAll(c)
 	}
 
 	h.logger.Debug("Successfully deleted all user permanently")

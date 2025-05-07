@@ -5,10 +5,8 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	recordmapper "MamangRust/paymentgatewaygrpc/internal/mapper/record"
 	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/topup_errors"
 	"context"
-	"database/sql"
-	"errors"
-	"fmt"
 	"time"
 )
 
@@ -38,10 +36,7 @@ func (r *topupRepository) FindAllTopups(req *requests.FindAllTopups) ([]*record.
 	res, err := r.db.GetTopups(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no topups found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-		return nil, nil, fmt.Errorf("failed to retrieve topups (page %d, size %d, search '%s'): %w", req.Page, req.PageSize, req.Search, err)
+		return nil, nil, topup_errors.ErrFindAllTopupsFailed
 	}
 
 	var totalCount int
@@ -66,10 +61,7 @@ func (r *topupRepository) FindByActive(req *requests.FindAllTopups) ([]*record.T
 	res, err := r.db.GetActiveTopups(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no active topups found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-		return nil, nil, fmt.Errorf("failed to find active topups (page %d, size %d, search '%s'): %w", req.Page, req.PageSize, req.Search, err)
+		return nil, nil, topup_errors.ErrFindTopupsByActiveFailed
 	}
 
 	var totalCount int
@@ -94,10 +86,7 @@ func (r *topupRepository) FindByTrashed(req *requests.FindAllTopups) ([]*record.
 	res, err := r.db.GetTrashedTopups(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no trashed topups found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-		return nil, nil, fmt.Errorf("failed to find trashed topups (page %d, size %d, search '%s'): %w", req.Page, req.PageSize, req.Search, err)
+		return nil, nil, topup_errors.ErrFindTopupsByTrashedFailed
 	}
 
 	var totalCount int
@@ -123,10 +112,7 @@ func (r *topupRepository) FindAllTopupByCardNumber(req *requests.FindAllTopupsBy
 	res, err := r.db.GetTopupsByCardNumber(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no topups found matching the criteria (page %d, size %d, search '%s', card_number '%s')", req.Page, req.PageSize, req.Search, req.CardNumber)
-		}
-		return nil, nil, fmt.Errorf("failed to retrieve topups (page %d, size %d, search '%s', card_number '%s'): %w", req.Page, req.PageSize, req.Search, req.CardNumber, err)
+		return nil, nil, topup_errors.ErrFindTopupsByCardNumberFailed
 	}
 
 	var totalCount int
@@ -142,10 +128,7 @@ func (r *topupRepository) FindAllTopupByCardNumber(req *requests.FindAllTopupsBy
 func (r *topupRepository) FindById(topup_id int) (*record.TopupRecord, error) {
 	res, err := r.db.GetTopupByID(r.ctx, int32(topup_id))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("topup not found with ID: %d", topup_id)
-		}
-		return nil, fmt.Errorf("failed to get topup by ID %d: %w", topup_id, err)
+		return nil, topup_errors.ErrFindTopupByIdFailed
 	}
 	return r.mapping.ToTopupRecord(res), nil
 }
@@ -165,10 +148,7 @@ func (r *topupRepository) GetMonthTopupStatusSuccess(req *requests.MonthTopupSta
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no successful topup records found for year %d and month %d", req.Year, req.Month)
-		}
-		return nil, fmt.Errorf("failed to get successful monthly topup status for year %d and month %d: %w", req.Year, req.Month, err)
+		return nil, topup_errors.ErrGetMonthTopupStatusSuccessFailed
 	}
 
 	so := r.mapping.ToTopupRecordsMonthStatusSuccess(res)
@@ -180,10 +160,7 @@ func (r *topupRepository) GetYearlyTopupStatusSuccess(year int) ([]*record.Topup
 	res, err := r.db.GetYearlyTopupStatusSuccess(r.ctx, int32(year))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no successful yearly topup records found for year %d", year)
-		}
-		return nil, fmt.Errorf("failed to get successful yearly topup status for year %d: %w", year, err)
+		return nil, topup_errors.ErrGetYearlyTopupStatusSuccessFailed
 	}
 	so := r.mapping.ToTopupRecordsYearStatusSuccess(res)
 
@@ -205,10 +182,7 @@ func (r *topupRepository) GetMonthTopupStatusFailed(req *requests.MonthTopupStat
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no failed topup records found for year %d and month %d", req.Year, req.Month)
-		}
-		return nil, fmt.Errorf("failed to get failed monthly topup status for year %d and month %d: %w", req.Year, req.Month, err)
+		return nil, topup_errors.ErrGetMonthTopupStatusFailedFailed
 	}
 
 	so := r.mapping.ToTopupRecordsMonthStatusFailed(res)
@@ -220,10 +194,7 @@ func (r *topupRepository) GetYearlyTopupStatusFailed(year int) ([]*record.TopupR
 	res, err := r.db.GetYearlyTopupStatusFailed(r.ctx, int32(year))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no failed yearly topup records found for year %d", year)
-		}
-		return nil, fmt.Errorf("failed to get failed yearly topup status for year %d: %w", year, err)
+		return nil, topup_errors.ErrGetYearlyTopupStatusFailedFailed
 	}
 
 	so := r.mapping.ToTopupRecordsYearStatusFailed(res)
@@ -247,10 +218,7 @@ func (r *topupRepository) GetMonthTopupStatusSuccessByCardNumber(req *requests.M
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no successful monthly topup records for card number %s in %d-%02d", req.CardNumber, req.Year, req.Month)
-		}
-		return nil, fmt.Errorf("failed to get successful monthly topup by card number %s for %d-%02d: %w", req.CardNumber, req.Year, req.Month, err)
+		return nil, topup_errors.ErrGetMonthTopupStatusSuccessByCardFailed
 	}
 
 	so := r.mapping.ToTopupRecordsMonthStatusSuccessByCardNumber(res)
@@ -265,10 +233,7 @@ func (r *topupRepository) GetYearlyTopupStatusSuccessByCardNumber(req *requests.
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no successful yearly topup records for card number %s in year %d", req.CardNumber, req.Year)
-		}
-		return nil, fmt.Errorf("failed to get successful yearly topup by card number %s for year %d: %w", req.CardNumber, req.Year, err)
+		return nil, topup_errors.ErrGetYearlyTopupStatusSuccessByCardFailed
 	}
 
 	so := r.mapping.ToTopupRecordsYearStatusSuccessByCardNumber(res)
@@ -296,10 +261,7 @@ func (r *topupRepository) GetMonthTopupStatusFailedByCardNumber(req *requests.Mo
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no failed monthly topup records for card number %s in %d-%02d", req.CardNumber, req.Year, req.Month)
-		}
-		return nil, fmt.Errorf("failed to get failed monthly topup by card number %s for %d-%02d: %w", req.CardNumber, req.Year, req.Month, err)
+		return nil, topup_errors.ErrGetMonthTopupStatusFailedByCardFailed
 	}
 
 	so := r.mapping.ToTopupRecordsMonthStatusFailedByCardNumber(res)
@@ -317,10 +279,7 @@ func (r *topupRepository) GetYearlyTopupStatusFailedByCardNumber(req *requests.Y
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no failed yearly topup records for card number %s in year %d", req.CardNumber, req.Year)
-		}
-		return nil, fmt.Errorf("failed to get failed yearly topup by card number %s for year %d: %w", req.CardNumber, req.Year, err)
+		return nil, topup_errors.ErrGetYearlyTopupStatusFailedByCardFailed
 	}
 
 	so := r.mapping.ToTopupRecordsYearStatusFailedByCardNumber(res)
@@ -334,10 +293,7 @@ func (r *topupRepository) GetMonthlyTopupMethods(year int) ([]*record.TopupMonth
 	res, err := r.db.GetMonthlyTopupMethods(r.ctx, yearStart)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no monthly topup method data found for year %d", year)
-		}
-		return nil, fmt.Errorf("failed to get monthly topup methods for year %d: %w", year, err)
+		return nil, topup_errors.ErrGetMonthlyTopupMethodsFailed
 	}
 
 	return r.mapping.ToTopupMonthlyMethods(res), nil
@@ -347,10 +303,7 @@ func (r *topupRepository) GetYearlyTopupMethods(year int) ([]*record.TopupYearly
 	res, err := r.db.GetYearlyTopupMethods(r.ctx, year)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly topup method data found for year %d", year)
-		}
-		return nil, fmt.Errorf("failed to get yearly topup methods for year %d: %w", year, err)
+		return nil, topup_errors.ErrGetYearlyTopupMethodsFailed
 	}
 
 	return r.mapping.ToTopupYearlyMethods(res), nil
@@ -362,10 +315,7 @@ func (r *topupRepository) GetMonthlyTopupAmounts(year int) ([]*record.TopupMonth
 	res, err := r.db.GetMonthlyTopupAmounts(r.ctx, yearStart)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no monthly topup amount data found for year %d", year)
-		}
-		return nil, fmt.Errorf("failed to get monthly topup amounts for year %d: %w", year, err)
+		return nil, topup_errors.ErrGetMonthlyTopupAmountsFailed
 	}
 
 	return r.mapping.ToTopupMonthlyAmounts(res), nil
@@ -375,10 +325,7 @@ func (r *topupRepository) GetYearlyTopupAmounts(year int) ([]*record.TopupYearly
 	res, err := r.db.GetYearlyTopupAmounts(r.ctx, year)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly topup amount data found for year %d", year)
-		}
-		return nil, fmt.Errorf("failed to get yearly topup amounts for year %d: %w", year, err)
+		return nil, topup_errors.ErrGetYearlyTopupAmountsFailed
 	}
 
 	return r.mapping.ToTopupYearlyAmounts(res), nil
@@ -396,10 +343,7 @@ func (r *topupRepository) GetMonthlyTopupMethodsByCardNumber(req *requests.YearM
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no monthly topup method data for card number %s in year %d", req.CardNumber, req.Year)
-		}
-		return nil, fmt.Errorf("failed to get monthly topup methods by card number %s in year %d: %w", req.CardNumber, req.Year, err)
+		return nil, topup_errors.ErrGetMonthlyTopupMethodsByCardFailed
 	}
 
 	return r.mapping.ToTopupMonthlyMethodsByCardNumber(res), nil
@@ -415,10 +359,7 @@ func (r *topupRepository) GetYearlyTopupMethodsByCardNumber(req *requests.YearMo
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly topup method data for card number %s in year %d", req.CardNumber, req.Year)
-		}
-		return nil, fmt.Errorf("failed to get yearly topup methods by card number %s in year %d: %w", req.CardNumber, req.Year, err)
+		return nil, topup_errors.ErrGetYearlyTopupMethodsByCardFailed
 	}
 
 	return r.mapping.ToTopupYearlyMethodsByCardNumber(res), nil
@@ -436,10 +377,7 @@ func (r *topupRepository) GetMonthlyTopupAmountsByCardNumber(req *requests.YearM
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no monthly topup amount data for card number %s in year %d", req.CardNumber, req.Year)
-		}
-		return nil, fmt.Errorf("failed to get monthly topup amounts by card number %s in year %d: %w", req.CardNumber, req.Year, err)
+		return nil, topup_errors.ErrGetMonthlyTopupAmountsByCardFailed
 	}
 
 	return r.mapping.ToTopupMonthlyAmountsByCardNumber(res), nil
@@ -455,10 +393,7 @@ func (r *topupRepository) GetYearlyTopupAmountsByCardNumber(req *requests.YearMo
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly topup amount data for card number %s in year %d", req.CardNumber, req.Year)
-		}
-		return nil, fmt.Errorf("failed to get yearly topup amounts by card number %s in year %d: %w", req.CardNumber, req.Year, err)
+		return nil, topup_errors.ErrGetYearlyTopupAmountsByCardFailed
 	}
 
 	return r.mapping.ToTopupYearlyAmountsByCardNumber(res), nil
@@ -474,10 +409,7 @@ func (r *topupRepository) CreateTopup(request *requests.CreateTopupRequest) (*re
 	res, err := r.db.CreateTopup(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("invalid topup data: %w", err)
-		}
-		return nil, fmt.Errorf("failed to create topup: invalid or incomplete topup data: %w", err)
+		return nil, topup_errors.ErrCreateTopupFailed
 	}
 
 	return r.mapping.ToTopupRecord(res), nil
@@ -494,10 +426,7 @@ func (r *topupRepository) UpdateTopup(request *requests.UpdateTopupRequest) (*re
 	res, err := r.db.UpdateTopup(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("topup ID %d not found for update", request.TopupID)
-		}
-		return nil, fmt.Errorf("failed to update topup ID %d: topup not found or invalid update data", request.TopupID)
+		return nil, topup_errors.ErrUpdateTopupFailed
 	}
 
 	return r.mapping.ToTopupRecord(res), nil
@@ -512,10 +441,7 @@ func (r *topupRepository) UpdateTopupAmount(request *requests.UpdateTopupAmount)
 	res, err := r.db.UpdateTopupAmount(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("topup ID %d not found for update", request.TopupID)
-		}
-		return nil, fmt.Errorf("failed to update topup ID %d: topup not found or invalid update data", request.TopupID)
+		return nil, topup_errors.ErrUpdateTopupAmountFailed
 	}
 
 	return r.mapping.ToTopupRecord(res), nil
@@ -530,10 +456,7 @@ func (r *topupRepository) UpdateTopupStatus(request *requests.UpdateTopupStatus)
 	res, err := r.db.UpdateTopupStatus(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("topup ID %d not found for update", request.TopupID)
-		}
-		return nil, fmt.Errorf("failed to update topup ID %d: topup not found or invalid update data", request.TopupID)
+		return nil, topup_errors.ErrUpdateTopupStatusFailed
 	}
 
 	return r.mapping.ToTopupRecord(res), nil
@@ -542,10 +465,7 @@ func (r *topupRepository) UpdateTopupStatus(request *requests.UpdateTopupStatus)
 func (r *topupRepository) TrashedTopup(topup_id int) (*record.TopupRecord, error) {
 	res, err := r.db.TrashTopup(r.ctx, int32(topup_id))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("topup ID %d not found or already trashed", topup_id)
-		}
-		return nil, fmt.Errorf("failed to trash topup ID %d: %w", topup_id, err)
+		return nil, topup_errors.ErrTrashedTopupFailed
 	}
 	return r.mapping.ToTopupRecord(res), nil
 }
@@ -553,10 +473,7 @@ func (r *topupRepository) TrashedTopup(topup_id int) (*record.TopupRecord, error
 func (r *topupRepository) RestoreTopup(topup_id int) (*record.TopupRecord, error) {
 	res, err := r.db.RestoreTopup(r.ctx, int32(topup_id))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("topup ID %d not found in trash", topup_id)
-		}
-		return nil, fmt.Errorf("failed to restore topup ID %d: %w", topup_id, err)
+		return nil, topup_errors.ErrRestoreTopupFailed
 	}
 	return r.mapping.ToTopupRecord(res), nil
 }
@@ -564,10 +481,7 @@ func (r *topupRepository) RestoreTopup(topup_id int) (*record.TopupRecord, error
 func (r *topupRepository) DeleteTopupPermanent(topup_id int) (bool, error) {
 	err := r.db.DeleteTopupPermanently(r.ctx, int32(topup_id))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("topup ID %d not found or already deleted", topup_id)
-		}
-		return false, fmt.Errorf("failed to permanently delete topup ID %d: %w", topup_id, err)
+		return false, topup_errors.ErrDeleteTopupPermanentFailed
 	}
 	return true, nil
 }
@@ -576,10 +490,7 @@ func (r *topupRepository) RestoreAllTopup() (bool, error) {
 	err := r.db.RestoreAllTopups(r.ctx)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("no trashed topup available to restore")
-		}
-		return false, fmt.Errorf("failed to restore trashed topup: %w", err)
+		return false, topup_errors.ErrRestoreAllTopupFailed
 	}
 
 	return true, nil
@@ -589,10 +500,7 @@ func (r *topupRepository) DeleteAllTopupPermanent() (bool, error) {
 	err := r.db.DeleteAllPermanentTopups(r.ctx)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("no trashed topup available to delete permanently")
-		}
-		return false, fmt.Errorf("failed to permanently delete topup: %w", err)
+		return false, topup_errors.ErrDeleteAllTopupPermanentFailed
 	}
 
 	return true, nil

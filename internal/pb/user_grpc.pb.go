@@ -43,8 +43,8 @@ type UserServiceClient interface {
 	FindByTrashed(ctx context.Context, in *FindAllUserRequest, opts ...grpc.CallOption) (*ApiResponsePaginationUserDeleteAt, error)
 	Create(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*ApiResponseUser, error)
 	Update(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*ApiResponseUser, error)
-	TrashedUser(ctx context.Context, in *FindByIdUserRequest, opts ...grpc.CallOption) (*ApiResponseUser, error)
-	RestoreUser(ctx context.Context, in *FindByIdUserRequest, opts ...grpc.CallOption) (*ApiResponseUser, error)
+	TrashedUser(ctx context.Context, in *FindByIdUserRequest, opts ...grpc.CallOption) (*ApiResponseUserDeleteAt, error)
+	RestoreUser(ctx context.Context, in *FindByIdUserRequest, opts ...grpc.CallOption) (*ApiResponseUserDeleteAt, error)
 	DeleteUserPermanent(ctx context.Context, in *FindByIdUserRequest, opts ...grpc.CallOption) (*ApiResponseUserDelete, error)
 	RestoreAllUser(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ApiResponseUserAll, error)
 	DeleteAllUserPermanent(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ApiResponseUserAll, error)
@@ -118,9 +118,9 @@ func (c *userServiceClient) Update(ctx context.Context, in *UpdateUserRequest, o
 	return out, nil
 }
 
-func (c *userServiceClient) TrashedUser(ctx context.Context, in *FindByIdUserRequest, opts ...grpc.CallOption) (*ApiResponseUser, error) {
+func (c *userServiceClient) TrashedUser(ctx context.Context, in *FindByIdUserRequest, opts ...grpc.CallOption) (*ApiResponseUserDeleteAt, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ApiResponseUser)
+	out := new(ApiResponseUserDeleteAt)
 	err := c.cc.Invoke(ctx, UserService_TrashedUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -128,9 +128,9 @@ func (c *userServiceClient) TrashedUser(ctx context.Context, in *FindByIdUserReq
 	return out, nil
 }
 
-func (c *userServiceClient) RestoreUser(ctx context.Context, in *FindByIdUserRequest, opts ...grpc.CallOption) (*ApiResponseUser, error) {
+func (c *userServiceClient) RestoreUser(ctx context.Context, in *FindByIdUserRequest, opts ...grpc.CallOption) (*ApiResponseUserDeleteAt, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ApiResponseUser)
+	out := new(ApiResponseUserDeleteAt)
 	err := c.cc.Invoke(ctx, UserService_RestoreUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -178,8 +178,8 @@ type UserServiceServer interface {
 	FindByTrashed(context.Context, *FindAllUserRequest) (*ApiResponsePaginationUserDeleteAt, error)
 	Create(context.Context, *CreateUserRequest) (*ApiResponseUser, error)
 	Update(context.Context, *UpdateUserRequest) (*ApiResponseUser, error)
-	TrashedUser(context.Context, *FindByIdUserRequest) (*ApiResponseUser, error)
-	RestoreUser(context.Context, *FindByIdUserRequest) (*ApiResponseUser, error)
+	TrashedUser(context.Context, *FindByIdUserRequest) (*ApiResponseUserDeleteAt, error)
+	RestoreUser(context.Context, *FindByIdUserRequest) (*ApiResponseUserDeleteAt, error)
 	DeleteUserPermanent(context.Context, *FindByIdUserRequest) (*ApiResponseUserDelete, error)
 	RestoreAllUser(context.Context, *emptypb.Empty) (*ApiResponseUserAll, error)
 	DeleteAllUserPermanent(context.Context, *emptypb.Empty) (*ApiResponseUserAll, error)
@@ -211,10 +211,10 @@ func (UnimplementedUserServiceServer) Create(context.Context, *CreateUserRequest
 func (UnimplementedUserServiceServer) Update(context.Context, *UpdateUserRequest) (*ApiResponseUser, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
-func (UnimplementedUserServiceServer) TrashedUser(context.Context, *FindByIdUserRequest) (*ApiResponseUser, error) {
+func (UnimplementedUserServiceServer) TrashedUser(context.Context, *FindByIdUserRequest) (*ApiResponseUserDeleteAt, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TrashedUser not implemented")
 }
-func (UnimplementedUserServiceServer) RestoreUser(context.Context, *FindByIdUserRequest) (*ApiResponseUser, error) {
+func (UnimplementedUserServiceServer) RestoreUser(context.Context, *FindByIdUserRequest) (*ApiResponseUserDeleteAt, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RestoreUser not implemented")
 }
 func (UnimplementedUserServiceServer) DeleteUserPermanent(context.Context, *FindByIdUserRequest) (*ApiResponseUserDelete, error) {

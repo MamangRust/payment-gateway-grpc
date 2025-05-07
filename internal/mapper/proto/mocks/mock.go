@@ -41,596 +41,60 @@ func (m *MockAuthProtoMapper) EXPECT() *MockAuthProtoMapperMockRecorder {
 	return m.recorder
 }
 
-// ToResponseGetMe mocks base method.
-func (m *MockAuthProtoMapper) ToResponseGetMe(response *response.UserResponse) *pb.ApiResponseGetMe {
+// ToProtoResponseGetMe mocks base method.
+func (m *MockAuthProtoMapper) ToProtoResponseGetMe(status, message string, response *response.UserResponse) *pb.ApiResponseGetMe {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseGetMe", response)
+	ret := m.ctrl.Call(m, "ToProtoResponseGetMe", status, message, response)
 	ret0, _ := ret[0].(*pb.ApiResponseGetMe)
 	return ret0
 }
 
-// ToResponseGetMe indicates an expected call of ToResponseGetMe.
-func (mr *MockAuthProtoMapperMockRecorder) ToResponseGetMe(response any) *gomock.Call {
+// ToProtoResponseGetMe indicates an expected call of ToProtoResponseGetMe.
+func (mr *MockAuthProtoMapperMockRecorder) ToProtoResponseGetMe(status, message, response any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseGetMe", reflect.TypeOf((*MockAuthProtoMapper)(nil).ToResponseGetMe), response)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseGetMe", reflect.TypeOf((*MockAuthProtoMapper)(nil).ToProtoResponseGetMe), status, message, response)
 }
 
-// ToResponseLogin mocks base method.
-func (m *MockAuthProtoMapper) ToResponseLogin(response *response.TokenResponse) *pb.ApiResponseLogin {
+// ToProtoResponseLogin mocks base method.
+func (m *MockAuthProtoMapper) ToProtoResponseLogin(status, message string, response *response.TokenResponse) *pb.ApiResponseLogin {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseLogin", response)
+	ret := m.ctrl.Call(m, "ToProtoResponseLogin", status, message, response)
 	ret0, _ := ret[0].(*pb.ApiResponseLogin)
 	return ret0
 }
 
-// ToResponseLogin indicates an expected call of ToResponseLogin.
-func (mr *MockAuthProtoMapperMockRecorder) ToResponseLogin(response any) *gomock.Call {
+// ToProtoResponseLogin indicates an expected call of ToProtoResponseLogin.
+func (mr *MockAuthProtoMapperMockRecorder) ToProtoResponseLogin(status, message, response any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseLogin", reflect.TypeOf((*MockAuthProtoMapper)(nil).ToResponseLogin), response)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseLogin", reflect.TypeOf((*MockAuthProtoMapper)(nil).ToProtoResponseLogin), status, message, response)
 }
 
-// ToResponseRefreshToken mocks base method.
-func (m *MockAuthProtoMapper) ToResponseRefreshToken(response *response.TokenResponse) *pb.ApiResponseRefreshToken {
+// ToProtoResponseRefreshToken mocks base method.
+func (m *MockAuthProtoMapper) ToProtoResponseRefreshToken(status, message string, response *response.TokenResponse) *pb.ApiResponseRefreshToken {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseRefreshToken", response)
+	ret := m.ctrl.Call(m, "ToProtoResponseRefreshToken", status, message, response)
 	ret0, _ := ret[0].(*pb.ApiResponseRefreshToken)
 	return ret0
 }
 
-// ToResponseRefreshToken indicates an expected call of ToResponseRefreshToken.
-func (mr *MockAuthProtoMapperMockRecorder) ToResponseRefreshToken(response any) *gomock.Call {
+// ToProtoResponseRefreshToken indicates an expected call of ToProtoResponseRefreshToken.
+func (mr *MockAuthProtoMapperMockRecorder) ToProtoResponseRefreshToken(status, message, response any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseRefreshToken", reflect.TypeOf((*MockAuthProtoMapper)(nil).ToResponseRefreshToken), response)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseRefreshToken", reflect.TypeOf((*MockAuthProtoMapper)(nil).ToProtoResponseRefreshToken), status, message, response)
 }
 
-// ToResponseRegister mocks base method.
-func (m *MockAuthProtoMapper) ToResponseRegister(response *response.UserResponse) *pb.ApiResponseRegister {
+// ToProtoResponseRegister mocks base method.
+func (m *MockAuthProtoMapper) ToProtoResponseRegister(status, message string, response *response.UserResponse) *pb.ApiResponseRegister {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseRegister", response)
+	ret := m.ctrl.Call(m, "ToProtoResponseRegister", status, message, response)
 	ret0, _ := ret[0].(*pb.ApiResponseRegister)
 	return ret0
 }
 
-// ToResponseRegister indicates an expected call of ToResponseRegister.
-func (mr *MockAuthProtoMapperMockRecorder) ToResponseRegister(response any) *gomock.Call {
+// ToProtoResponseRegister indicates an expected call of ToProtoResponseRegister.
+func (mr *MockAuthProtoMapperMockRecorder) ToProtoResponseRegister(status, message, response any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseRegister", reflect.TypeOf((*MockAuthProtoMapper)(nil).ToResponseRegister), response)
-}
-
-// MockCardProtoMapper is a mock of CardProtoMapper interface.
-type MockCardProtoMapper struct {
-	ctrl     *gomock.Controller
-	recorder *MockCardProtoMapperMockRecorder
-	isgomock struct{}
-}
-
-// MockCardProtoMapperMockRecorder is the mock recorder for MockCardProtoMapper.
-type MockCardProtoMapperMockRecorder struct {
-	mock *MockCardProtoMapper
-}
-
-// NewMockCardProtoMapper creates a new mock instance.
-func NewMockCardProtoMapper(ctrl *gomock.Controller) *MockCardProtoMapper {
-	mock := &MockCardProtoMapper{ctrl: ctrl}
-	mock.recorder = &MockCardProtoMapperMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockCardProtoMapper) EXPECT() *MockCardProtoMapperMockRecorder {
-	return m.recorder
-}
-
-// ToResponseCard mocks base method.
-func (m *MockCardProtoMapper) ToResponseCard(card *response.CardResponse) *pb.CardResponse {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseCard", card)
-	ret0, _ := ret[0].(*pb.CardResponse)
-	return ret0
-}
-
-// ToResponseCard indicates an expected call of ToResponseCard.
-func (mr *MockCardProtoMapperMockRecorder) ToResponseCard(card any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseCard", reflect.TypeOf((*MockCardProtoMapper)(nil).ToResponseCard), card)
-}
-
-// ToResponseCardDeleteAt mocks base method.
-func (m *MockCardProtoMapper) ToResponseCardDeleteAt(card *response.CardResponseDeleteAt) *pb.CardResponseDeleteAt {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseCardDeleteAt", card)
-	ret0, _ := ret[0].(*pb.CardResponseDeleteAt)
-	return ret0
-}
-
-// ToResponseCardDeleteAt indicates an expected call of ToResponseCardDeleteAt.
-func (mr *MockCardProtoMapperMockRecorder) ToResponseCardDeleteAt(card any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseCardDeleteAt", reflect.TypeOf((*MockCardProtoMapper)(nil).ToResponseCardDeleteAt), card)
-}
-
-// ToResponseMonthlyBalance mocks base method.
-func (m *MockCardProtoMapper) ToResponseMonthlyBalance(cards *response.CardResponseMonthBalance) *pb.CardResponseMonthlyBalance {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseMonthlyBalance", cards)
-	ret0, _ := ret[0].(*pb.CardResponseMonthlyBalance)
-	return ret0
-}
-
-// ToResponseMonthlyBalance indicates an expected call of ToResponseMonthlyBalance.
-func (mr *MockCardProtoMapperMockRecorder) ToResponseMonthlyBalance(cards any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseMonthlyBalance", reflect.TypeOf((*MockCardProtoMapper)(nil).ToResponseMonthlyBalance), cards)
-}
-
-// ToResponseMonthlyBalances mocks base method.
-func (m *MockCardProtoMapper) ToResponseMonthlyBalances(cards []*response.CardResponseMonthBalance) []*pb.CardResponseMonthlyBalance {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseMonthlyBalances", cards)
-	ret0, _ := ret[0].([]*pb.CardResponseMonthlyBalance)
-	return ret0
-}
-
-// ToResponseMonthlyBalances indicates an expected call of ToResponseMonthlyBalances.
-func (mr *MockCardProtoMapperMockRecorder) ToResponseMonthlyBalances(cards any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseMonthlyBalances", reflect.TypeOf((*MockCardProtoMapper)(nil).ToResponseMonthlyBalances), cards)
-}
-
-// ToResponseYearlyBalance mocks base method.
-func (m *MockCardProtoMapper) ToResponseYearlyBalance(cards *response.CardResponseYearlyBalance) *pb.CardResponseYearlyBalance {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseYearlyBalance", cards)
-	ret0, _ := ret[0].(*pb.CardResponseYearlyBalance)
-	return ret0
-}
-
-// ToResponseYearlyBalance indicates an expected call of ToResponseYearlyBalance.
-func (mr *MockCardProtoMapperMockRecorder) ToResponseYearlyBalance(cards any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseYearlyBalance", reflect.TypeOf((*MockCardProtoMapper)(nil).ToResponseYearlyBalance), cards)
-}
-
-// ToResponseYearlyBalances mocks base method.
-func (m *MockCardProtoMapper) ToResponseYearlyBalances(cards []*response.CardResponseYearlyBalance) []*pb.CardResponseYearlyBalance {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseYearlyBalances", cards)
-	ret0, _ := ret[0].([]*pb.CardResponseYearlyBalance)
-	return ret0
-}
-
-// ToResponseYearlyBalances indicates an expected call of ToResponseYearlyBalances.
-func (mr *MockCardProtoMapperMockRecorder) ToResponseYearlyBalances(cards any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseYearlyBalances", reflect.TypeOf((*MockCardProtoMapper)(nil).ToResponseYearlyBalances), cards)
-}
-
-// ToResponsesCard mocks base method.
-func (m *MockCardProtoMapper) ToResponsesCard(cards []*response.CardResponse) []*pb.CardResponse {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesCard", cards)
-	ret0, _ := ret[0].([]*pb.CardResponse)
-	return ret0
-}
-
-// ToResponsesCard indicates an expected call of ToResponsesCard.
-func (mr *MockCardProtoMapperMockRecorder) ToResponsesCard(cards any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesCard", reflect.TypeOf((*MockCardProtoMapper)(nil).ToResponsesCard), cards)
-}
-
-// ToResponsesCardDeletedAt mocks base method.
-func (m *MockCardProtoMapper) ToResponsesCardDeletedAt(cards []*response.CardResponseDeleteAt) []*pb.CardResponseDeleteAt {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesCardDeletedAt", cards)
-	ret0, _ := ret[0].([]*pb.CardResponseDeleteAt)
-	return ret0
-}
-
-// ToResponsesCardDeletedAt indicates an expected call of ToResponsesCardDeletedAt.
-func (mr *MockCardProtoMapperMockRecorder) ToResponsesCardDeletedAt(cards any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesCardDeletedAt", reflect.TypeOf((*MockCardProtoMapper)(nil).ToResponsesCardDeletedAt), cards)
-}
-
-// MockMerchantProtoMapper is a mock of MerchantProtoMapper interface.
-type MockMerchantProtoMapper struct {
-	ctrl     *gomock.Controller
-	recorder *MockMerchantProtoMapperMockRecorder
-	isgomock struct{}
-}
-
-// MockMerchantProtoMapperMockRecorder is the mock recorder for MockMerchantProtoMapper.
-type MockMerchantProtoMapperMockRecorder struct {
-	mock *MockMerchantProtoMapper
-}
-
-// NewMockMerchantProtoMapper creates a new mock instance.
-func NewMockMerchantProtoMapper(ctrl *gomock.Controller) *MockMerchantProtoMapper {
-	mock := &MockMerchantProtoMapper{ctrl: ctrl}
-	mock.recorder = &MockMerchantProtoMapperMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockMerchantProtoMapper) EXPECT() *MockMerchantProtoMapperMockRecorder {
-	return m.recorder
-}
-
-// ToResponseMerchant mocks base method.
-func (m *MockMerchantProtoMapper) ToResponseMerchant(merchant *response.MerchantResponse) *pb.MerchantResponse {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseMerchant", merchant)
-	ret0, _ := ret[0].(*pb.MerchantResponse)
-	return ret0
-}
-
-// ToResponseMerchant indicates an expected call of ToResponseMerchant.
-func (mr *MockMerchantProtoMapperMockRecorder) ToResponseMerchant(merchant any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseMerchant", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToResponseMerchant), merchant)
-}
-
-// ToResponseMerchantDeleteAt mocks base method.
-func (m *MockMerchantProtoMapper) ToResponseMerchantDeleteAt(merchant *response.MerchantResponseDeleteAt) *pb.MerchantResponseDeleteAt {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseMerchantDeleteAt", merchant)
-	ret0, _ := ret[0].(*pb.MerchantResponseDeleteAt)
-	return ret0
-}
-
-// ToResponseMerchantDeleteAt indicates an expected call of ToResponseMerchantDeleteAt.
-func (mr *MockMerchantProtoMapperMockRecorder) ToResponseMerchantDeleteAt(merchant any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseMerchantDeleteAt", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToResponseMerchantDeleteAt), merchant)
-}
-
-// ToResponsesMerchant mocks base method.
-func (m *MockMerchantProtoMapper) ToResponsesMerchant(merchants []*response.MerchantResponse) []*pb.MerchantResponse {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesMerchant", merchants)
-	ret0, _ := ret[0].([]*pb.MerchantResponse)
-	return ret0
-}
-
-// ToResponsesMerchant indicates an expected call of ToResponsesMerchant.
-func (mr *MockMerchantProtoMapperMockRecorder) ToResponsesMerchant(merchants any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesMerchant", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToResponsesMerchant), merchants)
-}
-
-// ToResponsesMerchantDeleteAt mocks base method.
-func (m *MockMerchantProtoMapper) ToResponsesMerchantDeleteAt(merchants []*response.MerchantResponseDeleteAt) []*pb.MerchantResponseDeleteAt {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesMerchantDeleteAt", merchants)
-	ret0, _ := ret[0].([]*pb.MerchantResponseDeleteAt)
-	return ret0
-}
-
-// ToResponsesMerchantDeleteAt indicates an expected call of ToResponsesMerchantDeleteAt.
-func (mr *MockMerchantProtoMapperMockRecorder) ToResponsesMerchantDeleteAt(merchants any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesMerchantDeleteAt", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToResponsesMerchantDeleteAt), merchants)
-}
-
-// MockSaldoProtoMapper is a mock of SaldoProtoMapper interface.
-type MockSaldoProtoMapper struct {
-	ctrl     *gomock.Controller
-	recorder *MockSaldoProtoMapperMockRecorder
-	isgomock struct{}
-}
-
-// MockSaldoProtoMapperMockRecorder is the mock recorder for MockSaldoProtoMapper.
-type MockSaldoProtoMapperMockRecorder struct {
-	mock *MockSaldoProtoMapper
-}
-
-// NewMockSaldoProtoMapper creates a new mock instance.
-func NewMockSaldoProtoMapper(ctrl *gomock.Controller) *MockSaldoProtoMapper {
-	mock := &MockSaldoProtoMapper{ctrl: ctrl}
-	mock.recorder = &MockSaldoProtoMapperMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockSaldoProtoMapper) EXPECT() *MockSaldoProtoMapperMockRecorder {
-	return m.recorder
-}
-
-// ToResponseSaldo mocks base method.
-func (m *MockSaldoProtoMapper) ToResponseSaldo(saldo *response.SaldoResponse) *pb.SaldoResponse {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseSaldo", saldo)
-	ret0, _ := ret[0].(*pb.SaldoResponse)
-	return ret0
-}
-
-// ToResponseSaldo indicates an expected call of ToResponseSaldo.
-func (mr *MockSaldoProtoMapperMockRecorder) ToResponseSaldo(saldo any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseSaldo", reflect.TypeOf((*MockSaldoProtoMapper)(nil).ToResponseSaldo), saldo)
-}
-
-// ToResponseSaldoDeleteAt mocks base method.
-func (m *MockSaldoProtoMapper) ToResponseSaldoDeleteAt(saldo *response.SaldoResponseDeleteAt) *pb.SaldoResponseDeleteAt {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseSaldoDeleteAt", saldo)
-	ret0, _ := ret[0].(*pb.SaldoResponseDeleteAt)
-	return ret0
-}
-
-// ToResponseSaldoDeleteAt indicates an expected call of ToResponseSaldoDeleteAt.
-func (mr *MockSaldoProtoMapperMockRecorder) ToResponseSaldoDeleteAt(saldo any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseSaldoDeleteAt", reflect.TypeOf((*MockSaldoProtoMapper)(nil).ToResponseSaldoDeleteAt), saldo)
-}
-
-// ToResponsesSaldo mocks base method.
-func (m *MockSaldoProtoMapper) ToResponsesSaldo(saldos []*response.SaldoResponse) []*pb.SaldoResponse {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesSaldo", saldos)
-	ret0, _ := ret[0].([]*pb.SaldoResponse)
-	return ret0
-}
-
-// ToResponsesSaldo indicates an expected call of ToResponsesSaldo.
-func (mr *MockSaldoProtoMapperMockRecorder) ToResponsesSaldo(saldos any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesSaldo", reflect.TypeOf((*MockSaldoProtoMapper)(nil).ToResponsesSaldo), saldos)
-}
-
-// ToResponsesSaldoDeleteAt mocks base method.
-func (m *MockSaldoProtoMapper) ToResponsesSaldoDeleteAt(saldos []*response.SaldoResponseDeleteAt) []*pb.SaldoResponseDeleteAt {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesSaldoDeleteAt", saldos)
-	ret0, _ := ret[0].([]*pb.SaldoResponseDeleteAt)
-	return ret0
-}
-
-// ToResponsesSaldoDeleteAt indicates an expected call of ToResponsesSaldoDeleteAt.
-func (mr *MockSaldoProtoMapperMockRecorder) ToResponsesSaldoDeleteAt(saldos any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesSaldoDeleteAt", reflect.TypeOf((*MockSaldoProtoMapper)(nil).ToResponsesSaldoDeleteAt), saldos)
-}
-
-// MockTopupProtoMapper is a mock of TopupProtoMapper interface.
-type MockTopupProtoMapper struct {
-	ctrl     *gomock.Controller
-	recorder *MockTopupProtoMapperMockRecorder
-	isgomock struct{}
-}
-
-// MockTopupProtoMapperMockRecorder is the mock recorder for MockTopupProtoMapper.
-type MockTopupProtoMapperMockRecorder struct {
-	mock *MockTopupProtoMapper
-}
-
-// NewMockTopupProtoMapper creates a new mock instance.
-func NewMockTopupProtoMapper(ctrl *gomock.Controller) *MockTopupProtoMapper {
-	mock := &MockTopupProtoMapper{ctrl: ctrl}
-	mock.recorder = &MockTopupProtoMapperMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockTopupProtoMapper) EXPECT() *MockTopupProtoMapperMockRecorder {
-	return m.recorder
-}
-
-// ToResponseTopup mocks base method.
-func (m *MockTopupProtoMapper) ToResponseTopup(topup *response.TopupResponse) *pb.TopupResponse {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseTopup", topup)
-	ret0, _ := ret[0].(*pb.TopupResponse)
-	return ret0
-}
-
-// ToResponseTopup indicates an expected call of ToResponseTopup.
-func (mr *MockTopupProtoMapperMockRecorder) ToResponseTopup(topup any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseTopup", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToResponseTopup), topup)
-}
-
-// ToResponseTopupDeleteAt mocks base method.
-func (m *MockTopupProtoMapper) ToResponseTopupDeleteAt(topup *response.TopupResponseDeleteAt) *pb.TopupResponseDeleteAt {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseTopupDeleteAt", topup)
-	ret0, _ := ret[0].(*pb.TopupResponseDeleteAt)
-	return ret0
-}
-
-// ToResponseTopupDeleteAt indicates an expected call of ToResponseTopupDeleteAt.
-func (mr *MockTopupProtoMapperMockRecorder) ToResponseTopupDeleteAt(topup any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseTopupDeleteAt", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToResponseTopupDeleteAt), topup)
-}
-
-// ToResponsesTopup mocks base method.
-func (m *MockTopupProtoMapper) ToResponsesTopup(topups []*response.TopupResponse) []*pb.TopupResponse {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesTopup", topups)
-	ret0, _ := ret[0].([]*pb.TopupResponse)
-	return ret0
-}
-
-// ToResponsesTopup indicates an expected call of ToResponsesTopup.
-func (mr *MockTopupProtoMapperMockRecorder) ToResponsesTopup(topups any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesTopup", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToResponsesTopup), topups)
-}
-
-// ToResponsesTopupDeleteAt mocks base method.
-func (m *MockTopupProtoMapper) ToResponsesTopupDeleteAt(topups []*response.TopupResponseDeleteAt) []*pb.TopupResponseDeleteAt {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesTopupDeleteAt", topups)
-	ret0, _ := ret[0].([]*pb.TopupResponseDeleteAt)
-	return ret0
-}
-
-// ToResponsesTopupDeleteAt indicates an expected call of ToResponsesTopupDeleteAt.
-func (mr *MockTopupProtoMapperMockRecorder) ToResponsesTopupDeleteAt(topups any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesTopupDeleteAt", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToResponsesTopupDeleteAt), topups)
-}
-
-// MockTransactionProtoMapper is a mock of TransactionProtoMapper interface.
-type MockTransactionProtoMapper struct {
-	ctrl     *gomock.Controller
-	recorder *MockTransactionProtoMapperMockRecorder
-	isgomock struct{}
-}
-
-// MockTransactionProtoMapperMockRecorder is the mock recorder for MockTransactionProtoMapper.
-type MockTransactionProtoMapperMockRecorder struct {
-	mock *MockTransactionProtoMapper
-}
-
-// NewMockTransactionProtoMapper creates a new mock instance.
-func NewMockTransactionProtoMapper(ctrl *gomock.Controller) *MockTransactionProtoMapper {
-	mock := &MockTransactionProtoMapper{ctrl: ctrl}
-	mock.recorder = &MockTransactionProtoMapperMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockTransactionProtoMapper) EXPECT() *MockTransactionProtoMapperMockRecorder {
-	return m.recorder
-}
-
-// ToResponseTransaction mocks base method.
-func (m *MockTransactionProtoMapper) ToResponseTransaction(transaction *response.TransactionResponse) *pb.TransactionResponse {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseTransaction", transaction)
-	ret0, _ := ret[0].(*pb.TransactionResponse)
-	return ret0
-}
-
-// ToResponseTransaction indicates an expected call of ToResponseTransaction.
-func (mr *MockTransactionProtoMapperMockRecorder) ToResponseTransaction(transaction any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseTransaction", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToResponseTransaction), transaction)
-}
-
-// ToResponseTransactionDeleteAt mocks base method.
-func (m *MockTransactionProtoMapper) ToResponseTransactionDeleteAt(transaction *response.TransactionResponseDeleteAt) *pb.TransactionResponseDeleteAt {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseTransactionDeleteAt", transaction)
-	ret0, _ := ret[0].(*pb.TransactionResponseDeleteAt)
-	return ret0
-}
-
-// ToResponseTransactionDeleteAt indicates an expected call of ToResponseTransactionDeleteAt.
-func (mr *MockTransactionProtoMapperMockRecorder) ToResponseTransactionDeleteAt(transaction any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseTransactionDeleteAt", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToResponseTransactionDeleteAt), transaction)
-}
-
-// ToResponsesTransaction mocks base method.
-func (m *MockTransactionProtoMapper) ToResponsesTransaction(transactions []*response.TransactionResponse) []*pb.TransactionResponse {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesTransaction", transactions)
-	ret0, _ := ret[0].([]*pb.TransactionResponse)
-	return ret0
-}
-
-// ToResponsesTransaction indicates an expected call of ToResponsesTransaction.
-func (mr *MockTransactionProtoMapperMockRecorder) ToResponsesTransaction(transactions any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesTransaction", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToResponsesTransaction), transactions)
-}
-
-// ToResponsesTransactionDeleteAt mocks base method.
-func (m *MockTransactionProtoMapper) ToResponsesTransactionDeleteAt(transactions []*response.TransactionResponseDeleteAt) []*pb.TransactionResponseDeleteAt {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesTransactionDeleteAt", transactions)
-	ret0, _ := ret[0].([]*pb.TransactionResponseDeleteAt)
-	return ret0
-}
-
-// ToResponsesTransactionDeleteAt indicates an expected call of ToResponsesTransactionDeleteAt.
-func (mr *MockTransactionProtoMapperMockRecorder) ToResponsesTransactionDeleteAt(transactions any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesTransactionDeleteAt", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToResponsesTransactionDeleteAt), transactions)
-}
-
-// MockTransferProtoMapper is a mock of TransferProtoMapper interface.
-type MockTransferProtoMapper struct {
-	ctrl     *gomock.Controller
-	recorder *MockTransferProtoMapperMockRecorder
-	isgomock struct{}
-}
-
-// MockTransferProtoMapperMockRecorder is the mock recorder for MockTransferProtoMapper.
-type MockTransferProtoMapperMockRecorder struct {
-	mock *MockTransferProtoMapper
-}
-
-// NewMockTransferProtoMapper creates a new mock instance.
-func NewMockTransferProtoMapper(ctrl *gomock.Controller) *MockTransferProtoMapper {
-	mock := &MockTransferProtoMapper{ctrl: ctrl}
-	mock.recorder = &MockTransferProtoMapperMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockTransferProtoMapper) EXPECT() *MockTransferProtoMapperMockRecorder {
-	return m.recorder
-}
-
-// ToResponseTransfer mocks base method.
-func (m *MockTransferProtoMapper) ToResponseTransfer(transfer *response.TransferResponse) *pb.TransferResponse {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseTransfer", transfer)
-	ret0, _ := ret[0].(*pb.TransferResponse)
-	return ret0
-}
-
-// ToResponseTransfer indicates an expected call of ToResponseTransfer.
-func (mr *MockTransferProtoMapperMockRecorder) ToResponseTransfer(transfer any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseTransfer", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToResponseTransfer), transfer)
-}
-
-// ToResponseTransferDeleteAt mocks base method.
-func (m *MockTransferProtoMapper) ToResponseTransferDeleteAt(transfer *response.TransferResponseDeleteAt) *pb.TransferResponseDeleteAt {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseTransferDeleteAt", transfer)
-	ret0, _ := ret[0].(*pb.TransferResponseDeleteAt)
-	return ret0
-}
-
-// ToResponseTransferDeleteAt indicates an expected call of ToResponseTransferDeleteAt.
-func (mr *MockTransferProtoMapperMockRecorder) ToResponseTransferDeleteAt(transfer any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseTransferDeleteAt", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToResponseTransferDeleteAt), transfer)
-}
-
-// ToResponsesTransfer mocks base method.
-func (m *MockTransferProtoMapper) ToResponsesTransfer(transfers []*response.TransferResponse) []*pb.TransferResponse {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesTransfer", transfers)
-	ret0, _ := ret[0].([]*pb.TransferResponse)
-	return ret0
-}
-
-// ToResponsesTransfer indicates an expected call of ToResponsesTransfer.
-func (mr *MockTransferProtoMapperMockRecorder) ToResponsesTransfer(transfers any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesTransfer", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToResponsesTransfer), transfers)
-}
-
-// ToResponsesTransferDeleteAt mocks base method.
-func (m *MockTransferProtoMapper) ToResponsesTransferDeleteAt(transfers []*response.TransferResponseDeleteAt) []*pb.TransferResponseDeleteAt {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesTransferDeleteAt", transfers)
-	ret0, _ := ret[0].([]*pb.TransferResponseDeleteAt)
-	return ret0
-}
-
-// ToResponsesTransferDeleteAt indicates an expected call of ToResponsesTransferDeleteAt.
-func (mr *MockTransferProtoMapperMockRecorder) ToResponsesTransferDeleteAt(transfers any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesTransferDeleteAt", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToResponsesTransferDeleteAt), transfers)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseRegister", reflect.TypeOf((*MockAuthProtoMapper)(nil).ToProtoResponseRegister), status, message, response)
 }
 
 // MockUserProtoMapper is a mock of UserProtoMapper interface.
@@ -657,60 +121,1376 @@ func (m *MockUserProtoMapper) EXPECT() *MockUserProtoMapperMockRecorder {
 	return m.recorder
 }
 
-// ToResponseUser mocks base method.
-func (m *MockUserProtoMapper) ToResponseUser(user *response.UserResponse) *pb.UserResponse {
+// ToProtoResponsePaginationUser mocks base method.
+func (m *MockUserProtoMapper) ToProtoResponsePaginationUser(pagination *pb.PaginationMeta, status, message string, users []*response.UserResponse) *pb.ApiResponsePaginationUser {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseUser", user)
-	ret0, _ := ret[0].(*pb.UserResponse)
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationUser", pagination, status, message, users)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationUser)
 	return ret0
 }
 
-// ToResponseUser indicates an expected call of ToResponseUser.
-func (mr *MockUserProtoMapperMockRecorder) ToResponseUser(user any) *gomock.Call {
+// ToProtoResponsePaginationUser indicates an expected call of ToProtoResponsePaginationUser.
+func (mr *MockUserProtoMapperMockRecorder) ToProtoResponsePaginationUser(pagination, status, message, users any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseUser", reflect.TypeOf((*MockUserProtoMapper)(nil).ToResponseUser), user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationUser", reflect.TypeOf((*MockUserProtoMapper)(nil).ToProtoResponsePaginationUser), pagination, status, message, users)
 }
 
-// ToResponseUserDelete mocks base method.
-func (m *MockUserProtoMapper) ToResponseUserDelete(user *response.UserResponseDeleteAt) *pb.UserResponseWithDeleteAt {
+// ToProtoResponsePaginationUserDeleteAt mocks base method.
+func (m *MockUserProtoMapper) ToProtoResponsePaginationUserDeleteAt(pagination *pb.PaginationMeta, status, message string, users []*response.UserResponseDeleteAt) *pb.ApiResponsePaginationUserDeleteAt {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseUserDelete", user)
-	ret0, _ := ret[0].(*pb.UserResponseWithDeleteAt)
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationUserDeleteAt", pagination, status, message, users)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationUserDeleteAt)
 	return ret0
 }
 
-// ToResponseUserDelete indicates an expected call of ToResponseUserDelete.
-func (mr *MockUserProtoMapperMockRecorder) ToResponseUserDelete(user any) *gomock.Call {
+// ToProtoResponsePaginationUserDeleteAt indicates an expected call of ToProtoResponsePaginationUserDeleteAt.
+func (mr *MockUserProtoMapperMockRecorder) ToProtoResponsePaginationUserDeleteAt(pagination, status, message, users any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseUserDelete", reflect.TypeOf((*MockUserProtoMapper)(nil).ToResponseUserDelete), user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationUserDeleteAt", reflect.TypeOf((*MockUserProtoMapper)(nil).ToProtoResponsePaginationUserDeleteAt), pagination, status, message, users)
 }
 
-// ToResponsesUser mocks base method.
-func (m *MockUserProtoMapper) ToResponsesUser(users []*response.UserResponse) []*pb.UserResponse {
+// ToProtoResponseUser mocks base method.
+func (m *MockUserProtoMapper) ToProtoResponseUser(status, message string, pbResponse *response.UserResponse) *pb.ApiResponseUser {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesUser", users)
-	ret0, _ := ret[0].([]*pb.UserResponse)
+	ret := m.ctrl.Call(m, "ToProtoResponseUser", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseUser)
 	return ret0
 }
 
-// ToResponsesUser indicates an expected call of ToResponsesUser.
-func (mr *MockUserProtoMapperMockRecorder) ToResponsesUser(users any) *gomock.Call {
+// ToProtoResponseUser indicates an expected call of ToProtoResponseUser.
+func (mr *MockUserProtoMapperMockRecorder) ToProtoResponseUser(status, message, pbResponse any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesUser", reflect.TypeOf((*MockUserProtoMapper)(nil).ToResponsesUser), users)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseUser", reflect.TypeOf((*MockUserProtoMapper)(nil).ToProtoResponseUser), status, message, pbResponse)
 }
 
-// ToResponsesUserDeleteAt mocks base method.
-func (m *MockUserProtoMapper) ToResponsesUserDeleteAt(users []*response.UserResponseDeleteAt) []*pb.UserResponseWithDeleteAt {
+// ToProtoResponseUserAll mocks base method.
+func (m *MockUserProtoMapper) ToProtoResponseUserAll(status, message string) *pb.ApiResponseUserAll {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesUserDeleteAt", users)
-	ret0, _ := ret[0].([]*pb.UserResponseWithDeleteAt)
+	ret := m.ctrl.Call(m, "ToProtoResponseUserAll", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseUserAll)
 	return ret0
 }
 
-// ToResponsesUserDeleteAt indicates an expected call of ToResponsesUserDeleteAt.
-func (mr *MockUserProtoMapperMockRecorder) ToResponsesUserDeleteAt(users any) *gomock.Call {
+// ToProtoResponseUserAll indicates an expected call of ToProtoResponseUserAll.
+func (mr *MockUserProtoMapperMockRecorder) ToProtoResponseUserAll(status, message any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesUserDeleteAt", reflect.TypeOf((*MockUserProtoMapper)(nil).ToResponsesUserDeleteAt), users)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseUserAll", reflect.TypeOf((*MockUserProtoMapper)(nil).ToProtoResponseUserAll), status, message)
+}
+
+// ToProtoResponseUserDelete mocks base method.
+func (m *MockUserProtoMapper) ToProtoResponseUserDelete(status, message string) *pb.ApiResponseUserDelete {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseUserDelete", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseUserDelete)
+	return ret0
+}
+
+// ToProtoResponseUserDelete indicates an expected call of ToProtoResponseUserDelete.
+func (mr *MockUserProtoMapperMockRecorder) ToProtoResponseUserDelete(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseUserDelete", reflect.TypeOf((*MockUserProtoMapper)(nil).ToProtoResponseUserDelete), status, message)
+}
+
+// ToProtoResponseUserDeleteAt mocks base method.
+func (m *MockUserProtoMapper) ToProtoResponseUserDeleteAt(status, message string, pbResponse *response.UserResponseDeleteAt) *pb.ApiResponseUserDeleteAt {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseUserDeleteAt", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseUserDeleteAt)
+	return ret0
+}
+
+// ToProtoResponseUserDeleteAt indicates an expected call of ToProtoResponseUserDeleteAt.
+func (mr *MockUserProtoMapperMockRecorder) ToProtoResponseUserDeleteAt(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseUserDeleteAt", reflect.TypeOf((*MockUserProtoMapper)(nil).ToProtoResponseUserDeleteAt), status, message, pbResponse)
+}
+
+// ToProtoResponsesUser mocks base method.
+func (m *MockUserProtoMapper) ToProtoResponsesUser(status, message string, pbResponse []*response.UserResponse) *pb.ApiResponsesUser {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsesUser", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponsesUser)
+	return ret0
+}
+
+// ToProtoResponsesUser indicates an expected call of ToProtoResponsesUser.
+func (mr *MockUserProtoMapperMockRecorder) ToProtoResponsesUser(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsesUser", reflect.TypeOf((*MockUserProtoMapper)(nil).ToProtoResponsesUser), status, message, pbResponse)
+}
+
+// MockRoleProtoMapper is a mock of RoleProtoMapper interface.
+type MockRoleProtoMapper struct {
+	ctrl     *gomock.Controller
+	recorder *MockRoleProtoMapperMockRecorder
+	isgomock struct{}
+}
+
+// MockRoleProtoMapperMockRecorder is the mock recorder for MockRoleProtoMapper.
+type MockRoleProtoMapperMockRecorder struct {
+	mock *MockRoleProtoMapper
+}
+
+// NewMockRoleProtoMapper creates a new mock instance.
+func NewMockRoleProtoMapper(ctrl *gomock.Controller) *MockRoleProtoMapper {
+	mock := &MockRoleProtoMapper{ctrl: ctrl}
+	mock.recorder = &MockRoleProtoMapperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockRoleProtoMapper) EXPECT() *MockRoleProtoMapperMockRecorder {
+	return m.recorder
+}
+
+// ToProtoResponsePaginationRole mocks base method.
+func (m *MockRoleProtoMapper) ToProtoResponsePaginationRole(pagination *pb.PaginationMeta, status, message string, pbResponse []*response.RoleResponse) *pb.ApiResponsePaginationRole {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationRole", pagination, status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationRole)
+	return ret0
+}
+
+// ToProtoResponsePaginationRole indicates an expected call of ToProtoResponsePaginationRole.
+func (mr *MockRoleProtoMapperMockRecorder) ToProtoResponsePaginationRole(pagination, status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationRole", reflect.TypeOf((*MockRoleProtoMapper)(nil).ToProtoResponsePaginationRole), pagination, status, message, pbResponse)
+}
+
+// ToProtoResponsePaginationRoleDeleteAt mocks base method.
+func (m *MockRoleProtoMapper) ToProtoResponsePaginationRoleDeleteAt(pagination *pb.PaginationMeta, status, message string, pbResponse []*response.RoleResponseDeleteAt) *pb.ApiResponsePaginationRoleDeleteAt {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationRoleDeleteAt", pagination, status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationRoleDeleteAt)
+	return ret0
+}
+
+// ToProtoResponsePaginationRoleDeleteAt indicates an expected call of ToProtoResponsePaginationRoleDeleteAt.
+func (mr *MockRoleProtoMapperMockRecorder) ToProtoResponsePaginationRoleDeleteAt(pagination, status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationRoleDeleteAt", reflect.TypeOf((*MockRoleProtoMapper)(nil).ToProtoResponsePaginationRoleDeleteAt), pagination, status, message, pbResponse)
+}
+
+// ToProtoResponseRole mocks base method.
+func (m *MockRoleProtoMapper) ToProtoResponseRole(status, message string, pbResponse *response.RoleResponse) *pb.ApiResponseRole {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseRole", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseRole)
+	return ret0
+}
+
+// ToProtoResponseRole indicates an expected call of ToProtoResponseRole.
+func (mr *MockRoleProtoMapperMockRecorder) ToProtoResponseRole(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseRole", reflect.TypeOf((*MockRoleProtoMapper)(nil).ToProtoResponseRole), status, message, pbResponse)
+}
+
+// ToProtoResponseRoleAll mocks base method.
+func (m *MockRoleProtoMapper) ToProtoResponseRoleAll(status, message string) *pb.ApiResponseRoleAll {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseRoleAll", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseRoleAll)
+	return ret0
+}
+
+// ToProtoResponseRoleAll indicates an expected call of ToProtoResponseRoleAll.
+func (mr *MockRoleProtoMapperMockRecorder) ToProtoResponseRoleAll(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseRoleAll", reflect.TypeOf((*MockRoleProtoMapper)(nil).ToProtoResponseRoleAll), status, message)
+}
+
+// ToProtoResponseRoleDelete mocks base method.
+func (m *MockRoleProtoMapper) ToProtoResponseRoleDelete(status, message string) *pb.ApiResponseRoleDelete {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseRoleDelete", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseRoleDelete)
+	return ret0
+}
+
+// ToProtoResponseRoleDelete indicates an expected call of ToProtoResponseRoleDelete.
+func (mr *MockRoleProtoMapperMockRecorder) ToProtoResponseRoleDelete(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseRoleDelete", reflect.TypeOf((*MockRoleProtoMapper)(nil).ToProtoResponseRoleDelete), status, message)
+}
+
+// ToProtoResponsesRole mocks base method.
+func (m *MockRoleProtoMapper) ToProtoResponsesRole(status, message string, pbResponse []*response.RoleResponse) *pb.ApiResponsesRole {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsesRole", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponsesRole)
+	return ret0
+}
+
+// ToProtoResponsesRole indicates an expected call of ToProtoResponsesRole.
+func (mr *MockRoleProtoMapperMockRecorder) ToProtoResponsesRole(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsesRole", reflect.TypeOf((*MockRoleProtoMapper)(nil).ToProtoResponsesRole), status, message, pbResponse)
+}
+
+// MockCardProtoMapper is a mock of CardProtoMapper interface.
+type MockCardProtoMapper struct {
+	ctrl     *gomock.Controller
+	recorder *MockCardProtoMapperMockRecorder
+	isgomock struct{}
+}
+
+// MockCardProtoMapperMockRecorder is the mock recorder for MockCardProtoMapper.
+type MockCardProtoMapperMockRecorder struct {
+	mock *MockCardProtoMapper
+}
+
+// NewMockCardProtoMapper creates a new mock instance.
+func NewMockCardProtoMapper(ctrl *gomock.Controller) *MockCardProtoMapper {
+	mock := &MockCardProtoMapper{ctrl: ctrl}
+	mock.recorder = &MockCardProtoMapperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockCardProtoMapper) EXPECT() *MockCardProtoMapperMockRecorder {
+	return m.recorder
+}
+
+// ToProtoResponseCard mocks base method.
+func (m *MockCardProtoMapper) ToProtoResponseCard(status, message string, card *response.CardResponse) *pb.ApiResponseCard {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseCard", status, message, card)
+	ret0, _ := ret[0].(*pb.ApiResponseCard)
+	return ret0
+}
+
+// ToProtoResponseCard indicates an expected call of ToProtoResponseCard.
+func (mr *MockCardProtoMapperMockRecorder) ToProtoResponseCard(status, message, card any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseCard", reflect.TypeOf((*MockCardProtoMapper)(nil).ToProtoResponseCard), status, message, card)
+}
+
+// ToProtoResponseCardAll mocks base method.
+func (m *MockCardProtoMapper) ToProtoResponseCardAll(status, message string) *pb.ApiResponseCardAll {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseCardAll", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseCardAll)
+	return ret0
+}
+
+// ToProtoResponseCardAll indicates an expected call of ToProtoResponseCardAll.
+func (mr *MockCardProtoMapperMockRecorder) ToProtoResponseCardAll(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseCardAll", reflect.TypeOf((*MockCardProtoMapper)(nil).ToProtoResponseCardAll), status, message)
+}
+
+// ToProtoResponseCardDeleteAt mocks base method.
+func (m *MockCardProtoMapper) ToProtoResponseCardDeleteAt(status, message string) *pb.ApiResponseCardDelete {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseCardDeleteAt", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseCardDelete)
+	return ret0
+}
+
+// ToProtoResponseCardDeleteAt indicates an expected call of ToProtoResponseCardDeleteAt.
+func (mr *MockCardProtoMapperMockRecorder) ToProtoResponseCardDeleteAt(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseCardDeleteAt", reflect.TypeOf((*MockCardProtoMapper)(nil).ToProtoResponseCardDeleteAt), status, message)
+}
+
+// ToProtoResponseDashboardCard mocks base method.
+func (m *MockCardProtoMapper) ToProtoResponseDashboardCard(status, message string, dash *response.DashboardCard) *pb.ApiResponseDashboardCard {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseDashboardCard", status, message, dash)
+	ret0, _ := ret[0].(*pb.ApiResponseDashboardCard)
+	return ret0
+}
+
+// ToProtoResponseDashboardCard indicates an expected call of ToProtoResponseDashboardCard.
+func (mr *MockCardProtoMapperMockRecorder) ToProtoResponseDashboardCard(status, message, dash any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseDashboardCard", reflect.TypeOf((*MockCardProtoMapper)(nil).ToProtoResponseDashboardCard), status, message, dash)
+}
+
+// ToProtoResponseDashboardCardCardNumber mocks base method.
+func (m *MockCardProtoMapper) ToProtoResponseDashboardCardCardNumber(status, message string, dash *response.DashboardCardCardNumber) *pb.ApiResponseDashboardCardNumber {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseDashboardCardCardNumber", status, message, dash)
+	ret0, _ := ret[0].(*pb.ApiResponseDashboardCardNumber)
+	return ret0
+}
+
+// ToProtoResponseDashboardCardCardNumber indicates an expected call of ToProtoResponseDashboardCardCardNumber.
+func (mr *MockCardProtoMapperMockRecorder) ToProtoResponseDashboardCardCardNumber(status, message, dash any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseDashboardCardCardNumber", reflect.TypeOf((*MockCardProtoMapper)(nil).ToProtoResponseDashboardCardCardNumber), status, message, dash)
+}
+
+// ToProtoResponseMonthlyAmounts mocks base method.
+func (m *MockCardProtoMapper) ToProtoResponseMonthlyAmounts(status, message string, cards []*response.CardResponseMonthAmount) *pb.ApiResponseMonthlyAmount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseMonthlyAmounts", status, message, cards)
+	ret0, _ := ret[0].(*pb.ApiResponseMonthlyAmount)
+	return ret0
+}
+
+// ToProtoResponseMonthlyAmounts indicates an expected call of ToProtoResponseMonthlyAmounts.
+func (mr *MockCardProtoMapperMockRecorder) ToProtoResponseMonthlyAmounts(status, message, cards any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseMonthlyAmounts", reflect.TypeOf((*MockCardProtoMapper)(nil).ToProtoResponseMonthlyAmounts), status, message, cards)
+}
+
+// ToProtoResponseMonthlyBalances mocks base method.
+func (m *MockCardProtoMapper) ToProtoResponseMonthlyBalances(status, message string, cards []*response.CardResponseMonthBalance) *pb.ApiResponseMonthlyBalance {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseMonthlyBalances", status, message, cards)
+	ret0, _ := ret[0].(*pb.ApiResponseMonthlyBalance)
+	return ret0
+}
+
+// ToProtoResponseMonthlyBalances indicates an expected call of ToProtoResponseMonthlyBalances.
+func (mr *MockCardProtoMapperMockRecorder) ToProtoResponseMonthlyBalances(status, message, cards any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseMonthlyBalances", reflect.TypeOf((*MockCardProtoMapper)(nil).ToProtoResponseMonthlyBalances), status, message, cards)
+}
+
+// ToProtoResponsePaginationCard mocks base method.
+func (m *MockCardProtoMapper) ToProtoResponsePaginationCard(pagination *pb.PaginationMeta, status, message string, cards []*response.CardResponse) *pb.ApiResponsePaginationCard {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationCard", pagination, status, message, cards)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationCard)
+	return ret0
+}
+
+// ToProtoResponsePaginationCard indicates an expected call of ToProtoResponsePaginationCard.
+func (mr *MockCardProtoMapperMockRecorder) ToProtoResponsePaginationCard(pagination, status, message, cards any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationCard", reflect.TypeOf((*MockCardProtoMapper)(nil).ToProtoResponsePaginationCard), pagination, status, message, cards)
+}
+
+// ToProtoResponsePaginationCardDeletedAt mocks base method.
+func (m *MockCardProtoMapper) ToProtoResponsePaginationCardDeletedAt(pagination *pb.PaginationMeta, status, message string, cards []*response.CardResponseDeleteAt) *pb.ApiResponsePaginationCardDeleteAt {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationCardDeletedAt", pagination, status, message, cards)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationCardDeleteAt)
+	return ret0
+}
+
+// ToProtoResponsePaginationCardDeletedAt indicates an expected call of ToProtoResponsePaginationCardDeletedAt.
+func (mr *MockCardProtoMapperMockRecorder) ToProtoResponsePaginationCardDeletedAt(pagination, status, message, cards any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationCardDeletedAt", reflect.TypeOf((*MockCardProtoMapper)(nil).ToProtoResponsePaginationCardDeletedAt), pagination, status, message, cards)
+}
+
+// ToProtoResponseYearlyAmounts mocks base method.
+func (m *MockCardProtoMapper) ToProtoResponseYearlyAmounts(status, message string, cards []*response.CardResponseYearAmount) *pb.ApiResponseYearlyAmount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseYearlyAmounts", status, message, cards)
+	ret0, _ := ret[0].(*pb.ApiResponseYearlyAmount)
+	return ret0
+}
+
+// ToProtoResponseYearlyAmounts indicates an expected call of ToProtoResponseYearlyAmounts.
+func (mr *MockCardProtoMapperMockRecorder) ToProtoResponseYearlyAmounts(status, message, cards any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseYearlyAmounts", reflect.TypeOf((*MockCardProtoMapper)(nil).ToProtoResponseYearlyAmounts), status, message, cards)
+}
+
+// ToProtoResponseYearlyBalances mocks base method.
+func (m *MockCardProtoMapper) ToProtoResponseYearlyBalances(status, message string, cards []*response.CardResponseYearlyBalance) *pb.ApiResponseYearlyBalance {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseYearlyBalances", status, message, cards)
+	ret0, _ := ret[0].(*pb.ApiResponseYearlyBalance)
+	return ret0
+}
+
+// ToProtoResponseYearlyBalances indicates an expected call of ToProtoResponseYearlyBalances.
+func (mr *MockCardProtoMapperMockRecorder) ToProtoResponseYearlyBalances(status, message, cards any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseYearlyBalances", reflect.TypeOf((*MockCardProtoMapper)(nil).ToProtoResponseYearlyBalances), status, message, cards)
+}
+
+// MockMerchantProtoMapper is a mock of MerchantProtoMapper interface.
+type MockMerchantProtoMapper struct {
+	ctrl     *gomock.Controller
+	recorder *MockMerchantProtoMapperMockRecorder
+	isgomock struct{}
+}
+
+// MockMerchantProtoMapperMockRecorder is the mock recorder for MockMerchantProtoMapper.
+type MockMerchantProtoMapperMockRecorder struct {
+	mock *MockMerchantProtoMapper
+}
+
+// NewMockMerchantProtoMapper creates a new mock instance.
+func NewMockMerchantProtoMapper(ctrl *gomock.Controller) *MockMerchantProtoMapper {
+	mock := &MockMerchantProtoMapper{ctrl: ctrl}
+	mock.recorder = &MockMerchantProtoMapperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockMerchantProtoMapper) EXPECT() *MockMerchantProtoMapperMockRecorder {
+	return m.recorder
+}
+
+// ToProtoResponseMerchant mocks base method.
+func (m *MockMerchantProtoMapper) ToProtoResponseMerchant(status, message string, res *response.MerchantResponse) *pb.ApiResponseMerchant {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseMerchant", status, message, res)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchant)
+	return ret0
+}
+
+// ToProtoResponseMerchant indicates an expected call of ToProtoResponseMerchant.
+func (mr *MockMerchantProtoMapperMockRecorder) ToProtoResponseMerchant(status, message, res any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseMerchant", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToProtoResponseMerchant), status, message, res)
+}
+
+// ToProtoResponseMerchantAll mocks base method.
+func (m *MockMerchantProtoMapper) ToProtoResponseMerchantAll(status, message string) *pb.ApiResponseMerchantAll {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseMerchantAll", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantAll)
+	return ret0
+}
+
+// ToProtoResponseMerchantAll indicates an expected call of ToProtoResponseMerchantAll.
+func (mr *MockMerchantProtoMapperMockRecorder) ToProtoResponseMerchantAll(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseMerchantAll", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToProtoResponseMerchantAll), status, message)
+}
+
+// ToProtoResponseMerchantDelete mocks base method.
+func (m *MockMerchantProtoMapper) ToProtoResponseMerchantDelete(status, message string) *pb.ApiResponseMerchantDelete {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseMerchantDelete", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantDelete)
+	return ret0
+}
+
+// ToProtoResponseMerchantDelete indicates an expected call of ToProtoResponseMerchantDelete.
+func (mr *MockMerchantProtoMapperMockRecorder) ToProtoResponseMerchantDelete(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseMerchantDelete", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToProtoResponseMerchantDelete), status, message)
+}
+
+// ToProtoResponseMerchants mocks base method.
+func (m *MockMerchantProtoMapper) ToProtoResponseMerchants(status, message string, res []*response.MerchantResponse) *pb.ApiResponsesMerchant {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseMerchants", status, message, res)
+	ret0, _ := ret[0].(*pb.ApiResponsesMerchant)
+	return ret0
+}
+
+// ToProtoResponseMerchants indicates an expected call of ToProtoResponseMerchants.
+func (mr *MockMerchantProtoMapperMockRecorder) ToProtoResponseMerchants(status, message, res any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseMerchants", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToProtoResponseMerchants), status, message, res)
+}
+
+// ToProtoResponseMonthlyAmounts mocks base method.
+func (m *MockMerchantProtoMapper) ToProtoResponseMonthlyAmounts(status, message string, ms []*response.MerchantResponseMonthlyAmount) *pb.ApiResponseMerchantMonthlyAmount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseMonthlyAmounts", status, message, ms)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyAmount)
+	return ret0
+}
+
+// ToProtoResponseMonthlyAmounts indicates an expected call of ToProtoResponseMonthlyAmounts.
+func (mr *MockMerchantProtoMapperMockRecorder) ToProtoResponseMonthlyAmounts(status, message, ms any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseMonthlyAmounts", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToProtoResponseMonthlyAmounts), status, message, ms)
+}
+
+// ToProtoResponseMonthlyPaymentMethods mocks base method.
+func (m *MockMerchantProtoMapper) ToProtoResponseMonthlyPaymentMethods(status, message string, ms []*response.MerchantResponseMonthlyPaymentMethod) *pb.ApiResponseMerchantMonthlyPaymentMethod {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseMonthlyPaymentMethods", status, message, ms)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyPaymentMethod)
+	return ret0
+}
+
+// ToProtoResponseMonthlyPaymentMethods indicates an expected call of ToProtoResponseMonthlyPaymentMethods.
+func (mr *MockMerchantProtoMapperMockRecorder) ToProtoResponseMonthlyPaymentMethods(status, message, ms any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseMonthlyPaymentMethods", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToProtoResponseMonthlyPaymentMethods), status, message, ms)
+}
+
+// ToProtoResponseMonthlyTotalAmounts mocks base method.
+func (m *MockMerchantProtoMapper) ToProtoResponseMonthlyTotalAmounts(status, message string, ms []*response.MerchantResponseMonthlyTotalAmount) *pb.ApiResponseMerchantMonthlyTotalAmount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseMonthlyTotalAmounts", status, message, ms)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyTotalAmount)
+	return ret0
+}
+
+// ToProtoResponseMonthlyTotalAmounts indicates an expected call of ToProtoResponseMonthlyTotalAmounts.
+func (mr *MockMerchantProtoMapperMockRecorder) ToProtoResponseMonthlyTotalAmounts(status, message, ms any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseMonthlyTotalAmounts", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToProtoResponseMonthlyTotalAmounts), status, message, ms)
+}
+
+// ToProtoResponsePaginationMerchant mocks base method.
+func (m *MockMerchantProtoMapper) ToProtoResponsePaginationMerchant(pagination *pb.PaginationMeta, status, message string, merchants []*response.MerchantResponse) *pb.ApiResponsePaginationMerchant {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationMerchant", pagination, status, message, merchants)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationMerchant)
+	return ret0
+}
+
+// ToProtoResponsePaginationMerchant indicates an expected call of ToProtoResponsePaginationMerchant.
+func (mr *MockMerchantProtoMapperMockRecorder) ToProtoResponsePaginationMerchant(pagination, status, message, merchants any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationMerchant", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToProtoResponsePaginationMerchant), pagination, status, message, merchants)
+}
+
+// ToProtoResponsePaginationMerchantDeleteAt mocks base method.
+func (m *MockMerchantProtoMapper) ToProtoResponsePaginationMerchantDeleteAt(pagination *pb.PaginationMeta, status, message string, merchants []*response.MerchantResponseDeleteAt) *pb.ApiResponsePaginationMerchantDeleteAt {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationMerchantDeleteAt", pagination, status, message, merchants)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationMerchantDeleteAt)
+	return ret0
+}
+
+// ToProtoResponsePaginationMerchantDeleteAt indicates an expected call of ToProtoResponsePaginationMerchantDeleteAt.
+func (mr *MockMerchantProtoMapperMockRecorder) ToProtoResponsePaginationMerchantDeleteAt(pagination, status, message, merchants any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationMerchantDeleteAt", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToProtoResponsePaginationMerchantDeleteAt), pagination, status, message, merchants)
+}
+
+// ToProtoResponsePaginationMerchantTransaction mocks base method.
+func (m *MockMerchantProtoMapper) ToProtoResponsePaginationMerchantTransaction(pagination *pb.PaginationMeta, status, message string, merchants []*response.MerchantTransactionResponse) *pb.ApiResponsePaginationMerchantTransaction {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationMerchantTransaction", pagination, status, message, merchants)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationMerchantTransaction)
+	return ret0
+}
+
+// ToProtoResponsePaginationMerchantTransaction indicates an expected call of ToProtoResponsePaginationMerchantTransaction.
+func (mr *MockMerchantProtoMapperMockRecorder) ToProtoResponsePaginationMerchantTransaction(pagination, status, message, merchants any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationMerchantTransaction", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToProtoResponsePaginationMerchantTransaction), pagination, status, message, merchants)
+}
+
+// ToProtoResponseYearlyAmounts mocks base method.
+func (m *MockMerchantProtoMapper) ToProtoResponseYearlyAmounts(status, message string, ms []*response.MerchantResponseYearlyAmount) *pb.ApiResponseMerchantYearlyAmount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseYearlyAmounts", status, message, ms)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyAmount)
+	return ret0
+}
+
+// ToProtoResponseYearlyAmounts indicates an expected call of ToProtoResponseYearlyAmounts.
+func (mr *MockMerchantProtoMapperMockRecorder) ToProtoResponseYearlyAmounts(status, message, ms any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseYearlyAmounts", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToProtoResponseYearlyAmounts), status, message, ms)
+}
+
+// ToProtoResponseYearlyPaymentMethods mocks base method.
+func (m *MockMerchantProtoMapper) ToProtoResponseYearlyPaymentMethods(status, message string, ms []*response.MerchantResponseYearlyPaymentMethod) *pb.ApiResponseMerchantYearlyPaymentMethod {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseYearlyPaymentMethods", status, message, ms)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyPaymentMethod)
+	return ret0
+}
+
+// ToProtoResponseYearlyPaymentMethods indicates an expected call of ToProtoResponseYearlyPaymentMethods.
+func (mr *MockMerchantProtoMapperMockRecorder) ToProtoResponseYearlyPaymentMethods(status, message, ms any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseYearlyPaymentMethods", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToProtoResponseYearlyPaymentMethods), status, message, ms)
+}
+
+// ToProtoResponseYearlyTotalAmounts mocks base method.
+func (m *MockMerchantProtoMapper) ToProtoResponseYearlyTotalAmounts(status, message string, ms []*response.MerchantResponseYearlyTotalAmount) *pb.ApiResponseMerchantYearlyTotalAmount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseYearlyTotalAmounts", status, message, ms)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyTotalAmount)
+	return ret0
+}
+
+// ToProtoResponseYearlyTotalAmounts indicates an expected call of ToProtoResponseYearlyTotalAmounts.
+func (mr *MockMerchantProtoMapperMockRecorder) ToProtoResponseYearlyTotalAmounts(status, message, ms any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseYearlyTotalAmounts", reflect.TypeOf((*MockMerchantProtoMapper)(nil).ToProtoResponseYearlyTotalAmounts), status, message, ms)
+}
+
+// MockSaldoProtoMapper is a mock of SaldoProtoMapper interface.
+type MockSaldoProtoMapper struct {
+	ctrl     *gomock.Controller
+	recorder *MockSaldoProtoMapperMockRecorder
+	isgomock struct{}
+}
+
+// MockSaldoProtoMapperMockRecorder is the mock recorder for MockSaldoProtoMapper.
+type MockSaldoProtoMapperMockRecorder struct {
+	mock *MockSaldoProtoMapper
+}
+
+// NewMockSaldoProtoMapper creates a new mock instance.
+func NewMockSaldoProtoMapper(ctrl *gomock.Controller) *MockSaldoProtoMapper {
+	mock := &MockSaldoProtoMapper{ctrl: ctrl}
+	mock.recorder = &MockSaldoProtoMapperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockSaldoProtoMapper) EXPECT() *MockSaldoProtoMapperMockRecorder {
+	return m.recorder
+}
+
+// ToProtoResponseMonthSaldoBalances mocks base method.
+func (m *MockSaldoProtoMapper) ToProtoResponseMonthSaldoBalances(status, message string, pbResponse []*response.SaldoMonthBalanceResponse) *pb.ApiResponseMonthSaldoBalances {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseMonthSaldoBalances", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseMonthSaldoBalances)
+	return ret0
+}
+
+// ToProtoResponseMonthSaldoBalances indicates an expected call of ToProtoResponseMonthSaldoBalances.
+func (mr *MockSaldoProtoMapperMockRecorder) ToProtoResponseMonthSaldoBalances(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseMonthSaldoBalances", reflect.TypeOf((*MockSaldoProtoMapper)(nil).ToProtoResponseMonthSaldoBalances), status, message, pbResponse)
+}
+
+// ToProtoResponseMonthTotalSaldo mocks base method.
+func (m *MockSaldoProtoMapper) ToProtoResponseMonthTotalSaldo(status, message string, pbResponse []*response.SaldoMonthTotalBalanceResponse) *pb.ApiResponseMonthTotalSaldo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseMonthTotalSaldo", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseMonthTotalSaldo)
+	return ret0
+}
+
+// ToProtoResponseMonthTotalSaldo indicates an expected call of ToProtoResponseMonthTotalSaldo.
+func (mr *MockSaldoProtoMapperMockRecorder) ToProtoResponseMonthTotalSaldo(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseMonthTotalSaldo", reflect.TypeOf((*MockSaldoProtoMapper)(nil).ToProtoResponseMonthTotalSaldo), status, message, pbResponse)
+}
+
+// ToProtoResponsePaginationSaldo mocks base method.
+func (m *MockSaldoProtoMapper) ToProtoResponsePaginationSaldo(pagination *pb.PaginationMeta, status, message string, pbResponse []*response.SaldoResponse) *pb.ApiResponsePaginationSaldo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationSaldo", pagination, status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationSaldo)
+	return ret0
+}
+
+// ToProtoResponsePaginationSaldo indicates an expected call of ToProtoResponsePaginationSaldo.
+func (mr *MockSaldoProtoMapperMockRecorder) ToProtoResponsePaginationSaldo(pagination, status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationSaldo", reflect.TypeOf((*MockSaldoProtoMapper)(nil).ToProtoResponsePaginationSaldo), pagination, status, message, pbResponse)
+}
+
+// ToProtoResponsePaginationSaldoDeleteAt mocks base method.
+func (m *MockSaldoProtoMapper) ToProtoResponsePaginationSaldoDeleteAt(pagination *pb.PaginationMeta, status, message string, pbResponse []*response.SaldoResponseDeleteAt) *pb.ApiResponsePaginationSaldoDeleteAt {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationSaldoDeleteAt", pagination, status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationSaldoDeleteAt)
+	return ret0
+}
+
+// ToProtoResponsePaginationSaldoDeleteAt indicates an expected call of ToProtoResponsePaginationSaldoDeleteAt.
+func (mr *MockSaldoProtoMapperMockRecorder) ToProtoResponsePaginationSaldoDeleteAt(pagination, status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationSaldoDeleteAt", reflect.TypeOf((*MockSaldoProtoMapper)(nil).ToProtoResponsePaginationSaldoDeleteAt), pagination, status, message, pbResponse)
+}
+
+// ToProtoResponseSaldo mocks base method.
+func (m *MockSaldoProtoMapper) ToProtoResponseSaldo(status, message string, pbResponse *response.SaldoResponse) *pb.ApiResponseSaldo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseSaldo", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseSaldo)
+	return ret0
+}
+
+// ToProtoResponseSaldo indicates an expected call of ToProtoResponseSaldo.
+func (mr *MockSaldoProtoMapperMockRecorder) ToProtoResponseSaldo(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseSaldo", reflect.TypeOf((*MockSaldoProtoMapper)(nil).ToProtoResponseSaldo), status, message, pbResponse)
+}
+
+// ToProtoResponseSaldoAll mocks base method.
+func (m *MockSaldoProtoMapper) ToProtoResponseSaldoAll(status, message string) *pb.ApiResponseSaldoAll {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseSaldoAll", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseSaldoAll)
+	return ret0
+}
+
+// ToProtoResponseSaldoAll indicates an expected call of ToProtoResponseSaldoAll.
+func (mr *MockSaldoProtoMapperMockRecorder) ToProtoResponseSaldoAll(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseSaldoAll", reflect.TypeOf((*MockSaldoProtoMapper)(nil).ToProtoResponseSaldoAll), status, message)
+}
+
+// ToProtoResponseSaldoDelete mocks base method.
+func (m *MockSaldoProtoMapper) ToProtoResponseSaldoDelete(status, message string) *pb.ApiResponseSaldoDelete {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseSaldoDelete", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseSaldoDelete)
+	return ret0
+}
+
+// ToProtoResponseSaldoDelete indicates an expected call of ToProtoResponseSaldoDelete.
+func (mr *MockSaldoProtoMapperMockRecorder) ToProtoResponseSaldoDelete(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseSaldoDelete", reflect.TypeOf((*MockSaldoProtoMapper)(nil).ToProtoResponseSaldoDelete), status, message)
+}
+
+// ToProtoResponseYearSaldoBalances mocks base method.
+func (m *MockSaldoProtoMapper) ToProtoResponseYearSaldoBalances(status, message string, pbResponse []*response.SaldoYearBalanceResponse) *pb.ApiResponseYearSaldoBalances {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseYearSaldoBalances", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseYearSaldoBalances)
+	return ret0
+}
+
+// ToProtoResponseYearSaldoBalances indicates an expected call of ToProtoResponseYearSaldoBalances.
+func (mr *MockSaldoProtoMapperMockRecorder) ToProtoResponseYearSaldoBalances(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseYearSaldoBalances", reflect.TypeOf((*MockSaldoProtoMapper)(nil).ToProtoResponseYearSaldoBalances), status, message, pbResponse)
+}
+
+// ToProtoResponseYearTotalSaldo mocks base method.
+func (m *MockSaldoProtoMapper) ToProtoResponseYearTotalSaldo(status, message string, pbResponse []*response.SaldoYearTotalBalanceResponse) *pb.ApiResponseYearTotalSaldo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseYearTotalSaldo", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseYearTotalSaldo)
+	return ret0
+}
+
+// ToProtoResponseYearTotalSaldo indicates an expected call of ToProtoResponseYearTotalSaldo.
+func (mr *MockSaldoProtoMapperMockRecorder) ToProtoResponseYearTotalSaldo(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseYearTotalSaldo", reflect.TypeOf((*MockSaldoProtoMapper)(nil).ToProtoResponseYearTotalSaldo), status, message, pbResponse)
+}
+
+// ToProtoResponsesSaldo mocks base method.
+func (m *MockSaldoProtoMapper) ToProtoResponsesSaldo(status, message string, pbResponse []*response.SaldoResponse) *pb.ApiResponsesSaldo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsesSaldo", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponsesSaldo)
+	return ret0
+}
+
+// ToProtoResponsesSaldo indicates an expected call of ToProtoResponsesSaldo.
+func (mr *MockSaldoProtoMapperMockRecorder) ToProtoResponsesSaldo(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsesSaldo", reflect.TypeOf((*MockSaldoProtoMapper)(nil).ToProtoResponsesSaldo), status, message, pbResponse)
+}
+
+// MockTopupProtoMapper is a mock of TopupProtoMapper interface.
+type MockTopupProtoMapper struct {
+	ctrl     *gomock.Controller
+	recorder *MockTopupProtoMapperMockRecorder
+	isgomock struct{}
+}
+
+// MockTopupProtoMapperMockRecorder is the mock recorder for MockTopupProtoMapper.
+type MockTopupProtoMapperMockRecorder struct {
+	mock *MockTopupProtoMapper
+}
+
+// NewMockTopupProtoMapper creates a new mock instance.
+func NewMockTopupProtoMapper(ctrl *gomock.Controller) *MockTopupProtoMapper {
+	mock := &MockTopupProtoMapper{ctrl: ctrl}
+	mock.recorder = &MockTopupProtoMapperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTopupProtoMapper) EXPECT() *MockTopupProtoMapperMockRecorder {
+	return m.recorder
+}
+
+// ToProtoResponsePaginationTopup mocks base method.
+func (m *MockTopupProtoMapper) ToProtoResponsePaginationTopup(pagination *pb.PaginationMeta, status, message string, s []*response.TopupResponse) *pb.ApiResponsePaginationTopup {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationTopup", pagination, status, message, s)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationTopup)
+	return ret0
+}
+
+// ToProtoResponsePaginationTopup indicates an expected call of ToProtoResponsePaginationTopup.
+func (mr *MockTopupProtoMapperMockRecorder) ToProtoResponsePaginationTopup(pagination, status, message, s any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationTopup", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToProtoResponsePaginationTopup), pagination, status, message, s)
+}
+
+// ToProtoResponsePaginationTopupDeleteAt mocks base method.
+func (m *MockTopupProtoMapper) ToProtoResponsePaginationTopupDeleteAt(pagination *pb.PaginationMeta, status, message string, s []*response.TopupResponseDeleteAt) *pb.ApiResponsePaginationTopupDeleteAt {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationTopupDeleteAt", pagination, status, message, s)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationTopupDeleteAt)
+	return ret0
+}
+
+// ToProtoResponsePaginationTopupDeleteAt indicates an expected call of ToProtoResponsePaginationTopupDeleteAt.
+func (mr *MockTopupProtoMapperMockRecorder) ToProtoResponsePaginationTopupDeleteAt(pagination, status, message, s any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationTopupDeleteAt", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToProtoResponsePaginationTopupDeleteAt), pagination, status, message, s)
+}
+
+// ToProtoResponseTopup mocks base method.
+func (m *MockTopupProtoMapper) ToProtoResponseTopup(status, message string, s *response.TopupResponse) *pb.ApiResponseTopup {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTopup", status, message, s)
+	ret0, _ := ret[0].(*pb.ApiResponseTopup)
+	return ret0
+}
+
+// ToProtoResponseTopup indicates an expected call of ToProtoResponseTopup.
+func (mr *MockTopupProtoMapperMockRecorder) ToProtoResponseTopup(status, message, s any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTopup", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToProtoResponseTopup), status, message, s)
+}
+
+// ToProtoResponseTopupAll mocks base method.
+func (m *MockTopupProtoMapper) ToProtoResponseTopupAll(status, message string) *pb.ApiResponseTopupAll {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTopupAll", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupAll)
+	return ret0
+}
+
+// ToProtoResponseTopupAll indicates an expected call of ToProtoResponseTopupAll.
+func (mr *MockTopupProtoMapperMockRecorder) ToProtoResponseTopupAll(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTopupAll", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToProtoResponseTopupAll), status, message)
+}
+
+// ToProtoResponseTopupDelete mocks base method.
+func (m *MockTopupProtoMapper) ToProtoResponseTopupDelete(status, message string) *pb.ApiResponseTopupDelete {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTopupDelete", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupDelete)
+	return ret0
+}
+
+// ToProtoResponseTopupDelete indicates an expected call of ToProtoResponseTopupDelete.
+func (mr *MockTopupProtoMapperMockRecorder) ToProtoResponseTopupDelete(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTopupDelete", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToProtoResponseTopupDelete), status, message)
+}
+
+// ToProtoResponseTopupMonthAmount mocks base method.
+func (m *MockTopupProtoMapper) ToProtoResponseTopupMonthAmount(status, message string, s []*response.TopupMonthAmountResponse) *pb.ApiResponseTopupMonthAmount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTopupMonthAmount", status, message, s)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthAmount)
+	return ret0
+}
+
+// ToProtoResponseTopupMonthAmount indicates an expected call of ToProtoResponseTopupMonthAmount.
+func (mr *MockTopupProtoMapperMockRecorder) ToProtoResponseTopupMonthAmount(status, message, s any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTopupMonthAmount", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToProtoResponseTopupMonthAmount), status, message, s)
+}
+
+// ToProtoResponseTopupMonthMethod mocks base method.
+func (m *MockTopupProtoMapper) ToProtoResponseTopupMonthMethod(status, message string, s []*response.TopupMonthMethodResponse) *pb.ApiResponseTopupMonthMethod {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTopupMonthMethod", status, message, s)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthMethod)
+	return ret0
+}
+
+// ToProtoResponseTopupMonthMethod indicates an expected call of ToProtoResponseTopupMonthMethod.
+func (mr *MockTopupProtoMapperMockRecorder) ToProtoResponseTopupMonthMethod(status, message, s any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTopupMonthMethod", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToProtoResponseTopupMonthMethod), status, message, s)
+}
+
+// ToProtoResponseTopupMonthStatusFailed mocks base method.
+func (m *MockTopupProtoMapper) ToProtoResponseTopupMonthStatusFailed(status, message string, s []*response.TopupResponseMonthStatusFailed) *pb.ApiResponseTopupMonthStatusFailed {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTopupMonthStatusFailed", status, message, s)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthStatusFailed)
+	return ret0
+}
+
+// ToProtoResponseTopupMonthStatusFailed indicates an expected call of ToProtoResponseTopupMonthStatusFailed.
+func (mr *MockTopupProtoMapperMockRecorder) ToProtoResponseTopupMonthStatusFailed(status, message, s any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTopupMonthStatusFailed", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToProtoResponseTopupMonthStatusFailed), status, message, s)
+}
+
+// ToProtoResponseTopupMonthStatusSuccess mocks base method.
+func (m *MockTopupProtoMapper) ToProtoResponseTopupMonthStatusSuccess(status, message string, s []*response.TopupResponseMonthStatusSuccess) *pb.ApiResponseTopupMonthStatusSuccess {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTopupMonthStatusSuccess", status, message, s)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthStatusSuccess)
+	return ret0
+}
+
+// ToProtoResponseTopupMonthStatusSuccess indicates an expected call of ToProtoResponseTopupMonthStatusSuccess.
+func (mr *MockTopupProtoMapperMockRecorder) ToProtoResponseTopupMonthStatusSuccess(status, message, s any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTopupMonthStatusSuccess", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToProtoResponseTopupMonthStatusSuccess), status, message, s)
+}
+
+// ToProtoResponseTopupYearAmount mocks base method.
+func (m *MockTopupProtoMapper) ToProtoResponseTopupYearAmount(status, message string, s []*response.TopupYearlyAmountResponse) *pb.ApiResponseTopupYearAmount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTopupYearAmount", status, message, s)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearAmount)
+	return ret0
+}
+
+// ToProtoResponseTopupYearAmount indicates an expected call of ToProtoResponseTopupYearAmount.
+func (mr *MockTopupProtoMapperMockRecorder) ToProtoResponseTopupYearAmount(status, message, s any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTopupYearAmount", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToProtoResponseTopupYearAmount), status, message, s)
+}
+
+// ToProtoResponseTopupYearMethod mocks base method.
+func (m *MockTopupProtoMapper) ToProtoResponseTopupYearMethod(status, message string, s []*response.TopupYearlyMethodResponse) *pb.ApiResponseTopupYearMethod {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTopupYearMethod", status, message, s)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearMethod)
+	return ret0
+}
+
+// ToProtoResponseTopupYearMethod indicates an expected call of ToProtoResponseTopupYearMethod.
+func (mr *MockTopupProtoMapperMockRecorder) ToProtoResponseTopupYearMethod(status, message, s any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTopupYearMethod", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToProtoResponseTopupYearMethod), status, message, s)
+}
+
+// ToProtoResponseTopupYearStatusFailed mocks base method.
+func (m *MockTopupProtoMapper) ToProtoResponseTopupYearStatusFailed(status, message string, s []*response.TopupResponseYearStatusFailed) *pb.ApiResponseTopupYearStatusFailed {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTopupYearStatusFailed", status, message, s)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearStatusFailed)
+	return ret0
+}
+
+// ToProtoResponseTopupYearStatusFailed indicates an expected call of ToProtoResponseTopupYearStatusFailed.
+func (mr *MockTopupProtoMapperMockRecorder) ToProtoResponseTopupYearStatusFailed(status, message, s any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTopupYearStatusFailed", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToProtoResponseTopupYearStatusFailed), status, message, s)
+}
+
+// ToProtoResponseTopupYearStatusSuccess mocks base method.
+func (m *MockTopupProtoMapper) ToProtoResponseTopupYearStatusSuccess(status, message string, s []*response.TopupResponseYearStatusSuccess) *pb.ApiResponseTopupYearStatusSuccess {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTopupYearStatusSuccess", status, message, s)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearStatusSuccess)
+	return ret0
+}
+
+// ToProtoResponseTopupYearStatusSuccess indicates an expected call of ToProtoResponseTopupYearStatusSuccess.
+func (mr *MockTopupProtoMapperMockRecorder) ToProtoResponseTopupYearStatusSuccess(status, message, s any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTopupYearStatusSuccess", reflect.TypeOf((*MockTopupProtoMapper)(nil).ToProtoResponseTopupYearStatusSuccess), status, message, s)
+}
+
+// MockTransactionProtoMapper is a mock of TransactionProtoMapper interface.
+type MockTransactionProtoMapper struct {
+	ctrl     *gomock.Controller
+	recorder *MockTransactionProtoMapperMockRecorder
+	isgomock struct{}
+}
+
+// MockTransactionProtoMapperMockRecorder is the mock recorder for MockTransactionProtoMapper.
+type MockTransactionProtoMapperMockRecorder struct {
+	mock *MockTransactionProtoMapper
+}
+
+// NewMockTransactionProtoMapper creates a new mock instance.
+func NewMockTransactionProtoMapper(ctrl *gomock.Controller) *MockTransactionProtoMapper {
+	mock := &MockTransactionProtoMapper{ctrl: ctrl}
+	mock.recorder = &MockTransactionProtoMapperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTransactionProtoMapper) EXPECT() *MockTransactionProtoMapperMockRecorder {
+	return m.recorder
+}
+
+// ToProtoResponsePaginationTransaction mocks base method.
+func (m *MockTransactionProtoMapper) ToProtoResponsePaginationTransaction(pagination *pb.PaginationMeta, status, message string, pbResponse []*response.TransactionResponse) *pb.ApiResponsePaginationTransaction {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationTransaction", pagination, status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationTransaction)
+	return ret0
+}
+
+// ToProtoResponsePaginationTransaction indicates an expected call of ToProtoResponsePaginationTransaction.
+func (mr *MockTransactionProtoMapperMockRecorder) ToProtoResponsePaginationTransaction(pagination, status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationTransaction", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToProtoResponsePaginationTransaction), pagination, status, message, pbResponse)
+}
+
+// ToProtoResponsePaginationTransactionDeleteAt mocks base method.
+func (m *MockTransactionProtoMapper) ToProtoResponsePaginationTransactionDeleteAt(pagination *pb.PaginationMeta, status, message string, pbResponse []*response.TransactionResponseDeleteAt) *pb.ApiResponsePaginationTransactionDeleteAt {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationTransactionDeleteAt", pagination, status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationTransactionDeleteAt)
+	return ret0
+}
+
+// ToProtoResponsePaginationTransactionDeleteAt indicates an expected call of ToProtoResponsePaginationTransactionDeleteAt.
+func (mr *MockTransactionProtoMapperMockRecorder) ToProtoResponsePaginationTransactionDeleteAt(pagination, status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationTransactionDeleteAt", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToProtoResponsePaginationTransactionDeleteAt), pagination, status, message, pbResponse)
+}
+
+// ToProtoResponseTransaction mocks base method.
+func (m *MockTransactionProtoMapper) ToProtoResponseTransaction(status, message string, pbResponse *response.TransactionResponse) *pb.ApiResponseTransaction {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransaction", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransaction)
+	return ret0
+}
+
+// ToProtoResponseTransaction indicates an expected call of ToProtoResponseTransaction.
+func (mr *MockTransactionProtoMapperMockRecorder) ToProtoResponseTransaction(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransaction", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToProtoResponseTransaction), status, message, pbResponse)
+}
+
+// ToProtoResponseTransactionAll mocks base method.
+func (m *MockTransactionProtoMapper) ToProtoResponseTransactionAll(status, message string) *pb.ApiResponseTransactionAll {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransactionAll", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionAll)
+	return ret0
+}
+
+// ToProtoResponseTransactionAll indicates an expected call of ToProtoResponseTransactionAll.
+func (mr *MockTransactionProtoMapperMockRecorder) ToProtoResponseTransactionAll(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransactionAll", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToProtoResponseTransactionAll), status, message)
+}
+
+// ToProtoResponseTransactionDelete mocks base method.
+func (m *MockTransactionProtoMapper) ToProtoResponseTransactionDelete(status, message string) *pb.ApiResponseTransactionDelete {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransactionDelete", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionDelete)
+	return ret0
+}
+
+// ToProtoResponseTransactionDelete indicates an expected call of ToProtoResponseTransactionDelete.
+func (mr *MockTransactionProtoMapperMockRecorder) ToProtoResponseTransactionDelete(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransactionDelete", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToProtoResponseTransactionDelete), status, message)
+}
+
+// ToProtoResponseTransactionMonthAmount mocks base method.
+func (m *MockTransactionProtoMapper) ToProtoResponseTransactionMonthAmount(status, message string, pbResponse []*response.TransactionMonthAmountResponse) *pb.ApiResponseTransactionMonthAmount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransactionMonthAmount", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthAmount)
+	return ret0
+}
+
+// ToProtoResponseTransactionMonthAmount indicates an expected call of ToProtoResponseTransactionMonthAmount.
+func (mr *MockTransactionProtoMapperMockRecorder) ToProtoResponseTransactionMonthAmount(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransactionMonthAmount", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToProtoResponseTransactionMonthAmount), status, message, pbResponse)
+}
+
+// ToProtoResponseTransactionMonthMethod mocks base method.
+func (m *MockTransactionProtoMapper) ToProtoResponseTransactionMonthMethod(status, message string, pbResponse []*response.TransactionMonthMethodResponse) *pb.ApiResponseTransactionMonthMethod {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransactionMonthMethod", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthMethod)
+	return ret0
+}
+
+// ToProtoResponseTransactionMonthMethod indicates an expected call of ToProtoResponseTransactionMonthMethod.
+func (mr *MockTransactionProtoMapperMockRecorder) ToProtoResponseTransactionMonthMethod(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransactionMonthMethod", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToProtoResponseTransactionMonthMethod), status, message, pbResponse)
+}
+
+// ToProtoResponseTransactionMonthStatusFailed mocks base method.
+func (m *MockTransactionProtoMapper) ToProtoResponseTransactionMonthStatusFailed(status, message string, pbResponse []*response.TransactionResponseMonthStatusFailed) *pb.ApiResponseTransactionMonthStatusFailed {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransactionMonthStatusFailed", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthStatusFailed)
+	return ret0
+}
+
+// ToProtoResponseTransactionMonthStatusFailed indicates an expected call of ToProtoResponseTransactionMonthStatusFailed.
+func (mr *MockTransactionProtoMapperMockRecorder) ToProtoResponseTransactionMonthStatusFailed(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransactionMonthStatusFailed", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToProtoResponseTransactionMonthStatusFailed), status, message, pbResponse)
+}
+
+// ToProtoResponseTransactionMonthStatusSuccess mocks base method.
+func (m *MockTransactionProtoMapper) ToProtoResponseTransactionMonthStatusSuccess(status, message string, pbResponse []*response.TransactionResponseMonthStatusSuccess) *pb.ApiResponseTransactionMonthStatusSuccess {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransactionMonthStatusSuccess", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthStatusSuccess)
+	return ret0
+}
+
+// ToProtoResponseTransactionMonthStatusSuccess indicates an expected call of ToProtoResponseTransactionMonthStatusSuccess.
+func (mr *MockTransactionProtoMapperMockRecorder) ToProtoResponseTransactionMonthStatusSuccess(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransactionMonthStatusSuccess", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToProtoResponseTransactionMonthStatusSuccess), status, message, pbResponse)
+}
+
+// ToProtoResponseTransactionYearAmount mocks base method.
+func (m *MockTransactionProtoMapper) ToProtoResponseTransactionYearAmount(status, message string, pbResponse []*response.TransactionYearlyAmountResponse) *pb.ApiResponseTransactionYearAmount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransactionYearAmount", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearAmount)
+	return ret0
+}
+
+// ToProtoResponseTransactionYearAmount indicates an expected call of ToProtoResponseTransactionYearAmount.
+func (mr *MockTransactionProtoMapperMockRecorder) ToProtoResponseTransactionYearAmount(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransactionYearAmount", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToProtoResponseTransactionYearAmount), status, message, pbResponse)
+}
+
+// ToProtoResponseTransactionYearMethod mocks base method.
+func (m *MockTransactionProtoMapper) ToProtoResponseTransactionYearMethod(status, message string, pbResponse []*response.TransactionYearMethodResponse) *pb.ApiResponseTransactionYearMethod {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransactionYearMethod", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearMethod)
+	return ret0
+}
+
+// ToProtoResponseTransactionYearMethod indicates an expected call of ToProtoResponseTransactionYearMethod.
+func (mr *MockTransactionProtoMapperMockRecorder) ToProtoResponseTransactionYearMethod(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransactionYearMethod", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToProtoResponseTransactionYearMethod), status, message, pbResponse)
+}
+
+// ToProtoResponseTransactionYearStatusFailed mocks base method.
+func (m *MockTransactionProtoMapper) ToProtoResponseTransactionYearStatusFailed(status, message string, pbResponse []*response.TransactionResponseYearStatusFailed) *pb.ApiResponseTransactionYearStatusFailed {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransactionYearStatusFailed", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearStatusFailed)
+	return ret0
+}
+
+// ToProtoResponseTransactionYearStatusFailed indicates an expected call of ToProtoResponseTransactionYearStatusFailed.
+func (mr *MockTransactionProtoMapperMockRecorder) ToProtoResponseTransactionYearStatusFailed(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransactionYearStatusFailed", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToProtoResponseTransactionYearStatusFailed), status, message, pbResponse)
+}
+
+// ToProtoResponseTransactionYearStatusSuccess mocks base method.
+func (m *MockTransactionProtoMapper) ToProtoResponseTransactionYearStatusSuccess(status, message string, pbResponse []*response.TransactionResponseYearStatusSuccess) *pb.ApiResponseTransactionYearStatusSuccess {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransactionYearStatusSuccess", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearStatusSuccess)
+	return ret0
+}
+
+// ToProtoResponseTransactionYearStatusSuccess indicates an expected call of ToProtoResponseTransactionYearStatusSuccess.
+func (mr *MockTransactionProtoMapperMockRecorder) ToProtoResponseTransactionYearStatusSuccess(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransactionYearStatusSuccess", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToProtoResponseTransactionYearStatusSuccess), status, message, pbResponse)
+}
+
+// ToProtoResponseTransactions mocks base method.
+func (m *MockTransactionProtoMapper) ToProtoResponseTransactions(status, message string, pbResponse []*response.TransactionResponse) *pb.ApiResponseTransactions {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransactions", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactions)
+	return ret0
+}
+
+// ToProtoResponseTransactions indicates an expected call of ToProtoResponseTransactions.
+func (mr *MockTransactionProtoMapperMockRecorder) ToProtoResponseTransactions(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransactions", reflect.TypeOf((*MockTransactionProtoMapper)(nil).ToProtoResponseTransactions), status, message, pbResponse)
+}
+
+// MockTransferProtoMapper is a mock of TransferProtoMapper interface.
+type MockTransferProtoMapper struct {
+	ctrl     *gomock.Controller
+	recorder *MockTransferProtoMapperMockRecorder
+	isgomock struct{}
+}
+
+// MockTransferProtoMapperMockRecorder is the mock recorder for MockTransferProtoMapper.
+type MockTransferProtoMapperMockRecorder struct {
+	mock *MockTransferProtoMapper
+}
+
+// NewMockTransferProtoMapper creates a new mock instance.
+func NewMockTransferProtoMapper(ctrl *gomock.Controller) *MockTransferProtoMapper {
+	mock := &MockTransferProtoMapper{ctrl: ctrl}
+	mock.recorder = &MockTransferProtoMapperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTransferProtoMapper) EXPECT() *MockTransferProtoMapperMockRecorder {
+	return m.recorder
+}
+
+// ToProtoResponsePaginationTransfer mocks base method.
+func (m *MockTransferProtoMapper) ToProtoResponsePaginationTransfer(pagination *pb.PaginationMeta, status, message string, pbResponse []*response.TransferResponse) *pb.ApiResponsePaginationTransfer {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationTransfer", pagination, status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationTransfer)
+	return ret0
+}
+
+// ToProtoResponsePaginationTransfer indicates an expected call of ToProtoResponsePaginationTransfer.
+func (mr *MockTransferProtoMapperMockRecorder) ToProtoResponsePaginationTransfer(pagination, status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationTransfer", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToProtoResponsePaginationTransfer), pagination, status, message, pbResponse)
+}
+
+// ToProtoResponsePaginationTransferDeleteAt mocks base method.
+func (m *MockTransferProtoMapper) ToProtoResponsePaginationTransferDeleteAt(pagination *pb.PaginationMeta, status, message string, pbResponse []*response.TransferResponseDeleteAt) *pb.ApiResponsePaginationTransferDeleteAt {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationTransferDeleteAt", pagination, status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationTransferDeleteAt)
+	return ret0
+}
+
+// ToProtoResponsePaginationTransferDeleteAt indicates an expected call of ToProtoResponsePaginationTransferDeleteAt.
+func (mr *MockTransferProtoMapperMockRecorder) ToProtoResponsePaginationTransferDeleteAt(pagination, status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationTransferDeleteAt", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToProtoResponsePaginationTransferDeleteAt), pagination, status, message, pbResponse)
+}
+
+// ToProtoResponseTransfer mocks base method.
+func (m *MockTransferProtoMapper) ToProtoResponseTransfer(status, message string, pbResponse *response.TransferResponse) *pb.ApiResponseTransfer {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransfer", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransfer)
+	return ret0
+}
+
+// ToProtoResponseTransfer indicates an expected call of ToProtoResponseTransfer.
+func (mr *MockTransferProtoMapperMockRecorder) ToProtoResponseTransfer(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransfer", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToProtoResponseTransfer), status, message, pbResponse)
+}
+
+// ToProtoResponseTransferAll mocks base method.
+func (m *MockTransferProtoMapper) ToProtoResponseTransferAll(status, message string) *pb.ApiResponseTransferAll {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransferAll", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseTransferAll)
+	return ret0
+}
+
+// ToProtoResponseTransferAll indicates an expected call of ToProtoResponseTransferAll.
+func (mr *MockTransferProtoMapperMockRecorder) ToProtoResponseTransferAll(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransferAll", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToProtoResponseTransferAll), status, message)
+}
+
+// ToProtoResponseTransferDelete mocks base method.
+func (m *MockTransferProtoMapper) ToProtoResponseTransferDelete(status, message string) *pb.ApiResponseTransferDelete {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransferDelete", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseTransferDelete)
+	return ret0
+}
+
+// ToProtoResponseTransferDelete indicates an expected call of ToProtoResponseTransferDelete.
+func (mr *MockTransferProtoMapperMockRecorder) ToProtoResponseTransferDelete(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransferDelete", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToProtoResponseTransferDelete), status, message)
+}
+
+// ToProtoResponseTransferMonthAmount mocks base method.
+func (m *MockTransferProtoMapper) ToProtoResponseTransferMonthAmount(status, message string, pbResponse []*response.TransferMonthAmountResponse) *pb.ApiResponseTransferMonthAmount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransferMonthAmount", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransferMonthAmount)
+	return ret0
+}
+
+// ToProtoResponseTransferMonthAmount indicates an expected call of ToProtoResponseTransferMonthAmount.
+func (mr *MockTransferProtoMapperMockRecorder) ToProtoResponseTransferMonthAmount(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransferMonthAmount", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToProtoResponseTransferMonthAmount), status, message, pbResponse)
+}
+
+// ToProtoResponseTransferMonthStatusFailed mocks base method.
+func (m *MockTransferProtoMapper) ToProtoResponseTransferMonthStatusFailed(status, message string, pbResponse []*response.TransferResponseMonthStatusFailed) *pb.ApiResponseTransferMonthStatusFailed {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransferMonthStatusFailed", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransferMonthStatusFailed)
+	return ret0
+}
+
+// ToProtoResponseTransferMonthStatusFailed indicates an expected call of ToProtoResponseTransferMonthStatusFailed.
+func (mr *MockTransferProtoMapperMockRecorder) ToProtoResponseTransferMonthStatusFailed(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransferMonthStatusFailed", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToProtoResponseTransferMonthStatusFailed), status, message, pbResponse)
+}
+
+// ToProtoResponseTransferMonthStatusSuccess mocks base method.
+func (m *MockTransferProtoMapper) ToProtoResponseTransferMonthStatusSuccess(status, message string, pbResponse []*response.TransferResponseMonthStatusSuccess) *pb.ApiResponseTransferMonthStatusSuccess {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransferMonthStatusSuccess", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransferMonthStatusSuccess)
+	return ret0
+}
+
+// ToProtoResponseTransferMonthStatusSuccess indicates an expected call of ToProtoResponseTransferMonthStatusSuccess.
+func (mr *MockTransferProtoMapperMockRecorder) ToProtoResponseTransferMonthStatusSuccess(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransferMonthStatusSuccess", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToProtoResponseTransferMonthStatusSuccess), status, message, pbResponse)
+}
+
+// ToProtoResponseTransferYearAmount mocks base method.
+func (m *MockTransferProtoMapper) ToProtoResponseTransferYearAmount(status, message string, pbResponse []*response.TransferYearAmountResponse) *pb.ApiResponseTransferYearAmount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransferYearAmount", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransferYearAmount)
+	return ret0
+}
+
+// ToProtoResponseTransferYearAmount indicates an expected call of ToProtoResponseTransferYearAmount.
+func (mr *MockTransferProtoMapperMockRecorder) ToProtoResponseTransferYearAmount(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransferYearAmount", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToProtoResponseTransferYearAmount), status, message, pbResponse)
+}
+
+// ToProtoResponseTransferYearStatusFailed mocks base method.
+func (m *MockTransferProtoMapper) ToProtoResponseTransferYearStatusFailed(status, message string, pbResponse []*response.TransferResponseYearStatusFailed) *pb.ApiResponseTransferYearStatusFailed {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransferYearStatusFailed", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransferYearStatusFailed)
+	return ret0
+}
+
+// ToProtoResponseTransferYearStatusFailed indicates an expected call of ToProtoResponseTransferYearStatusFailed.
+func (mr *MockTransferProtoMapperMockRecorder) ToProtoResponseTransferYearStatusFailed(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransferYearStatusFailed", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToProtoResponseTransferYearStatusFailed), status, message, pbResponse)
+}
+
+// ToProtoResponseTransferYearStatusSuccess mocks base method.
+func (m *MockTransferProtoMapper) ToProtoResponseTransferYearStatusSuccess(status, message string, pbResponse []*response.TransferResponseYearStatusSuccess) *pb.ApiResponseTransferYearStatusSuccess {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransferYearStatusSuccess", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransferYearStatusSuccess)
+	return ret0
+}
+
+// ToProtoResponseTransferYearStatusSuccess indicates an expected call of ToProtoResponseTransferYearStatusSuccess.
+func (mr *MockTransferProtoMapperMockRecorder) ToProtoResponseTransferYearStatusSuccess(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransferYearStatusSuccess", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToProtoResponseTransferYearStatusSuccess), status, message, pbResponse)
+}
+
+// ToProtoResponseTransfers mocks base method.
+func (m *MockTransferProtoMapper) ToProtoResponseTransfers(status, message string, pbResponse []*response.TransferResponse) *pb.ApiResponseTransfers {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseTransfers", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseTransfers)
+	return ret0
+}
+
+// ToProtoResponseTransfers indicates an expected call of ToProtoResponseTransfers.
+func (mr *MockTransferProtoMapperMockRecorder) ToProtoResponseTransfers(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseTransfers", reflect.TypeOf((*MockTransferProtoMapper)(nil).ToProtoResponseTransfers), status, message, pbResponse)
 }
 
 // MockWithdrawalProtoMapper is a mock of WithdrawalProtoMapper interface.
@@ -737,58 +1517,170 @@ func (m *MockWithdrawalProtoMapper) EXPECT() *MockWithdrawalProtoMapperMockRecor
 	return m.recorder
 }
 
-// ToResponseWithdrawal mocks base method.
-func (m *MockWithdrawalProtoMapper) ToResponseWithdrawal(withdrawal *response.WithdrawResponse) *pb.WithdrawResponse {
+// ToProtoResponsePaginationWithdraw mocks base method.
+func (m *MockWithdrawalProtoMapper) ToProtoResponsePaginationWithdraw(pagination *pb.PaginationMeta, status, message string, pbResponse []*response.WithdrawResponse) *pb.ApiResponsePaginationWithdraw {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseWithdrawal", withdrawal)
-	ret0, _ := ret[0].(*pb.WithdrawResponse)
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationWithdraw", pagination, status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationWithdraw)
 	return ret0
 }
 
-// ToResponseWithdrawal indicates an expected call of ToResponseWithdrawal.
-func (mr *MockWithdrawalProtoMapperMockRecorder) ToResponseWithdrawal(withdrawal any) *gomock.Call {
+// ToProtoResponsePaginationWithdraw indicates an expected call of ToProtoResponsePaginationWithdraw.
+func (mr *MockWithdrawalProtoMapperMockRecorder) ToProtoResponsePaginationWithdraw(pagination, status, message, pbResponse any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseWithdrawal", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToResponseWithdrawal), withdrawal)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationWithdraw", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToProtoResponsePaginationWithdraw), pagination, status, message, pbResponse)
 }
 
-// ToResponseWithdrawalDeleteAt mocks base method.
-func (m *MockWithdrawalProtoMapper) ToResponseWithdrawalDeleteAt(withdraw *response.WithdrawResponseDeleteAt) *pb.WithdrawResponseDeleteAt {
+// ToProtoResponsePaginationWithdrawDeleteAt mocks base method.
+func (m *MockWithdrawalProtoMapper) ToProtoResponsePaginationWithdrawDeleteAt(pagination *pb.PaginationMeta, status, message string, pbResponse []*response.WithdrawResponseDeleteAt) *pb.ApiResponsePaginationWithdrawDeleteAt {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponseWithdrawalDeleteAt", withdraw)
-	ret0, _ := ret[0].(*pb.WithdrawResponseDeleteAt)
+	ret := m.ctrl.Call(m, "ToProtoResponsePaginationWithdrawDeleteAt", pagination, status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationWithdrawDeleteAt)
 	return ret0
 }
 
-// ToResponseWithdrawalDeleteAt indicates an expected call of ToResponseWithdrawalDeleteAt.
-func (mr *MockWithdrawalProtoMapperMockRecorder) ToResponseWithdrawalDeleteAt(withdraw any) *gomock.Call {
+// ToProtoResponsePaginationWithdrawDeleteAt indicates an expected call of ToProtoResponsePaginationWithdrawDeleteAt.
+func (mr *MockWithdrawalProtoMapperMockRecorder) ToProtoResponsePaginationWithdrawDeleteAt(pagination, status, message, pbResponse any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponseWithdrawalDeleteAt", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToResponseWithdrawalDeleteAt), withdraw)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsePaginationWithdrawDeleteAt", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToProtoResponsePaginationWithdrawDeleteAt), pagination, status, message, pbResponse)
 }
 
-// ToResponsesWithdrawal mocks base method.
-func (m *MockWithdrawalProtoMapper) ToResponsesWithdrawal(withdrawals []*response.WithdrawResponse) []*pb.WithdrawResponse {
+// ToProtoResponseWithdraw mocks base method.
+func (m *MockWithdrawalProtoMapper) ToProtoResponseWithdraw(status, message string, withdraw *response.WithdrawResponse) *pb.ApiResponseWithdraw {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesWithdrawal", withdrawals)
-	ret0, _ := ret[0].([]*pb.WithdrawResponse)
+	ret := m.ctrl.Call(m, "ToProtoResponseWithdraw", status, message, withdraw)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdraw)
 	return ret0
 }
 
-// ToResponsesWithdrawal indicates an expected call of ToResponsesWithdrawal.
-func (mr *MockWithdrawalProtoMapperMockRecorder) ToResponsesWithdrawal(withdrawals any) *gomock.Call {
+// ToProtoResponseWithdraw indicates an expected call of ToProtoResponseWithdraw.
+func (mr *MockWithdrawalProtoMapperMockRecorder) ToProtoResponseWithdraw(status, message, withdraw any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesWithdrawal", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToResponsesWithdrawal), withdrawals)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseWithdraw", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToProtoResponseWithdraw), status, message, withdraw)
 }
 
-// ToResponsesWithdrawalDeleteAt mocks base method.
-func (m *MockWithdrawalProtoMapper) ToResponsesWithdrawalDeleteAt(withdraws []*response.WithdrawResponseDeleteAt) []*pb.WithdrawResponseDeleteAt {
+// ToProtoResponseWithdrawAll mocks base method.
+func (m *MockWithdrawalProtoMapper) ToProtoResponseWithdrawAll(status, message string) *pb.ApiResponseWithdrawAll {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ToResponsesWithdrawalDeleteAt", withdraws)
-	ret0, _ := ret[0].([]*pb.WithdrawResponseDeleteAt)
+	ret := m.ctrl.Call(m, "ToProtoResponseWithdrawAll", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawAll)
 	return ret0
 }
 
-// ToResponsesWithdrawalDeleteAt indicates an expected call of ToResponsesWithdrawalDeleteAt.
-func (mr *MockWithdrawalProtoMapperMockRecorder) ToResponsesWithdrawalDeleteAt(withdraws any) *gomock.Call {
+// ToProtoResponseWithdrawAll indicates an expected call of ToProtoResponseWithdrawAll.
+func (mr *MockWithdrawalProtoMapperMockRecorder) ToProtoResponseWithdrawAll(status, message any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToResponsesWithdrawalDeleteAt", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToResponsesWithdrawalDeleteAt), withdraws)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseWithdrawAll", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToProtoResponseWithdrawAll), status, message)
+}
+
+// ToProtoResponseWithdrawDelete mocks base method.
+func (m *MockWithdrawalProtoMapper) ToProtoResponseWithdrawDelete(status, message string) *pb.ApiResponseWithdrawDelete {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseWithdrawDelete", status, message)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawDelete)
+	return ret0
+}
+
+// ToProtoResponseWithdrawDelete indicates an expected call of ToProtoResponseWithdrawDelete.
+func (mr *MockWithdrawalProtoMapperMockRecorder) ToProtoResponseWithdrawDelete(status, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseWithdrawDelete", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToProtoResponseWithdrawDelete), status, message)
+}
+
+// ToProtoResponseWithdrawMonthAmount mocks base method.
+func (m *MockWithdrawalProtoMapper) ToProtoResponseWithdrawMonthAmount(status, message string, pbResponse []*response.WithdrawMonthlyAmountResponse) *pb.ApiResponseWithdrawMonthAmount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseWithdrawMonthAmount", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthAmount)
+	return ret0
+}
+
+// ToProtoResponseWithdrawMonthAmount indicates an expected call of ToProtoResponseWithdrawMonthAmount.
+func (mr *MockWithdrawalProtoMapperMockRecorder) ToProtoResponseWithdrawMonthAmount(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseWithdrawMonthAmount", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToProtoResponseWithdrawMonthAmount), status, message, pbResponse)
+}
+
+// ToProtoResponseWithdrawMonthStatusFailed mocks base method.
+func (m *MockWithdrawalProtoMapper) ToProtoResponseWithdrawMonthStatusFailed(status, message string, pbResponse []*response.WithdrawResponseMonthStatusFailed) *pb.ApiResponseWithdrawMonthStatusFailed {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseWithdrawMonthStatusFailed", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthStatusFailed)
+	return ret0
+}
+
+// ToProtoResponseWithdrawMonthStatusFailed indicates an expected call of ToProtoResponseWithdrawMonthStatusFailed.
+func (mr *MockWithdrawalProtoMapperMockRecorder) ToProtoResponseWithdrawMonthStatusFailed(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseWithdrawMonthStatusFailed", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToProtoResponseWithdrawMonthStatusFailed), status, message, pbResponse)
+}
+
+// ToProtoResponseWithdrawMonthStatusSuccess mocks base method.
+func (m *MockWithdrawalProtoMapper) ToProtoResponseWithdrawMonthStatusSuccess(status, message string, pbResponse []*response.WithdrawResponseMonthStatusSuccess) *pb.ApiResponseWithdrawMonthStatusSuccess {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseWithdrawMonthStatusSuccess", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthStatusSuccess)
+	return ret0
+}
+
+// ToProtoResponseWithdrawMonthStatusSuccess indicates an expected call of ToProtoResponseWithdrawMonthStatusSuccess.
+func (mr *MockWithdrawalProtoMapperMockRecorder) ToProtoResponseWithdrawMonthStatusSuccess(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseWithdrawMonthStatusSuccess", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToProtoResponseWithdrawMonthStatusSuccess), status, message, pbResponse)
+}
+
+// ToProtoResponseWithdrawYearAmount mocks base method.
+func (m *MockWithdrawalProtoMapper) ToProtoResponseWithdrawYearAmount(status, message string, pbResponse []*response.WithdrawYearlyAmountResponse) *pb.ApiResponseWithdrawYearAmount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseWithdrawYearAmount", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearAmount)
+	return ret0
+}
+
+// ToProtoResponseWithdrawYearAmount indicates an expected call of ToProtoResponseWithdrawYearAmount.
+func (mr *MockWithdrawalProtoMapperMockRecorder) ToProtoResponseWithdrawYearAmount(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseWithdrawYearAmount", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToProtoResponseWithdrawYearAmount), status, message, pbResponse)
+}
+
+// ToProtoResponseWithdrawYearStatusFailed mocks base method.
+func (m *MockWithdrawalProtoMapper) ToProtoResponseWithdrawYearStatusFailed(status, message string, pbResponse []*response.WithdrawResponseYearStatusFailed) *pb.ApiResponseWithdrawYearStatusFailed {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseWithdrawYearStatusFailed", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearStatusFailed)
+	return ret0
+}
+
+// ToProtoResponseWithdrawYearStatusFailed indicates an expected call of ToProtoResponseWithdrawYearStatusFailed.
+func (mr *MockWithdrawalProtoMapperMockRecorder) ToProtoResponseWithdrawYearStatusFailed(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseWithdrawYearStatusFailed", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToProtoResponseWithdrawYearStatusFailed), status, message, pbResponse)
+}
+
+// ToProtoResponseWithdrawYearStatusSuccess mocks base method.
+func (m *MockWithdrawalProtoMapper) ToProtoResponseWithdrawYearStatusSuccess(status, message string, pbResponse []*response.WithdrawResponseYearStatusSuccess) *pb.ApiResponseWithdrawYearStatusSuccess {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponseWithdrawYearStatusSuccess", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearStatusSuccess)
+	return ret0
+}
+
+// ToProtoResponseWithdrawYearStatusSuccess indicates an expected call of ToProtoResponseWithdrawYearStatusSuccess.
+func (mr *MockWithdrawalProtoMapperMockRecorder) ToProtoResponseWithdrawYearStatusSuccess(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponseWithdrawYearStatusSuccess", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToProtoResponseWithdrawYearStatusSuccess), status, message, pbResponse)
+}
+
+// ToProtoResponsesWithdraw mocks base method.
+func (m *MockWithdrawalProtoMapper) ToProtoResponsesWithdraw(status, message string, pbResponse []*response.WithdrawResponse) *pb.ApiResponsesWithdraw {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToProtoResponsesWithdraw", status, message, pbResponse)
+	ret0, _ := ret[0].(*pb.ApiResponsesWithdraw)
+	return ret0
+}
+
+// ToProtoResponsesWithdraw indicates an expected call of ToProtoResponsesWithdraw.
+func (mr *MockWithdrawalProtoMapperMockRecorder) ToProtoResponsesWithdraw(status, message, pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToProtoResponsesWithdraw", reflect.TypeOf((*MockWithdrawalProtoMapper)(nil).ToProtoResponsesWithdraw), status, message, pbResponse)
 }

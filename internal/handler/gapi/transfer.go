@@ -2,15 +2,14 @@ package gapi
 
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
+	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	protomapper "MamangRust/paymentgatewaygrpc/internal/mapper/proto"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
 	"MamangRust/paymentgatewaygrpc/internal/service"
-	"MamangRust/paymentgatewaygrpc/pkg/errors_custom"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/transfer_errors"
 	"context"
 	"math"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -49,14 +48,7 @@ func (s *transferHandleGrpc) FindAllTransfer(ctx context.Context, request *pb.Fi
 	merchants, totalRecords, err := s.transferService.FindAll(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -76,27 +68,13 @@ func (s *transferHandleGrpc) FindByIdTransfer(ctx context.Context, request *pb.F
 	id := int(request.GetTransferId())
 
 	if id == 0 {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_request",
-				Message: "Valid transfer ID is required",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcTransferInvalidID
 	}
 
 	transfer, err := s.transferService.FindById(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransfer("success", "Successfully fetch transfer record", transfer)
@@ -109,25 +87,11 @@ func (s *transferHandleGrpc) FindMonthlyTransferStatusSuccess(ctx context.Contex
 	month := int(req.GetMonth())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidYear
 	}
 
 	if month <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid month parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidMonth
 	}
 
 	reqService := requests.MonthStatusTransfer{
@@ -138,10 +102,7 @@ func (s *transferHandleGrpc) FindMonthlyTransferStatusSuccess(ctx context.Contex
 	records, err := s.transferService.FindMonthTransferStatusSuccess(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch monthly Transfer status success: " + err.Message,
-		})
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferMonthStatusSuccess("success", "Successfully fetched monthly Transfer status success", records)
@@ -153,26 +114,12 @@ func (s *transferHandleGrpc) FindYearlyTransferStatusSuccess(ctx context.Context
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidYear
 	}
 
 	records, err := s.transferService.FindYearlyTransferStatusSuccess(year)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferYearStatusSuccess("success", "Successfully fetched yearly Transfer status success", records)
@@ -185,25 +132,11 @@ func (s *transferHandleGrpc) FindMonthlyTransferStatusFailed(ctx context.Context
 	month := int(req.GetMonth())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidYear
 	}
 
 	if month <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid month parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidMonth
 	}
 
 	reqService := requests.MonthStatusTransfer{
@@ -214,14 +147,7 @@ func (s *transferHandleGrpc) FindMonthlyTransferStatusFailed(ctx context.Context
 	records, err := s.transferService.FindMonthTransferStatusFailed(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferMonthStatusFailed("success", "success fetched monthly Transfer status Failed", records)
@@ -233,27 +159,13 @@ func (s *transferHandleGrpc) FindYearlyTransferStatusFailed(ctx context.Context,
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidYear
 	}
 
 	records, err := s.transferService.FindYearlyTransferStatusFailed(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferYearStatusFailed("success", "success fetched yearly Transfer status Failed", records)
@@ -267,36 +179,15 @@ func (s *transferHandleGrpc) FindMonthlyTransferStatusSuccessByCardNumber(ctx co
 	cardNumber := req.GetCardNumber()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidYear
 	}
 
 	if month <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid month parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidMonth
 	}
 
 	if cardNumber == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthStatusTransferCardNumber{
@@ -308,14 +199,7 @@ func (s *transferHandleGrpc) FindMonthlyTransferStatusSuccessByCardNumber(ctx co
 	records, err := s.transferService.FindMonthTransferStatusSuccessByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferMonthStatusSuccess("success", "Successfully fetched monthly Transfer status success", records)
@@ -328,25 +212,11 @@ func (s *transferHandleGrpc) FindYearlyTransferStatusSuccessByCardNumber(ctx con
 	cardNumber := req.GetCardNumber()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidYear
 	}
 
 	if cardNumber == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.YearStatusTransferCardNumber{
@@ -357,10 +227,7 @@ func (s *transferHandleGrpc) FindYearlyTransferStatusSuccessByCardNumber(ctx con
 	records, err := s.transferService.FindYearlyTransferStatusSuccessByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly Transfer status success: " + err.Message,
-		})
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferYearStatusSuccess("success", "Successfully fetched yearly Transfer status success", records)
@@ -374,36 +241,15 @@ func (s *transferHandleGrpc) FindMonthlyTransferStatusFailedByCardNumber(ctx con
 	cardNumber := req.GetCardNumber()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidYear
 	}
 
 	if month <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid month parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidMonth
 	}
 
 	if cardNumber == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthStatusTransferCardNumber{
@@ -415,14 +261,7 @@ func (s *transferHandleGrpc) FindMonthlyTransferStatusFailedByCardNumber(ctx con
 	records, err := s.transferService.FindMonthTransferStatusFailedByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferMonthStatusFailed("success", "success fetched monthly Transfer status Failed", records)
@@ -435,25 +274,11 @@ func (s *transferHandleGrpc) FindYearlyTransferStatusFailedByCardNumber(ctx cont
 	cardNumber := req.GetCardNumber()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidYear
 	}
 
 	if cardNumber == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.YearStatusTransferCardNumber{
@@ -464,14 +289,7 @@ func (s *transferHandleGrpc) FindYearlyTransferStatusFailedByCardNumber(ctx cont
 	records, err := s.transferService.FindYearlyTransferStatusFailedByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferYearStatusFailed("success", "success fetched yearly Transfer status Failed", records)
@@ -483,27 +301,13 @@ func (s *transferHandleGrpc) FindMonthlyTransferAmounts(ctx context.Context, req
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidYear
 	}
 
 	amounts, err := s.transferService.FindMonthlyTransferAmounts(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferMonthAmount("success", "Successfully fetched monthly transfer amounts", amounts)
@@ -515,27 +319,13 @@ func (s *transferHandleGrpc) FindYearlyTransferAmounts(ctx context.Context, req 
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidYear
 	}
 
 	amounts, err := s.transferService.FindYearlyTransferAmounts(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferYearAmount("success", "Successfully fetched yearly transfer amounts", amounts)
@@ -548,25 +338,11 @@ func (s *transferHandleGrpc) FindMonthlyTransferAmountsBySenderCardNumber(ctx co
 	cardNumber := req.GetCardNumber()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidYear
 	}
 
 	if cardNumber == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumber{
@@ -577,14 +353,7 @@ func (s *transferHandleGrpc) FindMonthlyTransferAmountsBySenderCardNumber(ctx co
 	amounts, err := s.transferService.FindMonthlyTransferAmountsBySenderCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcFailedFindMonthlyTransferAmountsBySenderCardNumber
 	}
 
 	so := s.mapping.ToProtoResponseTransferMonthAmount("success", "Successfully fetched monthly transfer amounts by sender card number", amounts)
@@ -597,26 +366,13 @@ func (s *transferHandleGrpc) FindMonthlyTransferAmountsByReceiverCardNumber(ctx 
 	cardNumber := req.GetCardNumber()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidYear
 	}
 
 	if cardNumber == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidCardNumber
 	}
+
 	reqService := requests.MonthYearCardNumber{
 		Year:       year,
 		CardNumber: cardNumber,
@@ -625,14 +381,7 @@ func (s *transferHandleGrpc) FindMonthlyTransferAmountsByReceiverCardNumber(ctx 
 	amounts, err := s.transferService.FindMonthlyTransferAmountsByReceiverCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferMonthAmount("success", "Successfully fetched monthly transfer amounts by receiver card number", amounts)
@@ -645,25 +394,11 @@ func (s *transferHandleGrpc) FindYearlyTransferAmountsBySenderCardNumber(ctx con
 	cardNumber := req.GetCardNumber()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidYear
 	}
 
 	if cardNumber == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumber{
@@ -674,14 +409,7 @@ func (s *transferHandleGrpc) FindYearlyTransferAmountsBySenderCardNumber(ctx con
 	amounts, err := s.transferService.FindYearlyTransferAmountsBySenderCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferYearAmount("success", "Successfully fetched yearly transfer amounts by sender card number", amounts)
@@ -694,25 +422,11 @@ func (s *transferHandleGrpc) FindYearlyTransferAmountsByReceiverCardNumber(ctx c
 	cardNumber := req.GetCardNumber()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidYear
 	}
 
 	if cardNumber == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumber{
@@ -723,14 +437,7 @@ func (s *transferHandleGrpc) FindYearlyTransferAmountsByReceiverCardNumber(ctx c
 	amounts, err := s.transferService.FindYearlyTransferAmountsByReceiverCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferYearAmount("success", "Successfully fetched yearly transfer amounts by receiver card number", amounts)
@@ -743,27 +450,13 @@ func (s *transferHandleGrpc) FindByTransferByTransferFrom(ctx context.Context, r
 	transfer_from := request.GetTransferFrom()
 
 	if transfer_from == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid transfer_from parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidCardNumber
 	}
 
 	merchants, err := s.transferService.FindTransferByTransferFrom(transfer_from)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransfers("success", "Successfully fetch transfer records", merchants)
@@ -775,27 +468,13 @@ func (s *transferHandleGrpc) FindByTransferByTransferTo(ctx context.Context, req
 	transfer_to := request.GetTransferTo()
 
 	if transfer_to == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid transfer_to parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcInvalidCardNumber
 	}
 
 	merchants, err := s.transferService.FindTransferByTransferTo(transfer_to)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransfers("success", "Successfully fetch transfer records", merchants)
@@ -824,14 +503,7 @@ func (s *transferHandleGrpc) FindByActiveTransfer(ctx context.Context, req *pb.F
 	res, totalRecords, err := s.transferService.FindByActive(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -868,14 +540,7 @@ func (s *transferHandleGrpc) FindByTrashedTransfer(ctx context.Context, req *pb.
 	res, totalRecords, err := s.transferService.FindByTrashed(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
 
@@ -898,27 +563,13 @@ func (s *transferHandleGrpc) CreateTransfer(ctx context.Context, request *pb.Cre
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Unable to create new transfer. Please check your input.",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcValidateCreateTransferRequest
 	}
 
 	res, err := s.transferService.CreateTransaction(&req)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransfer("success", "Successfully created transfer", res)
@@ -930,14 +581,7 @@ func (s *transferHandleGrpc) UpdateTransfer(ctx context.Context, request *pb.Upd
 	id := int(request.GetTransferId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Transfer ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcTransferInvalidID
 	}
 
 	req := requests.UpdateTransferRequest{
@@ -948,27 +592,13 @@ func (s *transferHandleGrpc) UpdateTransfer(ctx context.Context, request *pb.Upd
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Unable to process transfer update. Please review your data.",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcValidateUpdateTransferRequest
 	}
 
 	res, err := s.transferService.UpdateTransaction(&req)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransfer("success", "Successfully updated transfer", res)
@@ -980,27 +610,13 @@ func (s *transferHandleGrpc) TrashedTransfer(ctx context.Context, request *pb.Fi
 	id := int(request.GetTransferId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Transfer ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcTransferInvalidID
 	}
 
 	res, err := s.transferService.TrashedTransfer(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransfer("success", "Successfully trashed transfer", res)
@@ -1012,27 +628,13 @@ func (s *transferHandleGrpc) RestoreTransfer(ctx context.Context, request *pb.Fi
 	id := int(request.GetTransferId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Transfer ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcTransferInvalidID
 	}
 
 	res, err := s.transferService.RestoreTransfer(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransfer("success", "Successfully restored transfer", res)
@@ -1044,27 +646,13 @@ func (s *transferHandleGrpc) DeleteTransferPermanent(ctx context.Context, reques
 	id := int(request.GetTransferId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Transfer ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, transfer_errors.ErrGrpcTransferInvalidID
 	}
 
-	_, err := s.transferService.DeleteTransferPermanent(int(request.GetTransferId()))
+	_, err := s.transferService.DeleteTransferPermanent(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferDelete("success", "Successfully restored transfer")
@@ -1076,14 +664,7 @@ func (s *transferHandleGrpc) RestoreAllTransfer(ctx context.Context, _ *emptypb.
 	_, err := s.transferService.RestoreAllTransfer()
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferAll("success", "Successfully restored transfer")
@@ -1095,14 +676,7 @@ func (s *transferHandleGrpc) DeleteAllTransferPermanent(ctx context.Context, _ *
 	_, err := s.transferService.DeleteAllTransferPermanent()
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseTransferAll("success", "delete transfer permanent")

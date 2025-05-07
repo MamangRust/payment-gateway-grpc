@@ -5,6 +5,7 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/topup_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
 	"net/http"
 	"strconv"
@@ -105,11 +106,7 @@ func (h topupHandleApi) FindAll(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve topup data", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve topup data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindAllTopups(c)
 	}
 
 	so := h.mapping.ToApiResponsePaginationTopup(res)
@@ -133,11 +130,7 @@ func (h topupHandleApi) FindAll(c echo.Context) error {
 func (h *topupHandleApi) FindAllByCardNumber(c echo.Context) error {
 	cardNumber := c.Param("card_number")
 	if cardNumber == "" {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	page, err := strconv.Atoi(c.QueryParam("page"))
@@ -166,11 +159,7 @@ func (h *topupHandleApi) FindAllByCardNumber(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve transaction data", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve transaction data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindAllByCardNumberTopup(c)
 	}
 
 	so := h.mapping.ToApiResponsePaginationTopup(res)
@@ -195,11 +184,7 @@ func (h topupHandleApi) FindById(c echo.Context) error {
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidTopupID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -211,11 +196,7 @@ func (h topupHandleApi) FindById(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve topup data", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve topup data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindByIdTopup(c)
 	}
 
 	so := h.mapping.ToApiResponseTopup(res)
@@ -242,20 +223,12 @@ func (h *topupHandleApi) FindMonthlyTopupStatusSuccess(c echo.Context) error {
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	month, err := strconv.Atoi(monthStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid month",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidMonth(c)
 	}
 
 	ctx := c.Request().Context()
@@ -268,11 +241,7 @@ func (h *topupHandleApi) FindMonthlyTopupStatusSuccess(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly topup status success", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly topup status success: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindMonthlyTopupStatusSuccess(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupMonthStatusSuccess(res)
@@ -297,11 +266,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusSuccess(c echo.Context) error {
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -313,11 +278,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusSuccess(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly topup status success", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly topup status success: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindYearlyTopupStatusSuccess(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupYearStatusSuccess(res)
@@ -344,20 +305,12 @@ func (h *topupHandleApi) FindMonthlyTopupStatusFailed(c echo.Context) error {
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	month, err := strconv.Atoi(monthStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid month",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidMonth(c)
 	}
 
 	ctx := c.Request().Context()
@@ -370,11 +323,7 @@ func (h *topupHandleApi) FindMonthlyTopupStatusFailed(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly topup status failed", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly topup status failed: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindMonthlyTopupStatusFailed(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupMonthStatusFailed(res)
@@ -399,11 +348,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusFailed(c echo.Context) error {
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -415,11 +360,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusFailed(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly topup status failed", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly topup status failed: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindYearlyTopupStatusFailed(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupYearStatusFailed(res)
@@ -448,20 +389,12 @@ func (h *topupHandleApi) FindMonthlyTopupStatusSuccessByCardNumber(c echo.Contex
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	month, err := strconv.Atoi(monthStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid month",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidMonth(c)
 	}
 
 	ctx := c.Request().Context()
@@ -475,11 +408,7 @@ func (h *topupHandleApi) FindMonthlyTopupStatusSuccessByCardNumber(c echo.Contex
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly topup status success", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly topup status success: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindMonthlyTopupStatusSuccess(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupMonthStatusSuccess(res)
@@ -506,11 +435,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusSuccessByCardNumber(c echo.Context
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -523,11 +448,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusSuccessByCardNumber(c echo.Context
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly topup status success", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly topup status success: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindYearlyTopupStatusSuccess(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupYearStatusSuccess(res)
@@ -556,20 +477,12 @@ func (h *topupHandleApi) FindMonthlyTopupStatusFailedByCardNumber(c echo.Context
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	month, err := strconv.Atoi(monthStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid month",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidMonth(c)
 	}
 
 	ctx := c.Request().Context()
@@ -583,11 +496,7 @@ func (h *topupHandleApi) FindMonthlyTopupStatusFailedByCardNumber(c echo.Context
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly topup status failed", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly topup status failed: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindMonthlyTopupStatusFailed(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupMonthStatusFailed(res)
@@ -614,11 +523,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusFailedByCardNumber(c echo.Context)
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -631,11 +536,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusFailedByCardNumber(c echo.Context)
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly topup status failed", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly topup status failed: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindYearlyTopupStatusFailed(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupYearStatusFailed(res)
@@ -660,11 +561,7 @@ func (h *topupHandleApi) FindMonthlyTopupMethods(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -674,11 +571,7 @@ func (h *topupHandleApi) FindMonthlyTopupMethods(c echo.Context) error {
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly topup methods", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly topup methods",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindMonthlyTopupMethods(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupMonthMethod(res)
@@ -703,11 +596,7 @@ func (h *topupHandleApi) FindYearlyTopupMethods(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -717,11 +606,7 @@ func (h *topupHandleApi) FindYearlyTopupMethods(c echo.Context) error {
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly topup methods", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly topup methods",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindYearlyTopupMethods(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupYearMethod(res)
@@ -746,11 +631,7 @@ func (h *topupHandleApi) FindMonthlyTopupAmounts(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -760,11 +641,7 @@ func (h *topupHandleApi) FindMonthlyTopupAmounts(c echo.Context) error {
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly topup amounts", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly topup amounts",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindMonthlyTopupAmounts(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupMonthAmount(res)
@@ -834,11 +711,7 @@ func (h *topupHandleApi) FindMonthlyTopupMethodsByCardNumber(c echo.Context) err
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -849,11 +722,7 @@ func (h *topupHandleApi) FindMonthlyTopupMethodsByCardNumber(c echo.Context) err
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly topup methods by card number", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly topup methods by card number",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindMonthlyTopupMethodsByCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupMonthMethod(res)
@@ -880,11 +749,7 @@ func (h *topupHandleApi) FindYearlyTopupMethodsByCardNumber(c echo.Context) erro
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -895,11 +760,7 @@ func (h *topupHandleApi) FindYearlyTopupMethodsByCardNumber(c echo.Context) erro
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly topup methods by card number", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly topup methods by card number",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindYearlyTopupMethodsByCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupYearMethod(res)
@@ -925,13 +786,14 @@ func (h *topupHandleApi) FindMonthlyTopupAmountsByCardNumber(c echo.Context) err
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 
+	if cardNumber == "" {
+		h.logger.Debug("Invalid card number parameter")
+		return topup_errors.ErrApiInvalidCardNumber(c)
+	}
+
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -942,11 +804,7 @@ func (h *topupHandleApi) FindMonthlyTopupAmountsByCardNumber(c echo.Context) err
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly topup amounts by card number", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly topup amounts by card number",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindMonthlyTopupAmountsByCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupMonthAmount(res)
@@ -973,11 +831,7 @@ func (h *topupHandleApi) FindYearlyTopupAmountsByCardNumber(c echo.Context) erro
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -988,11 +842,7 @@ func (h *topupHandleApi) FindYearlyTopupAmountsByCardNumber(c echo.Context) erro
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly topup amounts by card number", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly topup amounts by card number",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindYearlyTopupAmountsByCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupYearAmount(res)
@@ -1038,11 +888,7 @@ func (h *topupHandleApi) FindByActive(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve topup data", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve topup data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindAllTopupsActive(c)
 	}
 
 	so := h.mapping.ToApiResponsePaginationTopupDeleteAt(res)
@@ -1088,11 +934,7 @@ func (h *topupHandleApi) FindByTrashed(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve topup data", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve topup data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedFindAllTopupsTrashed(c)
 	}
 
 	so := h.mapping.ToApiResponsePaginationTopupDeleteAt(res)
@@ -1117,21 +959,13 @@ func (h *topupHandleApi) Create(c echo.Context) error {
 	if err := c.Bind(&body); err != nil {
 		h.logger.Debug("Bad Request", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiBindCreateTopup(c)
 	}
 
 	if err := body.Validate(); err != nil {
 		h.logger.Debug("Validation Error", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Validation Error: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiValidateCreateTopup(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1145,11 +979,7 @@ func (h *topupHandleApi) Create(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to create topup", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to create topup: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedCreateTopup(c)
 	}
 
 	so := h.mapping.ToApiResponseTopup(res)
@@ -1175,11 +1005,7 @@ func (h *topupHandleApi) Update(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Bad Request", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidTopupID(c)
 	}
 
 	var body requests.UpdateTopupRequest
@@ -1187,21 +1013,13 @@ func (h *topupHandleApi) Update(c echo.Context) error {
 	if err := c.Bind(&body); err != nil {
 		h.logger.Debug("Bad Request", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: ",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiBindUpdateTopup(c)
 	}
 
 	if err := body.Validate(); err != nil {
 		h.logger.Debug("Validation Error", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Validation Error: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiValidateUpdateTopup(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1216,11 +1034,7 @@ func (h *topupHandleApi) Update(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to update topup", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to update topup: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedUpdateTopup(c)
 	}
 
 	so := h.mapping.ToApiResponseTopup(res)
@@ -1245,11 +1059,7 @@ func (h *topupHandleApi) TrashTopup(c echo.Context) error {
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidTopupID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1261,14 +1071,10 @@ func (h *topupHandleApi) TrashTopup(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to trashed topup", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to trashed topup:",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedTrashTopup(c)
 	}
 
-	so := h.mapping.ToApiResponseTopup(res)
+	so := h.mapping.ToApiResponseTopupDeleteAt(res)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -1292,11 +1098,7 @@ func (h *topupHandleApi) RestoreTopup(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidTopupID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1308,14 +1110,10 @@ func (h *topupHandleApi) RestoreTopup(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to restore topup", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to restore topup:",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedRestoreTopup(c)
 	}
 
-	so := h.mapping.ToApiResponseTopup(res)
+	so := h.mapping.ToApiResponseTopupDeleteAt(res)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -1339,11 +1137,7 @@ func (h *topupHandleApi) DeleteTopupPermanent(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return topup_errors.ErrApiInvalidTopupID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1355,11 +1149,7 @@ func (h *topupHandleApi) DeleteTopupPermanent(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to delete topup", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to delete topup:",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedDeletePermanentTopup(c)
 	}
 
 	so := h.mapping.ToApiResponseTopupDelete(res)
@@ -1383,11 +1173,7 @@ func (h *topupHandleApi) RestoreAllTopup(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Error("Failed to restore all topup", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently restore all topup",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedRestoreAllTopup(c)
 	}
 
 	h.logger.Debug("Successfully restored all topup")
@@ -1414,11 +1200,7 @@ func (h *topupHandleApi) DeleteAllTopupPermanent(c echo.Context) error {
 	if err != nil {
 		h.logger.Error("Failed to permanently delete all topup", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently delete all topup",
-			Code:    http.StatusInternalServerError,
-		})
+		return topup_errors.ErrApiFailedDeleteAllTopupPermanent(c)
 	}
 
 	h.logger.Debug("Successfully deleted all topup permanently")

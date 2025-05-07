@@ -172,8 +172,8 @@ type TopupService interface {
 	FindByTrashed(req *requests.FindAllTopups) ([]*response.TopupResponseDeleteAt, *int, *response.ErrorResponse)
 	CreateTopup(request *requests.CreateTopupRequest) (*response.TopupResponse, *response.ErrorResponse)
 	UpdateTopup(request *requests.UpdateTopupRequest) (*response.TopupResponse, *response.ErrorResponse)
-	TrashedTopup(topup_id int) (*response.TopupResponse, *response.ErrorResponse)
-	RestoreTopup(topup_id int) (*response.TopupResponse, *response.ErrorResponse)
+	TrashedTopup(topup_id int) (*response.TopupResponseDeleteAt, *response.ErrorResponse)
+	RestoreTopup(topup_id int) (*response.TopupResponseDeleteAt, *response.ErrorResponse)
 	DeleteTopupPermanent(topup_id int) (bool, *response.ErrorResponse)
 
 	RestoreAllTopup() (bool, *response.ErrorResponse)
@@ -261,8 +261,8 @@ type UserService interface {
 	FindByTrashed(req *requests.FindAllUsers) ([]*response.UserResponseDeleteAt, *int, *response.ErrorResponse)
 	CreateUser(request *requests.CreateUserRequest) (*response.UserResponse, *response.ErrorResponse)
 	UpdateUser(request *requests.UpdateUserRequest) (*response.UserResponse, *response.ErrorResponse)
-	TrashedUser(user_id int) (*response.UserResponse, *response.ErrorResponse)
-	RestoreUser(user_id int) (*response.UserResponse, *response.ErrorResponse)
+	TrashedUser(user_id int) (*response.UserResponseDeleteAt, *response.ErrorResponse)
+	RestoreUser(user_id int) (*response.UserResponseDeleteAt, *response.ErrorResponse)
 	DeleteUserPermanent(user_id int) (bool, *response.ErrorResponse)
 
 	RestoreAllUser() (bool, *response.ErrorResponse)

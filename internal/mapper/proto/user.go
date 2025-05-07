@@ -22,6 +22,14 @@ func (u *userProtoMapper) ToProtoResponseUser(status string, message string, pbR
 	}
 }
 
+func (u *userProtoMapper) ToProtoResponseUserDeleteAt(status string, message string, pbResponse *response.UserResponseDeleteAt) *pb.ApiResponseUserDeleteAt {
+	return &pb.ApiResponseUserDeleteAt{
+		Status:  status,
+		Message: message,
+		Data:    u.mapResponseUserDelete(pbResponse),
+	}
+}
+
 func (u *userProtoMapper) ToProtoResponsesUser(status string, message string, pbResponse []*response.UserResponse) *pb.ApiResponsesUser {
 	return &pb.ApiResponsesUser{
 		Status:  status,
@@ -83,13 +91,13 @@ func (u *userProtoMapper) mapResponsesUser(users []*response.UserResponse) []*pb
 	return mappedUsers
 }
 
-func (u *userProtoMapper) mapResponseUserDelete(user *response.UserResponseDeleteAt) *pb.UserResponseWithDeleteAt {
+func (u *userProtoMapper) mapResponseUserDelete(user *response.UserResponseDeleteAt) *pb.UserResponseDeleteAt {
 	var deletedAt *wrapperspb.StringValue
 	if user.DeletedAt != nil {
 		deletedAt = wrapperspb.String(*user.DeletedAt)
 	}
 
-	return &pb.UserResponseWithDeleteAt{
+	return &pb.UserResponseDeleteAt{
 		Id:        int32(user.ID),
 		Firstname: user.FirstName,
 		Lastname:  user.LastName,
@@ -100,8 +108,8 @@ func (u *userProtoMapper) mapResponseUserDelete(user *response.UserResponseDelet
 	}
 }
 
-func (u *userProtoMapper) mapResponsesUserDeleteAt(users []*response.UserResponseDeleteAt) []*pb.UserResponseWithDeleteAt {
-	var mappedUsers []*pb.UserResponseWithDeleteAt
+func (u *userProtoMapper) mapResponsesUserDeleteAt(users []*response.UserResponseDeleteAt) []*pb.UserResponseDeleteAt {
+	var mappedUsers []*pb.UserResponseDeleteAt
 
 	for _, user := range users {
 		mappedUsers = append(mappedUsers, u.mapResponseUserDelete(user))

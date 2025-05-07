@@ -104,6 +104,14 @@ func (t *topupProtoMapper) ToProtoResponseTopup(status string, message string, s
 	}
 }
 
+func (t *topupProtoMapper) ToProtoResponseTopupDeletAt(status string, message string, s *response.TopupResponseDeleteAt) *pb.ApiResponseTopupDeleteAt {
+	return &pb.ApiResponseTopupDeleteAt{
+		Status:  status,
+		Message: message,
+		Data:    t.mapResponseTopupDeleteAt(s),
+	}
+}
+
 func (t topupProtoMapper) ToProtoResponseTopupDelete(status string, message string) *pb.ApiResponseTopupDelete {
 	return &pb.ApiResponseTopupDelete{
 		Status:  status,

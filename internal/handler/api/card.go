@@ -2,12 +2,10 @@ package api
 
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/card_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
-	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -120,21 +118,10 @@ func (h *cardHandleApi) FindAll(c echo.Context) error {
 	}
 
 	cards, err := h.card.FindAllCard(ctx, req)
-	if err != nil {
-		if errors.Is(err, echo.ErrUnauthorized) {
-			return c.JSON(http.StatusUnauthorized, response.ErrorResponse{
-				Status:  "error",
-				Message: "Unauthorized",
-				Code:    http.StatusUnauthorized,
-			})
-		}
 
+	if err != nil {
 		h.logger.Debug("Failed to fetch card records", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch card records: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindAllCards(c)
 	}
 
 	so := h.mapping.ToApiResponsesCard(cards)
@@ -158,11 +145,7 @@ func (h *cardHandleApi) FindById(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		h.logger.Debug("Invalid card ID", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid card ID",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -175,11 +158,7 @@ func (h *cardHandleApi) FindById(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to fetch card record", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch card record: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindByIdCard(c)
 	}
 
 	so := h.mapping.ToApiResponseCard(card)
@@ -201,11 +180,7 @@ func (h *cardHandleApi) FindById(c echo.Context) error {
 func (h *cardHandleApi) FindByUserID(c echo.Context) error {
 	userID, ok := c.Get("user_id").(int32)
 	if !ok {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to parse UserID",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidUserID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -218,11 +193,7 @@ func (h *cardHandleApi) FindByUserID(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to fetch card record", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch card record: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindByUserIdCard(c)
 	}
 
 	so := h.mapping.ToApiResponseCard(card)
@@ -244,11 +215,7 @@ func (h *cardHandleApi) DashboardCard(c echo.Context) error {
 
 	res, err := h.card.DashboardCard(ctx, &emptypb.Empty{})
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve dashboard card: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedDashboardCard(c)
 	}
 
 	so := h.mapping.ToApiResponseDashboardCard(res)
@@ -273,11 +240,7 @@ func (h *cardHandleApi) DashboardCardCardNumber(c echo.Context) error {
 	cardNumber := c.Param("cardNumber")
 
 	if cardNumber == "" {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	req := &pb.FindByCardNumberRequest{
@@ -286,11 +249,7 @@ func (h *cardHandleApi) DashboardCardCardNumber(c echo.Context) error {
 
 	res, err := h.card.DashboardCardNumber(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve dashboard card for card number %s: %v", cardNumber, err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedDashboardCardByCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseDashboardCardCardNumber(res)
@@ -314,11 +273,7 @@ func (h *cardHandleApi) FindMonthlyBalance(c echo.Context) error {
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -330,11 +285,7 @@ func (h *cardHandleApi) FindMonthlyBalance(c echo.Context) error {
 	res, err := h.card.FindMonthlyBalance(ctx, req)
 
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve monthly balance: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindMonthlyBalance(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyBalances(res)
@@ -359,11 +310,7 @@ func (h *cardHandleApi) FindYearlyBalance(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -375,11 +322,7 @@ func (h *cardHandleApi) FindYearlyBalance(c echo.Context) error {
 	res, err := h.card.FindYearlyBalance(ctx, req)
 
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve yearly balance: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindYearlyBalance(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyBalances(res)
@@ -404,11 +347,7 @@ func (h *cardHandleApi) FindMonthlyTopupAmount(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -419,11 +358,7 @@ func (h *cardHandleApi) FindMonthlyTopupAmount(c echo.Context) error {
 
 	res, err := h.card.FindMonthlyTopupAmount(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve monthly topup amount: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindMonthlyTopupAmount(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyAmounts(res)
@@ -448,11 +383,7 @@ func (h *cardHandleApi) FindYearlyTopupAmount(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -463,11 +394,7 @@ func (h *cardHandleApi) FindYearlyTopupAmount(c echo.Context) error {
 
 	res, err := h.card.FindYearlyTopupAmount(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve yearly topup amount: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindYearlyTopupAmount(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyAmounts(res)
@@ -492,11 +419,7 @@ func (h *cardHandleApi) FindMonthlyWithdrawAmount(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -507,11 +430,7 @@ func (h *cardHandleApi) FindMonthlyWithdrawAmount(c echo.Context) error {
 
 	res, err := h.card.FindMonthlyWithdrawAmount(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve monthly withdraw amount: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindMonthlyWithdrawAmount(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyAmounts(res)
@@ -536,11 +455,7 @@ func (h *cardHandleApi) FindYearlyWithdrawAmount(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -551,11 +466,7 @@ func (h *cardHandleApi) FindYearlyWithdrawAmount(c echo.Context) error {
 
 	res, err := h.card.FindYearlyWithdrawAmount(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve yearly withdraw amount: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindYearlyWithdrawAmount(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyAmounts(res)
@@ -580,11 +491,7 @@ func (h *cardHandleApi) FindMonthlyTransactionAmount(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -595,11 +502,7 @@ func (h *cardHandleApi) FindMonthlyTransactionAmount(c echo.Context) error {
 
 	res, err := h.card.FindMonthlyTransactionAmount(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve monthly transaction amount: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindMonthlyTransactionAmount(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyAmounts(res)
@@ -624,11 +527,7 @@ func (h *cardHandleApi) FindYearlyTransactionAmount(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -639,11 +538,7 @@ func (h *cardHandleApi) FindYearlyTransactionAmount(c echo.Context) error {
 
 	res, err := h.card.FindYearlyTransactionAmount(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve yearly transaction amount: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindYearlyTransactionAmount(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyAmounts(res)
@@ -668,11 +563,7 @@ func (h *cardHandleApi) FindMonthlyTransferSenderAmount(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -683,11 +574,7 @@ func (h *cardHandleApi) FindMonthlyTransferSenderAmount(c echo.Context) error {
 
 	res, err := h.card.FindMonthlyTransferSenderAmount(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve monthly transfer sender amount: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindMonthlyTransferSenderAmount(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyAmounts(res)
@@ -712,11 +599,7 @@ func (h *cardHandleApi) FindYearlyTransferSenderAmount(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -727,11 +610,7 @@ func (h *cardHandleApi) FindYearlyTransferSenderAmount(c echo.Context) error {
 
 	res, err := h.card.FindYearlyTransferSenderAmount(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve yearly transfer sender amount: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindYearlyTransferSenderAmount(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyAmounts(res)
@@ -756,11 +635,7 @@ func (h *cardHandleApi) FindMonthlyTransferReceiverAmount(c echo.Context) error 
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -771,11 +646,7 @@ func (h *cardHandleApi) FindMonthlyTransferReceiverAmount(c echo.Context) error 
 
 	res, err := h.card.FindMonthlyTransferReceiverAmount(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve monthly transfer receiver amount: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindMonthlyTransferReceiverAmount(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyAmounts(res)
@@ -800,11 +671,7 @@ func (h *cardHandleApi) FindYearlyTransferReceiverAmount(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -815,11 +682,7 @@ func (h *cardHandleApi) FindYearlyTransferReceiverAmount(c echo.Context) error {
 
 	res, err := h.card.FindYearlyTransferReceiverAmount(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve yearly transfer receiver amount: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindYearlyTransferReceiverAmount(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyAmounts(res)
@@ -845,20 +708,12 @@ func (h *cardHandleApi) FindMonthlyBalanceByCardNumber(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	cardNumber := c.QueryParam("card_number")
 	if cardNumber == "" {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	ctx := c.Request().Context()
@@ -870,11 +725,7 @@ func (h *cardHandleApi) FindMonthlyBalanceByCardNumber(c echo.Context) error {
 
 	res, err := h.card.FindMonthlyBalanceByCardNumber(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve monthly balance: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindMonthlyBalanceByCard(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyBalances(res)
@@ -900,20 +751,12 @@ func (h *cardHandleApi) FindYearlyBalanceByCardNumber(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	cardNumber := c.QueryParam("card_number")
 	if cardNumber == "" {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	ctx := c.Request().Context()
@@ -925,11 +768,7 @@ func (h *cardHandleApi) FindYearlyBalanceByCardNumber(c echo.Context) error {
 
 	res, err := h.card.FindYearlyBalanceByCardNumber(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve yearly balance: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindYearlyBalanceByCard(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyBalances(res)
@@ -955,20 +794,12 @@ func (h *cardHandleApi) FindMonthlyTopupAmountByCardNumber(c echo.Context) error
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	cardNumber := c.QueryParam("card_number")
 	if cardNumber == "" {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	ctx := c.Request().Context()
@@ -980,11 +811,7 @@ func (h *cardHandleApi) FindMonthlyTopupAmountByCardNumber(c echo.Context) error
 
 	res, err := h.card.FindMonthlyTopupAmountByCardNumber(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve monthly topup amount by card number: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindMonthlyTopupAmountByCard(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyAmounts(res)
@@ -1010,21 +837,13 @@ func (h *cardHandleApi) FindYearlyTopupAmountByCardNumber(c echo.Context) error 
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	cardNumber := c.QueryParam("card_number")
 
 	if cardNumber == "" {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1036,11 +855,7 @@ func (h *cardHandleApi) FindYearlyTopupAmountByCardNumber(c echo.Context) error 
 
 	res, err := h.card.FindYearlyTopupAmountByCardNumber(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve yearly topup amount by card number: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindYearlyTopupAmountByCard(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyAmounts(res)
@@ -1065,20 +880,12 @@ func (h *cardHandleApi) FindMonthlyWithdrawAmountByCardNumber(c echo.Context) er
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	cardNumber := c.QueryParam("card_number")
 	if cardNumber == "" {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1090,11 +897,7 @@ func (h *cardHandleApi) FindMonthlyWithdrawAmountByCardNumber(c echo.Context) er
 
 	res, err := h.card.FindMonthlyWithdrawAmountByCardNumber(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve monthly withdraw amount by card number: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindMonthlyWithdrawAmountByCard(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyAmounts(res)
@@ -1120,22 +923,13 @@ func (h *cardHandleApi) FindYearlyWithdrawAmountByCardNumber(c echo.Context) err
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	cardNumber := c.QueryParam("card_number")
 
 	if cardNumber == "" {
-
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1147,11 +941,7 @@ func (h *cardHandleApi) FindYearlyWithdrawAmountByCardNumber(c echo.Context) err
 
 	res, err := h.card.FindYearlyWithdrawAmountByCardNumber(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve yearly withdraw amount by card number: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindYearlyWithdrawAmountByCard(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyAmounts(res)
@@ -1177,21 +967,13 @@ func (h *cardHandleApi) FindMonthlyTransactionAmountByCardNumber(c echo.Context)
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	cardNumber := c.QueryParam("card_number")
 
 	if cardNumber == "" {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1203,11 +985,7 @@ func (h *cardHandleApi) FindMonthlyTransactionAmountByCardNumber(c echo.Context)
 
 	res, err := h.card.FindMonthlyTransactionAmountByCardNumber(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve monthly transaction amount by card number: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindMonthlyTransactionAmountByCard(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyAmounts(res)
@@ -1233,21 +1011,13 @@ func (h *cardHandleApi) FindYearlyTransactionAmountByCardNumber(c echo.Context) 
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	cardNumber := c.QueryParam("card_number")
 
 	if cardNumber == "" {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1259,11 +1029,7 @@ func (h *cardHandleApi) FindYearlyTransactionAmountByCardNumber(c echo.Context) 
 
 	res, err := h.card.FindYearlyTransactionAmountByCardNumber(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve yearly transaction amount by card number: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindYearlyTransactionAmountByCard(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyAmounts(res)
@@ -1289,20 +1055,12 @@ func (h *cardHandleApi) FindMonthlyTransferSenderAmountByCardNumber(c echo.Conte
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	cardNumber := c.QueryParam("card_number")
 	if cardNumber == "" {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1314,11 +1072,7 @@ func (h *cardHandleApi) FindMonthlyTransferSenderAmountByCardNumber(c echo.Conte
 
 	res, err := h.card.FindMonthlyTransferSenderAmountByCardNumber(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve monthly transfer sender amount by card number: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindMonthlyTransferSenderAmountByCard(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyAmounts(res)
@@ -1345,20 +1099,12 @@ func (h *cardHandleApi) FindYearlyTransferSenderAmountByCardNumber(c echo.Contex
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	cardNumber := c.QueryParam("card_number")
 	if cardNumber == "" {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1370,11 +1116,7 @@ func (h *cardHandleApi) FindYearlyTransferSenderAmountByCardNumber(c echo.Contex
 
 	res, err := h.card.FindYearlyTransferSenderAmountByCardNumber(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve yearly transfer sender amount by card number: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindYearlyTransferSenderAmountByCard(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyAmounts(res)
@@ -1401,21 +1143,13 @@ func (h *cardHandleApi) FindMonthlyTransferReceiverAmountByCardNumber(c echo.Con
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	cardNumber := c.QueryParam("card_number")
 
 	if cardNumber == "" {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1427,11 +1161,7 @@ func (h *cardHandleApi) FindMonthlyTransferReceiverAmountByCardNumber(c echo.Con
 
 	res, err := h.card.FindMonthlyTransferReceiverAmountByCardNumber(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve monthly transfer receiver amount by card number: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindMonthlyTransferReceiverAmountByCard(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyAmounts(res)
@@ -1458,21 +1188,13 @@ func (h *cardHandleApi) FindYearlyTransferReceiverAmountByCardNumber(c echo.Cont
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year format",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidYear(c)
 	}
 
 	cardNumber := c.QueryParam("card_number")
 
 	if cardNumber == "" {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1484,11 +1206,7 @@ func (h *cardHandleApi) FindYearlyTransferReceiverAmountByCardNumber(c echo.Cont
 
 	res, err := h.card.FindYearlyTransferReceiverAmountByCardNumber(ctx, req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: fmt.Sprintf("Failed to retrieve yearly transfer receiver amount by card number: %v", err),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindYearlyTransferReceiverAmountByCard(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyAmounts(res)
@@ -1531,11 +1249,7 @@ func (h *cardHandleApi) FindByActive(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to fetch card record", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch card record: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindByActiveCard(c)
 	}
 
 	so := h.mapping.ToApiResponsesCardDeletedAt(res)
@@ -1580,11 +1294,7 @@ func (h *cardHandleApi) FindByTrashed(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to fetch card record", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch card record: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindByTrashedCard(c)
 	}
 
 	so := h.mapping.ToApiResponsesCardDeletedAt(res)
@@ -1616,11 +1326,7 @@ func (h *cardHandleApi) FindByCardNumber(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to fetch card record", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch card record: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedFindByCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseCard(res)
@@ -1644,20 +1350,12 @@ func (h *cardHandleApi) CreateCard(c echo.Context) error {
 
 	if err := c.Bind(&body); err != nil {
 		h.logger.Debug("Bad Request: ", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiBindCreateCard(c)
 	}
 
 	if err := body.Validate(); err != nil {
 		h.logger.Debug("Validation Error: ", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Validation Error: ",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiValidateCreateCard(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1674,11 +1372,7 @@ func (h *cardHandleApi) CreateCard(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to create card", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to create card: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedCreateCard(c)
 	}
 
 	so := h.mapping.ToApiResponseCard(res)
@@ -1705,31 +1399,19 @@ func (h *cardHandleApi) UpdateCard(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardID(c)
 	}
 
 	var body requests.UpdateCardRequest
 
 	if err := c.Bind(&body); err != nil {
 		h.logger.Debug("Bad Request: ", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiBindUpdateCard(c)
 	}
 
 	if err := body.Validate(); err != nil {
 		h.logger.Debug("Validation Error: ", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Validation Error: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiValidateUpdateCard(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1747,11 +1429,7 @@ func (h *cardHandleApi) UpdateCard(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to update card", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to update card: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedUpdateCard(c)
 	}
 
 	so := h.mapping.ToApiResponseCard(res)
@@ -1777,11 +1455,7 @@ func (h *cardHandleApi) TrashedCard(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1794,11 +1468,7 @@ func (h *cardHandleApi) TrashedCard(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to trashed card", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to trashed card: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedTrashCard(c)
 	}
 
 	so := h.mapping.ToApiResponseCard(res)
@@ -1824,11 +1494,7 @@ func (h *cardHandleApi) RestoreCard(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1841,11 +1507,7 @@ func (h *cardHandleApi) RestoreCard(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to restore card", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to restore card: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedRestoreCard(c)
 	}
 
 	so := h.mapping.ToApiResponseCard(res)
@@ -1871,11 +1533,7 @@ func (h *cardHandleApi) DeleteCardPermanent(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return card_errors.ErrApiInvalidCardID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1888,11 +1546,7 @@ func (h *cardHandleApi) DeleteCardPermanent(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to delete card", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to delete card: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedDeleteCardPermanent(c)
 	}
 
 	so := h.mapping.ToApiResponseCardDeleteAt(res)
@@ -1915,11 +1569,7 @@ func (h *cardHandleApi) RestoreAllCard(c echo.Context) error {
 	res, err := h.card.RestoreAllCard(ctx, &emptypb.Empty{})
 	if err != nil {
 		h.logger.Error("Failed to restore all cards", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently restore all cards",
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedRestoreAllCard(c)
 	}
 
 	h.logger.Debug("Successfully restored all cards")
@@ -1945,11 +1595,7 @@ func (h *cardHandleApi) DeleteAllCardPermanent(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Error("Failed to permanently delete all cards", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently delete all cards",
-			Code:    http.StatusInternalServerError,
-		})
+		return card_errors.ErrApiFailedDeleteAllCardPermanent(c)
 	}
 
 	h.logger.Debug("Successfully deleted all cards permanently")

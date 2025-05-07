@@ -204,14 +204,14 @@ func (mr *MockUserServiceClientMockRecorder) RestoreAllUser(ctx, in any, opts ..
 }
 
 // RestoreUser mocks base method.
-func (m *MockUserServiceClient) RestoreUser(ctx context.Context, in *pb.FindByIdUserRequest, opts ...grpc.CallOption) (*pb.ApiResponseUser, error) {
+func (m *MockUserServiceClient) RestoreUser(ctx context.Context, in *pb.FindByIdUserRequest, opts ...grpc.CallOption) (*pb.ApiResponseUserDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "RestoreUser", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseUser)
+	ret0, _ := ret[0].(*pb.ApiResponseUserDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -224,14 +224,14 @@ func (mr *MockUserServiceClientMockRecorder) RestoreUser(ctx, in any, opts ...an
 }
 
 // TrashedUser mocks base method.
-func (m *MockUserServiceClient) TrashedUser(ctx context.Context, in *pb.FindByIdUserRequest, opts ...grpc.CallOption) (*pb.ApiResponseUser, error) {
+func (m *MockUserServiceClient) TrashedUser(ctx context.Context, in *pb.FindByIdUserRequest, opts ...grpc.CallOption) (*pb.ApiResponseUserDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "TrashedUser", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseUser)
+	ret0, _ := ret[0].(*pb.ApiResponseUserDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -408,10 +408,10 @@ func (mr *MockUserServiceServerMockRecorder) RestoreAllUser(arg0, arg1 any) *gom
 }
 
 // RestoreUser mocks base method.
-func (m *MockUserServiceServer) RestoreUser(arg0 context.Context, arg1 *pb.FindByIdUserRequest) (*pb.ApiResponseUser, error) {
+func (m *MockUserServiceServer) RestoreUser(arg0 context.Context, arg1 *pb.FindByIdUserRequest) (*pb.ApiResponseUserDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RestoreUser", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseUser)
+	ret0, _ := ret[0].(*pb.ApiResponseUserDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -423,10 +423,10 @@ func (mr *MockUserServiceServerMockRecorder) RestoreUser(arg0, arg1 any) *gomock
 }
 
 // TrashedUser mocks base method.
-func (m *MockUserServiceServer) TrashedUser(arg0 context.Context, arg1 *pb.FindByIdUserRequest) (*pb.ApiResponseUser, error) {
+func (m *MockUserServiceServer) TrashedUser(arg0 context.Context, arg1 *pb.FindByIdUserRequest) (*pb.ApiResponseUserDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TrashedUser", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseUser)
+	ret0, _ := ret[0].(*pb.ApiResponseUserDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

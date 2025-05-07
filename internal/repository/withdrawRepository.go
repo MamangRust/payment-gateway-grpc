@@ -5,10 +5,8 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	recordmapper "MamangRust/paymentgatewaygrpc/internal/mapper/record"
 	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/withdraw_errors"
 	"context"
-	"database/sql"
-	"errors"
-	"fmt"
 	"time"
 )
 
@@ -38,11 +36,7 @@ func (r *withdrawRepository) FindAll(req *requests.FindAllWithdraws) ([]*record.
 	withdraw, err := r.db.GetWithdraws(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no withdraws found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-
-		return nil, nil, fmt.Errorf("failed to retrieve withdraws: invalid pagination (page %d, size %d) or search criteria '%s'", req.Page, req.PageSize, req.Search)
+		return nil, nil, withdraw_errors.ErrFindAllWithdrawsFailed
 	}
 
 	var totalCount int
@@ -68,11 +62,7 @@ func (r *withdrawRepository) FindByActive(req *requests.FindAllWithdraws) ([]*re
 	res, err := r.db.GetActiveWithdraws(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no active withdraws found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-
-		return nil, nil, fmt.Errorf("failed to find active withdraws: invalid parameters (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
+		return nil, nil, withdraw_errors.ErrFindActiveWithdrawsFailed
 	}
 
 	var totalCount int
@@ -97,11 +87,7 @@ func (r *withdrawRepository) FindByTrashed(req *requests.FindAllWithdraws) ([]*r
 	res, err := r.db.GetTrashedWithdraws(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no trashed withdraws found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-
-		return nil, nil, fmt.Errorf("failed to find trashed withdraws: invalid parameters (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
+		return nil, nil, withdraw_errors.ErrFindTrashedWithdrawsFailed
 	}
 
 	var totalCount int
@@ -127,11 +113,7 @@ func (r *withdrawRepository) FindAllByCardNumber(req *requests.FindAllWithdrawCa
 	withdraw, err := r.db.GetWithdrawsByCardNumber(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no withdraws found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-
-		return nil, nil, fmt.Errorf("failed to retrieve withdraws: invalid pagination (page %d, size %d) or search criteria '%s'", req.Page, req.PageSize, req.Search)
+		return nil, nil, withdraw_errors.ErrFindWithdrawsByCardNumberFailed
 	}
 	var totalCount int
 	if len(withdraw) > 0 {
@@ -148,10 +130,7 @@ func (r *withdrawRepository) FindById(id int) (*record.WithdrawRecord, error) {
 	withdraw, err := r.db.GetWithdrawByID(r.ctx, int32(id))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("withdraw not found with ID: %d", id)
-		}
-		return nil, fmt.Errorf("failed to find withdraw with ID %d: %w", id, err)
+		return nil, withdraw_errors.ErrFindWithdrawByIdFailed
 	}
 
 	return r.mapping.ToWithdrawRecord(withdraw), nil
@@ -175,10 +154,7 @@ func (r *withdrawRepository) GetMonthWithdrawStatusSuccess(req *requests.MonthSt
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no month withdraw success data found for year %d and month %d", year, month)
-		}
-		return nil, fmt.Errorf("failed to get month withdraw status success for year %d and month %d: %w", year, month, err)
+		return nil, withdraw_errors.ErrGetMonthWithdrawStatusSuccessFailed
 	}
 
 	so := r.mapping.ToWithdrawRecordsMonthStatusSuccess(res)
@@ -190,10 +166,7 @@ func (r *withdrawRepository) GetYearlyWithdrawStatusSuccess(year int) ([]*record
 	res, err := r.db.GetYearlyWithdrawStatusSuccess(r.ctx, int32(year))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly withdraw success data found for year %d", year)
-		}
-		return nil, fmt.Errorf("failed to get yearly withdraw status success for year %d: %w", year, err)
+		return nil, withdraw_errors.ErrGetYearlyWithdrawStatusSuccessFailed
 	}
 
 	so := r.mapping.ToWithdrawRecordsYearStatusSuccess(res)
@@ -216,10 +189,7 @@ func (r *withdrawRepository) GetMonthWithdrawStatusFailed(req *requests.MonthSta
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no month withdraw failed data found for year %d and month %d", req.Year, req.Month)
-		}
-		return nil, fmt.Errorf("failed to get month withdraw status failed for year %d and month %d: %w", req.Year, req.Month, err)
+		return nil, withdraw_errors.ErrGetMonthWithdrawStatusFailedFailed
 	}
 
 	so := r.mapping.ToWithdrawRecordsMonthStatusFailed(res)
@@ -231,10 +201,7 @@ func (r *withdrawRepository) GetYearlyWithdrawStatusFailed(year int) ([]*record.
 	res, err := r.db.GetYearlyWithdrawStatusFailed(r.ctx, int32(year))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly withdraw failed data found for year %d", year)
-		}
-		return nil, fmt.Errorf("failed to get yearly withdraw status failed for year %d: %w", year, err)
+		return nil, withdraw_errors.ErrGetYearlyWithdrawStatusFailedFailed
 	}
 
 	so := r.mapping.ToWithdrawRecordsYearStatusFailed(res)
@@ -258,10 +225,7 @@ func (r *withdrawRepository) GetMonthWithdrawStatusSuccessByCardNumber(req *requ
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no month withdraw success data found for year %d, month %d and card_number %s", req.Year, req.Month, req.CardNumber)
-		}
-		return nil, fmt.Errorf("failed to get month withdraw status success for year %d, month %d and card_number %s: %w", req.Year, req.Month, req.CardNumber, err)
+		return nil, withdraw_errors.ErrGetMonthWithdrawStatusSuccessByCardFailed
 	}
 
 	so := r.mapping.ToWithdrawRecordsMonthStatusSuccessCardNumber(res)
@@ -276,10 +240,7 @@ func (r *withdrawRepository) GetYearlyWithdrawStatusSuccessByCardNumber(req *req
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly withdraw success data found for year %d and card_number %s", req.Year, req.CardNumber)
-		}
-		return nil, fmt.Errorf("failed to get yearly withdraw status success for year %d and card_number %s: %w", req.Year, req.CardNumber, err)
+		return nil, withdraw_errors.ErrGetYearlyWithdrawStatusSuccessByCardFailed
 	}
 
 	so := r.mapping.ToWithdrawRecordsYearStatusSuccessCardNumber(res)
@@ -303,10 +264,7 @@ func (r *withdrawRepository) GetMonthWithdrawStatusFailedByCardNumber(req *reque
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no month withdraw failed data found for year %d, month %d and card_number %s", req.Year, req.Month, req.CardNumber)
-		}
-		return nil, fmt.Errorf("failed to get month withdraw status failed for year %d, month %d and card_number %s: %w", req.Year, req.Month, req.CardNumber, err)
+		return nil, withdraw_errors.ErrGetMonthWithdrawStatusFailedByCardFailed
 	}
 
 	so := r.mapping.ToWithdrawRecordsMonthStatusFailedCardNumber(res)
@@ -321,10 +279,7 @@ func (r *withdrawRepository) GetYearlyWithdrawStatusFailedByCardNumber(req *requ
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly withdraw failed data found for year %d and card_number %s", req.Year, req.CardNumber)
-		}
-		return nil, fmt.Errorf("failed to get yearly withdraw status failed for year %d and card_number %s: %w", req.Year, req.CardNumber, err)
+		return nil, withdraw_errors.ErrGetYearlyWithdrawStatusFailedByCardFailed
 	}
 
 	so := r.mapping.ToWithdrawRecordsYearStatusFailedCardNumber(res)
@@ -338,10 +293,7 @@ func (r *withdrawRepository) GetMonthlyWithdraws(year int) ([]*record.WithdrawMo
 	res, err := r.db.GetMonthlyWithdraws(r.ctx, yearStart)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no monthly withdrawals found for year %d", year)
-		}
-		return nil, fmt.Errorf("failed to get monthly withdrawals for year %d: %w", year, err)
+		return nil, withdraw_errors.ErrGetMonthlyWithdrawsFailed
 	}
 
 	return r.mapping.ToWithdrawsAmountMonthly(res), nil
@@ -352,10 +304,7 @@ func (r *withdrawRepository) GetYearlyWithdraws(year int) ([]*record.WithdrawYea
 	res, err := r.db.GetYearlyWithdraws(r.ctx, year)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly withdrawals found for year %d", year)
-		}
-		return nil, fmt.Errorf("failed to get yearly withdrawals for year %d: %w", year, err)
+		return nil, withdraw_errors.ErrGetYearlyWithdrawsFailed
 	}
 
 	return r.mapping.ToWithdrawsAmountYearly(res), nil
@@ -371,10 +320,7 @@ func (r *withdrawRepository) GetMonthlyWithdrawsByCardNumber(req *requests.YearM
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no monthly withdrawals found for card number %s and year %d", req.CardNumber, req.Year)
-		}
-		return nil, fmt.Errorf("failed to get monthly withdrawals for card number %s and year %d: %w", req.CardNumber, req.Year, err)
+		return nil, withdraw_errors.ErrGetMonthlyWithdrawsByCardFailed
 	}
 
 	return r.mapping.ToWithdrawsAmountMonthlyByCardNumber(res), nil
@@ -388,10 +334,7 @@ func (r *withdrawRepository) GetYearlyWithdrawsByCardNumber(req *requests.YearMo
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly withdrawals found for card number %s and year %d", req.CardNumber, req.Year)
-		}
-		return nil, fmt.Errorf("failed to get yearly withdrawals for card number %s and year %d: %w", req.CardNumber, req.Year, err)
+		return nil, withdraw_errors.ErrGetYearlyWithdrawsByCardFailed
 	}
 
 	return r.mapping.ToWithdrawsAmountYearlyByCardNumber(res), nil
@@ -407,10 +350,7 @@ func (r *withdrawRepository) CreateWithdraw(request *requests.CreateWithdrawRequ
 	res, err := r.db.CreateWithdraw(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("failed to create withdraw: invalid or incomplete withdraw data")
-		}
-		return nil, fmt.Errorf("failed to create withdraw: invalid or incomplete withdraw data")
+		return nil, withdraw_errors.ErrCreateWithdrawFailed
 	}
 
 	return r.mapping.ToWithdrawRecord(res), nil
@@ -427,11 +367,7 @@ func (r *withdrawRepository) UpdateWithdraw(request *requests.UpdateWithdrawRequ
 	res, err := r.db.UpdateWithdraw(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("failed to update withdraw ID %d: withdraw not found or invalid update data", request.WithdrawID)
-		}
-
-		return nil, fmt.Errorf("failed to update withdraw ID %d: withdraw not found or invalid update data", request.WithdrawID)
+		return nil, withdraw_errors.ErrUpdateWithdrawFailed
 	}
 
 	return r.mapping.ToWithdrawRecord(res), nil
@@ -446,11 +382,7 @@ func (r *withdrawRepository) UpdateWithdrawStatus(request *requests.UpdateWithdr
 	res, err := r.db.UpdateWithdrawStatus(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("failed to update withdraw status ID %d: withdraw not found or invalid update data", request.WithdrawID)
-		}
-
-		return nil, fmt.Errorf("failed to update withdraw status ID %d: withdraw not found or invalid update data", request.WithdrawID)
+		return nil, withdraw_errors.ErrUpdateWithdrawStatusFailed
 	}
 
 	return r.mapping.ToWithdrawRecord(res), nil
@@ -460,11 +392,7 @@ func (r *withdrawRepository) TrashedWithdraw(withdraw_id int) (*record.WithdrawR
 	res, err := r.db.TrashWithdraw(r.ctx, int32(withdraw_id))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("failed to move withdraw ID %d to trash: withdraw not found or already trashed", withdraw_id)
-		}
-
-		return nil, fmt.Errorf("failed to move withdraw ID %d to trash: withdraw not found or already trashed", withdraw_id)
+		return nil, withdraw_errors.ErrTrashedWithdrawFailed
 	}
 
 	return r.mapping.ToWithdrawRecord(res), nil
@@ -474,11 +402,7 @@ func (r *withdrawRepository) RestoreWithdraw(withdraw_id int) (*record.WithdrawR
 	res, err := r.db.RestoreWithdraw(r.ctx, int32(withdraw_id))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("failed to restore withdraw ID %d: withdraw not found in trash", withdraw_id)
-		}
-
-		return nil, fmt.Errorf("failed to restore withdraw ID %d: withdraw not found in trash", withdraw_id)
+		return nil, withdraw_errors.ErrRestoreWithdrawFailed
 	}
 
 	return r.mapping.ToWithdrawRecord(res), nil
@@ -488,11 +412,7 @@ func (r *withdrawRepository) DeleteWithdrawPermanent(withdraw_id int) (bool, err
 	err := r.db.DeleteWithdrawPermanently(r.ctx, int32(withdraw_id))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("failed to permanently delete withdraw ID %d: usewithdrawr not found", withdraw_id)
-		}
-
-		return false, fmt.Errorf("failed to permanently delete withdraw ID %d: withdraw not found", withdraw_id)
+		return false, withdraw_errors.ErrDeleteWithdrawPermanentFailed
 	}
 
 	return true, nil
@@ -502,11 +422,7 @@ func (r *withdrawRepository) RestoreAllWithdraw() (bool, error) {
 	err := r.db.RestoreAllWithdraws(r.ctx)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("no trashed withdraw available to restore")
-		}
-
-		return false, fmt.Errorf("no trashed withdraw available to restore")
+		return false, withdraw_errors.ErrRestoreAllWithdrawsFailed
 	}
 
 	return true, nil
@@ -516,11 +432,7 @@ func (r *withdrawRepository) DeleteAllWithdrawPermanent() (bool, error) {
 	err := r.db.DeleteAllPermanentWithdraws(r.ctx)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("cannot permanently delete all withdraw: operation not allowed")
-		}
-
-		return false, fmt.Errorf("cannot permanently delete all withdraw: operation not allowed")
+		return false, withdraw_errors.ErrDeleteAllWithdrawsPermanentFailed
 	}
 
 	return true, nil

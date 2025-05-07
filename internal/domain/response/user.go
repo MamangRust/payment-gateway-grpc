@@ -25,6 +25,12 @@ type ApiResponseUser struct {
 	Data    *UserResponse `json:"data"`
 }
 
+type ApiResponseUserDeleteAt struct {
+	Status  string                `json:"status"`
+	Message string                `json:"message"`
+	Data    *UserResponseDeleteAt `json:"data"`
+}
+
 type ApiResponsesUser struct {
 	Status  string          `json:"status"`
 	Message string          `json:"message"`

@@ -5,8 +5,8 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	recordmapper "MamangRust/paymentgatewaygrpc/internal/mapper/record"
 	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
+	refreshtoken_errors "MamangRust/paymentgatewaygrpc/pkg/errors/refresh_token_errors"
 	"context"
-	"fmt"
 	"time"
 )
 
@@ -28,7 +28,7 @@ func (r *refreshTokenRepository) FindByToken(token string) (*record.RefreshToken
 	res, err := r.db.FindRefreshTokenByToken(r.ctx, token)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to find refresh token by token: %w", err)
+		return nil, refreshtoken_errors.ErrTokenNotFound
 	}
 
 	return r.mapping.ToRefreshTokenRecord(res), nil
@@ -38,7 +38,7 @@ func (r *refreshTokenRepository) FindByUserId(user_id int) (*record.RefreshToken
 	res, err := r.db.FindRefreshTokenByUserId(r.ctx, int32(user_id))
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to find refresh token by user id: %w", err)
+		return nil, refreshtoken_errors.ErrFindByUserID
 	}
 
 	return r.mapping.ToRefreshTokenRecord(res), nil
@@ -48,7 +48,7 @@ func (r *refreshTokenRepository) CreateRefreshToken(req *requests.CreateRefreshT
 	layout := "2006-01-02 15:04:05"
 	expirationTime, err := time.Parse(layout, req.ExpiresAt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse expiration date: %w", err)
+		return nil, refreshtoken_errors.ErrParseDate
 	}
 
 	res, err := r.db.CreateRefreshToken(r.ctx, db.CreateRefreshTokenParams{
@@ -58,7 +58,7 @@ func (r *refreshTokenRepository) CreateRefreshToken(req *requests.CreateRefreshT
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create refresh token: %w", err)
+		return nil, refreshtoken_errors.ErrCreateRefreshToken
 	}
 
 	return r.mapping.ToRefreshTokenRecord(res), nil
@@ -68,7 +68,7 @@ func (r *refreshTokenRepository) UpdateRefreshToken(req *requests.UpdateRefreshT
 	layout := "2006-01-02 15:04:05"
 	expirationTime, err := time.Parse(layout, req.ExpiresAt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse expiration date: %w", err)
+		return nil, refreshtoken_errors.ErrParseDate
 	}
 
 	res, err := r.db.UpdateRefreshTokenByUserId(r.ctx, db.UpdateRefreshTokenByUserIdParams{
@@ -77,7 +77,7 @@ func (r *refreshTokenRepository) UpdateRefreshToken(req *requests.UpdateRefreshT
 		Expiration: expirationTime,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to update refresh token: token not found or invalid update data")
+		return nil, refreshtoken_errors.ErrUpdateRefreshToken
 	}
 
 	return r.mapping.ToRefreshTokenRecord(res), nil
@@ -86,7 +86,7 @@ func (r *refreshTokenRepository) DeleteRefreshToken(token string) error {
 	err := r.db.DeleteRefreshToken(r.ctx, token)
 
 	if err != nil {
-		return fmt.Errorf("failed to delete refresh token: %w", err)
+		return refreshtoken_errors.ErrDeleteRefreshToken
 	}
 
 	return nil
@@ -96,7 +96,7 @@ func (r *refreshTokenRepository) DeleteRefreshTokenByUserId(user_id int) error {
 	err := r.db.DeleteRefreshTokenByUserId(r.ctx, int32(user_id))
 
 	if err != nil {
-		return fmt.Errorf("failed to delete refresh token: %w", err)
+		return refreshtoken_errors.ErrDeleteByUserID
 	}
 
 	return nil

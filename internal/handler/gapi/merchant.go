@@ -2,15 +2,14 @@ package gapi
 
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
+	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	protomapper "MamangRust/paymentgatewaygrpc/internal/mapper/proto"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
 	"MamangRust/paymentgatewaygrpc/internal/service"
-	"MamangRust/paymentgatewaygrpc/pkg/errors_custom"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/merchant_errors"
 	"context"
 	"math"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -45,14 +44,7 @@ func (s *merchantHandleGrpc) FindAllMerchant(ctx context.Context, req *pb.FindAl
 	merchants, totalRecords, err := s.merchantService.FindAll(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -89,14 +81,7 @@ func (s *merchantHandleGrpc) FindAllTransactionMerchant(ctx context.Context, req
 	merchants, totalRecords, err := s.merchantService.FindAllTransactions(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -116,27 +101,13 @@ func (s *merchantHandleGrpc) FindByIdMerchant(ctx context.Context, req *pb.FindB
 	id := int(req.GetMerchantId())
 
 	if id == 0 {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_request",
-				Message: "Valid merchant ID is required",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcFailedFindByIdMerchant
 	}
 
 	merchant, err := s.merchantService.FindById(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMerchant("success", "Successfully fetched merchant record", merchant)
@@ -148,27 +119,13 @@ func (s *merchantHandleGrpc) FindMonthlyPaymentMethodsMerchant(ctx context.Conte
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
 	}
 
 	res, err := s.merchantService.FindMonthlyPaymentMethodsMerchant(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyPaymentMethods("success", "Successfully fetched monthly payment methods for merchant", res)
@@ -180,27 +137,13 @@ func (s *merchantHandleGrpc) FindYearlyPaymentMethodMerchant(ctx context.Context
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
 	}
 
 	res, err := s.merchantService.FindYearlyPaymentMethodMerchant(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyPaymentMethods("success", "Successfully fetched yearly payment methods for merchant", res)
@@ -212,27 +155,13 @@ func (s *merchantHandleGrpc) FindMonthlyAmountMerchant(ctx context.Context, req 
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
 	}
 
 	res, err := s.merchantService.FindMonthlyAmountMerchant(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Successfully fetched monthly amount for merchant", res)
@@ -244,27 +173,13 @@ func (s *merchantHandleGrpc) FindYearlyAmountMerchant(ctx context.Context, req *
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
 	}
 
 	res, err := s.merchantService.FindYearlyAmountMerchant(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Successfully fetched yearly amount for merchant", res)
@@ -276,27 +191,13 @@ func (s *merchantHandleGrpc) FindMonthlyTotalAmountMerchant(ctx context.Context,
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
 	}
 
 	res, err := s.merchantService.FindMonthlyTotalAmountMerchant(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyTotalAmounts("success", "Successfully fetched monthly amount for merchant", res)
@@ -308,27 +209,13 @@ func (s *merchantHandleGrpc) FindYearlyTotalAmountMerchant(ctx context.Context, 
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
 	}
 
 	res, err := s.merchantService.FindYearlyTotalAmountMerchant(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyTotalAmounts("success", "Successfully fetched yearly amount for merchant", res)
@@ -359,14 +246,7 @@ func (s *merchantHandleGrpc) FindAllTransactionByMerchant(ctx context.Context, r
 	merchants, totalRecords, err := s.merchantService.FindAllTransactionsByMerchant(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -388,25 +268,11 @@ func (s *merchantHandleGrpc) FindMonthlyPaymentMethodByMerchants(ctx context.Con
 	year := req.GetYear()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
 	}
 
 	if merchantId <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid id parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidID
 	}
 
 	reqService := requests.MonthYearPaymentMethodMerchant{
@@ -417,14 +283,7 @@ func (s *merchantHandleGrpc) FindMonthlyPaymentMethodByMerchants(ctx context.Con
 	res, err := s.merchantService.FindMonthlyPaymentMethodByMerchants(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyPaymentMethods("success", "Successfully fetched monthly payment methods by merchant", res)
@@ -437,25 +296,11 @@ func (s *merchantHandleGrpc) FindYearlyPaymentMethodByMerchants(ctx context.Cont
 	year := req.GetYear()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
 	}
 
 	if merchantId <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid id parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidID
 	}
 
 	reqService := requests.MonthYearPaymentMethodMerchant{
@@ -466,14 +311,7 @@ func (s *merchantHandleGrpc) FindYearlyPaymentMethodByMerchants(ctx context.Cont
 	res, err := s.merchantService.FindYearlyPaymentMethodByMerchants(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyPaymentMethods("success", "Successfully fetched yearly payment methods by merchant", res)
@@ -486,25 +324,11 @@ func (s *merchantHandleGrpc) FindMonthlyAmountByMerchants(ctx context.Context, r
 	year := req.GetYear()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
 	}
 
 	if merchantId <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid id parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidID
 	}
 
 	reqService := requests.MonthYearAmountMerchant{
@@ -515,14 +339,7 @@ func (s *merchantHandleGrpc) FindMonthlyAmountByMerchants(ctx context.Context, r
 	res, err := s.merchantService.FindMonthlyAmountByMerchants(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Successfully fetched monthly amount by merchant", res)
@@ -535,25 +352,11 @@ func (s *merchantHandleGrpc) FindYearlyAmountByMerchants(ctx context.Context, re
 	year := req.GetYear()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
 	}
 
 	if merchantId <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid id parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidID
 	}
 
 	reqService := requests.MonthYearAmountMerchant{
@@ -563,14 +366,7 @@ func (s *merchantHandleGrpc) FindYearlyAmountByMerchants(ctx context.Context, re
 	res, err := s.merchantService.FindYearlyAmountByMerchants(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Successfully fetched yearly amount by merchant", res)
@@ -600,14 +396,7 @@ func (s *merchantHandleGrpc) FindAllTransactionByApikey(ctx context.Context, req
 
 	merchants, totalRecords, err := s.merchantService.FindAllTransactionsByApikey(&reqService)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -629,25 +418,11 @@ func (s *merchantHandleGrpc) FindMonthlyPaymentMethodByApikey(ctx context.Contex
 	year := req.GetYear()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
 	}
 
 	if api_key == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid api_key parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidApiKey
 	}
 
 	reqService := requests.MonthYearPaymentMethodApiKey{
@@ -658,14 +433,7 @@ func (s *merchantHandleGrpc) FindMonthlyPaymentMethodByApikey(ctx context.Contex
 	res, err := s.merchantService.FindMonthlyPaymentMethodByApikeys(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyPaymentMethods("success", "Successfully fetched monthly payment methods by merchant", res)
@@ -678,25 +446,11 @@ func (s *merchantHandleGrpc) FindYearlyPaymentMethodByApikey(ctx context.Context
 	year := req.GetYear()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
 	}
 
 	if api_key == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid api_key parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidApiKey
 	}
 
 	reqService := requests.MonthYearPaymentMethodApiKey{
@@ -707,14 +461,7 @@ func (s *merchantHandleGrpc) FindYearlyPaymentMethodByApikey(ctx context.Context
 	res, err := s.merchantService.FindYearlyPaymentMethodByApikeys(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyPaymentMethods("success", "Successfully fetched yearly payment methods by merchant", res)
@@ -727,25 +474,11 @@ func (s *merchantHandleGrpc) FindMonthlyAmountByApikey(ctx context.Context, req 
 	year := req.GetYear()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
 	}
 
 	if api_key == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid api_key parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidApiKey
 	}
 
 	reqService := requests.MonthYearAmountApiKey{
@@ -755,14 +488,7 @@ func (s *merchantHandleGrpc) FindMonthlyAmountByApikey(ctx context.Context, req 
 
 	res, err := s.merchantService.FindMonthlyAmountByApikeys(&reqService)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Successfully fetched monthly amount by merchant", res)
@@ -775,25 +501,11 @@ func (s *merchantHandleGrpc) FindYearlyAmountByApikey(ctx context.Context, req *
 	year := req.GetYear()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
 	}
 
 	if api_key == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid api_key parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidApiKey
 	}
 
 	reqService := requests.MonthYearAmountApiKey{
@@ -804,14 +516,7 @@ func (s *merchantHandleGrpc) FindYearlyAmountByApikey(ctx context.Context, req *
 	res, err := s.merchantService.FindYearlyAmountByApikeys(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Successfully fetched yearly amount by merchant", res)
@@ -823,27 +528,13 @@ func (s *merchantHandleGrpc) FindByApiKey(ctx context.Context, req *pb.FindByApi
 	api_key := req.GetApiKey()
 
 	if api_key == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid api_key parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidApiKey
 	}
 
 	merchant, err := s.merchantService.FindByApiKey(api_key)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMerchant("success", "Successfully fetched merchant record", merchant)
@@ -855,27 +546,13 @@ func (s *merchantHandleGrpc) FindByMerchantUserId(ctx context.Context, req *pb.F
 	user_id := req.GetUserId()
 
 	if user_id <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid user_id parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidUserID
 	}
 
 	res, err := s.merchantService.FindByMerchantUserId(int(user_id))
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMerchants("success", "Successfully fetched merchant record", res)
@@ -904,14 +581,7 @@ func (s *merchantHandleGrpc) FindByActive(ctx context.Context, req *pb.FindAllMe
 	res, totalRecords, err := s.merchantService.FindByActive(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -949,14 +619,7 @@ func (s *merchantHandleGrpc) FindByTrashed(ctx context.Context, req *pb.FindAllM
 	res, totalRecords, err := s.merchantService.FindByTrashed(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -980,27 +643,13 @@ func (s *merchantHandleGrpc) CreateMerchant(ctx context.Context, req *pb.CreateM
 	}
 
 	if err := request.Validate(); err != nil {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Unable to create new merchant. Please check your input.",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcValidateCreateMerchant
 	}
 
 	merchant, err := s.merchantService.CreateMerchant(&request)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMerchant("success", "Successfully created merchant", merchant)
@@ -1013,14 +662,7 @@ func (s *merchantHandleGrpc) UpdateMerchant(ctx context.Context, req *pb.UpdateM
 	id := int(req.GetMerchantId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Merchant ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidID
 	}
 
 	request := requests.UpdateMerchantRequest{
@@ -1031,27 +673,13 @@ func (s *merchantHandleGrpc) UpdateMerchant(ctx context.Context, req *pb.UpdateM
 	}
 
 	if err := request.Validate(); err != nil {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Unable to process merchant update. Please review your data.",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcValidateUpdateMerchant
 	}
 
 	merchant, err := s.merchantService.UpdateMerchant(&request)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMerchant("success", "Successfully updated merchant", merchant)
@@ -1063,27 +691,13 @@ func (s *merchantHandleGrpc) TrashedMerchant(ctx context.Context, req *pb.FindBy
 	id := int(req.GetMerchantId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Merchant ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidID
 	}
 
-	merchant, err := s.merchantService.TrashedMerchant(int(req.GetMerchantId()))
+	merchant, err := s.merchantService.TrashedMerchant(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMerchant("success", "Successfully trashed merchant", merchant)
@@ -1095,27 +709,13 @@ func (s *merchantHandleGrpc) RestoreMerchant(ctx context.Context, req *pb.FindBy
 	id := int(req.GetMerchantId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Merchant ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidID
 	}
 
 	merchant, err := s.merchantService.RestoreMerchant(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMerchant("success", "Successfully restored merchant", merchant)
@@ -1127,27 +727,13 @@ func (s *merchantHandleGrpc) DeleteMerchant(ctx context.Context, req *pb.FindByI
 	id := int(req.GetMerchantId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Merchant ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, merchant_errors.ErrGrpcMerchantInvalidID
 	}
 
 	_, err := s.merchantService.DeleteMerchantPermanent(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMerchantDelete("success", "Successfully deleted merchant")
@@ -1159,14 +745,7 @@ func (s *merchantHandleGrpc) RestoreAllMerchant(ctx context.Context, _ *emptypb.
 	_, err := s.merchantService.RestoreAllMerchant()
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMerchantAll("success", "Successfully restore all merchant")
@@ -1178,14 +757,7 @@ func (s *merchantHandleGrpc) DeleteAllMerchantPermanent(ctx context.Context, _ *
 	_, err := s.merchantService.DeleteAllMerchantPermanent()
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMerchantAll("success", "Successfully delete all merchant")

@@ -67,6 +67,7 @@ type SaldoResponseMapper interface {
 
 type TopupResponseMapper interface {
 	ToApiResponseTopup(s *pb.ApiResponseTopup) *response.ApiResponseTopup
+	ToApiResponseTopupDeleteAt(s *pb.ApiResponseTopupDeleteAt) *response.ApiResponseTopupDeleteAt
 	ToApiResponseTopupAll(s *pb.ApiResponseTopupAll) *response.ApiResponseTopupAll
 	ToApiResponseTopupDelete(s *pb.ApiResponseTopupDelete) *response.ApiResponseTopupDelete
 	ToApiResponsePaginationTopup(s *pb.ApiResponsePaginationTopup) *response.ApiResponsePaginationTopup
@@ -115,6 +116,7 @@ type TransferResponseMapper interface {
 
 type UserResponseMapper interface {
 	ToApiResponseUser(pbResponse *pb.ApiResponseUser) *response.ApiResponseUser
+	ToApiResponseUserDeleteAt(pbResponse *pb.ApiResponseUserDeleteAt) *response.ApiResponseUserDeleteAt
 	ToApiResponsesUser(pbResponse *pb.ApiResponsesUser) *response.ApiResponsesUser
 	ToApiResponseUserDelete(pbResponse *pb.ApiResponseUserDelete) *response.ApiResponseUserDelete
 	ToApiResponseUserAll(pbResponse *pb.ApiResponseUserAll) *response.ApiResponseUserAll

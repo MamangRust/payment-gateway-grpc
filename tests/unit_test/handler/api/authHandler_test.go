@@ -4,6 +4,7 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	"MamangRust/paymentgatewaygrpc/internal/handler/api"
+	mock_apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api/mocks"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
 	mock_pb "MamangRust/paymentgatewaygrpc/internal/pb/mocks"
 	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
@@ -26,13 +27,15 @@ func TestHandleHello(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockClient := mock_pb.NewMockAuthServiceClient(ctrl)
+	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockAuthResponseMapper(ctrl)
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/api/auth/hello", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerAuth(mockClient, e, nil)
+	handler := api.NewHandlerAuth(mockClient, e, mockLogger, mockMapper)
 
 	err := handler.HandleHello(c)
 
@@ -47,6 +50,7 @@ func TestHandleRegister_Success(t *testing.T) {
 
 	mockClient := mock_pb.NewMockAuthServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockAuthResponseMapper(ctrl)
 
 	requestBody := requests.CreateUserRequest{
 		FirstName:       "John",
@@ -80,7 +84,7 @@ func TestHandleRegister_Success(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerAuth(mockClient, e, mockLogger)
+	handler := api.NewHandlerAuth(mockClient, e, mockLogger, mockMapper)
 	err := handler.Register(c)
 
 	assert.NoError(t, err)
@@ -99,6 +103,7 @@ func TestHandleRegister_Failure(t *testing.T) {
 
 	mockClient := mock_pb.NewMockAuthServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockAuthResponseMapper(ctrl)
 
 	requestBody := requests.CreateUserRequest{
 		FirstName:       "John",
@@ -132,7 +137,7 @@ func TestHandleRegister_Failure(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerAuth(mockClient, e, mockLogger)
+	handler := api.NewHandlerAuth(mockClient, e, mockLogger, mockMapper)
 	err := handler.Register(c)
 
 	assert.NoError(t, err)
@@ -151,6 +156,7 @@ func TestHandleRegister_ValidationError(t *testing.T) {
 
 	mockClient := mock_pb.NewMockAuthServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockAuthResponseMapper(ctrl)
 
 	mockLogger.EXPECT().Debug(
 		"Validation Error",
@@ -164,7 +170,7 @@ func TestHandleRegister_ValidationError(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerAuth(mockClient, e, mockLogger)
+	handler := api.NewHandlerAuth(mockClient, e, mockLogger, mockMapper)
 
 	err := handler.Register(c)
 
@@ -184,6 +190,7 @@ func TestHandleLogin_Success(t *testing.T) {
 
 	mockClient := mock_pb.NewMockAuthServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockAuthResponseMapper(ctrl)
 
 	mockResponse := &pb.ApiResponseLogin{
 		Status:  "success",
@@ -202,7 +209,7 @@ func TestHandleLogin_Success(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerAuth(mockClient, e, mockLogger)
+	handler := api.NewHandlerAuth(mockClient, e, mockLogger, mockMapper)
 
 	err := handler.Login(c)
 
@@ -227,6 +234,7 @@ func TestHandleLogin_Failure(t *testing.T) {
 
 	mockClient := mock_pb.NewMockAuthServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockAuthResponseMapper(ctrl)
 
 	mockClient.EXPECT().LoginUser(gomock.Any(), gomock.Any()).Return(nil, &response.ErrorResponse{
 		Status:  "error",
@@ -241,7 +249,7 @@ func TestHandleLogin_Failure(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerAuth(mockClient, e, mockLogger)
+	handler := api.NewHandlerAuth(mockClient, e, mockLogger, mockMapper)
 
 	err := handler.Login(c)
 
@@ -261,6 +269,7 @@ func TestHandleLogin_ValidationError(t *testing.T) {
 
 	mockClient := mock_pb.NewMockAuthServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockAuthResponseMapper(ctrl)
 
 	mockLogger.EXPECT().Debug(gomock.Eq("Validation Error"), gomock.Any()).Times(1)
 
@@ -271,7 +280,7 @@ func TestHandleLogin_ValidationError(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerAuth(mockClient, e, mockLogger)
+	handler := api.NewHandlerAuth(mockClient, e, mockLogger, mockMapper)
 
 	err := handler.Login(c)
 

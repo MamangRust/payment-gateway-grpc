@@ -2,9 +2,9 @@ package api
 
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/transfer_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
 	"net/http"
 	"strconv"
@@ -64,7 +64,6 @@ func NewHandlerTransfer(client pb.TransferServiceClient, router *echo.Echo, logg
 	routerTransfer.POST("/permanent/all", transferHandler.DeleteAllTransferPermanent)
 
 	return transferHandler
-
 }
 
 // @Summary Find all transfer records
@@ -105,11 +104,7 @@ func (h *transferHandleApi) FindAll(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve transfer data: ", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve transfer data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindAllTransfers(c)
 	}
 
 	so := h.mapping.ToApiResponsePaginationTransfer(res)
@@ -136,11 +131,7 @@ func (h *transferHandleApi) FindById(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiTransferInvalidID(c)
 
 	}
 
@@ -153,11 +144,7 @@ func (h *transferHandleApi) FindById(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve transfer data: ", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve transfer data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindByIdTransfer(c)
 	}
 
 	so := h.mapping.ToApiResponseTransfer(res)
@@ -184,20 +171,12 @@ func (h *transferHandleApi) FindMonthlyTransferStatusSuccess(c echo.Context) err
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidYear(c)
 	}
 
 	month, err := strconv.Atoi(monthStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid month",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidMonth(c)
 	}
 
 	ctx := c.Request().Context()
@@ -210,11 +189,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusSuccess(c echo.Context) err
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly Transfer status success", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly Transfer status success: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindMonthlyTransferStatusSuccess(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferMonthStatusSuccess(res)
@@ -239,11 +214,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusSuccess(c echo.Context) erro
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -255,11 +226,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusSuccess(c echo.Context) erro
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly Transfer status success", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly Transfer status success: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindYearlyTransferStatusSuccess(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferYearStatusSuccess(res)
@@ -286,20 +253,12 @@ func (h *transferHandleApi) FindMonthlyTransferStatusFailed(c echo.Context) erro
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidYear(c)
 	}
 
 	month, err := strconv.Atoi(monthStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid month",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidMonth(c)
 	}
 
 	ctx := c.Request().Context()
@@ -312,11 +271,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusFailed(c echo.Context) erro
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly Transfer status Failed", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly Transfer status Failed: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindMonthlyTransferStatusFailed(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferMonthStatusFailed(res)
@@ -341,11 +296,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusFailed(c echo.Context) error
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -357,11 +308,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusFailed(c echo.Context) error
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly Transfer status Failed", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly Transfer status Failed: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindYearlyTransferStatusFailed(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferYearStatusFailed(res)
@@ -389,20 +336,12 @@ func (h *transferHandleApi) FindMonthlyTransferStatusSuccessByCardNumber(c echo.
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidYear(c)
 	}
 
 	month, err := strconv.Atoi(monthStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid month",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidMonth(c)
 	}
 
 	ctx := c.Request().Context()
@@ -416,11 +355,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusSuccessByCardNumber(c echo.
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly Transfer status success", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly Transfer status success: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindMonthlyTransferStatusSuccessByCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferMonthStatusSuccess(res)
@@ -447,11 +382,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusSuccessByCardNumber(c echo.C
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -464,11 +395,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusSuccessByCardNumber(c echo.C
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly Transfer status success", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly Transfer status success: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindYearlyTransferStatusSuccessByCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferYearStatusSuccess(res)
@@ -497,20 +424,12 @@ func (h *transferHandleApi) FindMonthlyTransferStatusFailedByCardNumber(c echo.C
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidYear(c)
 	}
 
 	month, err := strconv.Atoi(monthStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid month",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidMonth(c)
 	}
 
 	ctx := c.Request().Context()
@@ -524,11 +443,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusFailedByCardNumber(c echo.C
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly Transfer status Failed", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly Transfer status Failed: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindMonthlyTransferStatusFailedByCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferMonthStatusFailed(res)
@@ -553,13 +468,13 @@ func (h *transferHandleApi) FindYearlyTransferStatusFailedByCardNumber(c echo.Co
 	yearStr := c.QueryParam("year")
 	cardNumber := c.QueryParam("card_number")
 
+	if cardNumber == "" {
+		return transfer_errors.ErrApiInvalidCardNumber(c)
+	}
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -572,11 +487,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusFailedByCardNumber(c echo.Co
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly Transfer status Failed", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly Transfer status Failed: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindYearlyTransferStatusFailedByCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferYearStatusFailed(res)
@@ -601,11 +512,7 @@ func (h *transferHandleApi) FindMonthlyTransferAmounts(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -615,11 +522,7 @@ func (h *transferHandleApi) FindMonthlyTransferAmounts(c echo.Context) error {
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly transfer amounts", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly transfer amounts",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindMonthlyTransferAmounts(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferMonthAmount(res)
@@ -644,11 +547,7 @@ func (h *transferHandleApi) FindYearlyTransferAmounts(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -658,11 +557,7 @@ func (h *transferHandleApi) FindYearlyTransferAmounts(c echo.Context) error {
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly transfer amounts", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly transfer amounts",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindYearlyTransferAmounts(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferYearAmount(res)
@@ -687,13 +582,14 @@ func (h *transferHandleApi) FindMonthlyTransferAmountsBySenderCardNumber(c echo.
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
+
+	if cardNumber == "" {
+		return transfer_errors.ErrApiInvalidCardNumber(c)
+	}
+
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -704,11 +600,7 @@ func (h *transferHandleApi) FindMonthlyTransferAmountsBySenderCardNumber(c echo.
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly transfer amounts by sender card number", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly transfer amounts by sender card number",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindMonthlyTransferAmountsBySenderCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferMonthAmount(res)
@@ -733,13 +625,14 @@ func (h *transferHandleApi) FindMonthlyTransferAmountsByReceiverCardNumber(c ech
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
+
+	if cardNumber == "" {
+		return transfer_errors.ErrApiInvalidCardNumber(c)
+	}
+
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -748,13 +641,10 @@ func (h *transferHandleApi) FindMonthlyTransferAmountsByReceiverCardNumber(c ech
 		CardNumber: cardNumber,
 		Year:       int32(year),
 	})
+
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly transfer amounts by receiver card number", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly transfer amounts by receiver card number",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindMonthlyTransferAmountsByReceiverCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferMonthAmount(res)
@@ -779,13 +669,10 @@ func (h *transferHandleApi) FindYearlyTransferAmountsBySenderCardNumber(c echo.C
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
+
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -796,11 +683,7 @@ func (h *transferHandleApi) FindYearlyTransferAmountsBySenderCardNumber(c echo.C
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly transfer amounts by sender card number", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly transfer amounts by sender card number",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindYearlyTransferAmountsBySenderCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferYearAmount(res)
@@ -829,11 +712,7 @@ func (h *transferHandleApi) FindYearlyTransferAmountsByReceiverCardNumber(c echo
 
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -842,13 +721,10 @@ func (h *transferHandleApi) FindYearlyTransferAmountsByReceiverCardNumber(c echo
 		CardNumber: cardNumber,
 		Year:       int32(year),
 	})
+
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly transfer amounts by receiver card number", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly transfer amounts by receiver card number",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindYearlyTransferAmountsByReceiverCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferYearAmount(res)
@@ -869,6 +745,10 @@ func (h *transferHandleApi) FindYearlyTransferAmountsByReceiverCardNumber(c echo
 func (h *transferHandleApi) FindByTransferByTransferFrom(c echo.Context) error {
 	transfer_from := c.Param("transfer_from")
 
+	if transfer_from == "" {
+		return transfer_errors.ErrApiInvalidCardNumber(c)
+	}
+
 	ctx := c.Request().Context()
 
 	res, err := h.client.FindTransferByTransferFrom(ctx, &pb.FindTransferByTransferFromRequest{
@@ -878,11 +758,7 @@ func (h *transferHandleApi) FindByTransferByTransferFrom(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve transfer data: ", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve transfer data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindByTransferFrom(c)
 	}
 
 	so := h.mapping.ToApiResponseTransfers(res)
@@ -902,8 +778,11 @@ func (h *transferHandleApi) FindByTransferByTransferFrom(c echo.Context) error {
 // @Router /api/transfer/transfer_to/{transfer_to} [get]
 func (h *transferHandleApi) FindByTransferByTransferTo(c echo.Context) error {
 	transfer_to := c.Param("transfer_to")
-
 	ctx := c.Request().Context()
+
+	if transfer_to == "" {
+		return transfer_errors.ErrApiInvalidCardNumber(c)
+	}
 
 	res, err := h.client.FindTransferByTransferTo(ctx, &pb.FindTransferByTransferToRequest{
 		TransferTo: transfer_to,
@@ -912,11 +791,7 @@ func (h *transferHandleApi) FindByTransferByTransferTo(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve transfer data: ", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve transfer data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindByTransferTo(c)
 	}
 
 	so := h.mapping.ToApiResponseTransfers(res)
@@ -963,11 +838,7 @@ func (h *transferHandleApi) FindByActiveTransfer(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve transfer data: ", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve transfer data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindByActiveTransfer(c)
 	}
 
 	so := h.mapping.ToApiResponsePaginationTransferDeleteAt(res)
@@ -1013,11 +884,7 @@ func (h *transferHandleApi) FindByTrashedTransfer(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve transfer data: ", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve transfer data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedFindByTrashedTransfer(c)
 	}
 
 	so := h.mapping.ToApiResponsePaginationTransferDeleteAt(res)
@@ -1042,21 +909,13 @@ func (h *transferHandleApi) CreateTransfer(c echo.Context) error {
 	if err := c.Bind(&body); err != nil {
 		h.logger.Debug("Invalid request body: ", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid request body",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiBindCreateTransfer(c)
 	}
 
 	if err := body.Validate(); err != nil {
 		h.logger.Debug("Validation Error: ", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Validation Error: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiValidateCreateTransfer(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1070,11 +929,7 @@ func (h *transferHandleApi) CreateTransfer(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to create transfer: ", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to create transfer: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedCreateTransfer(c)
 	}
 
 	so := h.mapping.ToApiResponseTransfer(res)
@@ -1101,11 +956,7 @@ func (h *transferHandleApi) UpdateTransfer(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiTransferInvalidID(c)
 	}
 
 	var body requests.UpdateTransferRequest
@@ -1113,21 +964,13 @@ func (h *transferHandleApi) UpdateTransfer(c echo.Context) error {
 	if err := c.Bind(&body); err != nil {
 		h.logger.Debug("Invalid request body: ", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid request body",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiBindUpdateTransfer(c)
 	}
 
 	if err := body.Validate(); err != nil {
 		h.logger.Debug("Validation Error: ", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Validation Error: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiValidateUpdateTransfer(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1142,11 +985,7 @@ func (h *transferHandleApi) UpdateTransfer(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to update transfer: ", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to update transfer: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedUpdateTransfer(c)
 	}
 
 	so := h.mapping.ToApiResponseTransfer(res)
@@ -1173,12 +1012,7 @@ func (h *transferHandleApi) TrashTransfer(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
-
+		return transfer_errors.ErrApiTransferInvalidID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1190,11 +1024,7 @@ func (h *transferHandleApi) TrashTransfer(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to trash transfer: ", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to trash transfer:",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedTrashedTransfer(c)
 	}
 
 	so := h.mapping.ToApiResponseTransfer(res)
@@ -1221,11 +1051,7 @@ func (h *transferHandleApi) RestoreTransfer(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiTransferInvalidID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1237,11 +1063,7 @@ func (h *transferHandleApi) RestoreTransfer(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to restore transfer: ", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to restore transfer:",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedRestoreTransfer(c)
 	}
 
 	so := h.mapping.ToApiResponseTransfer(res)
@@ -1268,11 +1090,7 @@ func (h *transferHandleApi) DeleteTransferPermanent(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return transfer_errors.ErrApiTransferInvalidID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1282,11 +1100,7 @@ func (h *transferHandleApi) DeleteTransferPermanent(c echo.Context) error {
 	})
 
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to delete transfer:",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedDeleteTransferPermanent(c)
 	}
 
 	so := h.mapping.ToApiResponseTransferDelete(res)
@@ -1311,11 +1125,7 @@ func (h *transferHandleApi) RestoreAllTransfer(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Error("Failed to restore all transfer", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently restore all transfer",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedRestoreAllTransfer(c)
 	}
 
 	h.logger.Debug("Successfully restored all transfer")
@@ -1344,11 +1154,7 @@ func (h *transferHandleApi) DeleteAllTransferPermanent(c echo.Context) error {
 	if err != nil {
 		h.logger.Error("Failed to permanently delete all transfer", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently delete all transfer",
-			Code:    http.StatusInternalServerError,
-		})
+		return transfer_errors.ErrApiFailedDeleteAllTransferPermanent(c)
 	}
 
 	h.logger.Debug("Successfully deleted all transfer permanently")

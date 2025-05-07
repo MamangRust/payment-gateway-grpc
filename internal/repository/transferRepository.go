@@ -5,10 +5,8 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	recordmapper "MamangRust/paymentgatewaygrpc/internal/mapper/record"
 	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/transfer_errors"
 	"context"
-	"database/sql"
-	"errors"
-	"fmt"
 	"time"
 )
 
@@ -38,10 +36,7 @@ func (r *transferRepository) FindAll(req *requests.FindAllTranfers) ([]*record.T
 	res, err := r.db.GetTransfers(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no transfers found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-		return nil, nil, fmt.Errorf("failed to retrieve transfers (page %d, size %d, search '%s'): %w", req.Page, req.PageSize, req.Search, err)
+		return nil, nil, transfer_errors.ErrFindAllTransfersFailed
 	}
 
 	var totalCount int
@@ -66,10 +61,7 @@ func (r *transferRepository) FindByActive(req *requests.FindAllTranfers) ([]*rec
 	res, err := r.db.GetActiveTransfers(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no active transfers found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-		return nil, nil, fmt.Errorf("failed to find active transfers (page %d, size %d, search '%s'): %w", req.Page, req.PageSize, req.Search, err)
+		return nil, nil, transfer_errors.ErrFindActiveTransfersFailed
 	}
 
 	var totalCount int
@@ -94,10 +86,7 @@ func (r *transferRepository) FindByTrashed(req *requests.FindAllTranfers) ([]*re
 	res, err := r.db.GetTrashedTransfers(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no trashed transfers found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-		return nil, nil, fmt.Errorf("failed to find trashed transfers (page %d, size %d, search '%s'): %w", req.Page, req.PageSize, req.Search, err)
+		return nil, nil, transfer_errors.ErrFindTrashedTransfersFailed
 	}
 
 	var totalCount int
@@ -114,10 +103,7 @@ func (r *transferRepository) FindById(id int) (*record.TransferRecord, error) {
 	transfer, err := r.db.GetTransferByID(r.ctx, int32(id))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("transfer not found with ID: %d", id)
-		}
-		return nil, fmt.Errorf("failed to find transfer by ID %d: %w", id, err)
+		return nil, transfer_errors.ErrFindTransferByIdFailed
 	}
 
 	return r.mapping.ToTransferRecord(transfer), nil
@@ -138,10 +124,7 @@ func (r *transferRepository) GetMonthTransferStatusSuccess(req *requests.MonthSt
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no transfer data for success status found for year %d, month %d", req.Year, req.Month)
-		}
-		return nil, fmt.Errorf("failed to get monthly transfer status success for year %d, month %d: %w", req.Year, req.Month, err)
+		return nil, transfer_errors.ErrGetMonthTransferStatusSuccessFailed
 	}
 
 	so := r.mapping.ToTransferRecordsMonthStatusSuccess(res)
@@ -153,10 +136,7 @@ func (r *transferRepository) GetYearlyTransferStatusSuccess(year int) ([]*record
 	res, err := r.db.GetYearlyTransferStatusSuccess(r.ctx, int32(year))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transfer success found for year %d", year)
-		}
-		return nil, fmt.Errorf("failed to get yearly transfer status success for year %d: %w", year, err)
+		return nil, transfer_errors.ErrGetYearlyTransferStatusSuccessFailed
 	}
 
 	so := r.mapping.ToTransferRecordsYearStatusSuccess(res)
@@ -179,10 +159,7 @@ func (r *transferRepository) GetMonthTransferStatusFailed(req *requests.MonthSta
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no month transfer failed found for year %d and month %d", req.Year, req.Month)
-		}
-		return nil, fmt.Errorf("failed to get month transfer status failed for year %d and month %d: %w", req.Year, req.Month, err)
+		return nil, transfer_errors.ErrGetMonthTransferStatusFailedFailed
 	}
 
 	so := r.mapping.ToTransferRecordsMonthStatusFailed(res)
@@ -194,10 +171,7 @@ func (r *transferRepository) GetYearlyTransferStatusFailed(year int) ([]*record.
 	res, err := r.db.GetYearlyTransferStatusFailed(r.ctx, int32(year))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transfer failed found for year %d", year)
-		}
-		return nil, fmt.Errorf("failed to get yearly transfer status failed for year %d: %w", year, err)
+		return nil, transfer_errors.ErrGetYearlyTransferStatusFailedFailed
 	}
 
 	so := r.mapping.ToTransferRecordsYearStatusFailed(res)
@@ -221,10 +195,7 @@ func (r *transferRepository) GetMonthTransferStatusSuccessByCardNumber(req *requ
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no month transfer success found for year %d, month %d and card_number %s", req.Year, req.Month, req.CardNumber)
-		}
-		return nil, fmt.Errorf("failed to get month transfer status success for year %d, month %d and card_number %s: %w", req.Year, req.Month, req.CardNumber, err)
+		return nil, transfer_errors.ErrGetMonthTransferStatusSuccessByCardFailed
 	}
 
 	so := r.mapping.ToTransferRecordsMonthStatusSuccessCardNumber(res)
@@ -239,10 +210,7 @@ func (r *transferRepository) GetYearlyTransferStatusSuccessByCardNumber(req *req
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transfer success found for year %d and card_number %s", req.Year, req.CardNumber)
-		}
-		return nil, fmt.Errorf("failed to get yearly transfer status success for year %d and card_number %s: %w", req.Year, req.CardNumber, err)
+		return nil, transfer_errors.ErrGetYearlyTransferStatusSuccessByCardFailed
 	}
 
 	so := r.mapping.ToTransferRecordsYearStatusSuccessCardNumber(res)
@@ -266,10 +234,7 @@ func (r *transferRepository) GetMonthTransferStatusFailedByCardNumber(req *reque
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no month transfer failed found for year %d, month %d and card_number %s", req.Year, req.Month, req.CardNumber)
-		}
-		return nil, fmt.Errorf("failed to get month transfer status failed for year %d, month %d and card_number %s: %w", req.Year, req.Month, req.CardNumber, err)
+		return nil, transfer_errors.ErrGetMonthTransferStatusFailedByCardFailed
 	}
 
 	so := r.mapping.ToTransferRecordsMonthStatusFailedCardNumber(res)
@@ -284,10 +249,7 @@ func (r *transferRepository) GetYearlyTransferStatusFailedByCardNumber(req *requ
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transfer failed found for year %d and card_number %s", req.Year, req.CardNumber)
-		}
-		return nil, fmt.Errorf("failed to get yearly transfer status failed for year %d and card_number %s: %w", req.Year, req.CardNumber, err)
+		return nil, transfer_errors.ErrGetYearlyTransferStatusFailedByCardFailed
 	}
 
 	so := r.mapping.ToTransferRecordsYearStatusFailedCardNumber(res)
@@ -301,10 +263,7 @@ func (r *transferRepository) GetMonthlyTransferAmounts(year int) ([]*record.Tran
 	res, err := r.db.GetMonthlyTransferAmounts(r.ctx, yearStart)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no monthly transfer amounts found")
-		}
-		return nil, fmt.Errorf("failed to get monthly transfer amounts: %w", err)
+		return nil, transfer_errors.ErrGetMonthlyTransferAmountsFailed
 	}
 
 	return r.mapping.ToTransferMonthAmounts(res), nil
@@ -314,10 +273,7 @@ func (r *transferRepository) GetYearlyTransferAmounts(year int) ([]*record.Trans
 	res, err := r.db.GetYearlyTransferAmounts(r.ctx, year)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transfer amounts found")
-		}
-		return nil, fmt.Errorf("failed to get yearly transfer amounts: %w", err)
+		return nil, transfer_errors.ErrGetYearlyTransferAmountsFailed
 	}
 	return r.mapping.ToTransferYearAmounts(res), nil
 }
@@ -329,10 +285,7 @@ func (r *transferRepository) GetMonthlyTransferAmountsBySenderCardNumber(req *re
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no monthly transfer amounts by sender card number %s and year %d found", req.CardNumber, req.Year)
-		}
-		return nil, fmt.Errorf("failed to get monthly transfer amounts by sender card number %s and year %d: %w", req.CardNumber, req.Year, err)
+		return nil, transfer_errors.ErrGetMonthlyTransferAmountsBySenderCardFailed
 	}
 
 	return r.mapping.ToTransferMonthAmountsSender(res), nil
@@ -345,10 +298,7 @@ func (r *transferRepository) GetMonthlyTransferAmountsByReceiverCardNumber(req *
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no monthly transfer amounts by receiver card number %s and year %d found", req.CardNumber, req.Year)
-		}
-		return nil, fmt.Errorf("failed to get monthly transfer amounts by receiver card number %s and year %d: %w", req.CardNumber, req.Year, err)
+		return nil, transfer_errors.ErrGetMonthlyTransferAmountsByReceiverCardFailed
 	}
 	return r.mapping.ToTransferMonthAmountsReceiver(res), nil
 }
@@ -360,10 +310,7 @@ func (r *transferRepository) GetYearlyTransferAmountsBySenderCardNumber(req *req
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transfer amounts by sender card number %s and year %d found", req.CardNumber, req.Year)
-		}
-		return nil, fmt.Errorf("failed to get yearly transfer amounts by sender card number %s and year %d: %w", req.CardNumber, req.Year, err)
+		return nil, transfer_errors.ErrGetYearlyTransferAmountsBySenderCardFailed
 	}
 
 	return r.mapping.ToTransferYearAmountsSender(res), nil
@@ -376,10 +323,7 @@ func (r *transferRepository) GetYearlyTransferAmountsByReceiverCardNumber(req *r
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no yearly transfer amounts by receiver card number %s and year %d found", req.CardNumber, req.Year)
-		}
-		return nil, fmt.Errorf("failed to get yearly transfer amounts by receiver card number %s and year %d: %w", req.CardNumber, req.Year, err)
+		return nil, transfer_errors.ErrGetYearlyTransferAmountsByReceiverCardFailed
 	}
 
 	return r.mapping.ToTransferYearAmountsReceiver(res), nil
@@ -389,10 +333,7 @@ func (r *transferRepository) FindTransferByTransferFrom(transfer_from string) ([
 	res, err := r.db.GetTransfersBySourceCard(r.ctx, transfer_from)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no transfer found with transfer_from = %s", transfer_from)
-		}
-		return nil, fmt.Errorf("failed to find transfer by transfer from %s: %w", transfer_from, err)
+		return nil, transfer_errors.ErrFindTransferByTransferFromFailed
 	}
 
 	return r.mapping.ToTransfersRecord(res), nil
@@ -402,10 +343,7 @@ func (r *transferRepository) FindTransferByTransferTo(transfer_to string) ([]*re
 	res, err := r.db.GetTransfersByDestinationCard(r.ctx, transfer_to)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no transfer found with transfer_to = %s", transfer_to)
-		}
-		return nil, fmt.Errorf("failed to find transfer by transfer to %s: %w", transfer_to, err)
+		return nil, transfer_errors.ErrFindTransferByTransferToFailed
 	}
 	return r.mapping.ToTransfersRecord(res), nil
 }
@@ -420,10 +358,7 @@ func (r *transferRepository) CreateTransfer(request *requests.CreateTransferRequ
 	res, err := r.db.CreateTransfer(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("invalid transfer data: %w", err)
-		}
-		return nil, fmt.Errorf("failed to create transfer: invalid or incomplete transfer data: %w", err)
+		return nil, transfer_errors.ErrCreateTransferFailed
 	}
 
 	return r.mapping.ToTransferRecord(res), nil
@@ -440,10 +375,7 @@ func (r *transferRepository) UpdateTransfer(request *requests.UpdateTransferRequ
 	res, err := r.db.UpdateTransfer(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("transfer ID %d not found for update", request.TransferID)
-		}
-		return nil, fmt.Errorf("failed to update transfer ID %d: transfer not found or invalid update data", request.TransferID)
+		return nil, transfer_errors.ErrUpdateTransferFailed
 	}
 
 	return r.mapping.ToTransferRecord(res), nil
@@ -459,10 +391,7 @@ func (r *transferRepository) UpdateTransferAmount(request *requests.UpdateTransf
 	res, err := r.db.UpdateTransferAmount(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("transfer ID %d not found for update", request.TransferID)
-		}
-		return nil, fmt.Errorf("failed to update transfer ID %d: transfer not found or invalid update data", request.TransferID)
+		return nil, transfer_errors.ErrUpdateTransferAmountFailed
 	}
 
 	return r.mapping.ToTransferRecord(res), nil
@@ -477,10 +406,7 @@ func (r *transferRepository) UpdateTransferStatus(request *requests.UpdateTransf
 	res, err := r.db.UpdateTransferStatus(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("transfer ID %d not found for update", request.TransferID)
-		}
-		return nil, fmt.Errorf("failed to update transfer ID %d: transfer not found or invalid update data", request.TransferID)
+		return nil, transfer_errors.ErrUpdateTransferStatusFailed
 	}
 
 	return r.mapping.ToTransferRecord(res), nil
@@ -490,10 +416,7 @@ func (r *transferRepository) TrashedTransfer(transfer_id int) (*record.TransferR
 	res, err := r.db.TrashTransfer(r.ctx, int32(transfer_id))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("transfer ID %d not found or already trashed", transfer_id)
-		}
-		return nil, fmt.Errorf("failed to move transfer ID %d to trash: %w", transfer_id, err)
+		return nil, transfer_errors.ErrTrashedTransferFailed
 	}
 	return r.mapping.ToTransferRecord(res), nil
 }
@@ -501,10 +424,7 @@ func (r *transferRepository) TrashedTransfer(transfer_id int) (*record.TransferR
 func (r *transferRepository) RestoreTransfer(transfer_id int) (*record.TransferRecord, error) {
 	res, err := r.db.RestoreTransfer(r.ctx, int32(transfer_id))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("transfer ID %d not found in trash", transfer_id)
-		}
-		return nil, fmt.Errorf("failed to restore transfer ID %d: %w", transfer_id, err)
+		return nil, transfer_errors.ErrRestoreTransferFailed
 	}
 	return r.mapping.ToTransferRecord(res), nil
 }
@@ -512,10 +432,7 @@ func (r *transferRepository) RestoreTransfer(transfer_id int) (*record.TransferR
 func (r *transferRepository) DeleteTransferPermanent(transfer_id int) (bool, error) {
 	err := r.db.DeleteTransferPermanently(r.ctx, int32(transfer_id))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("transfer ID %d not found", transfer_id)
-		}
-		return false, fmt.Errorf("failed to permanently delete transfer ID %d: %w", transfer_id, err)
+		return false, transfer_errors.ErrDeleteTransferPermanentFailed
 	}
 	return true, nil
 }
@@ -524,10 +441,7 @@ func (r *transferRepository) RestoreAllTransfer() (bool, error) {
 	err := r.db.RestoreAllTransfers(r.ctx)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("no trashed transfers available to restore")
-		}
-		return false, fmt.Errorf("failed to restore trashed transfers: %w", err)
+		return false, transfer_errors.ErrRestoreAllTransfersFailed
 	}
 
 	return true, nil
@@ -537,10 +451,7 @@ func (r *transferRepository) DeleteAllTransferPermanent() (bool, error) {
 	err := r.db.DeleteAllPermanentTransfers(r.ctx)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("no trashed transfers available to delete permanently")
-		}
-		return false, fmt.Errorf("failed to permanently delete transfers: %w", err)
+		return false, transfer_errors.ErrDeleteAllTransfersPermanentFailed
 	}
 
 	return true, nil

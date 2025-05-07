@@ -2,15 +2,14 @@ package gapi
 
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
+	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	protomapper "MamangRust/paymentgatewaygrpc/internal/mapper/proto"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
 	"MamangRust/paymentgatewaygrpc/internal/service"
-	"MamangRust/paymentgatewaygrpc/pkg/errors_custom"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/card_errors"
 	"context"
 	"math"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -45,14 +44,7 @@ func (s *cardHandleGrpc) FindAllCard(ctx context.Context, req *pb.FindAllCardReq
 	cards, totalRecords, err := s.cardService.FindAll(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -73,26 +65,12 @@ func (s *cardHandleGrpc) FindByIdCard(ctx context.Context, req *pb.FindByIdCardR
 	id := int(req.GetCardId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Card ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardID
 	}
 
 	card, err := s.cardService.FindById(id)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseCard("success", "Successfully fetched card record", card)
@@ -104,26 +82,12 @@ func (s *cardHandleGrpc) FindByUserIdCard(ctx context.Context, req *pb.FindByUse
 	id := int(req.GetUserId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "User ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidUserID
 	}
 	res, err := s.cardService.FindByUserID(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseCard("success", "Successfully fetched card record", res)
@@ -132,17 +96,9 @@ func (s *cardHandleGrpc) FindByUserIdCard(ctx context.Context, req *pb.FindByUse
 }
 
 func (s *cardHandleGrpc) DashboardCard(ctx context.Context, _ *emptypb.Empty) (*pb.ApiResponseDashboardCard, error) {
-
 	dashboardCard, err := s.cardService.DashboardCard()
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseDashboardCard("success", "Dashboard card retrieved successfully", dashboardCard)
@@ -154,27 +110,13 @@ func (s *cardHandleGrpc) DashboardCardNumber(ctx context.Context, req *pb.FindBy
 	card_number := req.GetCardNumber()
 
 	if card_number == "" {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Card Number parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	dashboardCard, err := s.cardService.DashboardCardCardNumber(card_number)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseDashboardCardCardNumber("success", "Dashboard card for card number retrieved successfully", dashboardCard)
@@ -186,26 +128,12 @@ func (s *cardHandleGrpc) FindMonthlyBalance(ctx context.Context, req *pb.FindYea
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 	res, err := s.cardService.FindMonthlyBalance(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyBalances("success", "Monthly balance retrieved successfully", res)
@@ -217,26 +145,12 @@ func (s *cardHandleGrpc) FindYearlyBalance(ctx context.Context, req *pb.FindYear
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	res, err := s.cardService.FindYearlyBalance(year)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyBalances("success", "Yearly balance retrieved successfully", res)
@@ -248,27 +162,13 @@ func (s *cardHandleGrpc) FindMonthlyTopupAmount(ctx context.Context, req *pb.Fin
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	res, err := s.cardService.FindMonthlyTopupAmount(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly topup amount retrieved successfully", res)
@@ -280,27 +180,13 @@ func (s *cardHandleGrpc) FindYearlyTopupAmount(ctx context.Context, req *pb.Find
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	res, err := s.cardService.FindYearlyTopupAmount(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly topup amount retrieved successfully", res)
@@ -312,27 +198,13 @@ func (s *cardHandleGrpc) FindMonthlyWithdrawAmount(ctx context.Context, req *pb.
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	res, err := s.cardService.FindMonthlyWithdrawAmount(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly withdraw amount retrieved successfully", res)
@@ -344,27 +216,13 @@ func (s *cardHandleGrpc) FindYearlyWithdrawAmount(ctx context.Context, req *pb.F
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	res, err := s.cardService.FindYearlyWithdrawAmount(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly withdraw amount retrieved successfully", res)
@@ -376,27 +234,13 @@ func (s *cardHandleGrpc) FindMonthlyTransactionAmount(ctx context.Context, req *
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	res, err := s.cardService.FindMonthlyTransactionAmount(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly transaction amount retrieved successfully", res)
@@ -408,27 +252,13 @@ func (s *cardHandleGrpc) FindYearlyTransactionAmount(ctx context.Context, req *p
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	res, err := s.cardService.FindYearlyTransactionAmount(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly transaction amount retrieved successfully", res)
@@ -440,27 +270,13 @@ func (s *cardHandleGrpc) FindMonthlyTransferSenderAmount(ctx context.Context, re
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	res, err := s.cardService.FindMonthlyTransferAmountSender(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly transfer sender amount retrieved successfully", res)
@@ -472,27 +288,13 @@ func (s *cardHandleGrpc) FindYearlyTransferSenderAmount(ctx context.Context, req
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	res, err := s.cardService.FindYearlyTransferAmountSender(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyAmounts("success", "transfer sender amount retrieved successfully", res)
@@ -504,27 +306,13 @@ func (s *cardHandleGrpc) FindMonthlyTransferReceiverAmount(ctx context.Context, 
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	res, err := s.cardService.FindMonthlyTransferAmountReceiver(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly transfer receiver amount retrieved successfully", res)
@@ -536,27 +324,13 @@ func (s *cardHandleGrpc) FindYearlyTransferReceiverAmount(ctx context.Context, r
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	res, err := s.cardService.FindYearlyTransferAmountReceiver(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly transfer receiver amount retrieved successfully", res)
@@ -569,25 +343,11 @@ func (s *cardHandleGrpc) FindMonthlyBalanceByCardNumber(ctx context.Context, req
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	if card_number == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumberCard{
@@ -598,14 +358,7 @@ func (s *cardHandleGrpc) FindMonthlyBalanceByCardNumber(ctx context.Context, req
 	res, err := s.cardService.FindMonthlyBalanceByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyBalances("success", "Monthly balance retrieved successfully", res)
@@ -618,25 +371,11 @@ func (s *cardHandleGrpc) FindYearlyBalanceByCardNumber(ctx context.Context, req 
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	if card_number == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumberCard{
@@ -647,14 +386,7 @@ func (s *cardHandleGrpc) FindYearlyBalanceByCardNumber(ctx context.Context, req 
 	res, err := s.cardService.FindYearlyBalanceByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyBalances("success", "Yearly balance retrieved successfully", res)
@@ -667,25 +399,11 @@ func (s *cardHandleGrpc) FindMonthlyTopupAmountByCardNumber(ctx context.Context,
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	if card_number == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumberCard{
@@ -696,14 +414,7 @@ func (s *cardHandleGrpc) FindMonthlyTopupAmountByCardNumber(ctx context.Context,
 	res, err := s.cardService.FindMonthlyTopupAmountByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly topup amount by card number retrieved successfully", res)
@@ -716,25 +427,11 @@ func (s *cardHandleGrpc) FindYearlyTopupAmountByCardNumber(ctx context.Context, 
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	if card_number == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumberCard{
@@ -745,14 +442,7 @@ func (s *cardHandleGrpc) FindYearlyTopupAmountByCardNumber(ctx context.Context, 
 	res, err := s.cardService.FindYearlyTopupAmountByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly topup amount by card number retrieved successfully", res)
@@ -765,25 +455,11 @@ func (s *cardHandleGrpc) FindMonthlyWithdrawAmountByCardNumber(ctx context.Conte
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	if card_number == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumberCard{
@@ -793,14 +469,7 @@ func (s *cardHandleGrpc) FindMonthlyWithdrawAmountByCardNumber(ctx context.Conte
 
 	res, err := s.cardService.FindMonthlyWithdrawAmountByCardNumber(&reqService)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly withdraw amount by card number retrieved successfully", res)
@@ -813,25 +482,11 @@ func (s *cardHandleGrpc) FindYearlyWithdrawAmountByCardNumber(ctx context.Contex
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	if card_number == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumberCard{
@@ -841,14 +496,7 @@ func (s *cardHandleGrpc) FindYearlyWithdrawAmountByCardNumber(ctx context.Contex
 
 	res, err := s.cardService.FindYearlyWithdrawAmountByCardNumber(&reqService)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly withdraw amount by card number retrieved successfully", res)
@@ -861,25 +509,11 @@ func (s *cardHandleGrpc) FindMonthlyTransactionAmountByCardNumber(ctx context.Co
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	if card_number == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumberCard{
@@ -890,14 +524,7 @@ func (s *cardHandleGrpc) FindMonthlyTransactionAmountByCardNumber(ctx context.Co
 	res, err := s.cardService.FindMonthlyTransactionAmountByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly transaction amount by card number retrieved successfully", res)
@@ -910,25 +537,11 @@ func (s *cardHandleGrpc) FindYearlyTransactionAmountByCardNumber(ctx context.Con
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	if card_number == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumberCard{
@@ -938,14 +551,7 @@ func (s *cardHandleGrpc) FindYearlyTransactionAmountByCardNumber(ctx context.Con
 
 	res, err := s.cardService.FindYearlyTransactionAmountByCardNumber(&reqService)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly transaction amount by card number retrieved successfully", res)
@@ -958,25 +564,11 @@ func (s *cardHandleGrpc) FindMonthlyTransferSenderAmountByCardNumber(ctx context
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	if card_number == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumberCard{
@@ -986,14 +578,7 @@ func (s *cardHandleGrpc) FindMonthlyTransferSenderAmountByCardNumber(ctx context
 
 	res, err := s.cardService.FindMonthlyTransferAmountBySender(&reqService)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly transfer sender amount by card number retrieved successfully", res)
@@ -1006,25 +591,11 @@ func (s *cardHandleGrpc) FindYearlyTransferSenderAmountByCardNumber(ctx context.
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	if card_number == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumberCard{
@@ -1034,14 +605,7 @@ func (s *cardHandleGrpc) FindYearlyTransferSenderAmountByCardNumber(ctx context.
 
 	res, err := s.cardService.FindYearlyTransferAmountBySender(&reqService)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly transfer sender amount by card number retrieved successfully", res)
@@ -1054,25 +618,11 @@ func (s *cardHandleGrpc) FindMonthlyTransferReceiverAmountByCardNumber(ctx conte
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	if card_number == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumberCard{
@@ -1083,14 +633,7 @@ func (s *cardHandleGrpc) FindMonthlyTransferReceiverAmountByCardNumber(ctx conte
 	res, err := s.cardService.FindMonthlyTransferAmountByReceiver(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly transfer receiver amount by card number retrieved successfully", res)
@@ -1103,25 +646,11 @@ func (s *cardHandleGrpc) FindYearlyTransferReceiverAmountByCardNumber(ctx contex
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
 	if card_number == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumberCard{
@@ -1131,14 +660,7 @@ func (s *cardHandleGrpc) FindYearlyTransferReceiverAmountByCardNumber(ctx contex
 
 	res, err := s.cardService.FindYearlyTransferAmountByReceiver(&reqService)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly transfer receiver amount by card number retrieved successfully", res)
@@ -1167,14 +689,7 @@ func (s *cardHandleGrpc) FindByActiveCard(ctx context.Context, req *pb.FindAllCa
 	res, totalRecords, err := s.cardService.FindByActive(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -1212,14 +727,7 @@ func (s *cardHandleGrpc) FindByTrashedCard(ctx context.Context, req *pb.FindAllC
 	res, totalRecords, err := s.cardService.FindByTrashed(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -1241,27 +749,13 @@ func (s *cardHandleGrpc) FindByCardNumber(ctx context.Context, req *pb.FindByCar
 	card_number := req.GetCardNumber()
 
 	if card_number == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	res, err := s.cardService.FindByCardNumber(card_number)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseCard("success", "Successfully fetched card record", res)
@@ -1280,27 +774,13 @@ func (s *cardHandleGrpc) CreateCard(ctx context.Context, req *pb.CreateCardReque
 	}
 
 	if err := request.Validate(); err != nil {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Unable to create new card. Please check your input.",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcValidateCreateCardRequest
 	}
 
 	res, err := s.cardService.CreateCard(&request)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseCard("success", "Successfully created card", res)
@@ -1319,27 +799,13 @@ func (s *cardHandleGrpc) UpdateCard(ctx context.Context, req *pb.UpdateCardReque
 	}
 
 	if err := request.Validate(); err != nil {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Unable to process card update. Please review your data.",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcValidateUpdateCardRequest
 	}
 
 	res, err := s.cardService.UpdateCard(&request)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseCard("success", "Successfully updated card", res)
@@ -1351,27 +817,13 @@ func (s *cardHandleGrpc) TrashedCard(ctx context.Context, req *pb.FindByIdCardRe
 	id := int(req.GetCardId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Card ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardID
 	}
 
 	res, err := s.cardService.TrashedCard(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseCard("success", "Successfully trashed card", res)
@@ -1383,27 +835,13 @@ func (s *cardHandleGrpc) RestoreCard(ctx context.Context, req *pb.FindByIdCardRe
 	id := int(req.GetCardId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Card ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardID
 	}
 
 	res, err := s.cardService.RestoreCard(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseCard("success", "Successfully restored card", res)
@@ -1415,27 +853,13 @@ func (s *cardHandleGrpc) DeleteCardPermanent(ctx context.Context, req *pb.FindBy
 	id := int(req.GetCardId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Card ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, card_errors.ErrGrpcInvalidCardID
 	}
 
 	_, err := s.cardService.DeleteCardPermanent(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseCardDeleteAt("success", "Successfully deleted card")
@@ -1447,14 +871,7 @@ func (s *cardHandleGrpc) RestoreAllCard(ctx context.Context, _ *emptypb.Empty) (
 	_, err := s.cardService.RestoreAllCard()
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseCardAll("success", "Successfully restore card")
@@ -1466,14 +883,7 @@ func (s *cardHandleGrpc) DeleteAllCardPermanent(ctx context.Context, _ *emptypb.
 	_, err := s.cardService.DeleteAllCardPermanent()
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseCardAll("success", "Successfully delete card permanent")

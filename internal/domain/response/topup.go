@@ -127,6 +127,12 @@ type ApiResponseTopup struct {
 	Data    *TopupResponse `json:"data"`
 }
 
+type ApiResponseTopupDeleteAt struct {
+	Status  string                 `json:"status"`
+	Message string                 `json:"message"`
+	Data    *TopupResponseDeleteAt `json:"data"`
+}
+
 type ApiResponsesTopup struct {
 	Status  string           `json:"status"`
 	Message string           `json:"message"`

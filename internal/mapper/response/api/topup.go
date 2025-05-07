@@ -29,6 +29,14 @@ func (t *topupResponseMapper) ToApiResponseTopup(s *pb.ApiResponseTopup) *respon
 	}
 }
 
+func (t *topupResponseMapper) ToApiResponseTopupDeleteAt(s *pb.ApiResponseTopupDeleteAt) *response.ApiResponseTopupDeleteAt {
+	return &response.ApiResponseTopupDeleteAt{
+		Status:  s.Status,
+		Message: s.Message,
+		Data:    t.mapResponseTopupDeleteAt(s.Data),
+	}
+}
+
 func (t *topupResponseMapper) ToApiResponseTopupAll(s *pb.ApiResponseTopupAll) *response.ApiResponseTopupAll {
 	return &response.ApiResponseTopupAll{
 		Status:  s.Status,

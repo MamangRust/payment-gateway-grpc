@@ -44,7 +44,7 @@ message UserResponse {
     string updated_at = 6;
 }
 
-message UserResponseWithDeleteAt{
+message UserResponseDeleteAt{
     int32 id = 1;
     string firstname = 2;
     string lastname = 3;
@@ -59,6 +59,13 @@ message ApiResponseUser {
     string message = 2;
     UserResponse data = 3;
 }
+
+message ApiResponseUserDeleteAt{
+    string status = 1;
+    string message = 2;
+    UserResponseDeleteAt data = 3;
+}
+
 
 message ApiResponsesUser {
     string status = 1;
@@ -80,7 +87,7 @@ message ApiResponseUserAll {
 message ApiResponsePaginationUserDeleteAt{
     string status = 1;
     string message = 2;
-    repeated UserResponseWithDeleteAt data = 3;
+    repeated UserResponseDeleteAt data = 3;
     PaginationMeta pagination = 4;
 }
 
@@ -101,8 +108,8 @@ service UserService {
 
     rpc Create(CreateUserRequest) returns (ApiResponseUser);
     rpc Update(UpdateUserRequest) returns (ApiResponseUser);
-    rpc TrashedUser(FindByIdUserRequest) returns (ApiResponseUser);
-    rpc RestoreUser(FindByIdUserRequest) returns (ApiResponseUser);
+    rpc TrashedUser(FindByIdUserRequest) returns (ApiResponseUserDeleteAt);
+    rpc RestoreUser(FindByIdUserRequest) returns (ApiResponseUserDeleteAt);
     rpc DeleteUserPermanent(FindByIdUserRequest) returns (ApiResponseUserDelete);
 
     rpc RestoreAllUser(google.protobuf.Empty) returns (ApiResponseUserAll){}

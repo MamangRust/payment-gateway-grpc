@@ -123,6 +123,26 @@ func (mr *MockTopupServiceClientMockRecorder) FindAllTopup(ctx, in any, opts ...
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTopup", reflect.TypeOf((*MockTopupServiceClient)(nil).FindAllTopup), varargs...)
 }
 
+// FindAllTopupByCardNumber mocks base method.
+func (m *MockTopupServiceClient) FindAllTopupByCardNumber(ctx context.Context, in *pb.FindAllTopupByCardNumberRequest, opts ...grpc.CallOption) (*pb.ApiResponsePaginationTopup, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindAllTopupByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationTopup)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAllTopupByCardNumber indicates an expected call of FindAllTopupByCardNumber.
+func (mr *MockTopupServiceClientMockRecorder) FindAllTopupByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTopupByCardNumber", reflect.TypeOf((*MockTopupServiceClient)(nil).FindAllTopupByCardNumber), varargs...)
+}
+
 // FindByActive mocks base method.
 func (m *MockTopupServiceClient) FindByActive(ctx context.Context, in *pb.FindAllTopupRequest, opts ...grpc.CallOption) (*pb.ApiResponsePaginationTopupDeleteAt, error) {
 	m.ctrl.T.Helper()
@@ -203,6 +223,326 @@ func (mr *MockTopupServiceClientMockRecorder) FindByTrashed(ctx, in any, opts ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockTopupServiceClient)(nil).FindByTrashed), varargs...)
 }
 
+// FindMonthlyTopupAmounts mocks base method.
+func (m *MockTopupServiceClient) FindMonthlyTopupAmounts(ctx context.Context, in *pb.FindYearTopupStatus, opts ...grpc.CallOption) (*pb.ApiResponseTopupMonthAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTopupAmounts", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupAmounts indicates an expected call of FindMonthlyTopupAmounts.
+func (mr *MockTopupServiceClientMockRecorder) FindMonthlyTopupAmounts(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupAmounts", reflect.TypeOf((*MockTopupServiceClient)(nil).FindMonthlyTopupAmounts), varargs...)
+}
+
+// FindMonthlyTopupAmountsByCardNumber mocks base method.
+func (m *MockTopupServiceClient) FindMonthlyTopupAmountsByCardNumber(ctx context.Context, in *pb.FindYearTopupCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseTopupMonthAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTopupAmountsByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupAmountsByCardNumber indicates an expected call of FindMonthlyTopupAmountsByCardNumber.
+func (mr *MockTopupServiceClientMockRecorder) FindMonthlyTopupAmountsByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupAmountsByCardNumber", reflect.TypeOf((*MockTopupServiceClient)(nil).FindMonthlyTopupAmountsByCardNumber), varargs...)
+}
+
+// FindMonthlyTopupMethods mocks base method.
+func (m *MockTopupServiceClient) FindMonthlyTopupMethods(ctx context.Context, in *pb.FindYearTopupStatus, opts ...grpc.CallOption) (*pb.ApiResponseTopupMonthMethod, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTopupMethods", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupMethods indicates an expected call of FindMonthlyTopupMethods.
+func (mr *MockTopupServiceClientMockRecorder) FindMonthlyTopupMethods(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupMethods", reflect.TypeOf((*MockTopupServiceClient)(nil).FindMonthlyTopupMethods), varargs...)
+}
+
+// FindMonthlyTopupMethodsByCardNumber mocks base method.
+func (m *MockTopupServiceClient) FindMonthlyTopupMethodsByCardNumber(ctx context.Context, in *pb.FindYearTopupCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseTopupMonthMethod, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTopupMethodsByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupMethodsByCardNumber indicates an expected call of FindMonthlyTopupMethodsByCardNumber.
+func (mr *MockTopupServiceClientMockRecorder) FindMonthlyTopupMethodsByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupMethodsByCardNumber", reflect.TypeOf((*MockTopupServiceClient)(nil).FindMonthlyTopupMethodsByCardNumber), varargs...)
+}
+
+// FindMonthlyTopupStatusFailed mocks base method.
+func (m *MockTopupServiceClient) FindMonthlyTopupStatusFailed(ctx context.Context, in *pb.FindMonthlyTopupStatus, opts ...grpc.CallOption) (*pb.ApiResponseTopupMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTopupStatusFailed", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupStatusFailed indicates an expected call of FindMonthlyTopupStatusFailed.
+func (mr *MockTopupServiceClientMockRecorder) FindMonthlyTopupStatusFailed(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupStatusFailed", reflect.TypeOf((*MockTopupServiceClient)(nil).FindMonthlyTopupStatusFailed), varargs...)
+}
+
+// FindMonthlyTopupStatusFailedByCardNumber mocks base method.
+func (m *MockTopupServiceClient) FindMonthlyTopupStatusFailedByCardNumber(ctx context.Context, in *pb.FindMonthlyTopupStatusCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseTopupMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTopupStatusFailedByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupStatusFailedByCardNumber indicates an expected call of FindMonthlyTopupStatusFailedByCardNumber.
+func (mr *MockTopupServiceClientMockRecorder) FindMonthlyTopupStatusFailedByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupStatusFailedByCardNumber", reflect.TypeOf((*MockTopupServiceClient)(nil).FindMonthlyTopupStatusFailedByCardNumber), varargs...)
+}
+
+// FindMonthlyTopupStatusSuccess mocks base method.
+func (m *MockTopupServiceClient) FindMonthlyTopupStatusSuccess(ctx context.Context, in *pb.FindMonthlyTopupStatus, opts ...grpc.CallOption) (*pb.ApiResponseTopupMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTopupStatusSuccess", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupStatusSuccess indicates an expected call of FindMonthlyTopupStatusSuccess.
+func (mr *MockTopupServiceClientMockRecorder) FindMonthlyTopupStatusSuccess(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupStatusSuccess", reflect.TypeOf((*MockTopupServiceClient)(nil).FindMonthlyTopupStatusSuccess), varargs...)
+}
+
+// FindMonthlyTopupStatusSuccessByCardNumber mocks base method.
+func (m *MockTopupServiceClient) FindMonthlyTopupStatusSuccessByCardNumber(ctx context.Context, in *pb.FindMonthlyTopupStatusCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseTopupMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTopupStatusSuccessByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupStatusSuccessByCardNumber indicates an expected call of FindMonthlyTopupStatusSuccessByCardNumber.
+func (mr *MockTopupServiceClientMockRecorder) FindMonthlyTopupStatusSuccessByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupStatusSuccessByCardNumber", reflect.TypeOf((*MockTopupServiceClient)(nil).FindMonthlyTopupStatusSuccessByCardNumber), varargs...)
+}
+
+// FindYearlyTopupAmounts mocks base method.
+func (m *MockTopupServiceClient) FindYearlyTopupAmounts(ctx context.Context, in *pb.FindYearTopupStatus, opts ...grpc.CallOption) (*pb.ApiResponseTopupYearAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTopupAmounts", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupAmounts indicates an expected call of FindYearlyTopupAmounts.
+func (mr *MockTopupServiceClientMockRecorder) FindYearlyTopupAmounts(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupAmounts", reflect.TypeOf((*MockTopupServiceClient)(nil).FindYearlyTopupAmounts), varargs...)
+}
+
+// FindYearlyTopupAmountsByCardNumber mocks base method.
+func (m *MockTopupServiceClient) FindYearlyTopupAmountsByCardNumber(ctx context.Context, in *pb.FindYearTopupCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseTopupYearAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTopupAmountsByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupAmountsByCardNumber indicates an expected call of FindYearlyTopupAmountsByCardNumber.
+func (mr *MockTopupServiceClientMockRecorder) FindYearlyTopupAmountsByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupAmountsByCardNumber", reflect.TypeOf((*MockTopupServiceClient)(nil).FindYearlyTopupAmountsByCardNumber), varargs...)
+}
+
+// FindYearlyTopupMethods mocks base method.
+func (m *MockTopupServiceClient) FindYearlyTopupMethods(ctx context.Context, in *pb.FindYearTopupStatus, opts ...grpc.CallOption) (*pb.ApiResponseTopupYearMethod, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTopupMethods", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupMethods indicates an expected call of FindYearlyTopupMethods.
+func (mr *MockTopupServiceClientMockRecorder) FindYearlyTopupMethods(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupMethods", reflect.TypeOf((*MockTopupServiceClient)(nil).FindYearlyTopupMethods), varargs...)
+}
+
+// FindYearlyTopupMethodsByCardNumber mocks base method.
+func (m *MockTopupServiceClient) FindYearlyTopupMethodsByCardNumber(ctx context.Context, in *pb.FindYearTopupCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseTopupYearMethod, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTopupMethodsByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupMethodsByCardNumber indicates an expected call of FindYearlyTopupMethodsByCardNumber.
+func (mr *MockTopupServiceClientMockRecorder) FindYearlyTopupMethodsByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupMethodsByCardNumber", reflect.TypeOf((*MockTopupServiceClient)(nil).FindYearlyTopupMethodsByCardNumber), varargs...)
+}
+
+// FindYearlyTopupStatusFailed mocks base method.
+func (m *MockTopupServiceClient) FindYearlyTopupStatusFailed(ctx context.Context, in *pb.FindYearTopupStatus, opts ...grpc.CallOption) (*pb.ApiResponseTopupYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTopupStatusFailed", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupStatusFailed indicates an expected call of FindYearlyTopupStatusFailed.
+func (mr *MockTopupServiceClientMockRecorder) FindYearlyTopupStatusFailed(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupStatusFailed", reflect.TypeOf((*MockTopupServiceClient)(nil).FindYearlyTopupStatusFailed), varargs...)
+}
+
+// FindYearlyTopupStatusFailedByCardNumber mocks base method.
+func (m *MockTopupServiceClient) FindYearlyTopupStatusFailedByCardNumber(ctx context.Context, in *pb.FindYearTopupStatusCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseTopupYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTopupStatusFailedByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupStatusFailedByCardNumber indicates an expected call of FindYearlyTopupStatusFailedByCardNumber.
+func (mr *MockTopupServiceClientMockRecorder) FindYearlyTopupStatusFailedByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupStatusFailedByCardNumber", reflect.TypeOf((*MockTopupServiceClient)(nil).FindYearlyTopupStatusFailedByCardNumber), varargs...)
+}
+
+// FindYearlyTopupStatusSuccess mocks base method.
+func (m *MockTopupServiceClient) FindYearlyTopupStatusSuccess(ctx context.Context, in *pb.FindYearTopupStatus, opts ...grpc.CallOption) (*pb.ApiResponseTopupYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTopupStatusSuccess", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupStatusSuccess indicates an expected call of FindYearlyTopupStatusSuccess.
+func (mr *MockTopupServiceClientMockRecorder) FindYearlyTopupStatusSuccess(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupStatusSuccess", reflect.TypeOf((*MockTopupServiceClient)(nil).FindYearlyTopupStatusSuccess), varargs...)
+}
+
+// FindYearlyTopupStatusSuccessByCardNumber mocks base method.
+func (m *MockTopupServiceClient) FindYearlyTopupStatusSuccessByCardNumber(ctx context.Context, in *pb.FindYearTopupStatusCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseTopupYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTopupStatusSuccessByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupStatusSuccessByCardNumber indicates an expected call of FindYearlyTopupStatusSuccessByCardNumber.
+func (mr *MockTopupServiceClientMockRecorder) FindYearlyTopupStatusSuccessByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupStatusSuccessByCardNumber", reflect.TypeOf((*MockTopupServiceClient)(nil).FindYearlyTopupStatusSuccessByCardNumber), varargs...)
+}
+
 // RestoreAllTopup mocks base method.
 func (m *MockTopupServiceClient) RestoreAllTopup(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*pb.ApiResponseTopupAll, error) {
 	m.ctrl.T.Helper()
@@ -244,14 +584,14 @@ func (mr *MockTopupServiceClientMockRecorder) RestoreTopup(ctx, in any, opts ...
 }
 
 // TrashedTopup mocks base method.
-func (m *MockTopupServiceClient) TrashedTopup(ctx context.Context, in *pb.FindByIdTopupRequest, opts ...grpc.CallOption) (*pb.ApiResponseTopup, error) {
+func (m *MockTopupServiceClient) TrashedTopup(ctx context.Context, in *pb.FindByIdTopupRequest, opts ...grpc.CallOption) (*pb.ApiResponseTopupDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "TrashedTopup", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseTopup)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -264,14 +604,14 @@ func (mr *MockTopupServiceClientMockRecorder) TrashedTopup(ctx, in any, opts ...
 }
 
 // UpdateTopup mocks base method.
-func (m *MockTopupServiceClient) UpdateTopup(ctx context.Context, in *pb.UpdateTopupRequest, opts ...grpc.CallOption) (*pb.ApiResponseTopup, error) {
+func (m *MockTopupServiceClient) UpdateTopup(ctx context.Context, in *pb.UpdateTopupRequest, opts ...grpc.CallOption) (*pb.ApiResponseTopupDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "UpdateTopup", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseTopup)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -367,6 +707,21 @@ func (mr *MockTopupServiceServerMockRecorder) FindAllTopup(arg0, arg1 any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTopup", reflect.TypeOf((*MockTopupServiceServer)(nil).FindAllTopup), arg0, arg1)
 }
 
+// FindAllTopupByCardNumber mocks base method.
+func (m *MockTopupServiceServer) FindAllTopupByCardNumber(arg0 context.Context, arg1 *pb.FindAllTopupByCardNumberRequest) (*pb.ApiResponsePaginationTopup, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAllTopupByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationTopup)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAllTopupByCardNumber indicates an expected call of FindAllTopupByCardNumber.
+func (mr *MockTopupServiceServerMockRecorder) FindAllTopupByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTopupByCardNumber", reflect.TypeOf((*MockTopupServiceServer)(nil).FindAllTopupByCardNumber), arg0, arg1)
+}
+
 // FindByActive mocks base method.
 func (m *MockTopupServiceServer) FindByActive(arg0 context.Context, arg1 *pb.FindAllTopupRequest) (*pb.ApiResponsePaginationTopupDeleteAt, error) {
 	m.ctrl.T.Helper()
@@ -427,6 +782,246 @@ func (mr *MockTopupServiceServerMockRecorder) FindByTrashed(arg0, arg1 any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockTopupServiceServer)(nil).FindByTrashed), arg0, arg1)
 }
 
+// FindMonthlyTopupAmounts mocks base method.
+func (m *MockTopupServiceServer) FindMonthlyTopupAmounts(arg0 context.Context, arg1 *pb.FindYearTopupStatus) (*pb.ApiResponseTopupMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTopupAmounts", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupAmounts indicates an expected call of FindMonthlyTopupAmounts.
+func (mr *MockTopupServiceServerMockRecorder) FindMonthlyTopupAmounts(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupAmounts", reflect.TypeOf((*MockTopupServiceServer)(nil).FindMonthlyTopupAmounts), arg0, arg1)
+}
+
+// FindMonthlyTopupAmountsByCardNumber mocks base method.
+func (m *MockTopupServiceServer) FindMonthlyTopupAmountsByCardNumber(arg0 context.Context, arg1 *pb.FindYearTopupCardNumber) (*pb.ApiResponseTopupMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTopupAmountsByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupAmountsByCardNumber indicates an expected call of FindMonthlyTopupAmountsByCardNumber.
+func (mr *MockTopupServiceServerMockRecorder) FindMonthlyTopupAmountsByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupAmountsByCardNumber", reflect.TypeOf((*MockTopupServiceServer)(nil).FindMonthlyTopupAmountsByCardNumber), arg0, arg1)
+}
+
+// FindMonthlyTopupMethods mocks base method.
+func (m *MockTopupServiceServer) FindMonthlyTopupMethods(arg0 context.Context, arg1 *pb.FindYearTopupStatus) (*pb.ApiResponseTopupMonthMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTopupMethods", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupMethods indicates an expected call of FindMonthlyTopupMethods.
+func (mr *MockTopupServiceServerMockRecorder) FindMonthlyTopupMethods(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupMethods", reflect.TypeOf((*MockTopupServiceServer)(nil).FindMonthlyTopupMethods), arg0, arg1)
+}
+
+// FindMonthlyTopupMethodsByCardNumber mocks base method.
+func (m *MockTopupServiceServer) FindMonthlyTopupMethodsByCardNumber(arg0 context.Context, arg1 *pb.FindYearTopupCardNumber) (*pb.ApiResponseTopupMonthMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTopupMethodsByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupMethodsByCardNumber indicates an expected call of FindMonthlyTopupMethodsByCardNumber.
+func (mr *MockTopupServiceServerMockRecorder) FindMonthlyTopupMethodsByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupMethodsByCardNumber", reflect.TypeOf((*MockTopupServiceServer)(nil).FindMonthlyTopupMethodsByCardNumber), arg0, arg1)
+}
+
+// FindMonthlyTopupStatusFailed mocks base method.
+func (m *MockTopupServiceServer) FindMonthlyTopupStatusFailed(arg0 context.Context, arg1 *pb.FindMonthlyTopupStatus) (*pb.ApiResponseTopupMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTopupStatusFailed", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupStatusFailed indicates an expected call of FindMonthlyTopupStatusFailed.
+func (mr *MockTopupServiceServerMockRecorder) FindMonthlyTopupStatusFailed(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupStatusFailed", reflect.TypeOf((*MockTopupServiceServer)(nil).FindMonthlyTopupStatusFailed), arg0, arg1)
+}
+
+// FindMonthlyTopupStatusFailedByCardNumber mocks base method.
+func (m *MockTopupServiceServer) FindMonthlyTopupStatusFailedByCardNumber(arg0 context.Context, arg1 *pb.FindMonthlyTopupStatusCardNumber) (*pb.ApiResponseTopupMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTopupStatusFailedByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupStatusFailedByCardNumber indicates an expected call of FindMonthlyTopupStatusFailedByCardNumber.
+func (mr *MockTopupServiceServerMockRecorder) FindMonthlyTopupStatusFailedByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupStatusFailedByCardNumber", reflect.TypeOf((*MockTopupServiceServer)(nil).FindMonthlyTopupStatusFailedByCardNumber), arg0, arg1)
+}
+
+// FindMonthlyTopupStatusSuccess mocks base method.
+func (m *MockTopupServiceServer) FindMonthlyTopupStatusSuccess(arg0 context.Context, arg1 *pb.FindMonthlyTopupStatus) (*pb.ApiResponseTopupMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTopupStatusSuccess", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupStatusSuccess indicates an expected call of FindMonthlyTopupStatusSuccess.
+func (mr *MockTopupServiceServerMockRecorder) FindMonthlyTopupStatusSuccess(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupStatusSuccess", reflect.TypeOf((*MockTopupServiceServer)(nil).FindMonthlyTopupStatusSuccess), arg0, arg1)
+}
+
+// FindMonthlyTopupStatusSuccessByCardNumber mocks base method.
+func (m *MockTopupServiceServer) FindMonthlyTopupStatusSuccessByCardNumber(arg0 context.Context, arg1 *pb.FindMonthlyTopupStatusCardNumber) (*pb.ApiResponseTopupMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTopupStatusSuccessByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTopupStatusSuccessByCardNumber indicates an expected call of FindMonthlyTopupStatusSuccessByCardNumber.
+func (mr *MockTopupServiceServerMockRecorder) FindMonthlyTopupStatusSuccessByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTopupStatusSuccessByCardNumber", reflect.TypeOf((*MockTopupServiceServer)(nil).FindMonthlyTopupStatusSuccessByCardNumber), arg0, arg1)
+}
+
+// FindYearlyTopupAmounts mocks base method.
+func (m *MockTopupServiceServer) FindYearlyTopupAmounts(arg0 context.Context, arg1 *pb.FindYearTopupStatus) (*pb.ApiResponseTopupYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTopupAmounts", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupAmounts indicates an expected call of FindYearlyTopupAmounts.
+func (mr *MockTopupServiceServerMockRecorder) FindYearlyTopupAmounts(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupAmounts", reflect.TypeOf((*MockTopupServiceServer)(nil).FindYearlyTopupAmounts), arg0, arg1)
+}
+
+// FindYearlyTopupAmountsByCardNumber mocks base method.
+func (m *MockTopupServiceServer) FindYearlyTopupAmountsByCardNumber(arg0 context.Context, arg1 *pb.FindYearTopupCardNumber) (*pb.ApiResponseTopupYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTopupAmountsByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupAmountsByCardNumber indicates an expected call of FindYearlyTopupAmountsByCardNumber.
+func (mr *MockTopupServiceServerMockRecorder) FindYearlyTopupAmountsByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupAmountsByCardNumber", reflect.TypeOf((*MockTopupServiceServer)(nil).FindYearlyTopupAmountsByCardNumber), arg0, arg1)
+}
+
+// FindYearlyTopupMethods mocks base method.
+func (m *MockTopupServiceServer) FindYearlyTopupMethods(arg0 context.Context, arg1 *pb.FindYearTopupStatus) (*pb.ApiResponseTopupYearMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTopupMethods", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupMethods indicates an expected call of FindYearlyTopupMethods.
+func (mr *MockTopupServiceServerMockRecorder) FindYearlyTopupMethods(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupMethods", reflect.TypeOf((*MockTopupServiceServer)(nil).FindYearlyTopupMethods), arg0, arg1)
+}
+
+// FindYearlyTopupMethodsByCardNumber mocks base method.
+func (m *MockTopupServiceServer) FindYearlyTopupMethodsByCardNumber(arg0 context.Context, arg1 *pb.FindYearTopupCardNumber) (*pb.ApiResponseTopupYearMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTopupMethodsByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupMethodsByCardNumber indicates an expected call of FindYearlyTopupMethodsByCardNumber.
+func (mr *MockTopupServiceServerMockRecorder) FindYearlyTopupMethodsByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupMethodsByCardNumber", reflect.TypeOf((*MockTopupServiceServer)(nil).FindYearlyTopupMethodsByCardNumber), arg0, arg1)
+}
+
+// FindYearlyTopupStatusFailed mocks base method.
+func (m *MockTopupServiceServer) FindYearlyTopupStatusFailed(arg0 context.Context, arg1 *pb.FindYearTopupStatus) (*pb.ApiResponseTopupYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTopupStatusFailed", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupStatusFailed indicates an expected call of FindYearlyTopupStatusFailed.
+func (mr *MockTopupServiceServerMockRecorder) FindYearlyTopupStatusFailed(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupStatusFailed", reflect.TypeOf((*MockTopupServiceServer)(nil).FindYearlyTopupStatusFailed), arg0, arg1)
+}
+
+// FindYearlyTopupStatusFailedByCardNumber mocks base method.
+func (m *MockTopupServiceServer) FindYearlyTopupStatusFailedByCardNumber(arg0 context.Context, arg1 *pb.FindYearTopupStatusCardNumber) (*pb.ApiResponseTopupYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTopupStatusFailedByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupStatusFailedByCardNumber indicates an expected call of FindYearlyTopupStatusFailedByCardNumber.
+func (mr *MockTopupServiceServerMockRecorder) FindYearlyTopupStatusFailedByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupStatusFailedByCardNumber", reflect.TypeOf((*MockTopupServiceServer)(nil).FindYearlyTopupStatusFailedByCardNumber), arg0, arg1)
+}
+
+// FindYearlyTopupStatusSuccess mocks base method.
+func (m *MockTopupServiceServer) FindYearlyTopupStatusSuccess(arg0 context.Context, arg1 *pb.FindYearTopupStatus) (*pb.ApiResponseTopupYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTopupStatusSuccess", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupStatusSuccess indicates an expected call of FindYearlyTopupStatusSuccess.
+func (mr *MockTopupServiceServerMockRecorder) FindYearlyTopupStatusSuccess(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupStatusSuccess", reflect.TypeOf((*MockTopupServiceServer)(nil).FindYearlyTopupStatusSuccess), arg0, arg1)
+}
+
+// FindYearlyTopupStatusSuccessByCardNumber mocks base method.
+func (m *MockTopupServiceServer) FindYearlyTopupStatusSuccessByCardNumber(arg0 context.Context, arg1 *pb.FindYearTopupStatusCardNumber) (*pb.ApiResponseTopupYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTopupStatusSuccessByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTopupStatusSuccessByCardNumber indicates an expected call of FindYearlyTopupStatusSuccessByCardNumber.
+func (mr *MockTopupServiceServerMockRecorder) FindYearlyTopupStatusSuccessByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTopupStatusSuccessByCardNumber", reflect.TypeOf((*MockTopupServiceServer)(nil).FindYearlyTopupStatusSuccessByCardNumber), arg0, arg1)
+}
+
 // RestoreAllTopup mocks base method.
 func (m *MockTopupServiceServer) RestoreAllTopup(arg0 context.Context, arg1 *emptypb.Empty) (*pb.ApiResponseTopupAll, error) {
 	m.ctrl.T.Helper()
@@ -458,10 +1053,10 @@ func (mr *MockTopupServiceServerMockRecorder) RestoreTopup(arg0, arg1 any) *gomo
 }
 
 // TrashedTopup mocks base method.
-func (m *MockTopupServiceServer) TrashedTopup(arg0 context.Context, arg1 *pb.FindByIdTopupRequest) (*pb.ApiResponseTopup, error) {
+func (m *MockTopupServiceServer) TrashedTopup(arg0 context.Context, arg1 *pb.FindByIdTopupRequest) (*pb.ApiResponseTopupDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TrashedTopup", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseTopup)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -473,10 +1068,10 @@ func (mr *MockTopupServiceServerMockRecorder) TrashedTopup(arg0, arg1 any) *gomo
 }
 
 // UpdateTopup mocks base method.
-func (m *MockTopupServiceServer) UpdateTopup(arg0 context.Context, arg1 *pb.UpdateTopupRequest) (*pb.ApiResponseTopup, error) {
+func (m *MockTopupServiceServer) UpdateTopup(arg0 context.Context, arg1 *pb.UpdateTopupRequest) (*pb.ApiResponseTopupDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateTopup", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseTopup)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

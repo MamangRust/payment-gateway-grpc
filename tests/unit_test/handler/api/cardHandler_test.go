@@ -4,6 +4,7 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	"MamangRust/paymentgatewaygrpc/internal/handler/api"
+	mock_apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api/mocks"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
 	mock_pb "MamangRust/paymentgatewaygrpc/internal/pb/mocks"
 	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
@@ -33,6 +34,7 @@ func TestFindAllCard_Success(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	mockCards := &pb.ApiResponsePaginationCard{
 		Status:  "success",
@@ -60,7 +62,7 @@ func TestFindAllCard_Success(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindAll(c)
 	assert.NoError(t, err)
@@ -80,6 +82,7 @@ func TestFindAllCard_Failure(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	e := echo.New()
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -99,7 +102,7 @@ func TestFindAllCard_Failure(t *testing.T) {
 
 	mockCardClient.EXPECT().FindAllCard(gomock.Any(), gomock.Any()).Return(nil, echo.ErrUnauthorized).Times(1)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindAll(c)
 
@@ -119,6 +122,7 @@ func TestFindAllCard_Empty(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	mockCards := &pb.ApiResponsePaginationCard{
 		Status:  "success",
@@ -143,7 +147,7 @@ func TestFindAllCard_Empty(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindAll(c)
 	assert.NoError(t, err)
@@ -162,6 +166,7 @@ func TestFindByIdCard_Success(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	cardID := 1
 
@@ -194,7 +199,7 @@ func TestFindByIdCard_Success(t *testing.T) {
 
 	mockCardClient.EXPECT().FindByIdCard(gomock.Any(), &pb.FindByIdCardRequest{CardId: int32(cardID)}).Return(mockResponse, nil).Times(1)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindById(c)
 
@@ -222,6 +227,7 @@ func TestFindByIdCard_Failure(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	cardID := 1
 
@@ -248,7 +254,7 @@ func TestFindByIdCard_Failure(t *testing.T) {
 
 	mockCardClient.EXPECT().FindByIdCard(gomock.Any(), &pb.FindByIdCardRequest{CardId: int32(cardID)}).Return(mockResponse, nil).Times(1)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindById(c)
 
@@ -268,6 +274,7 @@ func TestFindByIdCard_InvalidID(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	e := echo.New()
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -287,7 +294,7 @@ func TestFindByIdCard_InvalidID(t *testing.T) {
 
 	mockLogger.EXPECT().Debug("Invalid card ID", gomock.Any()).Times(1)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindById(c)
 
@@ -306,6 +313,7 @@ func TestFindByUserID_Success(t *testing.T) {
 	defer ctrl.Finish()
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	userID := int32(42)
 	token := "mocked_token_string"
@@ -344,7 +352,7 @@ func TestFindByUserID_Success(t *testing.T) {
 
 	c.Set("user_id", userID)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 	err := handler.FindByUserID(c)
 
 	assert.NoError(t, err)
@@ -369,6 +377,7 @@ func TestFindByUserID_Failure_InvalidUserIDType(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	invalidUserID := "not_a_number"
 
@@ -379,7 +388,7 @@ func TestFindByUserID_Failure_InvalidUserIDType(t *testing.T) {
 
 	c.Set("user_id", invalidUserID)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindByUserID(c)
 
@@ -402,6 +411,7 @@ func TestFindByUserID_Failure_CardFetchError(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	userID := int32(42)
 	token := "mocked_token_string"
@@ -423,7 +433,7 @@ func TestFindByUserID_Failure_CardFetchError(t *testing.T) {
 
 	c.Set("user_id", userID)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindByUserID(c)
 
@@ -446,6 +456,7 @@ func TestFindByActive_Success(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	expectedCard := []*pb.CardResponseDeleteAt{
 		{
@@ -479,7 +490,7 @@ func TestFindByActive_Success(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindByActive(c)
 
@@ -501,6 +512,7 @@ func TestFindByActive_Empty(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	mockResponse := &pb.ApiResponsePaginationCardDeleteAt{
 		Status:  "success",
@@ -529,7 +541,7 @@ func TestFindByActive_Empty(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindByActive(c)
 
@@ -550,6 +562,7 @@ func TestFindByActive_Failure(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	mockLogger.EXPECT().Debug("Failed to fetch card record", gomock.Any()).Times(1)
 
@@ -568,7 +581,7 @@ func TestFindByActive_Failure(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindByActive(c)
 
@@ -591,6 +604,7 @@ func TestFindByTrashed_Success(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	expectedCard := []*pb.CardResponseDeleteAt{
 		{
@@ -623,7 +637,7 @@ func TestFindByTrashed_Success(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindByTrashed(c)
 
@@ -645,6 +659,7 @@ func TestFindByTrashed_Empty(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	request := &pb.FindAllCardRequest{
 		Search:   "",
@@ -667,7 +682,7 @@ func TestFindByTrashed_Empty(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindByTrashed(c)
 
@@ -688,6 +703,7 @@ func TestFindByTrashed_Failed(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	mockLogger.EXPECT().Debug("Failed to fetch card record", gomock.Any()).Times(1)
 
@@ -700,7 +716,7 @@ func TestFindByTrashed_Failed(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindByTrashed(c)
 
@@ -724,6 +740,7 @@ func TestFindByCardNumber_Success(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	cardNumber := "1234567890123456"
 
@@ -747,7 +764,7 @@ func TestFindByCardNumber_Success(t *testing.T) {
 
 	mockCardClient.EXPECT().FindByCardNumber(gomock.Any(), &pb.FindByCardNumberRequest{CardNumber: cardNumber}).Return(mockResponse, nil).Times(1)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindByCardNumber(c)
 
@@ -775,6 +792,7 @@ func TestFindByCardNumberCard_Failure(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	cardNumber := "1234567890123456"
 
@@ -791,7 +809,7 @@ func TestFindByCardNumberCard_Failure(t *testing.T) {
 
 	mockLogger.EXPECT().Debug("Failed to fetch card record", gomock.Any()).Times(1)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.FindByCardNumber(c)
 
@@ -816,6 +834,7 @@ func TestCreateCard_Success(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	body := requests.CreateCardRequest{
 		UserID:       1,
@@ -858,7 +877,7 @@ func TestCreateCard_Success(t *testing.T) {
 		Return(mockResponse, nil).
 		Times(1)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.CreateCard(c)
 	assert.NoError(t, err)
@@ -879,6 +898,7 @@ func TestCreateCard_ValidationError(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	body := requests.CreateCardRequest{
 		UserID:       0,
@@ -899,7 +919,7 @@ func TestCreateCard_ValidationError(t *testing.T) {
 		Debug("Validation Error: ", gomock.Any()).
 		Times(1)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.CreateCard(c)
 
@@ -924,6 +944,7 @@ func TestCreateCard_Failure(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	body := requests.CreateCardRequest{
 		UserID:       1,
@@ -947,7 +968,7 @@ func TestCreateCard_Failure(t *testing.T) {
 
 	mockLogger.EXPECT().Debug("Failed to create card", gomock.Any()).Times(1)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.CreateCard(c)
 	assert.NoError(t, err)
@@ -967,6 +988,7 @@ func TestUpdateCard_Success(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	body := requests.UpdateCardRequest{
 		CardID:       1,
@@ -1016,7 +1038,7 @@ func TestUpdateCard_Success(t *testing.T) {
 		Return(mockResponse, nil).
 		Times(1)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.UpdateCard(c)
 	assert.NoError(t, err)
@@ -1037,6 +1059,7 @@ func TestUpdateCard_Failure(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	body := requests.UpdateCardRequest{
 		CardID:       1,
@@ -1065,7 +1088,7 @@ func TestUpdateCard_Failure(t *testing.T) {
 		Return(nil, errors.New("internal server error")).
 		Times(1)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.UpdateCard(c)
 	assert.NoError(t, err)
@@ -1084,6 +1107,7 @@ func TestUpdateCard_ValidationError(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	body := requests.UpdateCardRequest{
 		CardType: "",
@@ -1102,7 +1126,7 @@ func TestUpdateCard_ValidationError(t *testing.T) {
 
 	mockLogger.EXPECT().Debug(gomock.Any()).Times(1)
 
-	handler := api.NewHandlerCard(nil, e, mockLogger)
+	handler := api.NewHandlerCard(nil, e, mockLogger, mockMapper)
 
 	err := handler.UpdateCard(c)
 	assert.NoError(t, err)
@@ -1122,6 +1146,7 @@ func TestTrashedCard_Success(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	cardID := 1
 
@@ -1151,7 +1176,7 @@ func TestTrashedCard_Success(t *testing.T) {
 		Return(expectedResponse, nil).
 		Times(1)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.TrashedCard(c)
 	assert.NoError(t, err)
@@ -1173,6 +1198,7 @@ func TestTrashedCard_Failure(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	cardID := 1
 
@@ -1192,7 +1218,7 @@ func TestTrashedCard_Failure(t *testing.T) {
 	c.SetParamNames("id")
 	c.SetParamValues(fmt.Sprintf("%d", cardID))
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.TrashedCard(c)
 	assert.NoError(t, err)
@@ -1211,6 +1237,8 @@ func TestTrashedCard_InvalidID(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
+
 	mockLogger.EXPECT().Debug("Bad Request: Invalid ID", gomock.Any()).Times(1)
 
 	e := echo.New()
@@ -1220,7 +1248,7 @@ func TestTrashedCard_InvalidID(t *testing.T) {
 	c.SetParamNames("id")
 	c.SetParamValues("abc")
 
-	handler := api.NewHandlerCard(nil, e, mockLogger)
+	handler := api.NewHandlerCard(nil, e, mockLogger, mockMapper)
 
 	err := handler.TrashedCard(c)
 	assert.NoError(t, err)
@@ -1240,6 +1268,7 @@ func TestRestoreCard_Success(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	cardID := 1
 
@@ -1269,7 +1298,7 @@ func TestRestoreCard_Success(t *testing.T) {
 		Return(expectedResponse, nil).
 		Times(1)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.RestoreCard(c)
 	assert.NoError(t, err)
@@ -1291,6 +1320,7 @@ func TestRestoreCard_Failure(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	cardID := 1
 
@@ -1310,7 +1340,7 @@ func TestRestoreCard_Failure(t *testing.T) {
 	c.SetParamNames("id")
 	c.SetParamValues(fmt.Sprintf("%d", cardID))
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.RestoreCard(c)
 	assert.NoError(t, err)
@@ -1338,7 +1368,7 @@ func TestRestoreCard_InvalidID(t *testing.T) {
 	c.SetParamNames("id")
 	c.SetParamValues("abc")
 
-	handler := api.NewHandlerCard(nil, e, mockLogger)
+	handler := api.NewHandlerCard(nil, e, mockLogger, nil)
 
 	err := handler.RestoreCard(c)
 	assert.NoError(t, err)
@@ -1358,6 +1388,7 @@ func TestDeleteCardPermanent_Success(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	cardID := 1
 
@@ -1380,7 +1411,7 @@ func TestDeleteCardPermanent_Success(t *testing.T) {
 		Return(expectedResponse, nil).
 		Times(1)
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.DeleteCardPermanent(c)
 	assert.NoError(t, err)
@@ -1401,6 +1432,7 @@ func TestDeleteCardPermanent_Failure(t *testing.T) {
 
 	mockCardClient := mock_pb.NewMockCardServiceClient(ctrl)
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
 
 	cardID := 1
 
@@ -1420,7 +1452,7 @@ func TestDeleteCardPermanent_Failure(t *testing.T) {
 	c.SetParamNames("id")
 	c.SetParamValues(fmt.Sprintf("%d", cardID))
 
-	handler := api.NewHandlerCard(mockCardClient, e, mockLogger)
+	handler := api.NewHandlerCard(mockCardClient, e, mockLogger, mockMapper)
 
 	err := handler.DeleteCardPermanent(c)
 	assert.NoError(t, err)
@@ -1439,6 +1471,8 @@ func TestDeleteCardPermanent_InvalidID(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	mockMapper := mock_apimapper.NewMockCardResponseMapper(ctrl)
+
 	mockLogger.EXPECT().Debug("Bad Request: Invalid ID", gomock.Any()).Times(1)
 
 	e := echo.New()
@@ -1448,7 +1482,7 @@ func TestDeleteCardPermanent_InvalidID(t *testing.T) {
 	c.SetParamNames("id")
 	c.SetParamValues("abc")
 
-	handler := api.NewHandlerCard(nil, e, mockLogger)
+	handler := api.NewHandlerCard(nil, e, mockLogger, mockMapper)
 
 	err := handler.DeleteCardPermanent(c)
 	assert.NoError(t, err)

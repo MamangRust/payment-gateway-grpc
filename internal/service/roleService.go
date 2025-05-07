@@ -5,8 +5,8 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/service"
 	"MamangRust/paymentgatewaygrpc/internal/repository"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/role_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
-	"net/http"
 
 	"go.uber.org/zap"
 )
@@ -50,11 +50,7 @@ func (s *roleService) FindAll(req *requests.FindAllRoles) ([]*response.RoleRespo
 			zap.Int("page_size", req.PageSize),
 			zap.String("search", req.Search))
 
-		return nil, nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve role list",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, nil, role_errors.ErrFailedFindAll
 	}
 
 	s.logger.Debug("Successfully fetched role",
@@ -77,11 +73,7 @@ func (s *roleService) FindById(id int) (*response.RoleResponse, *response.ErrorR
 			zap.Int("role_id", id),
 			zap.Error(err))
 
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve role details",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, role_errors.ErrRoleNotFoundRes
 	}
 
 	s.logger.Debug("Successfully fetched role", zap.Int("id", id))
@@ -101,11 +93,7 @@ func (s *roleService) FindByUserId(id int) ([]*response.RoleResponse, *response.
 			zap.Int("user_id", id),
 			zap.Error(err))
 
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve user role",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, role_errors.ErrRoleNotFoundRes
 	}
 
 	s.logger.Debug("Successfully fetched role by user ID", zap.Int("id", id))
@@ -141,11 +129,7 @@ func (s *roleService) FindByActiveRole(req *requests.FindAllRoles) ([]*response.
 			zap.Int("page_size", pageSize),
 			zap.String("search", search))
 
-		return nil, nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve active roles",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, nil, role_errors.ErrFailedFindActive
 	}
 
 	s.logger.Debug("Successfully fetched active role",
@@ -178,16 +162,13 @@ func (s *roleService) FindByTrashedRole(req *requests.FindAllRoles) ([]*response
 	res, totalRecords, err := s.roleRepository.FindByTrashedRole(req)
 
 	if err != nil {
-		s.logger.Error("Failed to retrieve trashed roles",
+		s.logger.Error("Failed to fetch trashed role",
 			zap.Error(err),
 			zap.Int("page", page),
-			zap.Int("page_size", pageSize),
+			zap.Int("pageSize", pageSize),
 			zap.String("search", search))
-		return nil, nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve trashed roles",
-			Code:    http.StatusInternalServerError,
-		}
+
+		return nil, nil, role_errors.ErrFailedFindTrashed
 	}
 
 	s.logger.Debug("Successfully fetched trashed role",
@@ -211,11 +192,7 @@ func (s *roleService) CreateRole(request *requests.CreateRoleRequest) (*response
 		s.logger.Error("Failed to create new role record",
 			zap.String("role_name", request.Name),
 			zap.Error(err))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to create new role",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, role_errors.ErrFailedCreateRole
 	}
 
 	so := s.mapping.ToRoleResponse(role)
@@ -241,11 +218,7 @@ func (s *roleService) UpdateRole(request *requests.UpdateRoleRequest) (*response
 			zap.String("new_name", request.Name),
 			zap.Error(err))
 
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to update role",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, role_errors.ErrFailedUpdateRole
 	}
 
 	so := s.mapping.ToRoleResponse(role)
@@ -270,11 +243,7 @@ func (s *roleService) TrashedRole(id int) (*response.RoleResponse, *response.Err
 			zap.Int("role_id", id),
 			zap.Error(err))
 
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to move role to trash",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, role_errors.ErrFailedTrashedRole
 	}
 
 	so := s.mapping.ToRoleResponse(role)
@@ -298,11 +267,7 @@ func (s *roleService) RestoreRole(id int) (*response.RoleResponse, *response.Err
 			zap.Int("role_id", id),
 			zap.Error(err))
 
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to restore role from trash",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, role_errors.ErrFailedRestoreRole
 	}
 
 	so := s.mapping.ToRoleResponse(role)
@@ -325,11 +290,7 @@ func (s *roleService) DeleteRolePermanent(id int) (bool, *response.ErrorResponse
 			zap.Int("role_id", id),
 			zap.Error(err))
 
-		return false, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently delete role",
-			Code:    http.StatusInternalServerError,
-		}
+		return false, role_errors.ErrFailedDeletePermanent
 	}
 
 	s.logger.Debug("DeleteRolePermanent process completed",
@@ -346,11 +307,7 @@ func (s *roleService) RestoreAllRole() (bool, *response.ErrorResponse) {
 	if err != nil {
 		s.logger.Error("Failed to restore all trashed roles",
 			zap.Error(err))
-		return false, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to restore all roles",
-			Code:    http.StatusInternalServerError,
-		}
+		return false, role_errors.ErrFailedRestoreAll
 	}
 
 	s.logger.Debug("Successfully restored all roles")
@@ -365,11 +322,7 @@ func (s *roleService) DeleteAllRolePermanent() (bool, *response.ErrorResponse) {
 	if err != nil {
 		s.logger.Error("Failed to permanently delete all trashed roles",
 			zap.Error(err))
-		return false, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently delete all roles",
-			Code:    http.StatusInternalServerError,
-		}
+		return false, role_errors.ErrFailedDeletePermanent
 	}
 
 	s.logger.Debug("Successfully deleted all roles permanently")

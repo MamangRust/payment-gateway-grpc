@@ -371,7 +371,7 @@ func (x *UserResponse) GetUpdatedAt() string {
 	return ""
 }
 
-type UserResponseWithDeleteAt struct {
+type UserResponseDeleteAt struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Id            int32                   `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Firstname     string                  `protobuf:"bytes,2,opt,name=firstname,proto3" json:"firstname,omitempty"`
@@ -384,20 +384,20 @@ type UserResponseWithDeleteAt struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UserResponseWithDeleteAt) Reset() {
-	*x = UserResponseWithDeleteAt{}
+func (x *UserResponseDeleteAt) Reset() {
+	*x = UserResponseDeleteAt{}
 	mi := &file_user_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UserResponseWithDeleteAt) String() string {
+func (x *UserResponseDeleteAt) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UserResponseWithDeleteAt) ProtoMessage() {}
+func (*UserResponseDeleteAt) ProtoMessage() {}
 
-func (x *UserResponseWithDeleteAt) ProtoReflect() protoreflect.Message {
+func (x *UserResponseDeleteAt) ProtoReflect() protoreflect.Message {
 	mi := &file_user_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -409,54 +409,54 @@ func (x *UserResponseWithDeleteAt) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UserResponseWithDeleteAt.ProtoReflect.Descriptor instead.
-func (*UserResponseWithDeleteAt) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserResponseDeleteAt.ProtoReflect.Descriptor instead.
+func (*UserResponseDeleteAt) Descriptor() ([]byte, []int) {
 	return file_user_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *UserResponseWithDeleteAt) GetId() int32 {
+func (x *UserResponseDeleteAt) GetId() int32 {
 	if x != nil {
 		return x.Id
 	}
 	return 0
 }
 
-func (x *UserResponseWithDeleteAt) GetFirstname() string {
+func (x *UserResponseDeleteAt) GetFirstname() string {
 	if x != nil {
 		return x.Firstname
 	}
 	return ""
 }
 
-func (x *UserResponseWithDeleteAt) GetLastname() string {
+func (x *UserResponseDeleteAt) GetLastname() string {
 	if x != nil {
 		return x.Lastname
 	}
 	return ""
 }
 
-func (x *UserResponseWithDeleteAt) GetEmail() string {
+func (x *UserResponseDeleteAt) GetEmail() string {
 	if x != nil {
 		return x.Email
 	}
 	return ""
 }
 
-func (x *UserResponseWithDeleteAt) GetCreatedAt() string {
+func (x *UserResponseDeleteAt) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
 	}
 	return ""
 }
 
-func (x *UserResponseWithDeleteAt) GetUpdatedAt() string {
+func (x *UserResponseDeleteAt) GetUpdatedAt() string {
 	if x != nil {
 		return x.UpdatedAt
 	}
 	return ""
 }
 
-func (x *UserResponseWithDeleteAt) GetDeletedAt() *wrapperspb.StringValue {
+func (x *UserResponseDeleteAt) GetDeletedAt() *wrapperspb.StringValue {
 	if x != nil {
 		return x.DeletedAt
 	}
@@ -523,6 +523,66 @@ func (x *ApiResponseUser) GetData() *UserResponse {
 	return nil
 }
 
+type ApiResponseUserDeleteAt struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Data          *UserResponseDeleteAt  `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApiResponseUserDeleteAt) Reset() {
+	*x = ApiResponseUserDeleteAt{}
+	mi := &file_user_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApiResponseUserDeleteAt) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApiResponseUserDeleteAt) ProtoMessage() {}
+
+func (x *ApiResponseUserDeleteAt) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApiResponseUserDeleteAt.ProtoReflect.Descriptor instead.
+func (*ApiResponseUserDeleteAt) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ApiResponseUserDeleteAt) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ApiResponseUserDeleteAt) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *ApiResponseUserDeleteAt) GetData() *UserResponseDeleteAt {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
 type ApiResponsesUser struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
@@ -534,7 +594,7 @@ type ApiResponsesUser struct {
 
 func (x *ApiResponsesUser) Reset() {
 	*x = ApiResponsesUser{}
-	mi := &file_user_proto_msgTypes[7]
+	mi := &file_user_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -546,7 +606,7 @@ func (x *ApiResponsesUser) String() string {
 func (*ApiResponsesUser) ProtoMessage() {}
 
 func (x *ApiResponsesUser) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[7]
+	mi := &file_user_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -559,7 +619,7 @@ func (x *ApiResponsesUser) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApiResponsesUser.ProtoReflect.Descriptor instead.
 func (*ApiResponsesUser) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{7}
+	return file_user_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ApiResponsesUser) GetStatus() string {
@@ -593,7 +653,7 @@ type ApiResponseUserDelete struct {
 
 func (x *ApiResponseUserDelete) Reset() {
 	*x = ApiResponseUserDelete{}
-	mi := &file_user_proto_msgTypes[8]
+	mi := &file_user_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -605,7 +665,7 @@ func (x *ApiResponseUserDelete) String() string {
 func (*ApiResponseUserDelete) ProtoMessage() {}
 
 func (x *ApiResponseUserDelete) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[8]
+	mi := &file_user_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -618,7 +678,7 @@ func (x *ApiResponseUserDelete) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApiResponseUserDelete.ProtoReflect.Descriptor instead.
 func (*ApiResponseUserDelete) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{8}
+	return file_user_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ApiResponseUserDelete) GetStatus() string {
@@ -645,7 +705,7 @@ type ApiResponseUserAll struct {
 
 func (x *ApiResponseUserAll) Reset() {
 	*x = ApiResponseUserAll{}
-	mi := &file_user_proto_msgTypes[9]
+	mi := &file_user_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -657,7 +717,7 @@ func (x *ApiResponseUserAll) String() string {
 func (*ApiResponseUserAll) ProtoMessage() {}
 
 func (x *ApiResponseUserAll) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[9]
+	mi := &file_user_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -670,7 +730,7 @@ func (x *ApiResponseUserAll) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApiResponseUserAll.ProtoReflect.Descriptor instead.
 func (*ApiResponseUserAll) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{9}
+	return file_user_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ApiResponseUserAll) GetStatus() string {
@@ -688,18 +748,18 @@ func (x *ApiResponseUserAll) GetMessage() string {
 }
 
 type ApiResponsePaginationUserDeleteAt struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	Status        string                      `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	Message       string                      `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	Data          []*UserResponseWithDeleteAt `protobuf:"bytes,3,rep,name=data,proto3" json:"data,omitempty"`
-	Pagination    *PaginationMeta             `protobuf:"bytes,4,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	Status        string                  `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	Message       string                  `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Data          []*UserResponseDeleteAt `protobuf:"bytes,3,rep,name=data,proto3" json:"data,omitempty"`
+	Pagination    *PaginationMeta         `protobuf:"bytes,4,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ApiResponsePaginationUserDeleteAt) Reset() {
 	*x = ApiResponsePaginationUserDeleteAt{}
-	mi := &file_user_proto_msgTypes[10]
+	mi := &file_user_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -711,7 +771,7 @@ func (x *ApiResponsePaginationUserDeleteAt) String() string {
 func (*ApiResponsePaginationUserDeleteAt) ProtoMessage() {}
 
 func (x *ApiResponsePaginationUserDeleteAt) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[10]
+	mi := &file_user_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -724,7 +784,7 @@ func (x *ApiResponsePaginationUserDeleteAt) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ApiResponsePaginationUserDeleteAt.ProtoReflect.Descriptor instead.
 func (*ApiResponsePaginationUserDeleteAt) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{10}
+	return file_user_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ApiResponsePaginationUserDeleteAt) GetStatus() string {
@@ -741,7 +801,7 @@ func (x *ApiResponsePaginationUserDeleteAt) GetMessage() string {
 	return ""
 }
 
-func (x *ApiResponsePaginationUserDeleteAt) GetData() []*UserResponseWithDeleteAt {
+func (x *ApiResponsePaginationUserDeleteAt) GetData() []*UserResponseDeleteAt {
 	if x != nil {
 		return x.Data
 	}
@@ -767,7 +827,7 @@ type ApiResponsePaginationUser struct {
 
 func (x *ApiResponsePaginationUser) Reset() {
 	*x = ApiResponsePaginationUser{}
-	mi := &file_user_proto_msgTypes[11]
+	mi := &file_user_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -779,7 +839,7 @@ func (x *ApiResponsePaginationUser) String() string {
 func (*ApiResponsePaginationUser) ProtoMessage() {}
 
 func (x *ApiResponsePaginationUser) ProtoReflect() protoreflect.Message {
-	mi := &file_user_proto_msgTypes[11]
+	mi := &file_user_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -792,7 +852,7 @@ func (x *ApiResponsePaginationUser) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApiResponsePaginationUser.ProtoReflect.Descriptor instead.
 func (*ApiResponsePaginationUser) Descriptor() ([]byte, []int) {
-	return file_user_proto_rawDescGZIP(), []int{11}
+	return file_user_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ApiResponsePaginationUser) GetStatus() string {
@@ -856,8 +916,8 @@ const file_user_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x05 \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\x06 \x01(\tR\tupdatedAt\"\xf5\x01\n" +
-	"\x18UserResponseWithDeleteAt\x12\x0e\n" +
+	"updated_at\x18\x06 \x01(\tR\tupdatedAt\"\xf1\x01\n" +
+	"\x14UserResponseDeleteAt\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x1c\n" +
 	"\tfirstname\x18\x02 \x01(\tR\tfirstname\x12\x1a\n" +
 	"\blastname\x18\x03 \x01(\tR\blastname\x12\x14\n" +
@@ -871,7 +931,11 @@ const file_user_proto_rawDesc = "" +
 	"\x0fApiResponseUser\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12$\n" +
-	"\x04data\x18\x03 \x01(\v2\x10.pb.UserResponseR\x04data\"j\n" +
+	"\x04data\x18\x03 \x01(\v2\x10.pb.UserResponseR\x04data\"y\n" +
+	"\x17ApiResponseUserDeleteAt\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12,\n" +
+	"\x04data\x18\x03 \x01(\v2\x18.pb.UserResponseDeleteAtR\x04data\"j\n" +
 	"\x10ApiResponsesUser\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12$\n" +
@@ -881,11 +945,11 @@ const file_user_proto_rawDesc = "" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"F\n" +
 	"\x12ApiResponseUserAll\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\"\xbb\x01\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\xb7\x01\n" +
 	"!ApiResponsePaginationUserDeleteAt\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\x120\n" +
-	"\x04data\x18\x03 \x03(\v2\x1c.pb.UserResponseWithDeleteAtR\x04data\x122\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12,\n" +
+	"\x04data\x18\x03 \x03(\v2\x18.pb.UserResponseDeleteAtR\x04data\x122\n" +
 	"\n" +
 	"pagination\x18\x04 \x01(\v2\x12.pb.PaginationMetaR\n" +
 	"pagination\"\xa7\x01\n" +
@@ -895,16 +959,16 @@ const file_user_proto_rawDesc = "" +
 	"\x04data\x18\x03 \x03(\v2\x10.pb.UserResponseR\x04data\x122\n" +
 	"\n" +
 	"pagination\x18\x04 \x01(\v2\x12.pb.PaginationMetaR\n" +
-	"pagination2\xed\x05\n" +
+	"pagination2\xfd\x05\n" +
 	"\vUserService\x12@\n" +
 	"\aFindAll\x12\x16.pb.FindAllUserRequest\x1a\x1d.pb.ApiResponsePaginationUser\x128\n" +
 	"\bFindById\x12\x17.pb.FindByIdUserRequest\x1a\x13.pb.ApiResponseUser\x12O\n" +
 	"\fFindByActive\x12\x16.pb.FindAllUserRequest\x1a%.pb.ApiResponsePaginationUserDeleteAt\"\x00\x12P\n" +
 	"\rFindByTrashed\x12\x16.pb.FindAllUserRequest\x1a%.pb.ApiResponsePaginationUserDeleteAt\"\x00\x124\n" +
 	"\x06Create\x12\x15.pb.CreateUserRequest\x1a\x13.pb.ApiResponseUser\x124\n" +
-	"\x06Update\x12\x15.pb.UpdateUserRequest\x1a\x13.pb.ApiResponseUser\x12;\n" +
-	"\vTrashedUser\x12\x17.pb.FindByIdUserRequest\x1a\x13.pb.ApiResponseUser\x12;\n" +
-	"\vRestoreUser\x12\x17.pb.FindByIdUserRequest\x1a\x13.pb.ApiResponseUser\x12I\n" +
+	"\x06Update\x12\x15.pb.UpdateUserRequest\x1a\x13.pb.ApiResponseUser\x12C\n" +
+	"\vTrashedUser\x12\x17.pb.FindByIdUserRequest\x1a\x1b.pb.ApiResponseUserDeleteAt\x12C\n" +
+	"\vRestoreUser\x12\x17.pb.FindByIdUserRequest\x1a\x1b.pb.ApiResponseUserDeleteAt\x12I\n" +
 	"\x13DeleteUserPermanent\x12\x17.pb.FindByIdUserRequest\x1a\x19.pb.ApiResponseUserDelete\x12B\n" +
 	"\x0eRestoreAllUser\x12\x16.google.protobuf.Empty\x1a\x16.pb.ApiResponseUserAll\"\x00\x12J\n" +
 	"\x16DeleteAllUserPermanent\x12\x16.google.protobuf.Empty\x1a\x16.pb.ApiResponseUserAll\"\x00B+Z)MamangRust/paymentgatewaygrpc/internal/pbb\x06proto3"
@@ -921,59 +985,61 @@ func file_user_proto_rawDescGZIP() []byte {
 	return file_user_proto_rawDescData
 }
 
-var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_user_proto_goTypes = []any{
 	(*FindAllUserRequest)(nil),                // 0: pb.FindAllUserRequest
 	(*FindByIdUserRequest)(nil),               // 1: pb.FindByIdUserRequest
 	(*CreateUserRequest)(nil),                 // 2: pb.CreateUserRequest
 	(*UpdateUserRequest)(nil),                 // 3: pb.UpdateUserRequest
 	(*UserResponse)(nil),                      // 4: pb.UserResponse
-	(*UserResponseWithDeleteAt)(nil),          // 5: pb.UserResponseWithDeleteAt
+	(*UserResponseDeleteAt)(nil),              // 5: pb.UserResponseDeleteAt
 	(*ApiResponseUser)(nil),                   // 6: pb.ApiResponseUser
-	(*ApiResponsesUser)(nil),                  // 7: pb.ApiResponsesUser
-	(*ApiResponseUserDelete)(nil),             // 8: pb.ApiResponseUserDelete
-	(*ApiResponseUserAll)(nil),                // 9: pb.ApiResponseUserAll
-	(*ApiResponsePaginationUserDeleteAt)(nil), // 10: pb.ApiResponsePaginationUserDeleteAt
-	(*ApiResponsePaginationUser)(nil),         // 11: pb.ApiResponsePaginationUser
-	(*wrapperspb.StringValue)(nil),            // 12: google.protobuf.StringValue
-	(*PaginationMeta)(nil),                    // 13: pb.PaginationMeta
-	(*emptypb.Empty)(nil),                     // 14: google.protobuf.Empty
+	(*ApiResponseUserDeleteAt)(nil),           // 7: pb.ApiResponseUserDeleteAt
+	(*ApiResponsesUser)(nil),                  // 8: pb.ApiResponsesUser
+	(*ApiResponseUserDelete)(nil),             // 9: pb.ApiResponseUserDelete
+	(*ApiResponseUserAll)(nil),                // 10: pb.ApiResponseUserAll
+	(*ApiResponsePaginationUserDeleteAt)(nil), // 11: pb.ApiResponsePaginationUserDeleteAt
+	(*ApiResponsePaginationUser)(nil),         // 12: pb.ApiResponsePaginationUser
+	(*wrapperspb.StringValue)(nil),            // 13: google.protobuf.StringValue
+	(*PaginationMeta)(nil),                    // 14: pb.PaginationMeta
+	(*emptypb.Empty)(nil),                     // 15: google.protobuf.Empty
 }
 var file_user_proto_depIdxs = []int32{
-	12, // 0: pb.UserResponseWithDeleteAt.deleted_at:type_name -> google.protobuf.StringValue
+	13, // 0: pb.UserResponseDeleteAt.deleted_at:type_name -> google.protobuf.StringValue
 	4,  // 1: pb.ApiResponseUser.data:type_name -> pb.UserResponse
-	4,  // 2: pb.ApiResponsesUser.data:type_name -> pb.UserResponse
-	5,  // 3: pb.ApiResponsePaginationUserDeleteAt.data:type_name -> pb.UserResponseWithDeleteAt
-	13, // 4: pb.ApiResponsePaginationUserDeleteAt.pagination:type_name -> pb.PaginationMeta
-	4,  // 5: pb.ApiResponsePaginationUser.data:type_name -> pb.UserResponse
-	13, // 6: pb.ApiResponsePaginationUser.pagination:type_name -> pb.PaginationMeta
-	0,  // 7: pb.UserService.FindAll:input_type -> pb.FindAllUserRequest
-	1,  // 8: pb.UserService.FindById:input_type -> pb.FindByIdUserRequest
-	0,  // 9: pb.UserService.FindByActive:input_type -> pb.FindAllUserRequest
-	0,  // 10: pb.UserService.FindByTrashed:input_type -> pb.FindAllUserRequest
-	2,  // 11: pb.UserService.Create:input_type -> pb.CreateUserRequest
-	3,  // 12: pb.UserService.Update:input_type -> pb.UpdateUserRequest
-	1,  // 13: pb.UserService.TrashedUser:input_type -> pb.FindByIdUserRequest
-	1,  // 14: pb.UserService.RestoreUser:input_type -> pb.FindByIdUserRequest
-	1,  // 15: pb.UserService.DeleteUserPermanent:input_type -> pb.FindByIdUserRequest
-	14, // 16: pb.UserService.RestoreAllUser:input_type -> google.protobuf.Empty
-	14, // 17: pb.UserService.DeleteAllUserPermanent:input_type -> google.protobuf.Empty
-	11, // 18: pb.UserService.FindAll:output_type -> pb.ApiResponsePaginationUser
-	6,  // 19: pb.UserService.FindById:output_type -> pb.ApiResponseUser
-	10, // 20: pb.UserService.FindByActive:output_type -> pb.ApiResponsePaginationUserDeleteAt
-	10, // 21: pb.UserService.FindByTrashed:output_type -> pb.ApiResponsePaginationUserDeleteAt
-	6,  // 22: pb.UserService.Create:output_type -> pb.ApiResponseUser
-	6,  // 23: pb.UserService.Update:output_type -> pb.ApiResponseUser
-	6,  // 24: pb.UserService.TrashedUser:output_type -> pb.ApiResponseUser
-	6,  // 25: pb.UserService.RestoreUser:output_type -> pb.ApiResponseUser
-	8,  // 26: pb.UserService.DeleteUserPermanent:output_type -> pb.ApiResponseUserDelete
-	9,  // 27: pb.UserService.RestoreAllUser:output_type -> pb.ApiResponseUserAll
-	9,  // 28: pb.UserService.DeleteAllUserPermanent:output_type -> pb.ApiResponseUserAll
-	18, // [18:29] is the sub-list for method output_type
-	7,  // [7:18] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	5,  // 2: pb.ApiResponseUserDeleteAt.data:type_name -> pb.UserResponseDeleteAt
+	4,  // 3: pb.ApiResponsesUser.data:type_name -> pb.UserResponse
+	5,  // 4: pb.ApiResponsePaginationUserDeleteAt.data:type_name -> pb.UserResponseDeleteAt
+	14, // 5: pb.ApiResponsePaginationUserDeleteAt.pagination:type_name -> pb.PaginationMeta
+	4,  // 6: pb.ApiResponsePaginationUser.data:type_name -> pb.UserResponse
+	14, // 7: pb.ApiResponsePaginationUser.pagination:type_name -> pb.PaginationMeta
+	0,  // 8: pb.UserService.FindAll:input_type -> pb.FindAllUserRequest
+	1,  // 9: pb.UserService.FindById:input_type -> pb.FindByIdUserRequest
+	0,  // 10: pb.UserService.FindByActive:input_type -> pb.FindAllUserRequest
+	0,  // 11: pb.UserService.FindByTrashed:input_type -> pb.FindAllUserRequest
+	2,  // 12: pb.UserService.Create:input_type -> pb.CreateUserRequest
+	3,  // 13: pb.UserService.Update:input_type -> pb.UpdateUserRequest
+	1,  // 14: pb.UserService.TrashedUser:input_type -> pb.FindByIdUserRequest
+	1,  // 15: pb.UserService.RestoreUser:input_type -> pb.FindByIdUserRequest
+	1,  // 16: pb.UserService.DeleteUserPermanent:input_type -> pb.FindByIdUserRequest
+	15, // 17: pb.UserService.RestoreAllUser:input_type -> google.protobuf.Empty
+	15, // 18: pb.UserService.DeleteAllUserPermanent:input_type -> google.protobuf.Empty
+	12, // 19: pb.UserService.FindAll:output_type -> pb.ApiResponsePaginationUser
+	6,  // 20: pb.UserService.FindById:output_type -> pb.ApiResponseUser
+	11, // 21: pb.UserService.FindByActive:output_type -> pb.ApiResponsePaginationUserDeleteAt
+	11, // 22: pb.UserService.FindByTrashed:output_type -> pb.ApiResponsePaginationUserDeleteAt
+	6,  // 23: pb.UserService.Create:output_type -> pb.ApiResponseUser
+	6,  // 24: pb.UserService.Update:output_type -> pb.ApiResponseUser
+	7,  // 25: pb.UserService.TrashedUser:output_type -> pb.ApiResponseUserDeleteAt
+	7,  // 26: pb.UserService.RestoreUser:output_type -> pb.ApiResponseUserDeleteAt
+	9,  // 27: pb.UserService.DeleteUserPermanent:output_type -> pb.ApiResponseUserDelete
+	10, // 28: pb.UserService.RestoreAllUser:output_type -> pb.ApiResponseUserAll
+	10, // 29: pb.UserService.DeleteAllUserPermanent:output_type -> pb.ApiResponseUserAll
+	19, // [19:30] is the sub-list for method output_type
+	8,  // [8:19] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_user_proto_init() }
@@ -988,7 +1054,7 @@ func file_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_proto_rawDesc), len(file_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -123,6 +123,26 @@ func (mr *MockWithdrawServiceClientMockRecorder) FindAllWithdraw(ctx, in any, op
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllWithdraw", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindAllWithdraw), varargs...)
 }
 
+// FindAllWithdrawByCardNumber mocks base method.
+func (m *MockWithdrawServiceClient) FindAllWithdrawByCardNumber(ctx context.Context, in *pb.FindAllWithdrawByCardNumberRequest, opts ...grpc.CallOption) (*pb.ApiResponsePaginationWithdraw, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindAllWithdrawByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationWithdraw)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAllWithdrawByCardNumber indicates an expected call of FindAllWithdrawByCardNumber.
+func (mr *MockWithdrawServiceClientMockRecorder) FindAllWithdrawByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllWithdrawByCardNumber", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindAllWithdrawByCardNumber), varargs...)
+}
+
 // FindByActive mocks base method.
 func (m *MockWithdrawServiceClient) FindByActive(ctx context.Context, in *pb.FindAllWithdrawRequest, opts ...grpc.CallOption) (*pb.ApiResponsePaginationWithdrawDeleteAt, error) {
 	m.ctrl.T.Helper()
@@ -201,6 +221,246 @@ func (mr *MockWithdrawServiceClientMockRecorder) FindByTrashed(ctx, in any, opts
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindByTrashed), varargs...)
+}
+
+// FindMonthlyWithdrawStatusFailed mocks base method.
+func (m *MockWithdrawServiceClient) FindMonthlyWithdrawStatusFailed(ctx context.Context, in *pb.FindMonthlyWithdrawStatus, opts ...grpc.CallOption) (*pb.ApiResponseWithdrawMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyWithdrawStatusFailed", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyWithdrawStatusFailed indicates an expected call of FindMonthlyWithdrawStatusFailed.
+func (mr *MockWithdrawServiceClientMockRecorder) FindMonthlyWithdrawStatusFailed(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyWithdrawStatusFailed", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindMonthlyWithdrawStatusFailed), varargs...)
+}
+
+// FindMonthlyWithdrawStatusFailedCardNumber mocks base method.
+func (m *MockWithdrawServiceClient) FindMonthlyWithdrawStatusFailedCardNumber(ctx context.Context, in *pb.FindMonthlyWithdrawStatusCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseWithdrawMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyWithdrawStatusFailedCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyWithdrawStatusFailedCardNumber indicates an expected call of FindMonthlyWithdrawStatusFailedCardNumber.
+func (mr *MockWithdrawServiceClientMockRecorder) FindMonthlyWithdrawStatusFailedCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyWithdrawStatusFailedCardNumber", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindMonthlyWithdrawStatusFailedCardNumber), varargs...)
+}
+
+// FindMonthlyWithdrawStatusSuccess mocks base method.
+func (m *MockWithdrawServiceClient) FindMonthlyWithdrawStatusSuccess(ctx context.Context, in *pb.FindMonthlyWithdrawStatus, opts ...grpc.CallOption) (*pb.ApiResponseWithdrawMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyWithdrawStatusSuccess", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyWithdrawStatusSuccess indicates an expected call of FindMonthlyWithdrawStatusSuccess.
+func (mr *MockWithdrawServiceClientMockRecorder) FindMonthlyWithdrawStatusSuccess(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyWithdrawStatusSuccess", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindMonthlyWithdrawStatusSuccess), varargs...)
+}
+
+// FindMonthlyWithdrawStatusSuccessCardNumber mocks base method.
+func (m *MockWithdrawServiceClient) FindMonthlyWithdrawStatusSuccessCardNumber(ctx context.Context, in *pb.FindMonthlyWithdrawStatusCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseWithdrawMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyWithdrawStatusSuccessCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyWithdrawStatusSuccessCardNumber indicates an expected call of FindMonthlyWithdrawStatusSuccessCardNumber.
+func (mr *MockWithdrawServiceClientMockRecorder) FindMonthlyWithdrawStatusSuccessCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyWithdrawStatusSuccessCardNumber", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindMonthlyWithdrawStatusSuccessCardNumber), varargs...)
+}
+
+// FindMonthlyWithdraws mocks base method.
+func (m *MockWithdrawServiceClient) FindMonthlyWithdraws(ctx context.Context, in *pb.FindYearWithdrawStatus, opts ...grpc.CallOption) (*pb.ApiResponseWithdrawMonthAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyWithdraws", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyWithdraws indicates an expected call of FindMonthlyWithdraws.
+func (mr *MockWithdrawServiceClientMockRecorder) FindMonthlyWithdraws(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyWithdraws", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindMonthlyWithdraws), varargs...)
+}
+
+// FindMonthlyWithdrawsByCardNumber mocks base method.
+func (m *MockWithdrawServiceClient) FindMonthlyWithdrawsByCardNumber(ctx context.Context, in *pb.FindYearWithdrawCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseWithdrawMonthAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyWithdrawsByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyWithdrawsByCardNumber indicates an expected call of FindMonthlyWithdrawsByCardNumber.
+func (mr *MockWithdrawServiceClientMockRecorder) FindMonthlyWithdrawsByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyWithdrawsByCardNumber", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindMonthlyWithdrawsByCardNumber), varargs...)
+}
+
+// FindYearlyWithdrawStatusFailed mocks base method.
+func (m *MockWithdrawServiceClient) FindYearlyWithdrawStatusFailed(ctx context.Context, in *pb.FindYearWithdrawStatus, opts ...grpc.CallOption) (*pb.ApiResponseWithdrawYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyWithdrawStatusFailed", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyWithdrawStatusFailed indicates an expected call of FindYearlyWithdrawStatusFailed.
+func (mr *MockWithdrawServiceClientMockRecorder) FindYearlyWithdrawStatusFailed(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyWithdrawStatusFailed", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindYearlyWithdrawStatusFailed), varargs...)
+}
+
+// FindYearlyWithdrawStatusFailedCardNumber mocks base method.
+func (m *MockWithdrawServiceClient) FindYearlyWithdrawStatusFailedCardNumber(ctx context.Context, in *pb.FindYearWithdrawStatusCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseWithdrawYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyWithdrawStatusFailedCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyWithdrawStatusFailedCardNumber indicates an expected call of FindYearlyWithdrawStatusFailedCardNumber.
+func (mr *MockWithdrawServiceClientMockRecorder) FindYearlyWithdrawStatusFailedCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyWithdrawStatusFailedCardNumber", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindYearlyWithdrawStatusFailedCardNumber), varargs...)
+}
+
+// FindYearlyWithdrawStatusSuccess mocks base method.
+func (m *MockWithdrawServiceClient) FindYearlyWithdrawStatusSuccess(ctx context.Context, in *pb.FindYearWithdrawStatus, opts ...grpc.CallOption) (*pb.ApiResponseWithdrawYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyWithdrawStatusSuccess", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyWithdrawStatusSuccess indicates an expected call of FindYearlyWithdrawStatusSuccess.
+func (mr *MockWithdrawServiceClientMockRecorder) FindYearlyWithdrawStatusSuccess(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyWithdrawStatusSuccess", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindYearlyWithdrawStatusSuccess), varargs...)
+}
+
+// FindYearlyWithdrawStatusSuccessCardNumber mocks base method.
+func (m *MockWithdrawServiceClient) FindYearlyWithdrawStatusSuccessCardNumber(ctx context.Context, in *pb.FindYearWithdrawStatusCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseWithdrawYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyWithdrawStatusSuccessCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyWithdrawStatusSuccessCardNumber indicates an expected call of FindYearlyWithdrawStatusSuccessCardNumber.
+func (mr *MockWithdrawServiceClientMockRecorder) FindYearlyWithdrawStatusSuccessCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyWithdrawStatusSuccessCardNumber", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindYearlyWithdrawStatusSuccessCardNumber), varargs...)
+}
+
+// FindYearlyWithdraws mocks base method.
+func (m *MockWithdrawServiceClient) FindYearlyWithdraws(ctx context.Context, in *pb.FindYearWithdrawStatus, opts ...grpc.CallOption) (*pb.ApiResponseWithdrawYearAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyWithdraws", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyWithdraws indicates an expected call of FindYearlyWithdraws.
+func (mr *MockWithdrawServiceClientMockRecorder) FindYearlyWithdraws(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyWithdraws", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindYearlyWithdraws), varargs...)
+}
+
+// FindYearlyWithdrawsByCardNumber mocks base method.
+func (m *MockWithdrawServiceClient) FindYearlyWithdrawsByCardNumber(ctx context.Context, in *pb.FindYearWithdrawCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseWithdrawYearAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyWithdrawsByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyWithdrawsByCardNumber indicates an expected call of FindYearlyWithdrawsByCardNumber.
+func (mr *MockWithdrawServiceClientMockRecorder) FindYearlyWithdrawsByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyWithdrawsByCardNumber", reflect.TypeOf((*MockWithdrawServiceClient)(nil).FindYearlyWithdrawsByCardNumber), varargs...)
 }
 
 // RestoreAllWithdraw mocks base method.
@@ -367,6 +627,21 @@ func (mr *MockWithdrawServiceServerMockRecorder) FindAllWithdraw(arg0, arg1 any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllWithdraw", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindAllWithdraw), arg0, arg1)
 }
 
+// FindAllWithdrawByCardNumber mocks base method.
+func (m *MockWithdrawServiceServer) FindAllWithdrawByCardNumber(arg0 context.Context, arg1 *pb.FindAllWithdrawByCardNumberRequest) (*pb.ApiResponsePaginationWithdraw, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAllWithdrawByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationWithdraw)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAllWithdrawByCardNumber indicates an expected call of FindAllWithdrawByCardNumber.
+func (mr *MockWithdrawServiceServerMockRecorder) FindAllWithdrawByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllWithdrawByCardNumber", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindAllWithdrawByCardNumber), arg0, arg1)
+}
+
 // FindByActive mocks base method.
 func (m *MockWithdrawServiceServer) FindByActive(arg0 context.Context, arg1 *pb.FindAllWithdrawRequest) (*pb.ApiResponsePaginationWithdrawDeleteAt, error) {
 	m.ctrl.T.Helper()
@@ -425,6 +700,186 @@ func (m *MockWithdrawServiceServer) FindByTrashed(arg0 context.Context, arg1 *pb
 func (mr *MockWithdrawServiceServerMockRecorder) FindByTrashed(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindByTrashed), arg0, arg1)
+}
+
+// FindMonthlyWithdrawStatusFailed mocks base method.
+func (m *MockWithdrawServiceServer) FindMonthlyWithdrawStatusFailed(arg0 context.Context, arg1 *pb.FindMonthlyWithdrawStatus) (*pb.ApiResponseWithdrawMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyWithdrawStatusFailed", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyWithdrawStatusFailed indicates an expected call of FindMonthlyWithdrawStatusFailed.
+func (mr *MockWithdrawServiceServerMockRecorder) FindMonthlyWithdrawStatusFailed(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyWithdrawStatusFailed", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindMonthlyWithdrawStatusFailed), arg0, arg1)
+}
+
+// FindMonthlyWithdrawStatusFailedCardNumber mocks base method.
+func (m *MockWithdrawServiceServer) FindMonthlyWithdrawStatusFailedCardNumber(arg0 context.Context, arg1 *pb.FindMonthlyWithdrawStatusCardNumber) (*pb.ApiResponseWithdrawMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyWithdrawStatusFailedCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyWithdrawStatusFailedCardNumber indicates an expected call of FindMonthlyWithdrawStatusFailedCardNumber.
+func (mr *MockWithdrawServiceServerMockRecorder) FindMonthlyWithdrawStatusFailedCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyWithdrawStatusFailedCardNumber", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindMonthlyWithdrawStatusFailedCardNumber), arg0, arg1)
+}
+
+// FindMonthlyWithdrawStatusSuccess mocks base method.
+func (m *MockWithdrawServiceServer) FindMonthlyWithdrawStatusSuccess(arg0 context.Context, arg1 *pb.FindMonthlyWithdrawStatus) (*pb.ApiResponseWithdrawMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyWithdrawStatusSuccess", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyWithdrawStatusSuccess indicates an expected call of FindMonthlyWithdrawStatusSuccess.
+func (mr *MockWithdrawServiceServerMockRecorder) FindMonthlyWithdrawStatusSuccess(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyWithdrawStatusSuccess", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindMonthlyWithdrawStatusSuccess), arg0, arg1)
+}
+
+// FindMonthlyWithdrawStatusSuccessCardNumber mocks base method.
+func (m *MockWithdrawServiceServer) FindMonthlyWithdrawStatusSuccessCardNumber(arg0 context.Context, arg1 *pb.FindMonthlyWithdrawStatusCardNumber) (*pb.ApiResponseWithdrawMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyWithdrawStatusSuccessCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyWithdrawStatusSuccessCardNumber indicates an expected call of FindMonthlyWithdrawStatusSuccessCardNumber.
+func (mr *MockWithdrawServiceServerMockRecorder) FindMonthlyWithdrawStatusSuccessCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyWithdrawStatusSuccessCardNumber", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindMonthlyWithdrawStatusSuccessCardNumber), arg0, arg1)
+}
+
+// FindMonthlyWithdraws mocks base method.
+func (m *MockWithdrawServiceServer) FindMonthlyWithdraws(arg0 context.Context, arg1 *pb.FindYearWithdrawStatus) (*pb.ApiResponseWithdrawMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyWithdraws", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyWithdraws indicates an expected call of FindMonthlyWithdraws.
+func (mr *MockWithdrawServiceServerMockRecorder) FindMonthlyWithdraws(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyWithdraws", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindMonthlyWithdraws), arg0, arg1)
+}
+
+// FindMonthlyWithdrawsByCardNumber mocks base method.
+func (m *MockWithdrawServiceServer) FindMonthlyWithdrawsByCardNumber(arg0 context.Context, arg1 *pb.FindYearWithdrawCardNumber) (*pb.ApiResponseWithdrawMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyWithdrawsByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyWithdrawsByCardNumber indicates an expected call of FindMonthlyWithdrawsByCardNumber.
+func (mr *MockWithdrawServiceServerMockRecorder) FindMonthlyWithdrawsByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyWithdrawsByCardNumber", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindMonthlyWithdrawsByCardNumber), arg0, arg1)
+}
+
+// FindYearlyWithdrawStatusFailed mocks base method.
+func (m *MockWithdrawServiceServer) FindYearlyWithdrawStatusFailed(arg0 context.Context, arg1 *pb.FindYearWithdrawStatus) (*pb.ApiResponseWithdrawYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyWithdrawStatusFailed", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyWithdrawStatusFailed indicates an expected call of FindYearlyWithdrawStatusFailed.
+func (mr *MockWithdrawServiceServerMockRecorder) FindYearlyWithdrawStatusFailed(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyWithdrawStatusFailed", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindYearlyWithdrawStatusFailed), arg0, arg1)
+}
+
+// FindYearlyWithdrawStatusFailedCardNumber mocks base method.
+func (m *MockWithdrawServiceServer) FindYearlyWithdrawStatusFailedCardNumber(arg0 context.Context, arg1 *pb.FindYearWithdrawStatusCardNumber) (*pb.ApiResponseWithdrawYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyWithdrawStatusFailedCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyWithdrawStatusFailedCardNumber indicates an expected call of FindYearlyWithdrawStatusFailedCardNumber.
+func (mr *MockWithdrawServiceServerMockRecorder) FindYearlyWithdrawStatusFailedCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyWithdrawStatusFailedCardNumber", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindYearlyWithdrawStatusFailedCardNumber), arg0, arg1)
+}
+
+// FindYearlyWithdrawStatusSuccess mocks base method.
+func (m *MockWithdrawServiceServer) FindYearlyWithdrawStatusSuccess(arg0 context.Context, arg1 *pb.FindYearWithdrawStatus) (*pb.ApiResponseWithdrawYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyWithdrawStatusSuccess", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyWithdrawStatusSuccess indicates an expected call of FindYearlyWithdrawStatusSuccess.
+func (mr *MockWithdrawServiceServerMockRecorder) FindYearlyWithdrawStatusSuccess(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyWithdrawStatusSuccess", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindYearlyWithdrawStatusSuccess), arg0, arg1)
+}
+
+// FindYearlyWithdrawStatusSuccessCardNumber mocks base method.
+func (m *MockWithdrawServiceServer) FindYearlyWithdrawStatusSuccessCardNumber(arg0 context.Context, arg1 *pb.FindYearWithdrawStatusCardNumber) (*pb.ApiResponseWithdrawYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyWithdrawStatusSuccessCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyWithdrawStatusSuccessCardNumber indicates an expected call of FindYearlyWithdrawStatusSuccessCardNumber.
+func (mr *MockWithdrawServiceServerMockRecorder) FindYearlyWithdrawStatusSuccessCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyWithdrawStatusSuccessCardNumber", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindYearlyWithdrawStatusSuccessCardNumber), arg0, arg1)
+}
+
+// FindYearlyWithdraws mocks base method.
+func (m *MockWithdrawServiceServer) FindYearlyWithdraws(arg0 context.Context, arg1 *pb.FindYearWithdrawStatus) (*pb.ApiResponseWithdrawYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyWithdraws", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyWithdraws indicates an expected call of FindYearlyWithdraws.
+func (mr *MockWithdrawServiceServerMockRecorder) FindYearlyWithdraws(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyWithdraws", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindYearlyWithdraws), arg0, arg1)
+}
+
+// FindYearlyWithdrawsByCardNumber mocks base method.
+func (m *MockWithdrawServiceServer) FindYearlyWithdrawsByCardNumber(arg0 context.Context, arg1 *pb.FindYearWithdrawCardNumber) (*pb.ApiResponseWithdrawYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyWithdrawsByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyWithdrawsByCardNumber indicates an expected call of FindYearlyWithdrawsByCardNumber.
+func (mr *MockWithdrawServiceServerMockRecorder) FindYearlyWithdrawsByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyWithdrawsByCardNumber", reflect.TypeOf((*MockWithdrawServiceServer)(nil).FindYearlyWithdrawsByCardNumber), arg0, arg1)
 }
 
 // RestoreAllWithdraw mocks base method.

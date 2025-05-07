@@ -13,7 +13,6 @@ import (
 	record "MamangRust/paymentgatewaygrpc/internal/domain/record"
 	requests "MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	reflect "reflect"
-	time "time"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -88,35 +87,35 @@ func (mr *MockUserRepositoryMockRecorder) DeleteUserPermanent(user_id any) *gomo
 }
 
 // FindAllUsers mocks base method.
-func (m *MockUserRepository) FindAllUsers(search string, page, pageSize int) ([]*record.UserRecord, int, error) {
+func (m *MockUserRepository) FindAllUsers(req *requests.FindAllUsers) ([]*record.UserRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAllUsers", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindAllUsers", req)
 	ret0, _ := ret[0].([]*record.UserRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindAllUsers indicates an expected call of FindAllUsers.
-func (mr *MockUserRepositoryMockRecorder) FindAllUsers(search, page, pageSize any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) FindAllUsers(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllUsers", reflect.TypeOf((*MockUserRepository)(nil).FindAllUsers), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllUsers", reflect.TypeOf((*MockUserRepository)(nil).FindAllUsers), req)
 }
 
 // FindByActive mocks base method.
-func (m *MockUserRepository) FindByActive(search string, page, pageSize int) ([]*record.UserRecord, int, error) {
+func (m *MockUserRepository) FindByActive(req *requests.FindAllUsers) ([]*record.UserRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByActive", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByActive", req)
 	ret0, _ := ret[0].([]*record.UserRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByActive indicates an expected call of FindByActive.
-func (mr *MockUserRepositoryMockRecorder) FindByActive(search, page, pageSize any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) FindByActive(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockUserRepository)(nil).FindByActive), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockUserRepository)(nil).FindByActive), req)
 }
 
 // FindByEmail mocks base method.
@@ -150,19 +149,19 @@ func (mr *MockUserRepositoryMockRecorder) FindById(user_id any) *gomock.Call {
 }
 
 // FindByTrashed mocks base method.
-func (m *MockUserRepository) FindByTrashed(search string, page, pageSize int) ([]*record.UserRecord, int, error) {
+func (m *MockUserRepository) FindByTrashed(req *requests.FindAllUsers) ([]*record.UserRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByTrashed", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByTrashed", req)
 	ret0, _ := ret[0].([]*record.UserRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByTrashed indicates an expected call of FindByTrashed.
-func (mr *MockUserRepositoryMockRecorder) FindByTrashed(search, page, pageSize any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) FindByTrashed(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockUserRepository)(nil).FindByTrashed), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockUserRepository)(nil).FindByTrashed), req)
 }
 
 // RestoreAllUser mocks base method.
@@ -295,35 +294,35 @@ func (mr *MockRoleRepositoryMockRecorder) DeleteRolePermanent(role_id any) *gomo
 }
 
 // FindAllRoles mocks base method.
-func (m *MockRoleRepository) FindAllRoles(page, pageSize int, search string) ([]*record.RoleRecord, int, error) {
+func (m *MockRoleRepository) FindAllRoles(req *requests.FindAllRoles) ([]*record.RoleRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAllRoles", page, pageSize, search)
+	ret := m.ctrl.Call(m, "FindAllRoles", req)
 	ret0, _ := ret[0].([]*record.RoleRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindAllRoles indicates an expected call of FindAllRoles.
-func (mr *MockRoleRepositoryMockRecorder) FindAllRoles(page, pageSize, search any) *gomock.Call {
+func (mr *MockRoleRepositoryMockRecorder) FindAllRoles(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllRoles", reflect.TypeOf((*MockRoleRepository)(nil).FindAllRoles), page, pageSize, search)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllRoles", reflect.TypeOf((*MockRoleRepository)(nil).FindAllRoles), req)
 }
 
 // FindByActiveRole mocks base method.
-func (m *MockRoleRepository) FindByActiveRole(page, pageSize int, search string) ([]*record.RoleRecord, int, error) {
+func (m *MockRoleRepository) FindByActiveRole(req *requests.FindAllRoles) ([]*record.RoleRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByActiveRole", page, pageSize, search)
+	ret := m.ctrl.Call(m, "FindByActiveRole", req)
 	ret0, _ := ret[0].([]*record.RoleRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByActiveRole indicates an expected call of FindByActiveRole.
-func (mr *MockRoleRepositoryMockRecorder) FindByActiveRole(page, pageSize, search any) *gomock.Call {
+func (mr *MockRoleRepositoryMockRecorder) FindByActiveRole(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActiveRole", reflect.TypeOf((*MockRoleRepository)(nil).FindByActiveRole), page, pageSize, search)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActiveRole", reflect.TypeOf((*MockRoleRepository)(nil).FindByActiveRole), req)
 }
 
 // FindById mocks base method.
@@ -357,19 +356,19 @@ func (mr *MockRoleRepositoryMockRecorder) FindByName(name any) *gomock.Call {
 }
 
 // FindByTrashedRole mocks base method.
-func (m *MockRoleRepository) FindByTrashedRole(page, pageSize int, search string) ([]*record.RoleRecord, int, error) {
+func (m *MockRoleRepository) FindByTrashedRole(req *requests.FindAllRoles) ([]*record.RoleRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByTrashedRole", page, pageSize, search)
+	ret := m.ctrl.Call(m, "FindByTrashedRole", req)
 	ret0, _ := ret[0].([]*record.RoleRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByTrashedRole indicates an expected call of FindByTrashedRole.
-func (mr *MockRoleRepositoryMockRecorder) FindByTrashedRole(page, pageSize, search any) *gomock.Call {
+func (mr *MockRoleRepositoryMockRecorder) FindByTrashedRole(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashedRole", reflect.TypeOf((*MockRoleRepository)(nil).FindByTrashedRole), page, pageSize, search)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashedRole", reflect.TypeOf((*MockRoleRepository)(nil).FindByTrashedRole), req)
 }
 
 // FindByUserId mocks base method.
@@ -682,35 +681,35 @@ func (mr *MockCardRepositoryMockRecorder) DeleteCardPermanent(card_id any) *gomo
 }
 
 // FindAllCards mocks base method.
-func (m *MockCardRepository) FindAllCards(search string, page, pageSize int) ([]*record.CardRecord, int, error) {
+func (m *MockCardRepository) FindAllCards(req *requests.FindAllCards) ([]*record.CardRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAllCards", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindAllCards", req)
 	ret0, _ := ret[0].([]*record.CardRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindAllCards indicates an expected call of FindAllCards.
-func (mr *MockCardRepositoryMockRecorder) FindAllCards(search, page, pageSize any) *gomock.Call {
+func (mr *MockCardRepositoryMockRecorder) FindAllCards(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllCards", reflect.TypeOf((*MockCardRepository)(nil).FindAllCards), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllCards", reflect.TypeOf((*MockCardRepository)(nil).FindAllCards), req)
 }
 
 // FindByActive mocks base method.
-func (m *MockCardRepository) FindByActive(search string, page, pageSize int) ([]*record.CardRecord, int, error) {
+func (m *MockCardRepository) FindByActive(req *requests.FindAllCards) ([]*record.CardRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByActive", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByActive", req)
 	ret0, _ := ret[0].([]*record.CardRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByActive indicates an expected call of FindByActive.
-func (mr *MockCardRepositoryMockRecorder) FindByActive(search, page, pageSize any) *gomock.Call {
+func (mr *MockCardRepositoryMockRecorder) FindByActive(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockCardRepository)(nil).FindByActive), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockCardRepository)(nil).FindByActive), req)
 }
 
 // FindById mocks base method.
@@ -729,19 +728,19 @@ func (mr *MockCardRepositoryMockRecorder) FindById(card_id any) *gomock.Call {
 }
 
 // FindByTrashed mocks base method.
-func (m *MockCardRepository) FindByTrashed(search string, page, pageSize int) ([]*record.CardRecord, int, error) {
+func (m *MockCardRepository) FindByTrashed(req *requests.FindAllCards) ([]*record.CardRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByTrashed", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByTrashed", req)
 	ret0, _ := ret[0].([]*record.CardRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByTrashed indicates an expected call of FindByTrashed.
-func (mr *MockCardRepositoryMockRecorder) FindByTrashed(search, page, pageSize any) *gomock.Call {
+func (mr *MockCardRepositoryMockRecorder) FindByTrashed(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockCardRepository)(nil).FindByTrashed), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockCardRepository)(nil).FindByTrashed), req)
 }
 
 // FindCardByCardNumber mocks base method.
@@ -789,6 +788,336 @@ func (mr *MockCardRepositoryMockRecorder) GetMonthlyBalance(year any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyBalance", reflect.TypeOf((*MockCardRepository)(nil).GetMonthlyBalance), year)
 }
 
+// GetMonthlyBalancesByCardNumber mocks base method.
+func (m *MockCardRepository) GetMonthlyBalancesByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardMonthBalance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyBalancesByCardNumber", req)
+	ret0, _ := ret[0].([]*record.CardMonthBalance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyBalancesByCardNumber indicates an expected call of GetMonthlyBalancesByCardNumber.
+func (mr *MockCardRepositoryMockRecorder) GetMonthlyBalancesByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyBalancesByCardNumber", reflect.TypeOf((*MockCardRepository)(nil).GetMonthlyBalancesByCardNumber), req)
+}
+
+// GetMonthlyTopupAmount mocks base method.
+func (m *MockCardRepository) GetMonthlyTopupAmount(year int) ([]*record.CardMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTopupAmount", year)
+	ret0, _ := ret[0].([]*record.CardMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTopupAmount indicates an expected call of GetMonthlyTopupAmount.
+func (mr *MockCardRepositoryMockRecorder) GetMonthlyTopupAmount(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTopupAmount", reflect.TypeOf((*MockCardRepository)(nil).GetMonthlyTopupAmount), year)
+}
+
+// GetMonthlyTopupAmountByCardNumber mocks base method.
+func (m *MockCardRepository) GetMonthlyTopupAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTopupAmountByCardNumber", req)
+	ret0, _ := ret[0].([]*record.CardMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTopupAmountByCardNumber indicates an expected call of GetMonthlyTopupAmountByCardNumber.
+func (mr *MockCardRepositoryMockRecorder) GetMonthlyTopupAmountByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTopupAmountByCardNumber", reflect.TypeOf((*MockCardRepository)(nil).GetMonthlyTopupAmountByCardNumber), req)
+}
+
+// GetMonthlyTransactionAmount mocks base method.
+func (m *MockCardRepository) GetMonthlyTransactionAmount(year int) ([]*record.CardMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTransactionAmount", year)
+	ret0, _ := ret[0].([]*record.CardMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTransactionAmount indicates an expected call of GetMonthlyTransactionAmount.
+func (mr *MockCardRepositoryMockRecorder) GetMonthlyTransactionAmount(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTransactionAmount", reflect.TypeOf((*MockCardRepository)(nil).GetMonthlyTransactionAmount), year)
+}
+
+// GetMonthlyTransactionAmountByCardNumber mocks base method.
+func (m *MockCardRepository) GetMonthlyTransactionAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTransactionAmountByCardNumber", req)
+	ret0, _ := ret[0].([]*record.CardMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTransactionAmountByCardNumber indicates an expected call of GetMonthlyTransactionAmountByCardNumber.
+func (mr *MockCardRepositoryMockRecorder) GetMonthlyTransactionAmountByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTransactionAmountByCardNumber", reflect.TypeOf((*MockCardRepository)(nil).GetMonthlyTransactionAmountByCardNumber), req)
+}
+
+// GetMonthlyTransferAmountByReceiver mocks base method.
+func (m *MockCardRepository) GetMonthlyTransferAmountByReceiver(req *requests.MonthYearCardNumberCard) ([]*record.CardMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTransferAmountByReceiver", req)
+	ret0, _ := ret[0].([]*record.CardMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTransferAmountByReceiver indicates an expected call of GetMonthlyTransferAmountByReceiver.
+func (mr *MockCardRepositoryMockRecorder) GetMonthlyTransferAmountByReceiver(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTransferAmountByReceiver", reflect.TypeOf((*MockCardRepository)(nil).GetMonthlyTransferAmountByReceiver), req)
+}
+
+// GetMonthlyTransferAmountBySender mocks base method.
+func (m *MockCardRepository) GetMonthlyTransferAmountBySender(req *requests.MonthYearCardNumberCard) ([]*record.CardMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTransferAmountBySender", req)
+	ret0, _ := ret[0].([]*record.CardMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTransferAmountBySender indicates an expected call of GetMonthlyTransferAmountBySender.
+func (mr *MockCardRepositoryMockRecorder) GetMonthlyTransferAmountBySender(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTransferAmountBySender", reflect.TypeOf((*MockCardRepository)(nil).GetMonthlyTransferAmountBySender), req)
+}
+
+// GetMonthlyTransferAmountReceiver mocks base method.
+func (m *MockCardRepository) GetMonthlyTransferAmountReceiver(year int) ([]*record.CardMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTransferAmountReceiver", year)
+	ret0, _ := ret[0].([]*record.CardMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTransferAmountReceiver indicates an expected call of GetMonthlyTransferAmountReceiver.
+func (mr *MockCardRepositoryMockRecorder) GetMonthlyTransferAmountReceiver(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTransferAmountReceiver", reflect.TypeOf((*MockCardRepository)(nil).GetMonthlyTransferAmountReceiver), year)
+}
+
+// GetMonthlyTransferAmountSender mocks base method.
+func (m *MockCardRepository) GetMonthlyTransferAmountSender(year int) ([]*record.CardMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTransferAmountSender", year)
+	ret0, _ := ret[0].([]*record.CardMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTransferAmountSender indicates an expected call of GetMonthlyTransferAmountSender.
+func (mr *MockCardRepositoryMockRecorder) GetMonthlyTransferAmountSender(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTransferAmountSender", reflect.TypeOf((*MockCardRepository)(nil).GetMonthlyTransferAmountSender), year)
+}
+
+// GetMonthlyWithdrawAmount mocks base method.
+func (m *MockCardRepository) GetMonthlyWithdrawAmount(year int) ([]*record.CardMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyWithdrawAmount", year)
+	ret0, _ := ret[0].([]*record.CardMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyWithdrawAmount indicates an expected call of GetMonthlyWithdrawAmount.
+func (mr *MockCardRepositoryMockRecorder) GetMonthlyWithdrawAmount(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyWithdrawAmount", reflect.TypeOf((*MockCardRepository)(nil).GetMonthlyWithdrawAmount), year)
+}
+
+// GetMonthlyWithdrawAmountByCardNumber mocks base method.
+func (m *MockCardRepository) GetMonthlyWithdrawAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyWithdrawAmountByCardNumber", req)
+	ret0, _ := ret[0].([]*record.CardMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyWithdrawAmountByCardNumber indicates an expected call of GetMonthlyWithdrawAmountByCardNumber.
+func (mr *MockCardRepositoryMockRecorder) GetMonthlyWithdrawAmountByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyWithdrawAmountByCardNumber", reflect.TypeOf((*MockCardRepository)(nil).GetMonthlyWithdrawAmountByCardNumber), req)
+}
+
+// GetTotalBalanceByCardNumber mocks base method.
+func (m *MockCardRepository) GetTotalBalanceByCardNumber(cardNumber string) (*int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalBalanceByCardNumber", cardNumber)
+	ret0, _ := ret[0].(*int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTotalBalanceByCardNumber indicates an expected call of GetTotalBalanceByCardNumber.
+func (mr *MockCardRepositoryMockRecorder) GetTotalBalanceByCardNumber(cardNumber any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalBalanceByCardNumber", reflect.TypeOf((*MockCardRepository)(nil).GetTotalBalanceByCardNumber), cardNumber)
+}
+
+// GetTotalBalances mocks base method.
+func (m *MockCardRepository) GetTotalBalances() (*int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalBalances")
+	ret0, _ := ret[0].(*int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTotalBalances indicates an expected call of GetTotalBalances.
+func (mr *MockCardRepositoryMockRecorder) GetTotalBalances() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalBalances", reflect.TypeOf((*MockCardRepository)(nil).GetTotalBalances))
+}
+
+// GetTotalTopAmount mocks base method.
+func (m *MockCardRepository) GetTotalTopAmount() (*int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalTopAmount")
+	ret0, _ := ret[0].(*int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTotalTopAmount indicates an expected call of GetTotalTopAmount.
+func (mr *MockCardRepositoryMockRecorder) GetTotalTopAmount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalTopAmount", reflect.TypeOf((*MockCardRepository)(nil).GetTotalTopAmount))
+}
+
+// GetTotalTopupAmountByCardNumber mocks base method.
+func (m *MockCardRepository) GetTotalTopupAmountByCardNumber(cardNumber string) (*int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalTopupAmountByCardNumber", cardNumber)
+	ret0, _ := ret[0].(*int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTotalTopupAmountByCardNumber indicates an expected call of GetTotalTopupAmountByCardNumber.
+func (mr *MockCardRepositoryMockRecorder) GetTotalTopupAmountByCardNumber(cardNumber any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalTopupAmountByCardNumber", reflect.TypeOf((*MockCardRepository)(nil).GetTotalTopupAmountByCardNumber), cardNumber)
+}
+
+// GetTotalTransactionAmount mocks base method.
+func (m *MockCardRepository) GetTotalTransactionAmount() (*int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalTransactionAmount")
+	ret0, _ := ret[0].(*int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTotalTransactionAmount indicates an expected call of GetTotalTransactionAmount.
+func (mr *MockCardRepositoryMockRecorder) GetTotalTransactionAmount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalTransactionAmount", reflect.TypeOf((*MockCardRepository)(nil).GetTotalTransactionAmount))
+}
+
+// GetTotalTransactionAmountByCardNumber mocks base method.
+func (m *MockCardRepository) GetTotalTransactionAmountByCardNumber(cardNumber string) (*int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalTransactionAmountByCardNumber", cardNumber)
+	ret0, _ := ret[0].(*int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTotalTransactionAmountByCardNumber indicates an expected call of GetTotalTransactionAmountByCardNumber.
+func (mr *MockCardRepositoryMockRecorder) GetTotalTransactionAmountByCardNumber(cardNumber any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalTransactionAmountByCardNumber", reflect.TypeOf((*MockCardRepository)(nil).GetTotalTransactionAmountByCardNumber), cardNumber)
+}
+
+// GetTotalTransferAmount mocks base method.
+func (m *MockCardRepository) GetTotalTransferAmount() (*int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalTransferAmount")
+	ret0, _ := ret[0].(*int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTotalTransferAmount indicates an expected call of GetTotalTransferAmount.
+func (mr *MockCardRepositoryMockRecorder) GetTotalTransferAmount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalTransferAmount", reflect.TypeOf((*MockCardRepository)(nil).GetTotalTransferAmount))
+}
+
+// GetTotalTransferAmountByReceiver mocks base method.
+func (m *MockCardRepository) GetTotalTransferAmountByReceiver(receiverCardNumber string) (*int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalTransferAmountByReceiver", receiverCardNumber)
+	ret0, _ := ret[0].(*int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTotalTransferAmountByReceiver indicates an expected call of GetTotalTransferAmountByReceiver.
+func (mr *MockCardRepositoryMockRecorder) GetTotalTransferAmountByReceiver(receiverCardNumber any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalTransferAmountByReceiver", reflect.TypeOf((*MockCardRepository)(nil).GetTotalTransferAmountByReceiver), receiverCardNumber)
+}
+
+// GetTotalTransferAmountBySender mocks base method.
+func (m *MockCardRepository) GetTotalTransferAmountBySender(senderCardNumber string) (*int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalTransferAmountBySender", senderCardNumber)
+	ret0, _ := ret[0].(*int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTotalTransferAmountBySender indicates an expected call of GetTotalTransferAmountBySender.
+func (mr *MockCardRepositoryMockRecorder) GetTotalTransferAmountBySender(senderCardNumber any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalTransferAmountBySender", reflect.TypeOf((*MockCardRepository)(nil).GetTotalTransferAmountBySender), senderCardNumber)
+}
+
+// GetTotalWithdrawAmount mocks base method.
+func (m *MockCardRepository) GetTotalWithdrawAmount() (*int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalWithdrawAmount")
+	ret0, _ := ret[0].(*int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTotalWithdrawAmount indicates an expected call of GetTotalWithdrawAmount.
+func (mr *MockCardRepositoryMockRecorder) GetTotalWithdrawAmount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalWithdrawAmount", reflect.TypeOf((*MockCardRepository)(nil).GetTotalWithdrawAmount))
+}
+
+// GetTotalWithdrawAmountByCardNumber mocks base method.
+func (m *MockCardRepository) GetTotalWithdrawAmountByCardNumber(cardNumber string) (*int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalWithdrawAmountByCardNumber", cardNumber)
+	ret0, _ := ret[0].(*int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTotalWithdrawAmountByCardNumber indicates an expected call of GetTotalWithdrawAmountByCardNumber.
+func (mr *MockCardRepositoryMockRecorder) GetTotalWithdrawAmountByCardNumber(cardNumber any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalWithdrawAmountByCardNumber", reflect.TypeOf((*MockCardRepository)(nil).GetTotalWithdrawAmountByCardNumber), cardNumber)
+}
+
 // GetYearlyBalance mocks base method.
 func (m *MockCardRepository) GetYearlyBalance(year int) ([]*record.CardYearlyBalance, error) {
 	m.ctrl.T.Helper()
@@ -802,6 +1131,171 @@ func (m *MockCardRepository) GetYearlyBalance(year int) ([]*record.CardYearlyBal
 func (mr *MockCardRepositoryMockRecorder) GetYearlyBalance(year any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyBalance", reflect.TypeOf((*MockCardRepository)(nil).GetYearlyBalance), year)
+}
+
+// GetYearlyBalanceByCardNumber mocks base method.
+func (m *MockCardRepository) GetYearlyBalanceByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardYearlyBalance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyBalanceByCardNumber", req)
+	ret0, _ := ret[0].([]*record.CardYearlyBalance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyBalanceByCardNumber indicates an expected call of GetYearlyBalanceByCardNumber.
+func (mr *MockCardRepositoryMockRecorder) GetYearlyBalanceByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyBalanceByCardNumber", reflect.TypeOf((*MockCardRepository)(nil).GetYearlyBalanceByCardNumber), req)
+}
+
+// GetYearlyTopupAmount mocks base method.
+func (m *MockCardRepository) GetYearlyTopupAmount(year int) ([]*record.CardYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTopupAmount", year)
+	ret0, _ := ret[0].([]*record.CardYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTopupAmount indicates an expected call of GetYearlyTopupAmount.
+func (mr *MockCardRepositoryMockRecorder) GetYearlyTopupAmount(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTopupAmount", reflect.TypeOf((*MockCardRepository)(nil).GetYearlyTopupAmount), year)
+}
+
+// GetYearlyTopupAmountByCardNumber mocks base method.
+func (m *MockCardRepository) GetYearlyTopupAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTopupAmountByCardNumber", req)
+	ret0, _ := ret[0].([]*record.CardYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTopupAmountByCardNumber indicates an expected call of GetYearlyTopupAmountByCardNumber.
+func (mr *MockCardRepositoryMockRecorder) GetYearlyTopupAmountByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTopupAmountByCardNumber", reflect.TypeOf((*MockCardRepository)(nil).GetYearlyTopupAmountByCardNumber), req)
+}
+
+// GetYearlyTransactionAmount mocks base method.
+func (m *MockCardRepository) GetYearlyTransactionAmount(year int) ([]*record.CardYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransactionAmount", year)
+	ret0, _ := ret[0].([]*record.CardYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransactionAmount indicates an expected call of GetYearlyTransactionAmount.
+func (mr *MockCardRepositoryMockRecorder) GetYearlyTransactionAmount(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransactionAmount", reflect.TypeOf((*MockCardRepository)(nil).GetYearlyTransactionAmount), year)
+}
+
+// GetYearlyTransactionAmountByCardNumber mocks base method.
+func (m *MockCardRepository) GetYearlyTransactionAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransactionAmountByCardNumber", req)
+	ret0, _ := ret[0].([]*record.CardYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransactionAmountByCardNumber indicates an expected call of GetYearlyTransactionAmountByCardNumber.
+func (mr *MockCardRepositoryMockRecorder) GetYearlyTransactionAmountByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransactionAmountByCardNumber", reflect.TypeOf((*MockCardRepository)(nil).GetYearlyTransactionAmountByCardNumber), req)
+}
+
+// GetYearlyTransferAmountByReceiver mocks base method.
+func (m *MockCardRepository) GetYearlyTransferAmountByReceiver(req *requests.MonthYearCardNumberCard) ([]*record.CardYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransferAmountByReceiver", req)
+	ret0, _ := ret[0].([]*record.CardYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransferAmountByReceiver indicates an expected call of GetYearlyTransferAmountByReceiver.
+func (mr *MockCardRepositoryMockRecorder) GetYearlyTransferAmountByReceiver(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransferAmountByReceiver", reflect.TypeOf((*MockCardRepository)(nil).GetYearlyTransferAmountByReceiver), req)
+}
+
+// GetYearlyTransferAmountBySender mocks base method.
+func (m *MockCardRepository) GetYearlyTransferAmountBySender(req *requests.MonthYearCardNumberCard) ([]*record.CardYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransferAmountBySender", req)
+	ret0, _ := ret[0].([]*record.CardYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransferAmountBySender indicates an expected call of GetYearlyTransferAmountBySender.
+func (mr *MockCardRepositoryMockRecorder) GetYearlyTransferAmountBySender(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransferAmountBySender", reflect.TypeOf((*MockCardRepository)(nil).GetYearlyTransferAmountBySender), req)
+}
+
+// GetYearlyTransferAmountReceiver mocks base method.
+func (m *MockCardRepository) GetYearlyTransferAmountReceiver(year int) ([]*record.CardYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransferAmountReceiver", year)
+	ret0, _ := ret[0].([]*record.CardYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransferAmountReceiver indicates an expected call of GetYearlyTransferAmountReceiver.
+func (mr *MockCardRepositoryMockRecorder) GetYearlyTransferAmountReceiver(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransferAmountReceiver", reflect.TypeOf((*MockCardRepository)(nil).GetYearlyTransferAmountReceiver), year)
+}
+
+// GetYearlyTransferAmountSender mocks base method.
+func (m *MockCardRepository) GetYearlyTransferAmountSender(year int) ([]*record.CardYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransferAmountSender", year)
+	ret0, _ := ret[0].([]*record.CardYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransferAmountSender indicates an expected call of GetYearlyTransferAmountSender.
+func (mr *MockCardRepositoryMockRecorder) GetYearlyTransferAmountSender(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransferAmountSender", reflect.TypeOf((*MockCardRepository)(nil).GetYearlyTransferAmountSender), year)
+}
+
+// GetYearlyWithdrawAmount mocks base method.
+func (m *MockCardRepository) GetYearlyWithdrawAmount(year int) ([]*record.CardYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyWithdrawAmount", year)
+	ret0, _ := ret[0].([]*record.CardYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyWithdrawAmount indicates an expected call of GetYearlyWithdrawAmount.
+func (mr *MockCardRepositoryMockRecorder) GetYearlyWithdrawAmount(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyWithdrawAmount", reflect.TypeOf((*MockCardRepository)(nil).GetYearlyWithdrawAmount), year)
+}
+
+// GetYearlyWithdrawAmountByCardNumber mocks base method.
+func (m *MockCardRepository) GetYearlyWithdrawAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*record.CardYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyWithdrawAmountByCardNumber", req)
+	ret0, _ := ret[0].([]*record.CardYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyWithdrawAmountByCardNumber indicates an expected call of GetYearlyWithdrawAmountByCardNumber.
+func (mr *MockCardRepositoryMockRecorder) GetYearlyWithdrawAmountByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyWithdrawAmountByCardNumber", reflect.TypeOf((*MockCardRepository)(nil).GetYearlyWithdrawAmountByCardNumber), req)
 }
 
 // RestoreAllCard mocks base method.
@@ -934,35 +1428,83 @@ func (mr *MockMerchantRepositoryMockRecorder) DeleteMerchantPermanent(merchant_i
 }
 
 // FindAllMerchants mocks base method.
-func (m *MockMerchantRepository) FindAllMerchants(search string, page, pageSize int) ([]*record.MerchantRecord, int, error) {
+func (m *MockMerchantRepository) FindAllMerchants(req *requests.FindAllMerchants) ([]*record.MerchantRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAllMerchants", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindAllMerchants", req)
 	ret0, _ := ret[0].([]*record.MerchantRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindAllMerchants indicates an expected call of FindAllMerchants.
-func (mr *MockMerchantRepositoryMockRecorder) FindAllMerchants(search, page, pageSize any) *gomock.Call {
+func (mr *MockMerchantRepositoryMockRecorder) FindAllMerchants(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllMerchants", reflect.TypeOf((*MockMerchantRepository)(nil).FindAllMerchants), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllMerchants", reflect.TypeOf((*MockMerchantRepository)(nil).FindAllMerchants), req)
+}
+
+// FindAllTransactions mocks base method.
+func (m *MockMerchantRepository) FindAllTransactions(req *requests.FindAllMerchantTransactions) ([]*record.MerchantTransactionsRecord, *int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAllTransactions", req)
+	ret0, _ := ret[0].([]*record.MerchantTransactionsRecord)
+	ret1, _ := ret[1].(*int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// FindAllTransactions indicates an expected call of FindAllTransactions.
+func (mr *MockMerchantRepositoryMockRecorder) FindAllTransactions(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransactions", reflect.TypeOf((*MockMerchantRepository)(nil).FindAllTransactions), req)
+}
+
+// FindAllTransactionsByApikey mocks base method.
+func (m *MockMerchantRepository) FindAllTransactionsByApikey(req *requests.FindAllMerchantTransactionsByApiKey) ([]*record.MerchantTransactionsRecord, *int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAllTransactionsByApikey", req)
+	ret0, _ := ret[0].([]*record.MerchantTransactionsRecord)
+	ret1, _ := ret[1].(*int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// FindAllTransactionsByApikey indicates an expected call of FindAllTransactionsByApikey.
+func (mr *MockMerchantRepositoryMockRecorder) FindAllTransactionsByApikey(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransactionsByApikey", reflect.TypeOf((*MockMerchantRepository)(nil).FindAllTransactionsByApikey), req)
+}
+
+// FindAllTransactionsByMerchant mocks base method.
+func (m *MockMerchantRepository) FindAllTransactionsByMerchant(req *requests.FindAllMerchantTransactionsById) ([]*record.MerchantTransactionsRecord, *int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAllTransactionsByMerchant", req)
+	ret0, _ := ret[0].([]*record.MerchantTransactionsRecord)
+	ret1, _ := ret[1].(*int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// FindAllTransactionsByMerchant indicates an expected call of FindAllTransactionsByMerchant.
+func (mr *MockMerchantRepositoryMockRecorder) FindAllTransactionsByMerchant(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransactionsByMerchant", reflect.TypeOf((*MockMerchantRepository)(nil).FindAllTransactionsByMerchant), req)
 }
 
 // FindByActive mocks base method.
-func (m *MockMerchantRepository) FindByActive(search string, page, pageSize int) ([]*record.MerchantRecord, int, error) {
+func (m *MockMerchantRepository) FindByActive(req *requests.FindAllMerchants) ([]*record.MerchantRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByActive", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByActive", req)
 	ret0, _ := ret[0].([]*record.MerchantRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByActive indicates an expected call of FindByActive.
-func (mr *MockMerchantRepositoryMockRecorder) FindByActive(search, page, pageSize any) *gomock.Call {
+func (mr *MockMerchantRepositoryMockRecorder) FindByActive(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockMerchantRepository)(nil).FindByActive), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockMerchantRepository)(nil).FindByActive), req)
 }
 
 // FindByApiKey mocks base method.
@@ -1026,19 +1568,289 @@ func (mr *MockMerchantRepositoryMockRecorder) FindByName(name any) *gomock.Call 
 }
 
 // FindByTrashed mocks base method.
-func (m *MockMerchantRepository) FindByTrashed(search string, page, pageSize int) ([]*record.MerchantRecord, int, error) {
+func (m *MockMerchantRepository) FindByTrashed(req *requests.FindAllMerchants) ([]*record.MerchantRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByTrashed", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByTrashed", req)
 	ret0, _ := ret[0].([]*record.MerchantRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByTrashed indicates an expected call of FindByTrashed.
-func (mr *MockMerchantRepositoryMockRecorder) FindByTrashed(search, page, pageSize any) *gomock.Call {
+func (mr *MockMerchantRepositoryMockRecorder) FindByTrashed(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockMerchantRepository)(nil).FindByTrashed), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockMerchantRepository)(nil).FindByTrashed), req)
+}
+
+// GetMonthlyAmountByApikey mocks base method.
+func (m *MockMerchantRepository) GetMonthlyAmountByApikey(req *requests.MonthYearAmountApiKey) ([]*record.MerchantMonthlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyAmountByApikey", req)
+	ret0, _ := ret[0].([]*record.MerchantMonthlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyAmountByApikey indicates an expected call of GetMonthlyAmountByApikey.
+func (mr *MockMerchantRepositoryMockRecorder) GetMonthlyAmountByApikey(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyAmountByApikey", reflect.TypeOf((*MockMerchantRepository)(nil).GetMonthlyAmountByApikey), req)
+}
+
+// GetMonthlyAmountByMerchants mocks base method.
+func (m *MockMerchantRepository) GetMonthlyAmountByMerchants(req *requests.MonthYearAmountMerchant) ([]*record.MerchantMonthlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyAmountByMerchants", req)
+	ret0, _ := ret[0].([]*record.MerchantMonthlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyAmountByMerchants indicates an expected call of GetMonthlyAmountByMerchants.
+func (mr *MockMerchantRepositoryMockRecorder) GetMonthlyAmountByMerchants(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyAmountByMerchants", reflect.TypeOf((*MockMerchantRepository)(nil).GetMonthlyAmountByMerchants), req)
+}
+
+// GetMonthlyAmountMerchant mocks base method.
+func (m *MockMerchantRepository) GetMonthlyAmountMerchant(year int) ([]*record.MerchantMonthlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyAmountMerchant", year)
+	ret0, _ := ret[0].([]*record.MerchantMonthlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyAmountMerchant indicates an expected call of GetMonthlyAmountMerchant.
+func (mr *MockMerchantRepositoryMockRecorder) GetMonthlyAmountMerchant(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyAmountMerchant", reflect.TypeOf((*MockMerchantRepository)(nil).GetMonthlyAmountMerchant), year)
+}
+
+// GetMonthlyPaymentMethodByApikey mocks base method.
+func (m *MockMerchantRepository) GetMonthlyPaymentMethodByApikey(req *requests.MonthYearPaymentMethodApiKey) ([]*record.MerchantMonthlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyPaymentMethodByApikey", req)
+	ret0, _ := ret[0].([]*record.MerchantMonthlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyPaymentMethodByApikey indicates an expected call of GetMonthlyPaymentMethodByApikey.
+func (mr *MockMerchantRepositoryMockRecorder) GetMonthlyPaymentMethodByApikey(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyPaymentMethodByApikey", reflect.TypeOf((*MockMerchantRepository)(nil).GetMonthlyPaymentMethodByApikey), req)
+}
+
+// GetMonthlyPaymentMethodByMerchants mocks base method.
+func (m *MockMerchantRepository) GetMonthlyPaymentMethodByMerchants(req *requests.MonthYearPaymentMethodMerchant) ([]*record.MerchantMonthlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyPaymentMethodByMerchants", req)
+	ret0, _ := ret[0].([]*record.MerchantMonthlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyPaymentMethodByMerchants indicates an expected call of GetMonthlyPaymentMethodByMerchants.
+func (mr *MockMerchantRepositoryMockRecorder) GetMonthlyPaymentMethodByMerchants(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyPaymentMethodByMerchants", reflect.TypeOf((*MockMerchantRepository)(nil).GetMonthlyPaymentMethodByMerchants), req)
+}
+
+// GetMonthlyPaymentMethodsMerchant mocks base method.
+func (m *MockMerchantRepository) GetMonthlyPaymentMethodsMerchant(year int) ([]*record.MerchantMonthlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyPaymentMethodsMerchant", year)
+	ret0, _ := ret[0].([]*record.MerchantMonthlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyPaymentMethodsMerchant indicates an expected call of GetMonthlyPaymentMethodsMerchant.
+func (mr *MockMerchantRepositoryMockRecorder) GetMonthlyPaymentMethodsMerchant(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyPaymentMethodsMerchant", reflect.TypeOf((*MockMerchantRepository)(nil).GetMonthlyPaymentMethodsMerchant), year)
+}
+
+// GetMonthlyTotalAmountByApikey mocks base method.
+func (m *MockMerchantRepository) GetMonthlyTotalAmountByApikey(req *requests.MonthYearTotalAmountApiKey) ([]*record.MerchantMonthlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTotalAmountByApikey", req)
+	ret0, _ := ret[0].([]*record.MerchantMonthlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTotalAmountByApikey indicates an expected call of GetMonthlyTotalAmountByApikey.
+func (mr *MockMerchantRepositoryMockRecorder) GetMonthlyTotalAmountByApikey(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTotalAmountByApikey", reflect.TypeOf((*MockMerchantRepository)(nil).GetMonthlyTotalAmountByApikey), req)
+}
+
+// GetMonthlyTotalAmountByMerchants mocks base method.
+func (m *MockMerchantRepository) GetMonthlyTotalAmountByMerchants(req *requests.MonthYearTotalAmountMerchant) ([]*record.MerchantMonthlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTotalAmountByMerchants", req)
+	ret0, _ := ret[0].([]*record.MerchantMonthlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTotalAmountByMerchants indicates an expected call of GetMonthlyTotalAmountByMerchants.
+func (mr *MockMerchantRepositoryMockRecorder) GetMonthlyTotalAmountByMerchants(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTotalAmountByMerchants", reflect.TypeOf((*MockMerchantRepository)(nil).GetMonthlyTotalAmountByMerchants), req)
+}
+
+// GetMonthlyTotalAmountMerchant mocks base method.
+func (m *MockMerchantRepository) GetMonthlyTotalAmountMerchant(year int) ([]*record.MerchantMonthlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTotalAmountMerchant", year)
+	ret0, _ := ret[0].([]*record.MerchantMonthlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTotalAmountMerchant indicates an expected call of GetMonthlyTotalAmountMerchant.
+func (mr *MockMerchantRepositoryMockRecorder) GetMonthlyTotalAmountMerchant(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTotalAmountMerchant", reflect.TypeOf((*MockMerchantRepository)(nil).GetMonthlyTotalAmountMerchant), year)
+}
+
+// GetYearlyAmountByApikey mocks base method.
+func (m *MockMerchantRepository) GetYearlyAmountByApikey(req *requests.MonthYearAmountApiKey) ([]*record.MerchantYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyAmountByApikey", req)
+	ret0, _ := ret[0].([]*record.MerchantYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyAmountByApikey indicates an expected call of GetYearlyAmountByApikey.
+func (mr *MockMerchantRepositoryMockRecorder) GetYearlyAmountByApikey(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyAmountByApikey", reflect.TypeOf((*MockMerchantRepository)(nil).GetYearlyAmountByApikey), req)
+}
+
+// GetYearlyAmountByMerchants mocks base method.
+func (m *MockMerchantRepository) GetYearlyAmountByMerchants(req *requests.MonthYearAmountMerchant) ([]*record.MerchantYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyAmountByMerchants", req)
+	ret0, _ := ret[0].([]*record.MerchantYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyAmountByMerchants indicates an expected call of GetYearlyAmountByMerchants.
+func (mr *MockMerchantRepositoryMockRecorder) GetYearlyAmountByMerchants(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyAmountByMerchants", reflect.TypeOf((*MockMerchantRepository)(nil).GetYearlyAmountByMerchants), req)
+}
+
+// GetYearlyAmountMerchant mocks base method.
+func (m *MockMerchantRepository) GetYearlyAmountMerchant(year int) ([]*record.MerchantYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyAmountMerchant", year)
+	ret0, _ := ret[0].([]*record.MerchantYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyAmountMerchant indicates an expected call of GetYearlyAmountMerchant.
+func (mr *MockMerchantRepositoryMockRecorder) GetYearlyAmountMerchant(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyAmountMerchant", reflect.TypeOf((*MockMerchantRepository)(nil).GetYearlyAmountMerchant), year)
+}
+
+// GetYearlyPaymentMethodByApikey mocks base method.
+func (m *MockMerchantRepository) GetYearlyPaymentMethodByApikey(req *requests.MonthYearPaymentMethodApiKey) ([]*record.MerchantYearlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyPaymentMethodByApikey", req)
+	ret0, _ := ret[0].([]*record.MerchantYearlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyPaymentMethodByApikey indicates an expected call of GetYearlyPaymentMethodByApikey.
+func (mr *MockMerchantRepositoryMockRecorder) GetYearlyPaymentMethodByApikey(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyPaymentMethodByApikey", reflect.TypeOf((*MockMerchantRepository)(nil).GetYearlyPaymentMethodByApikey), req)
+}
+
+// GetYearlyPaymentMethodByMerchants mocks base method.
+func (m *MockMerchantRepository) GetYearlyPaymentMethodByMerchants(req *requests.MonthYearPaymentMethodMerchant) ([]*record.MerchantYearlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyPaymentMethodByMerchants", req)
+	ret0, _ := ret[0].([]*record.MerchantYearlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyPaymentMethodByMerchants indicates an expected call of GetYearlyPaymentMethodByMerchants.
+func (mr *MockMerchantRepositoryMockRecorder) GetYearlyPaymentMethodByMerchants(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyPaymentMethodByMerchants", reflect.TypeOf((*MockMerchantRepository)(nil).GetYearlyPaymentMethodByMerchants), req)
+}
+
+// GetYearlyPaymentMethodMerchant mocks base method.
+func (m *MockMerchantRepository) GetYearlyPaymentMethodMerchant(year int) ([]*record.MerchantYearlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyPaymentMethodMerchant", year)
+	ret0, _ := ret[0].([]*record.MerchantYearlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyPaymentMethodMerchant indicates an expected call of GetYearlyPaymentMethodMerchant.
+func (mr *MockMerchantRepositoryMockRecorder) GetYearlyPaymentMethodMerchant(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyPaymentMethodMerchant", reflect.TypeOf((*MockMerchantRepository)(nil).GetYearlyPaymentMethodMerchant), year)
+}
+
+// GetYearlyTotalAmountByApikey mocks base method.
+func (m *MockMerchantRepository) GetYearlyTotalAmountByApikey(req *requests.MonthYearTotalAmountApiKey) ([]*record.MerchantYearlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTotalAmountByApikey", req)
+	ret0, _ := ret[0].([]*record.MerchantYearlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTotalAmountByApikey indicates an expected call of GetYearlyTotalAmountByApikey.
+func (mr *MockMerchantRepositoryMockRecorder) GetYearlyTotalAmountByApikey(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTotalAmountByApikey", reflect.TypeOf((*MockMerchantRepository)(nil).GetYearlyTotalAmountByApikey), req)
+}
+
+// GetYearlyTotalAmountByMerchants mocks base method.
+func (m *MockMerchantRepository) GetYearlyTotalAmountByMerchants(req *requests.MonthYearTotalAmountMerchant) ([]*record.MerchantYearlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTotalAmountByMerchants", req)
+	ret0, _ := ret[0].([]*record.MerchantYearlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTotalAmountByMerchants indicates an expected call of GetYearlyTotalAmountByMerchants.
+func (mr *MockMerchantRepositoryMockRecorder) GetYearlyTotalAmountByMerchants(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTotalAmountByMerchants", reflect.TypeOf((*MockMerchantRepository)(nil).GetYearlyTotalAmountByMerchants), req)
+}
+
+// GetYearlyTotalAmountMerchant mocks base method.
+func (m *MockMerchantRepository) GetYearlyTotalAmountMerchant(year int) ([]*record.MerchantYearlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTotalAmountMerchant", year)
+	ret0, _ := ret[0].([]*record.MerchantYearlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTotalAmountMerchant indicates an expected call of GetYearlyTotalAmountMerchant.
+func (mr *MockMerchantRepositoryMockRecorder) GetYearlyTotalAmountMerchant(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTotalAmountMerchant", reflect.TypeOf((*MockMerchantRepository)(nil).GetYearlyTotalAmountMerchant), year)
 }
 
 // RestoreAllMerchant mocks base method.
@@ -1099,6 +1911,21 @@ func (m *MockMerchantRepository) UpdateMerchant(request *requests.UpdateMerchant
 func (mr *MockMerchantRepositoryMockRecorder) UpdateMerchant(request any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMerchant", reflect.TypeOf((*MockMerchantRepository)(nil).UpdateMerchant), request)
+}
+
+// UpdateMerchantStatus mocks base method.
+func (m *MockMerchantRepository) UpdateMerchantStatus(request *requests.UpdateMerchantStatus) (*record.MerchantRecord, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMerchantStatus", request)
+	ret0, _ := ret[0].(*record.MerchantRecord)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateMerchantStatus indicates an expected call of UpdateMerchantStatus.
+func (mr *MockMerchantRepositoryMockRecorder) UpdateMerchantStatus(request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMerchantStatus", reflect.TypeOf((*MockMerchantRepository)(nil).UpdateMerchantStatus), request)
 }
 
 // MockSaldoRepository is a mock of SaldoRepository interface.
@@ -1171,35 +1998,35 @@ func (mr *MockSaldoRepositoryMockRecorder) DeleteSaldoPermanent(saldo_id any) *g
 }
 
 // FindAllSaldos mocks base method.
-func (m *MockSaldoRepository) FindAllSaldos(search string, page, pageSize int) ([]*record.SaldoRecord, int, error) {
+func (m *MockSaldoRepository) FindAllSaldos(req *requests.FindAllSaldos) ([]*record.SaldoRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAllSaldos", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindAllSaldos", req)
 	ret0, _ := ret[0].([]*record.SaldoRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindAllSaldos indicates an expected call of FindAllSaldos.
-func (mr *MockSaldoRepositoryMockRecorder) FindAllSaldos(search, page, pageSize any) *gomock.Call {
+func (mr *MockSaldoRepositoryMockRecorder) FindAllSaldos(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllSaldos", reflect.TypeOf((*MockSaldoRepository)(nil).FindAllSaldos), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllSaldos", reflect.TypeOf((*MockSaldoRepository)(nil).FindAllSaldos), req)
 }
 
 // FindByActive mocks base method.
-func (m *MockSaldoRepository) FindByActive(search string, page, pageSize int) ([]*record.SaldoRecord, int, error) {
+func (m *MockSaldoRepository) FindByActive(req *requests.FindAllSaldos) ([]*record.SaldoRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByActive", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByActive", req)
 	ret0, _ := ret[0].([]*record.SaldoRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByActive indicates an expected call of FindByActive.
-func (mr *MockSaldoRepositoryMockRecorder) FindByActive(search, page, pageSize any) *gomock.Call {
+func (mr *MockSaldoRepositoryMockRecorder) FindByActive(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockSaldoRepository)(nil).FindByActive), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockSaldoRepository)(nil).FindByActive), req)
 }
 
 // FindByCardNumber mocks base method.
@@ -1233,19 +2060,79 @@ func (mr *MockSaldoRepositoryMockRecorder) FindById(saldo_id any) *gomock.Call {
 }
 
 // FindByTrashed mocks base method.
-func (m *MockSaldoRepository) FindByTrashed(search string, page, pageSize int) ([]*record.SaldoRecord, int, error) {
+func (m *MockSaldoRepository) FindByTrashed(req *requests.FindAllSaldos) ([]*record.SaldoRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByTrashed", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByTrashed", req)
 	ret0, _ := ret[0].([]*record.SaldoRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByTrashed indicates an expected call of FindByTrashed.
-func (mr *MockSaldoRepositoryMockRecorder) FindByTrashed(search, page, pageSize any) *gomock.Call {
+func (mr *MockSaldoRepositoryMockRecorder) FindByTrashed(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockSaldoRepository)(nil).FindByTrashed), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockSaldoRepository)(nil).FindByTrashed), req)
+}
+
+// GetMonthlySaldoBalances mocks base method.
+func (m *MockSaldoRepository) GetMonthlySaldoBalances(year int) ([]*record.SaldoMonthSaldoBalance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlySaldoBalances", year)
+	ret0, _ := ret[0].([]*record.SaldoMonthSaldoBalance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlySaldoBalances indicates an expected call of GetMonthlySaldoBalances.
+func (mr *MockSaldoRepositoryMockRecorder) GetMonthlySaldoBalances(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlySaldoBalances", reflect.TypeOf((*MockSaldoRepository)(nil).GetMonthlySaldoBalances), year)
+}
+
+// GetMonthlyTotalSaldoBalance mocks base method.
+func (m *MockSaldoRepository) GetMonthlyTotalSaldoBalance(req *requests.MonthTotalSaldoBalance) ([]*record.SaldoMonthTotalBalance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTotalSaldoBalance", req)
+	ret0, _ := ret[0].([]*record.SaldoMonthTotalBalance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTotalSaldoBalance indicates an expected call of GetMonthlyTotalSaldoBalance.
+func (mr *MockSaldoRepositoryMockRecorder) GetMonthlyTotalSaldoBalance(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTotalSaldoBalance", reflect.TypeOf((*MockSaldoRepository)(nil).GetMonthlyTotalSaldoBalance), req)
+}
+
+// GetYearTotalSaldoBalance mocks base method.
+func (m *MockSaldoRepository) GetYearTotalSaldoBalance(year int) ([]*record.SaldoYearTotalBalance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearTotalSaldoBalance", year)
+	ret0, _ := ret[0].([]*record.SaldoYearTotalBalance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearTotalSaldoBalance indicates an expected call of GetYearTotalSaldoBalance.
+func (mr *MockSaldoRepositoryMockRecorder) GetYearTotalSaldoBalance(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearTotalSaldoBalance", reflect.TypeOf((*MockSaldoRepository)(nil).GetYearTotalSaldoBalance), year)
+}
+
+// GetYearlySaldoBalances mocks base method.
+func (m *MockSaldoRepository) GetYearlySaldoBalances(year int) ([]*record.SaldoYearSaldoBalance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlySaldoBalances", year)
+	ret0, _ := ret[0].([]*record.SaldoYearSaldoBalance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlySaldoBalances indicates an expected call of GetYearlySaldoBalances.
+func (mr *MockSaldoRepositoryMockRecorder) GetYearlySaldoBalances(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlySaldoBalances", reflect.TypeOf((*MockSaldoRepository)(nil).GetYearlySaldoBalances), year)
 }
 
 // RestoreAllSaldo mocks base method.
@@ -1362,36 +2249,6 @@ func (m *MockTopupRepository) EXPECT() *MockTopupRepositoryMockRecorder {
 	return m.recorder
 }
 
-// CountAllTopups mocks base method.
-func (m *MockTopupRepository) CountAllTopups() (*int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountAllTopups")
-	ret0, _ := ret[0].(*int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountAllTopups indicates an expected call of CountAllTopups.
-func (mr *MockTopupRepositoryMockRecorder) CountAllTopups() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAllTopups", reflect.TypeOf((*MockTopupRepository)(nil).CountAllTopups))
-}
-
-// CountTopupsByDate mocks base method.
-func (m *MockTopupRepository) CountTopupsByDate(date string) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountTopupsByDate", date)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountTopupsByDate indicates an expected call of CountTopupsByDate.
-func (mr *MockTopupRepositoryMockRecorder) CountTopupsByDate(date any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountTopupsByDate", reflect.TypeOf((*MockTopupRepository)(nil).CountTopupsByDate), date)
-}
-
 // CreateTopup mocks base method.
 func (m *MockTopupRepository) CreateTopup(request *requests.CreateTopupRequest) (*record.TopupRecord, error) {
 	m.ctrl.T.Helper()
@@ -1437,51 +2294,52 @@ func (mr *MockTopupRepositoryMockRecorder) DeleteTopupPermanent(topup_id any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTopupPermanent", reflect.TypeOf((*MockTopupRepository)(nil).DeleteTopupPermanent), topup_id)
 }
 
-// FindAllTopups mocks base method.
-func (m *MockTopupRepository) FindAllTopups(search string, page, pageSize int) ([]*record.TopupRecord, int, error) {
+// FindAllTopupByCardNumber mocks base method.
+func (m *MockTopupRepository) FindAllTopupByCardNumber(req *requests.FindAllTopupsByCardNumber) ([]*record.TopupRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAllTopups", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindAllTopupByCardNumber", req)
 	ret0, _ := ret[0].([]*record.TopupRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// FindAllTopupByCardNumber indicates an expected call of FindAllTopupByCardNumber.
+func (mr *MockTopupRepositoryMockRecorder) FindAllTopupByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTopupByCardNumber", reflect.TypeOf((*MockTopupRepository)(nil).FindAllTopupByCardNumber), req)
+}
+
+// FindAllTopups mocks base method.
+func (m *MockTopupRepository) FindAllTopups(req *requests.FindAllTopups) ([]*record.TopupRecord, *int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAllTopups", req)
+	ret0, _ := ret[0].([]*record.TopupRecord)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindAllTopups indicates an expected call of FindAllTopups.
-func (mr *MockTopupRepositoryMockRecorder) FindAllTopups(search, page, pageSize any) *gomock.Call {
+func (mr *MockTopupRepositoryMockRecorder) FindAllTopups(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTopups", reflect.TypeOf((*MockTopupRepository)(nil).FindAllTopups), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTopups", reflect.TypeOf((*MockTopupRepository)(nil).FindAllTopups), req)
 }
 
 // FindByActive mocks base method.
-func (m *MockTopupRepository) FindByActive(search string, page, pageSize int) ([]*record.TopupRecord, int, error) {
+func (m *MockTopupRepository) FindByActive(req *requests.FindAllTopups) ([]*record.TopupRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByActive", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByActive", req)
 	ret0, _ := ret[0].([]*record.TopupRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByActive indicates an expected call of FindByActive.
-func (mr *MockTopupRepositoryMockRecorder) FindByActive(search, page, pageSize any) *gomock.Call {
+func (mr *MockTopupRepositoryMockRecorder) FindByActive(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockTopupRepository)(nil).FindByActive), search, page, pageSize)
-}
-
-// FindByCardNumber mocks base method.
-func (m *MockTopupRepository) FindByCardNumber(card_number string) ([]*record.TopupRecord, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByCardNumber", card_number)
-	ret0, _ := ret[0].([]*record.TopupRecord)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FindByCardNumber indicates an expected call of FindByCardNumber.
-func (mr *MockTopupRepositoryMockRecorder) FindByCardNumber(card_number any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByCardNumber", reflect.TypeOf((*MockTopupRepository)(nil).FindByCardNumber), card_number)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockTopupRepository)(nil).FindByActive), req)
 }
 
 // FindById mocks base method.
@@ -1500,19 +2358,259 @@ func (mr *MockTopupRepositoryMockRecorder) FindById(topup_id any) *gomock.Call {
 }
 
 // FindByTrashed mocks base method.
-func (m *MockTopupRepository) FindByTrashed(search string, page, pageSize int) ([]*record.TopupRecord, int, error) {
+func (m *MockTopupRepository) FindByTrashed(req *requests.FindAllTopups) ([]*record.TopupRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByTrashed", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByTrashed", req)
 	ret0, _ := ret[0].([]*record.TopupRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByTrashed indicates an expected call of FindByTrashed.
-func (mr *MockTopupRepositoryMockRecorder) FindByTrashed(search, page, pageSize any) *gomock.Call {
+func (mr *MockTopupRepositoryMockRecorder) FindByTrashed(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockTopupRepository)(nil).FindByTrashed), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockTopupRepository)(nil).FindByTrashed), req)
+}
+
+// GetMonthTopupStatusFailed mocks base method.
+func (m *MockTopupRepository) GetMonthTopupStatusFailed(req *requests.MonthTopupStatus) ([]*record.TopupRecordMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthTopupStatusFailed", req)
+	ret0, _ := ret[0].([]*record.TopupRecordMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthTopupStatusFailed indicates an expected call of GetMonthTopupStatusFailed.
+func (mr *MockTopupRepositoryMockRecorder) GetMonthTopupStatusFailed(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthTopupStatusFailed", reflect.TypeOf((*MockTopupRepository)(nil).GetMonthTopupStatusFailed), req)
+}
+
+// GetMonthTopupStatusFailedByCardNumber mocks base method.
+func (m *MockTopupRepository) GetMonthTopupStatusFailedByCardNumber(req *requests.MonthTopupStatusCardNumber) ([]*record.TopupRecordMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthTopupStatusFailedByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TopupRecordMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthTopupStatusFailedByCardNumber indicates an expected call of GetMonthTopupStatusFailedByCardNumber.
+func (mr *MockTopupRepositoryMockRecorder) GetMonthTopupStatusFailedByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthTopupStatusFailedByCardNumber", reflect.TypeOf((*MockTopupRepository)(nil).GetMonthTopupStatusFailedByCardNumber), req)
+}
+
+// GetMonthTopupStatusSuccess mocks base method.
+func (m *MockTopupRepository) GetMonthTopupStatusSuccess(req *requests.MonthTopupStatus) ([]*record.TopupRecordMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthTopupStatusSuccess", req)
+	ret0, _ := ret[0].([]*record.TopupRecordMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthTopupStatusSuccess indicates an expected call of GetMonthTopupStatusSuccess.
+func (mr *MockTopupRepositoryMockRecorder) GetMonthTopupStatusSuccess(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthTopupStatusSuccess", reflect.TypeOf((*MockTopupRepository)(nil).GetMonthTopupStatusSuccess), req)
+}
+
+// GetMonthTopupStatusSuccessByCardNumber mocks base method.
+func (m *MockTopupRepository) GetMonthTopupStatusSuccessByCardNumber(req *requests.MonthTopupStatusCardNumber) ([]*record.TopupRecordMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthTopupStatusSuccessByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TopupRecordMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthTopupStatusSuccessByCardNumber indicates an expected call of GetMonthTopupStatusSuccessByCardNumber.
+func (mr *MockTopupRepositoryMockRecorder) GetMonthTopupStatusSuccessByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthTopupStatusSuccessByCardNumber", reflect.TypeOf((*MockTopupRepository)(nil).GetMonthTopupStatusSuccessByCardNumber), req)
+}
+
+// GetMonthlyTopupAmounts mocks base method.
+func (m *MockTopupRepository) GetMonthlyTopupAmounts(year int) ([]*record.TopupMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTopupAmounts", year)
+	ret0, _ := ret[0].([]*record.TopupMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTopupAmounts indicates an expected call of GetMonthlyTopupAmounts.
+func (mr *MockTopupRepositoryMockRecorder) GetMonthlyTopupAmounts(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTopupAmounts", reflect.TypeOf((*MockTopupRepository)(nil).GetMonthlyTopupAmounts), year)
+}
+
+// GetMonthlyTopupAmountsByCardNumber mocks base method.
+func (m *MockTopupRepository) GetMonthlyTopupAmountsByCardNumber(req *requests.YearMonthMethod) ([]*record.TopupMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTopupAmountsByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TopupMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTopupAmountsByCardNumber indicates an expected call of GetMonthlyTopupAmountsByCardNumber.
+func (mr *MockTopupRepositoryMockRecorder) GetMonthlyTopupAmountsByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTopupAmountsByCardNumber", reflect.TypeOf((*MockTopupRepository)(nil).GetMonthlyTopupAmountsByCardNumber), req)
+}
+
+// GetMonthlyTopupMethods mocks base method.
+func (m *MockTopupRepository) GetMonthlyTopupMethods(year int) ([]*record.TopupMonthMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTopupMethods", year)
+	ret0, _ := ret[0].([]*record.TopupMonthMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTopupMethods indicates an expected call of GetMonthlyTopupMethods.
+func (mr *MockTopupRepositoryMockRecorder) GetMonthlyTopupMethods(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTopupMethods", reflect.TypeOf((*MockTopupRepository)(nil).GetMonthlyTopupMethods), year)
+}
+
+// GetMonthlyTopupMethodsByCardNumber mocks base method.
+func (m *MockTopupRepository) GetMonthlyTopupMethodsByCardNumber(req *requests.YearMonthMethod) ([]*record.TopupMonthMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTopupMethodsByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TopupMonthMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTopupMethodsByCardNumber indicates an expected call of GetMonthlyTopupMethodsByCardNumber.
+func (mr *MockTopupRepositoryMockRecorder) GetMonthlyTopupMethodsByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTopupMethodsByCardNumber", reflect.TypeOf((*MockTopupRepository)(nil).GetMonthlyTopupMethodsByCardNumber), req)
+}
+
+// GetYearlyTopupAmounts mocks base method.
+func (m *MockTopupRepository) GetYearlyTopupAmounts(year int) ([]*record.TopupYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTopupAmounts", year)
+	ret0, _ := ret[0].([]*record.TopupYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTopupAmounts indicates an expected call of GetYearlyTopupAmounts.
+func (mr *MockTopupRepositoryMockRecorder) GetYearlyTopupAmounts(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTopupAmounts", reflect.TypeOf((*MockTopupRepository)(nil).GetYearlyTopupAmounts), year)
+}
+
+// GetYearlyTopupAmountsByCardNumber mocks base method.
+func (m *MockTopupRepository) GetYearlyTopupAmountsByCardNumber(req *requests.YearMonthMethod) ([]*record.TopupYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTopupAmountsByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TopupYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTopupAmountsByCardNumber indicates an expected call of GetYearlyTopupAmountsByCardNumber.
+func (mr *MockTopupRepositoryMockRecorder) GetYearlyTopupAmountsByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTopupAmountsByCardNumber", reflect.TypeOf((*MockTopupRepository)(nil).GetYearlyTopupAmountsByCardNumber), req)
+}
+
+// GetYearlyTopupMethods mocks base method.
+func (m *MockTopupRepository) GetYearlyTopupMethods(year int) ([]*record.TopupYearlyMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTopupMethods", year)
+	ret0, _ := ret[0].([]*record.TopupYearlyMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTopupMethods indicates an expected call of GetYearlyTopupMethods.
+func (mr *MockTopupRepositoryMockRecorder) GetYearlyTopupMethods(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTopupMethods", reflect.TypeOf((*MockTopupRepository)(nil).GetYearlyTopupMethods), year)
+}
+
+// GetYearlyTopupMethodsByCardNumber mocks base method.
+func (m *MockTopupRepository) GetYearlyTopupMethodsByCardNumber(req *requests.YearMonthMethod) ([]*record.TopupYearlyMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTopupMethodsByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TopupYearlyMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTopupMethodsByCardNumber indicates an expected call of GetYearlyTopupMethodsByCardNumber.
+func (mr *MockTopupRepositoryMockRecorder) GetYearlyTopupMethodsByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTopupMethodsByCardNumber", reflect.TypeOf((*MockTopupRepository)(nil).GetYearlyTopupMethodsByCardNumber), req)
+}
+
+// GetYearlyTopupStatusFailed mocks base method.
+func (m *MockTopupRepository) GetYearlyTopupStatusFailed(year int) ([]*record.TopupRecordYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTopupStatusFailed", year)
+	ret0, _ := ret[0].([]*record.TopupRecordYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTopupStatusFailed indicates an expected call of GetYearlyTopupStatusFailed.
+func (mr *MockTopupRepositoryMockRecorder) GetYearlyTopupStatusFailed(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTopupStatusFailed", reflect.TypeOf((*MockTopupRepository)(nil).GetYearlyTopupStatusFailed), year)
+}
+
+// GetYearlyTopupStatusFailedByCardNumber mocks base method.
+func (m *MockTopupRepository) GetYearlyTopupStatusFailedByCardNumber(req *requests.YearTopupStatusCardNumber) ([]*record.TopupRecordYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTopupStatusFailedByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TopupRecordYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTopupStatusFailedByCardNumber indicates an expected call of GetYearlyTopupStatusFailedByCardNumber.
+func (mr *MockTopupRepositoryMockRecorder) GetYearlyTopupStatusFailedByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTopupStatusFailedByCardNumber", reflect.TypeOf((*MockTopupRepository)(nil).GetYearlyTopupStatusFailedByCardNumber), req)
+}
+
+// GetYearlyTopupStatusSuccess mocks base method.
+func (m *MockTopupRepository) GetYearlyTopupStatusSuccess(year int) ([]*record.TopupRecordYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTopupStatusSuccess", year)
+	ret0, _ := ret[0].([]*record.TopupRecordYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTopupStatusSuccess indicates an expected call of GetYearlyTopupStatusSuccess.
+func (mr *MockTopupRepositoryMockRecorder) GetYearlyTopupStatusSuccess(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTopupStatusSuccess", reflect.TypeOf((*MockTopupRepository)(nil).GetYearlyTopupStatusSuccess), year)
+}
+
+// GetYearlyTopupStatusSuccessByCardNumber mocks base method.
+func (m *MockTopupRepository) GetYearlyTopupStatusSuccessByCardNumber(req *requests.YearTopupStatusCardNumber) ([]*record.TopupRecordYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTopupStatusSuccessByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TopupRecordYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTopupStatusSuccessByCardNumber indicates an expected call of GetYearlyTopupStatusSuccessByCardNumber.
+func (mr *MockTopupRepositoryMockRecorder) GetYearlyTopupStatusSuccessByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTopupStatusSuccessByCardNumber", reflect.TypeOf((*MockTopupRepository)(nil).GetYearlyTopupStatusSuccessByCardNumber), req)
 }
 
 // RestoreAllTopup mocks base method.
@@ -1590,6 +2688,21 @@ func (mr *MockTopupRepositoryMockRecorder) UpdateTopupAmount(request any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTopupAmount", reflect.TypeOf((*MockTopupRepository)(nil).UpdateTopupAmount), request)
 }
 
+// UpdateTopupStatus mocks base method.
+func (m *MockTopupRepository) UpdateTopupStatus(request *requests.UpdateTopupStatus) (*record.TopupRecord, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTopupStatus", request)
+	ret0, _ := ret[0].(*record.TopupRecord)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateTopupStatus indicates an expected call of UpdateTopupStatus.
+func (mr *MockTopupRepositoryMockRecorder) UpdateTopupStatus(request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTopupStatus", reflect.TypeOf((*MockTopupRepository)(nil).UpdateTopupStatus), request)
+}
+
 // MockTransactionRepository is a mock of TransactionRepository interface.
 type MockTransactionRepository struct {
 	ctrl     *gomock.Controller
@@ -1612,36 +2725,6 @@ func NewMockTransactionRepository(ctrl *gomock.Controller) *MockTransactionRepos
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockTransactionRepository) EXPECT() *MockTransactionRepositoryMockRecorder {
 	return m.recorder
-}
-
-// CountAllTransactions mocks base method.
-func (m *MockTransactionRepository) CountAllTransactions() (*int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountAllTransactions")
-	ret0, _ := ret[0].(*int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountAllTransactions indicates an expected call of CountAllTransactions.
-func (mr *MockTransactionRepositoryMockRecorder) CountAllTransactions() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAllTransactions", reflect.TypeOf((*MockTransactionRepository)(nil).CountAllTransactions))
-}
-
-// CountTransactionsByDate mocks base method.
-func (m *MockTransactionRepository) CountTransactionsByDate(date string) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountTransactionsByDate", date)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountTransactionsByDate indicates an expected call of CountTransactionsByDate.
-func (mr *MockTransactionRepositoryMockRecorder) CountTransactionsByDate(date any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountTransactionsByDate", reflect.TypeOf((*MockTransactionRepository)(nil).CountTransactionsByDate), date)
 }
 
 // CreateTransaction mocks base method.
@@ -1689,51 +2772,52 @@ func (mr *MockTransactionRepositoryMockRecorder) DeleteTransactionPermanent(topu
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTransactionPermanent", reflect.TypeOf((*MockTransactionRepository)(nil).DeleteTransactionPermanent), topup_id)
 }
 
-// FindAllTransactions mocks base method.
-func (m *MockTransactionRepository) FindAllTransactions(search string, page, pageSize int) ([]*record.TransactionRecord, int, error) {
+// FindAllTransactionByCardNumber mocks base method.
+func (m *MockTransactionRepository) FindAllTransactionByCardNumber(req *requests.FindAllTransactionCardNumber) ([]*record.TransactionRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAllTransactions", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindAllTransactionByCardNumber", req)
 	ret0, _ := ret[0].([]*record.TransactionRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// FindAllTransactionByCardNumber indicates an expected call of FindAllTransactionByCardNumber.
+func (mr *MockTransactionRepositoryMockRecorder) FindAllTransactionByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransactionByCardNumber", reflect.TypeOf((*MockTransactionRepository)(nil).FindAllTransactionByCardNumber), req)
+}
+
+// FindAllTransactions mocks base method.
+func (m *MockTransactionRepository) FindAllTransactions(req *requests.FindAllTransactions) ([]*record.TransactionRecord, *int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAllTransactions", req)
+	ret0, _ := ret[0].([]*record.TransactionRecord)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindAllTransactions indicates an expected call of FindAllTransactions.
-func (mr *MockTransactionRepositoryMockRecorder) FindAllTransactions(search, page, pageSize any) *gomock.Call {
+func (mr *MockTransactionRepositoryMockRecorder) FindAllTransactions(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransactions", reflect.TypeOf((*MockTransactionRepository)(nil).FindAllTransactions), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransactions", reflect.TypeOf((*MockTransactionRepository)(nil).FindAllTransactions), req)
 }
 
 // FindByActive mocks base method.
-func (m *MockTransactionRepository) FindByActive(search string, page, pageSize int) ([]*record.TransactionRecord, int, error) {
+func (m *MockTransactionRepository) FindByActive(req *requests.FindAllTransactions) ([]*record.TransactionRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByActive", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByActive", req)
 	ret0, _ := ret[0].([]*record.TransactionRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByActive indicates an expected call of FindByActive.
-func (mr *MockTransactionRepositoryMockRecorder) FindByActive(search, page, pageSize any) *gomock.Call {
+func (mr *MockTransactionRepositoryMockRecorder) FindByActive(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockTransactionRepository)(nil).FindByActive), search, page, pageSize)
-}
-
-// FindByCardNumber mocks base method.
-func (m *MockTransactionRepository) FindByCardNumber(card_number string) ([]*record.TransactionRecord, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByCardNumber", card_number)
-	ret0, _ := ret[0].([]*record.TransactionRecord)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FindByCardNumber indicates an expected call of FindByCardNumber.
-func (mr *MockTransactionRepositoryMockRecorder) FindByCardNumber(card_number any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByCardNumber", reflect.TypeOf((*MockTransactionRepository)(nil).FindByCardNumber), card_number)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockTransactionRepository)(nil).FindByActive), req)
 }
 
 // FindById mocks base method.
@@ -1752,19 +2836,19 @@ func (mr *MockTransactionRepositoryMockRecorder) FindById(transaction_id any) *g
 }
 
 // FindByTrashed mocks base method.
-func (m *MockTransactionRepository) FindByTrashed(search string, page, pageSize int) ([]*record.TransactionRecord, int, error) {
+func (m *MockTransactionRepository) FindByTrashed(req *requests.FindAllTransactions) ([]*record.TransactionRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByTrashed", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByTrashed", req)
 	ret0, _ := ret[0].([]*record.TransactionRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByTrashed indicates an expected call of FindByTrashed.
-func (mr *MockTransactionRepositoryMockRecorder) FindByTrashed(search, page, pageSize any) *gomock.Call {
+func (mr *MockTransactionRepositoryMockRecorder) FindByTrashed(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockTransactionRepository)(nil).FindByTrashed), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockTransactionRepository)(nil).FindByTrashed), req)
 }
 
 // FindTransactionByMerchantId mocks base method.
@@ -1780,6 +2864,246 @@ func (m *MockTransactionRepository) FindTransactionByMerchantId(merchant_id int)
 func (mr *MockTransactionRepositoryMockRecorder) FindTransactionByMerchantId(merchant_id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindTransactionByMerchantId", reflect.TypeOf((*MockTransactionRepository)(nil).FindTransactionByMerchantId), merchant_id)
+}
+
+// GetMonthTransactionStatusFailed mocks base method.
+func (m *MockTransactionRepository) GetMonthTransactionStatusFailed(req *requests.MonthStatusTransaction) ([]*record.TransactionRecordMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthTransactionStatusFailed", req)
+	ret0, _ := ret[0].([]*record.TransactionRecordMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthTransactionStatusFailed indicates an expected call of GetMonthTransactionStatusFailed.
+func (mr *MockTransactionRepositoryMockRecorder) GetMonthTransactionStatusFailed(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthTransactionStatusFailed", reflect.TypeOf((*MockTransactionRepository)(nil).GetMonthTransactionStatusFailed), req)
+}
+
+// GetMonthTransactionStatusFailedByCardNumber mocks base method.
+func (m *MockTransactionRepository) GetMonthTransactionStatusFailedByCardNumber(req *requests.MonthStatusTransactionCardNumber) ([]*record.TransactionRecordMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthTransactionStatusFailedByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransactionRecordMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthTransactionStatusFailedByCardNumber indicates an expected call of GetMonthTransactionStatusFailedByCardNumber.
+func (mr *MockTransactionRepositoryMockRecorder) GetMonthTransactionStatusFailedByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthTransactionStatusFailedByCardNumber", reflect.TypeOf((*MockTransactionRepository)(nil).GetMonthTransactionStatusFailedByCardNumber), req)
+}
+
+// GetMonthTransactionStatusSuccess mocks base method.
+func (m *MockTransactionRepository) GetMonthTransactionStatusSuccess(req *requests.MonthStatusTransaction) ([]*record.TransactionRecordMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthTransactionStatusSuccess", req)
+	ret0, _ := ret[0].([]*record.TransactionRecordMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthTransactionStatusSuccess indicates an expected call of GetMonthTransactionStatusSuccess.
+func (mr *MockTransactionRepositoryMockRecorder) GetMonthTransactionStatusSuccess(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthTransactionStatusSuccess", reflect.TypeOf((*MockTransactionRepository)(nil).GetMonthTransactionStatusSuccess), req)
+}
+
+// GetMonthTransactionStatusSuccessByCardNumber mocks base method.
+func (m *MockTransactionRepository) GetMonthTransactionStatusSuccessByCardNumber(req *requests.MonthStatusTransactionCardNumber) ([]*record.TransactionRecordMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthTransactionStatusSuccessByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransactionRecordMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthTransactionStatusSuccessByCardNumber indicates an expected call of GetMonthTransactionStatusSuccessByCardNumber.
+func (mr *MockTransactionRepositoryMockRecorder) GetMonthTransactionStatusSuccessByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthTransactionStatusSuccessByCardNumber", reflect.TypeOf((*MockTransactionRepository)(nil).GetMonthTransactionStatusSuccessByCardNumber), req)
+}
+
+// GetMonthlyAmounts mocks base method.
+func (m *MockTransactionRepository) GetMonthlyAmounts(year int) ([]*record.TransactionMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyAmounts", year)
+	ret0, _ := ret[0].([]*record.TransactionMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyAmounts indicates an expected call of GetMonthlyAmounts.
+func (mr *MockTransactionRepositoryMockRecorder) GetMonthlyAmounts(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyAmounts", reflect.TypeOf((*MockTransactionRepository)(nil).GetMonthlyAmounts), year)
+}
+
+// GetMonthlyAmountsByCardNumber mocks base method.
+func (m *MockTransactionRepository) GetMonthlyAmountsByCardNumber(req *requests.MonthYearPaymentMethod) ([]*record.TransactionMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyAmountsByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransactionMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyAmountsByCardNumber indicates an expected call of GetMonthlyAmountsByCardNumber.
+func (mr *MockTransactionRepositoryMockRecorder) GetMonthlyAmountsByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyAmountsByCardNumber", reflect.TypeOf((*MockTransactionRepository)(nil).GetMonthlyAmountsByCardNumber), req)
+}
+
+// GetMonthlyPaymentMethods mocks base method.
+func (m *MockTransactionRepository) GetMonthlyPaymentMethods(year int) ([]*record.TransactionMonthMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyPaymentMethods", year)
+	ret0, _ := ret[0].([]*record.TransactionMonthMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyPaymentMethods indicates an expected call of GetMonthlyPaymentMethods.
+func (mr *MockTransactionRepositoryMockRecorder) GetMonthlyPaymentMethods(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyPaymentMethods", reflect.TypeOf((*MockTransactionRepository)(nil).GetMonthlyPaymentMethods), year)
+}
+
+// GetMonthlyPaymentMethodsByCardNumber mocks base method.
+func (m *MockTransactionRepository) GetMonthlyPaymentMethodsByCardNumber(req *requests.MonthYearPaymentMethod) ([]*record.TransactionMonthMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyPaymentMethodsByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransactionMonthMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyPaymentMethodsByCardNumber indicates an expected call of GetMonthlyPaymentMethodsByCardNumber.
+func (mr *MockTransactionRepositoryMockRecorder) GetMonthlyPaymentMethodsByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyPaymentMethodsByCardNumber", reflect.TypeOf((*MockTransactionRepository)(nil).GetMonthlyPaymentMethodsByCardNumber), req)
+}
+
+// GetYearlyAmounts mocks base method.
+func (m *MockTransactionRepository) GetYearlyAmounts(year int) ([]*record.TransactionYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyAmounts", year)
+	ret0, _ := ret[0].([]*record.TransactionYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyAmounts indicates an expected call of GetYearlyAmounts.
+func (mr *MockTransactionRepositoryMockRecorder) GetYearlyAmounts(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyAmounts", reflect.TypeOf((*MockTransactionRepository)(nil).GetYearlyAmounts), year)
+}
+
+// GetYearlyAmountsByCardNumber mocks base method.
+func (m *MockTransactionRepository) GetYearlyAmountsByCardNumber(req *requests.MonthYearPaymentMethod) ([]*record.TransactionYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyAmountsByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransactionYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyAmountsByCardNumber indicates an expected call of GetYearlyAmountsByCardNumber.
+func (mr *MockTransactionRepositoryMockRecorder) GetYearlyAmountsByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyAmountsByCardNumber", reflect.TypeOf((*MockTransactionRepository)(nil).GetYearlyAmountsByCardNumber), req)
+}
+
+// GetYearlyPaymentMethods mocks base method.
+func (m *MockTransactionRepository) GetYearlyPaymentMethods(year int) ([]*record.TransactionYearMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyPaymentMethods", year)
+	ret0, _ := ret[0].([]*record.TransactionYearMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyPaymentMethods indicates an expected call of GetYearlyPaymentMethods.
+func (mr *MockTransactionRepositoryMockRecorder) GetYearlyPaymentMethods(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyPaymentMethods", reflect.TypeOf((*MockTransactionRepository)(nil).GetYearlyPaymentMethods), year)
+}
+
+// GetYearlyPaymentMethodsByCardNumber mocks base method.
+func (m *MockTransactionRepository) GetYearlyPaymentMethodsByCardNumber(req *requests.MonthYearPaymentMethod) ([]*record.TransactionYearMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyPaymentMethodsByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransactionYearMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyPaymentMethodsByCardNumber indicates an expected call of GetYearlyPaymentMethodsByCardNumber.
+func (mr *MockTransactionRepositoryMockRecorder) GetYearlyPaymentMethodsByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyPaymentMethodsByCardNumber", reflect.TypeOf((*MockTransactionRepository)(nil).GetYearlyPaymentMethodsByCardNumber), req)
+}
+
+// GetYearlyTransactionStatusFailed mocks base method.
+func (m *MockTransactionRepository) GetYearlyTransactionStatusFailed(year int) ([]*record.TransactionRecordYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransactionStatusFailed", year)
+	ret0, _ := ret[0].([]*record.TransactionRecordYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransactionStatusFailed indicates an expected call of GetYearlyTransactionStatusFailed.
+func (mr *MockTransactionRepositoryMockRecorder) GetYearlyTransactionStatusFailed(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransactionStatusFailed", reflect.TypeOf((*MockTransactionRepository)(nil).GetYearlyTransactionStatusFailed), year)
+}
+
+// GetYearlyTransactionStatusFailedByCardNumber mocks base method.
+func (m *MockTransactionRepository) GetYearlyTransactionStatusFailedByCardNumber(req *requests.YearStatusTransactionCardNumber) ([]*record.TransactionRecordYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransactionStatusFailedByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransactionRecordYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransactionStatusFailedByCardNumber indicates an expected call of GetYearlyTransactionStatusFailedByCardNumber.
+func (mr *MockTransactionRepositoryMockRecorder) GetYearlyTransactionStatusFailedByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransactionStatusFailedByCardNumber", reflect.TypeOf((*MockTransactionRepository)(nil).GetYearlyTransactionStatusFailedByCardNumber), req)
+}
+
+// GetYearlyTransactionStatusSuccess mocks base method.
+func (m *MockTransactionRepository) GetYearlyTransactionStatusSuccess(year int) ([]*record.TransactionRecordYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransactionStatusSuccess", year)
+	ret0, _ := ret[0].([]*record.TransactionRecordYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransactionStatusSuccess indicates an expected call of GetYearlyTransactionStatusSuccess.
+func (mr *MockTransactionRepositoryMockRecorder) GetYearlyTransactionStatusSuccess(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransactionStatusSuccess", reflect.TypeOf((*MockTransactionRepository)(nil).GetYearlyTransactionStatusSuccess), year)
+}
+
+// GetYearlyTransactionStatusSuccessByCardNumber mocks base method.
+func (m *MockTransactionRepository) GetYearlyTransactionStatusSuccessByCardNumber(req *requests.YearStatusTransactionCardNumber) ([]*record.TransactionRecordYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransactionStatusSuccessByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransactionRecordYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransactionStatusSuccessByCardNumber indicates an expected call of GetYearlyTransactionStatusSuccessByCardNumber.
+func (mr *MockTransactionRepositoryMockRecorder) GetYearlyTransactionStatusSuccessByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransactionStatusSuccessByCardNumber", reflect.TypeOf((*MockTransactionRepository)(nil).GetYearlyTransactionStatusSuccessByCardNumber), req)
 }
 
 // RestoreAllTransaction mocks base method.
@@ -1842,6 +3166,21 @@ func (mr *MockTransactionRepositoryMockRecorder) UpdateTransaction(request any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTransaction", reflect.TypeOf((*MockTransactionRepository)(nil).UpdateTransaction), request)
 }
 
+// UpdateTransactionStatus mocks base method.
+func (m *MockTransactionRepository) UpdateTransactionStatus(request *requests.UpdateTransactionStatus) (*record.TransactionRecord, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTransactionStatus", request)
+	ret0, _ := ret[0].(*record.TransactionRecord)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateTransactionStatus indicates an expected call of UpdateTransactionStatus.
+func (mr *MockTransactionRepositoryMockRecorder) UpdateTransactionStatus(request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTransactionStatus", reflect.TypeOf((*MockTransactionRepository)(nil).UpdateTransactionStatus), request)
+}
+
 // MockTransferRepository is a mock of TransferRepository interface.
 type MockTransferRepository struct {
 	ctrl     *gomock.Controller
@@ -1864,36 +3203,6 @@ func NewMockTransferRepository(ctrl *gomock.Controller) *MockTransferRepository 
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockTransferRepository) EXPECT() *MockTransferRepositoryMockRecorder {
 	return m.recorder
-}
-
-// CountAllTransfers mocks base method.
-func (m *MockTransferRepository) CountAllTransfers() (*int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountAllTransfers")
-	ret0, _ := ret[0].(*int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountAllTransfers indicates an expected call of CountAllTransfers.
-func (mr *MockTransferRepositoryMockRecorder) CountAllTransfers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAllTransfers", reflect.TypeOf((*MockTransferRepository)(nil).CountAllTransfers))
-}
-
-// CountTransfersByDate mocks base method.
-func (m *MockTransferRepository) CountTransfersByDate(date string) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountTransfersByDate", date)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountTransfersByDate indicates an expected call of CountTransfersByDate.
-func (mr *MockTransferRepositoryMockRecorder) CountTransfersByDate(date any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountTransfersByDate", reflect.TypeOf((*MockTransferRepository)(nil).CountTransfersByDate), date)
 }
 
 // CreateTransfer mocks base method.
@@ -1942,35 +3251,35 @@ func (mr *MockTransferRepositoryMockRecorder) DeleteTransferPermanent(topup_id a
 }
 
 // FindAll mocks base method.
-func (m *MockTransferRepository) FindAll(search string, page, pageSize int) ([]*record.TransferRecord, int, error) {
+func (m *MockTransferRepository) FindAll(req *requests.FindAllTranfers) ([]*record.TransferRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAll", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindAll", req)
 	ret0, _ := ret[0].([]*record.TransferRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindAll indicates an expected call of FindAll.
-func (mr *MockTransferRepositoryMockRecorder) FindAll(search, page, pageSize any) *gomock.Call {
+func (mr *MockTransferRepositoryMockRecorder) FindAll(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockTransferRepository)(nil).FindAll), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockTransferRepository)(nil).FindAll), req)
 }
 
 // FindByActive mocks base method.
-func (m *MockTransferRepository) FindByActive(search string, page, pageSize int) ([]*record.TransferRecord, int, error) {
+func (m *MockTransferRepository) FindByActive(req *requests.FindAllTranfers) ([]*record.TransferRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByActive", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByActive", req)
 	ret0, _ := ret[0].([]*record.TransferRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByActive indicates an expected call of FindByActive.
-func (mr *MockTransferRepositoryMockRecorder) FindByActive(search, page, pageSize any) *gomock.Call {
+func (mr *MockTransferRepositoryMockRecorder) FindByActive(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockTransferRepository)(nil).FindByActive), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockTransferRepository)(nil).FindByActive), req)
 }
 
 // FindById mocks base method.
@@ -1989,19 +3298,19 @@ func (mr *MockTransferRepositoryMockRecorder) FindById(id any) *gomock.Call {
 }
 
 // FindByTrashed mocks base method.
-func (m *MockTransferRepository) FindByTrashed(search string, page, pageSize int) ([]*record.TransferRecord, int, error) {
+func (m *MockTransferRepository) FindByTrashed(req *requests.FindAllTranfers) ([]*record.TransferRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByTrashed", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByTrashed", req)
 	ret0, _ := ret[0].([]*record.TransferRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByTrashed indicates an expected call of FindByTrashed.
-func (mr *MockTransferRepositoryMockRecorder) FindByTrashed(search, page, pageSize any) *gomock.Call {
+func (mr *MockTransferRepositoryMockRecorder) FindByTrashed(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockTransferRepository)(nil).FindByTrashed), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockTransferRepository)(nil).FindByTrashed), req)
 }
 
 // FindTransferByTransferFrom mocks base method.
@@ -2032,6 +3341,216 @@ func (m *MockTransferRepository) FindTransferByTransferTo(transfer_to string) ([
 func (mr *MockTransferRepositoryMockRecorder) FindTransferByTransferTo(transfer_to any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindTransferByTransferTo", reflect.TypeOf((*MockTransferRepository)(nil).FindTransferByTransferTo), transfer_to)
+}
+
+// GetMonthTransferStatusFailed mocks base method.
+func (m *MockTransferRepository) GetMonthTransferStatusFailed(req *requests.MonthStatusTransfer) ([]*record.TransferRecordMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthTransferStatusFailed", req)
+	ret0, _ := ret[0].([]*record.TransferRecordMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthTransferStatusFailed indicates an expected call of GetMonthTransferStatusFailed.
+func (mr *MockTransferRepositoryMockRecorder) GetMonthTransferStatusFailed(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthTransferStatusFailed", reflect.TypeOf((*MockTransferRepository)(nil).GetMonthTransferStatusFailed), req)
+}
+
+// GetMonthTransferStatusFailedByCardNumber mocks base method.
+func (m *MockTransferRepository) GetMonthTransferStatusFailedByCardNumber(req *requests.MonthStatusTransferCardNumber) ([]*record.TransferRecordMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthTransferStatusFailedByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransferRecordMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthTransferStatusFailedByCardNumber indicates an expected call of GetMonthTransferStatusFailedByCardNumber.
+func (mr *MockTransferRepositoryMockRecorder) GetMonthTransferStatusFailedByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthTransferStatusFailedByCardNumber", reflect.TypeOf((*MockTransferRepository)(nil).GetMonthTransferStatusFailedByCardNumber), req)
+}
+
+// GetMonthTransferStatusSuccess mocks base method.
+func (m *MockTransferRepository) GetMonthTransferStatusSuccess(req *requests.MonthStatusTransfer) ([]*record.TransferRecordMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthTransferStatusSuccess", req)
+	ret0, _ := ret[0].([]*record.TransferRecordMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthTransferStatusSuccess indicates an expected call of GetMonthTransferStatusSuccess.
+func (mr *MockTransferRepositoryMockRecorder) GetMonthTransferStatusSuccess(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthTransferStatusSuccess", reflect.TypeOf((*MockTransferRepository)(nil).GetMonthTransferStatusSuccess), req)
+}
+
+// GetMonthTransferStatusSuccessByCardNumber mocks base method.
+func (m *MockTransferRepository) GetMonthTransferStatusSuccessByCardNumber(req *requests.MonthStatusTransferCardNumber) ([]*record.TransferRecordMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthTransferStatusSuccessByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransferRecordMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthTransferStatusSuccessByCardNumber indicates an expected call of GetMonthTransferStatusSuccessByCardNumber.
+func (mr *MockTransferRepositoryMockRecorder) GetMonthTransferStatusSuccessByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthTransferStatusSuccessByCardNumber", reflect.TypeOf((*MockTransferRepository)(nil).GetMonthTransferStatusSuccessByCardNumber), req)
+}
+
+// GetMonthlyTransferAmounts mocks base method.
+func (m *MockTransferRepository) GetMonthlyTransferAmounts(year int) ([]*record.TransferMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTransferAmounts", year)
+	ret0, _ := ret[0].([]*record.TransferMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTransferAmounts indicates an expected call of GetMonthlyTransferAmounts.
+func (mr *MockTransferRepositoryMockRecorder) GetMonthlyTransferAmounts(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTransferAmounts", reflect.TypeOf((*MockTransferRepository)(nil).GetMonthlyTransferAmounts), year)
+}
+
+// GetMonthlyTransferAmountsByReceiverCardNumber mocks base method.
+func (m *MockTransferRepository) GetMonthlyTransferAmountsByReceiverCardNumber(req *requests.MonthYearCardNumber) ([]*record.TransferMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTransferAmountsByReceiverCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransferMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTransferAmountsByReceiverCardNumber indicates an expected call of GetMonthlyTransferAmountsByReceiverCardNumber.
+func (mr *MockTransferRepositoryMockRecorder) GetMonthlyTransferAmountsByReceiverCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTransferAmountsByReceiverCardNumber", reflect.TypeOf((*MockTransferRepository)(nil).GetMonthlyTransferAmountsByReceiverCardNumber), req)
+}
+
+// GetMonthlyTransferAmountsBySenderCardNumber mocks base method.
+func (m *MockTransferRepository) GetMonthlyTransferAmountsBySenderCardNumber(req *requests.MonthYearCardNumber) ([]*record.TransferMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyTransferAmountsBySenderCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransferMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyTransferAmountsBySenderCardNumber indicates an expected call of GetMonthlyTransferAmountsBySenderCardNumber.
+func (mr *MockTransferRepositoryMockRecorder) GetMonthlyTransferAmountsBySenderCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyTransferAmountsBySenderCardNumber", reflect.TypeOf((*MockTransferRepository)(nil).GetMonthlyTransferAmountsBySenderCardNumber), req)
+}
+
+// GetYearlyTransferAmounts mocks base method.
+func (m *MockTransferRepository) GetYearlyTransferAmounts(year int) ([]*record.TransferYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransferAmounts", year)
+	ret0, _ := ret[0].([]*record.TransferYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransferAmounts indicates an expected call of GetYearlyTransferAmounts.
+func (mr *MockTransferRepositoryMockRecorder) GetYearlyTransferAmounts(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransferAmounts", reflect.TypeOf((*MockTransferRepository)(nil).GetYearlyTransferAmounts), year)
+}
+
+// GetYearlyTransferAmountsByReceiverCardNumber mocks base method.
+func (m *MockTransferRepository) GetYearlyTransferAmountsByReceiverCardNumber(req *requests.MonthYearCardNumber) ([]*record.TransferYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransferAmountsByReceiverCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransferYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransferAmountsByReceiverCardNumber indicates an expected call of GetYearlyTransferAmountsByReceiverCardNumber.
+func (mr *MockTransferRepositoryMockRecorder) GetYearlyTransferAmountsByReceiverCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransferAmountsByReceiverCardNumber", reflect.TypeOf((*MockTransferRepository)(nil).GetYearlyTransferAmountsByReceiverCardNumber), req)
+}
+
+// GetYearlyTransferAmountsBySenderCardNumber mocks base method.
+func (m *MockTransferRepository) GetYearlyTransferAmountsBySenderCardNumber(req *requests.MonthYearCardNumber) ([]*record.TransferYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransferAmountsBySenderCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransferYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransferAmountsBySenderCardNumber indicates an expected call of GetYearlyTransferAmountsBySenderCardNumber.
+func (mr *MockTransferRepositoryMockRecorder) GetYearlyTransferAmountsBySenderCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransferAmountsBySenderCardNumber", reflect.TypeOf((*MockTransferRepository)(nil).GetYearlyTransferAmountsBySenderCardNumber), req)
+}
+
+// GetYearlyTransferStatusFailed mocks base method.
+func (m *MockTransferRepository) GetYearlyTransferStatusFailed(year int) ([]*record.TransferRecordYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransferStatusFailed", year)
+	ret0, _ := ret[0].([]*record.TransferRecordYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransferStatusFailed indicates an expected call of GetYearlyTransferStatusFailed.
+func (mr *MockTransferRepositoryMockRecorder) GetYearlyTransferStatusFailed(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransferStatusFailed", reflect.TypeOf((*MockTransferRepository)(nil).GetYearlyTransferStatusFailed), year)
+}
+
+// GetYearlyTransferStatusFailedByCardNumber mocks base method.
+func (m *MockTransferRepository) GetYearlyTransferStatusFailedByCardNumber(req *requests.YearStatusTransferCardNumber) ([]*record.TransferRecordYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransferStatusFailedByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransferRecordYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransferStatusFailedByCardNumber indicates an expected call of GetYearlyTransferStatusFailedByCardNumber.
+func (mr *MockTransferRepositoryMockRecorder) GetYearlyTransferStatusFailedByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransferStatusFailedByCardNumber", reflect.TypeOf((*MockTransferRepository)(nil).GetYearlyTransferStatusFailedByCardNumber), req)
+}
+
+// GetYearlyTransferStatusSuccess mocks base method.
+func (m *MockTransferRepository) GetYearlyTransferStatusSuccess(year int) ([]*record.TransferRecordYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransferStatusSuccess", year)
+	ret0, _ := ret[0].([]*record.TransferRecordYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransferStatusSuccess indicates an expected call of GetYearlyTransferStatusSuccess.
+func (mr *MockTransferRepositoryMockRecorder) GetYearlyTransferStatusSuccess(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransferStatusSuccess", reflect.TypeOf((*MockTransferRepository)(nil).GetYearlyTransferStatusSuccess), year)
+}
+
+// GetYearlyTransferStatusSuccessByCardNumber mocks base method.
+func (m *MockTransferRepository) GetYearlyTransferStatusSuccessByCardNumber(req *requests.YearStatusTransferCardNumber) ([]*record.TransferRecordYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyTransferStatusSuccessByCardNumber", req)
+	ret0, _ := ret[0].([]*record.TransferRecordYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyTransferStatusSuccessByCardNumber indicates an expected call of GetYearlyTransferStatusSuccessByCardNumber.
+func (mr *MockTransferRepositoryMockRecorder) GetYearlyTransferStatusSuccessByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyTransferStatusSuccessByCardNumber", reflect.TypeOf((*MockTransferRepository)(nil).GetYearlyTransferStatusSuccessByCardNumber), req)
 }
 
 // RestoreAllTransfer mocks base method.
@@ -2109,6 +3628,21 @@ func (mr *MockTransferRepositoryMockRecorder) UpdateTransferAmount(request any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTransferAmount", reflect.TypeOf((*MockTransferRepository)(nil).UpdateTransferAmount), request)
 }
 
+// UpdateTransferStatus mocks base method.
+func (m *MockTransferRepository) UpdateTransferStatus(request *requests.UpdateTransferStatus) (*record.TransferRecord, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTransferStatus", request)
+	ret0, _ := ret[0].(*record.TransferRecord)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateTransferStatus indicates an expected call of UpdateTransferStatus.
+func (mr *MockTransferRepositoryMockRecorder) UpdateTransferStatus(request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTransferStatus", reflect.TypeOf((*MockTransferRepository)(nil).UpdateTransferStatus), request)
+}
+
 // MockWithdrawRepository is a mock of WithdrawRepository interface.
 type MockWithdrawRepository struct {
 	ctrl     *gomock.Controller
@@ -2131,21 +3665,6 @@ func NewMockWithdrawRepository(ctrl *gomock.Controller) *MockWithdrawRepository 
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockWithdrawRepository) EXPECT() *MockWithdrawRepositoryMockRecorder {
 	return m.recorder
-}
-
-// CountActiveByDate mocks base method.
-func (m *MockWithdrawRepository) CountActiveByDate(date time.Time) (int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountActiveByDate", date)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountActiveByDate indicates an expected call of CountActiveByDate.
-func (mr *MockWithdrawRepositoryMockRecorder) CountActiveByDate(date any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountActiveByDate", reflect.TypeOf((*MockWithdrawRepository)(nil).CountActiveByDate), date)
 }
 
 // CreateWithdraw mocks base method.
@@ -2194,50 +3713,51 @@ func (mr *MockWithdrawRepositoryMockRecorder) DeleteWithdrawPermanent(WithdrawID
 }
 
 // FindAll mocks base method.
-func (m *MockWithdrawRepository) FindAll(search string, page, pageSize int) ([]*record.WithdrawRecord, int, error) {
+func (m *MockWithdrawRepository) FindAll(req *requests.FindAllWithdraws) ([]*record.WithdrawRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAll", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindAll", req)
 	ret0, _ := ret[0].([]*record.WithdrawRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindAll indicates an expected call of FindAll.
-func (mr *MockWithdrawRepositoryMockRecorder) FindAll(search, page, pageSize any) *gomock.Call {
+func (mr *MockWithdrawRepositoryMockRecorder) FindAll(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockWithdrawRepository)(nil).FindAll), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockWithdrawRepository)(nil).FindAll), req)
+}
+
+// FindAllByCardNumber mocks base method.
+func (m *MockWithdrawRepository) FindAllByCardNumber(req *requests.FindAllWithdrawCardNumber) ([]*record.WithdrawRecord, *int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAllByCardNumber", req)
+	ret0, _ := ret[0].([]*record.WithdrawRecord)
+	ret1, _ := ret[1].(*int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// FindAllByCardNumber indicates an expected call of FindAllByCardNumber.
+func (mr *MockWithdrawRepositoryMockRecorder) FindAllByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllByCardNumber", reflect.TypeOf((*MockWithdrawRepository)(nil).FindAllByCardNumber), req)
 }
 
 // FindByActive mocks base method.
-func (m *MockWithdrawRepository) FindByActive(search string, page, pageSize int) ([]*record.WithdrawRecord, int, error) {
+func (m *MockWithdrawRepository) FindByActive(req *requests.FindAllWithdraws) ([]*record.WithdrawRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByActive", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByActive", req)
 	ret0, _ := ret[0].([]*record.WithdrawRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByActive indicates an expected call of FindByActive.
-func (mr *MockWithdrawRepositoryMockRecorder) FindByActive(search, page, pageSize any) *gomock.Call {
+func (mr *MockWithdrawRepositoryMockRecorder) FindByActive(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockWithdrawRepository)(nil).FindByActive), search, page, pageSize)
-}
-
-// FindByCardNumber mocks base method.
-func (m *MockWithdrawRepository) FindByCardNumber(card_number string) ([]*record.WithdrawRecord, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByCardNumber", card_number)
-	ret0, _ := ret[0].([]*record.WithdrawRecord)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FindByCardNumber indicates an expected call of FindByCardNumber.
-func (mr *MockWithdrawRepositoryMockRecorder) FindByCardNumber(card_number any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByCardNumber", reflect.TypeOf((*MockWithdrawRepository)(nil).FindByCardNumber), card_number)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActive", reflect.TypeOf((*MockWithdrawRepository)(nil).FindByActive), req)
 }
 
 // FindById mocks base method.
@@ -2256,19 +3776,199 @@ func (mr *MockWithdrawRepositoryMockRecorder) FindById(id any) *gomock.Call {
 }
 
 // FindByTrashed mocks base method.
-func (m *MockWithdrawRepository) FindByTrashed(search string, page, pageSize int) ([]*record.WithdrawRecord, int, error) {
+func (m *MockWithdrawRepository) FindByTrashed(req *requests.FindAllWithdraws) ([]*record.WithdrawRecord, *int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByTrashed", search, page, pageSize)
+	ret := m.ctrl.Call(m, "FindByTrashed", req)
 	ret0, _ := ret[0].([]*record.WithdrawRecord)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(*int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // FindByTrashed indicates an expected call of FindByTrashed.
-func (mr *MockWithdrawRepositoryMockRecorder) FindByTrashed(search, page, pageSize any) *gomock.Call {
+func (mr *MockWithdrawRepositoryMockRecorder) FindByTrashed(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockWithdrawRepository)(nil).FindByTrashed), search, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockWithdrawRepository)(nil).FindByTrashed), req)
+}
+
+// GetMonthWithdrawStatusFailed mocks base method.
+func (m *MockWithdrawRepository) GetMonthWithdrawStatusFailed(req *requests.MonthStatusWithdraw) ([]*record.WithdrawRecordMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthWithdrawStatusFailed", req)
+	ret0, _ := ret[0].([]*record.WithdrawRecordMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthWithdrawStatusFailed indicates an expected call of GetMonthWithdrawStatusFailed.
+func (mr *MockWithdrawRepositoryMockRecorder) GetMonthWithdrawStatusFailed(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthWithdrawStatusFailed", reflect.TypeOf((*MockWithdrawRepository)(nil).GetMonthWithdrawStatusFailed), req)
+}
+
+// GetMonthWithdrawStatusFailedByCardNumber mocks base method.
+func (m *MockWithdrawRepository) GetMonthWithdrawStatusFailedByCardNumber(req *requests.MonthStatusWithdrawCardNumber) ([]*record.WithdrawRecordMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthWithdrawStatusFailedByCardNumber", req)
+	ret0, _ := ret[0].([]*record.WithdrawRecordMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthWithdrawStatusFailedByCardNumber indicates an expected call of GetMonthWithdrawStatusFailedByCardNumber.
+func (mr *MockWithdrawRepositoryMockRecorder) GetMonthWithdrawStatusFailedByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthWithdrawStatusFailedByCardNumber", reflect.TypeOf((*MockWithdrawRepository)(nil).GetMonthWithdrawStatusFailedByCardNumber), req)
+}
+
+// GetMonthWithdrawStatusSuccess mocks base method.
+func (m *MockWithdrawRepository) GetMonthWithdrawStatusSuccess(req *requests.MonthStatusWithdraw) ([]*record.WithdrawRecordMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthWithdrawStatusSuccess", req)
+	ret0, _ := ret[0].([]*record.WithdrawRecordMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthWithdrawStatusSuccess indicates an expected call of GetMonthWithdrawStatusSuccess.
+func (mr *MockWithdrawRepositoryMockRecorder) GetMonthWithdrawStatusSuccess(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthWithdrawStatusSuccess", reflect.TypeOf((*MockWithdrawRepository)(nil).GetMonthWithdrawStatusSuccess), req)
+}
+
+// GetMonthWithdrawStatusSuccessByCardNumber mocks base method.
+func (m *MockWithdrawRepository) GetMonthWithdrawStatusSuccessByCardNumber(req *requests.MonthStatusWithdrawCardNumber) ([]*record.WithdrawRecordMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthWithdrawStatusSuccessByCardNumber", req)
+	ret0, _ := ret[0].([]*record.WithdrawRecordMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthWithdrawStatusSuccessByCardNumber indicates an expected call of GetMonthWithdrawStatusSuccessByCardNumber.
+func (mr *MockWithdrawRepositoryMockRecorder) GetMonthWithdrawStatusSuccessByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthWithdrawStatusSuccessByCardNumber", reflect.TypeOf((*MockWithdrawRepository)(nil).GetMonthWithdrawStatusSuccessByCardNumber), req)
+}
+
+// GetMonthlyWithdraws mocks base method.
+func (m *MockWithdrawRepository) GetMonthlyWithdraws(year int) ([]*record.WithdrawMonthlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyWithdraws", year)
+	ret0, _ := ret[0].([]*record.WithdrawMonthlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyWithdraws indicates an expected call of GetMonthlyWithdraws.
+func (mr *MockWithdrawRepositoryMockRecorder) GetMonthlyWithdraws(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyWithdraws", reflect.TypeOf((*MockWithdrawRepository)(nil).GetMonthlyWithdraws), year)
+}
+
+// GetMonthlyWithdrawsByCardNumber mocks base method.
+func (m *MockWithdrawRepository) GetMonthlyWithdrawsByCardNumber(req *requests.YearMonthCardNumber) ([]*record.WithdrawMonthlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMonthlyWithdrawsByCardNumber", req)
+	ret0, _ := ret[0].([]*record.WithdrawMonthlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMonthlyWithdrawsByCardNumber indicates an expected call of GetMonthlyWithdrawsByCardNumber.
+func (mr *MockWithdrawRepositoryMockRecorder) GetMonthlyWithdrawsByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMonthlyWithdrawsByCardNumber", reflect.TypeOf((*MockWithdrawRepository)(nil).GetMonthlyWithdrawsByCardNumber), req)
+}
+
+// GetYearlyWithdrawStatusFailed mocks base method.
+func (m *MockWithdrawRepository) GetYearlyWithdrawStatusFailed(year int) ([]*record.WithdrawRecordYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyWithdrawStatusFailed", year)
+	ret0, _ := ret[0].([]*record.WithdrawRecordYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyWithdrawStatusFailed indicates an expected call of GetYearlyWithdrawStatusFailed.
+func (mr *MockWithdrawRepositoryMockRecorder) GetYearlyWithdrawStatusFailed(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyWithdrawStatusFailed", reflect.TypeOf((*MockWithdrawRepository)(nil).GetYearlyWithdrawStatusFailed), year)
+}
+
+// GetYearlyWithdrawStatusFailedByCardNumber mocks base method.
+func (m *MockWithdrawRepository) GetYearlyWithdrawStatusFailedByCardNumber(req *requests.YearStatusWithdrawCardNumber) ([]*record.WithdrawRecordYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyWithdrawStatusFailedByCardNumber", req)
+	ret0, _ := ret[0].([]*record.WithdrawRecordYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyWithdrawStatusFailedByCardNumber indicates an expected call of GetYearlyWithdrawStatusFailedByCardNumber.
+func (mr *MockWithdrawRepositoryMockRecorder) GetYearlyWithdrawStatusFailedByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyWithdrawStatusFailedByCardNumber", reflect.TypeOf((*MockWithdrawRepository)(nil).GetYearlyWithdrawStatusFailedByCardNumber), req)
+}
+
+// GetYearlyWithdrawStatusSuccess mocks base method.
+func (m *MockWithdrawRepository) GetYearlyWithdrawStatusSuccess(year int) ([]*record.WithdrawRecordYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyWithdrawStatusSuccess", year)
+	ret0, _ := ret[0].([]*record.WithdrawRecordYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyWithdrawStatusSuccess indicates an expected call of GetYearlyWithdrawStatusSuccess.
+func (mr *MockWithdrawRepositoryMockRecorder) GetYearlyWithdrawStatusSuccess(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyWithdrawStatusSuccess", reflect.TypeOf((*MockWithdrawRepository)(nil).GetYearlyWithdrawStatusSuccess), year)
+}
+
+// GetYearlyWithdrawStatusSuccessByCardNumber mocks base method.
+func (m *MockWithdrawRepository) GetYearlyWithdrawStatusSuccessByCardNumber(req *requests.YearStatusWithdrawCardNumber) ([]*record.WithdrawRecordYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyWithdrawStatusSuccessByCardNumber", req)
+	ret0, _ := ret[0].([]*record.WithdrawRecordYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyWithdrawStatusSuccessByCardNumber indicates an expected call of GetYearlyWithdrawStatusSuccessByCardNumber.
+func (mr *MockWithdrawRepositoryMockRecorder) GetYearlyWithdrawStatusSuccessByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyWithdrawStatusSuccessByCardNumber", reflect.TypeOf((*MockWithdrawRepository)(nil).GetYearlyWithdrawStatusSuccessByCardNumber), req)
+}
+
+// GetYearlyWithdraws mocks base method.
+func (m *MockWithdrawRepository) GetYearlyWithdraws(year int) ([]*record.WithdrawYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyWithdraws", year)
+	ret0, _ := ret[0].([]*record.WithdrawYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyWithdraws indicates an expected call of GetYearlyWithdraws.
+func (mr *MockWithdrawRepositoryMockRecorder) GetYearlyWithdraws(year any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyWithdraws", reflect.TypeOf((*MockWithdrawRepository)(nil).GetYearlyWithdraws), year)
+}
+
+// GetYearlyWithdrawsByCardNumber mocks base method.
+func (m *MockWithdrawRepository) GetYearlyWithdrawsByCardNumber(req *requests.YearMonthCardNumber) ([]*record.WithdrawYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetYearlyWithdrawsByCardNumber", req)
+	ret0, _ := ret[0].([]*record.WithdrawYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetYearlyWithdrawsByCardNumber indicates an expected call of GetYearlyWithdrawsByCardNumber.
+func (mr *MockWithdrawRepositoryMockRecorder) GetYearlyWithdrawsByCardNumber(req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetYearlyWithdrawsByCardNumber", reflect.TypeOf((*MockWithdrawRepository)(nil).GetYearlyWithdrawsByCardNumber), req)
 }
 
 // RestoreAllWithdraw mocks base method.
@@ -2329,4 +4029,19 @@ func (m *MockWithdrawRepository) UpdateWithdraw(request *requests.UpdateWithdraw
 func (mr *MockWithdrawRepositoryMockRecorder) UpdateWithdraw(request any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateWithdraw", reflect.TypeOf((*MockWithdrawRepository)(nil).UpdateWithdraw), request)
+}
+
+// UpdateWithdrawStatus mocks base method.
+func (m *MockWithdrawRepository) UpdateWithdrawStatus(request *requests.UpdateWithdrawStatus) (*record.WithdrawRecord, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateWithdrawStatus", request)
+	ret0, _ := ret[0].(*record.WithdrawRecord)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateWithdrawStatus indicates an expected call of UpdateWithdrawStatus.
+func (mr *MockWithdrawRepositoryMockRecorder) UpdateWithdrawStatus(request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateWithdrawStatus", reflect.TypeOf((*MockWithdrawRepository)(nil).UpdateWithdrawStatus), request)
 }

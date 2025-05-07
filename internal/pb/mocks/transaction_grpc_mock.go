@@ -123,6 +123,26 @@ func (mr *MockTransactionServiceClientMockRecorder) FindAllTransaction(ctx, in a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransaction", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindAllTransaction), varargs...)
 }
 
+// FindAllTransactionByCardNumber mocks base method.
+func (m *MockTransactionServiceClient) FindAllTransactionByCardNumber(ctx context.Context, in *pb.FindAllTransactionCardNumberRequest, opts ...grpc.CallOption) (*pb.ApiResponsePaginationTransaction, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindAllTransactionByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationTransaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAllTransactionByCardNumber indicates an expected call of FindAllTransactionByCardNumber.
+func (mr *MockTransactionServiceClientMockRecorder) FindAllTransactionByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransactionByCardNumber", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindAllTransactionByCardNumber), varargs...)
+}
+
 // FindByActiveTransaction mocks base method.
 func (m *MockTransactionServiceClient) FindByActiveTransaction(ctx context.Context, in *pb.FindAllTransactionRequest, opts ...grpc.CallOption) (*pb.ApiResponsePaginationTransactionDeleteAt, error) {
 	m.ctrl.T.Helper()
@@ -141,26 +161,6 @@ func (mr *MockTransactionServiceClientMockRecorder) FindByActiveTransaction(ctx,
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActiveTransaction", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindByActiveTransaction), varargs...)
-}
-
-// FindByCardNumberTransaction mocks base method.
-func (m *MockTransactionServiceClient) FindByCardNumberTransaction(ctx context.Context, in *pb.FindByCardNumberTransactionRequest, opts ...grpc.CallOption) (*pb.ApiResponseTransactions, error) {
-	m.ctrl.T.Helper()
-	varargs := []any{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "FindByCardNumberTransaction", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseTransactions)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FindByCardNumberTransaction indicates an expected call of FindByCardNumberTransaction.
-func (mr *MockTransactionServiceClientMockRecorder) FindByCardNumberTransaction(ctx, in any, opts ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByCardNumberTransaction", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindByCardNumberTransaction), varargs...)
 }
 
 // FindByIdTransaction mocks base method.
@@ -203,6 +203,166 @@ func (mr *MockTransactionServiceClientMockRecorder) FindByTrashedTransaction(ctx
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashedTransaction", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindByTrashedTransaction), varargs...)
 }
 
+// FindMonthlyAmounts mocks base method.
+func (m *MockTransactionServiceClient) FindMonthlyAmounts(ctx context.Context, in *pb.FindYearTransactionStatus, opts ...grpc.CallOption) (*pb.ApiResponseTransactionMonthAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyAmounts", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyAmounts indicates an expected call of FindMonthlyAmounts.
+func (mr *MockTransactionServiceClientMockRecorder) FindMonthlyAmounts(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyAmounts", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindMonthlyAmounts), varargs...)
+}
+
+// FindMonthlyAmountsByCardNumber mocks base method.
+func (m *MockTransactionServiceClient) FindMonthlyAmountsByCardNumber(ctx context.Context, in *pb.FindByYearCardNumberTransactionRequest, opts ...grpc.CallOption) (*pb.ApiResponseTransactionMonthAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyAmountsByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyAmountsByCardNumber indicates an expected call of FindMonthlyAmountsByCardNumber.
+func (mr *MockTransactionServiceClientMockRecorder) FindMonthlyAmountsByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyAmountsByCardNumber", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindMonthlyAmountsByCardNumber), varargs...)
+}
+
+// FindMonthlyPaymentMethods mocks base method.
+func (m *MockTransactionServiceClient) FindMonthlyPaymentMethods(ctx context.Context, in *pb.FindYearTransactionStatus, opts ...grpc.CallOption) (*pb.ApiResponseTransactionMonthMethod, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyPaymentMethods", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyPaymentMethods indicates an expected call of FindMonthlyPaymentMethods.
+func (mr *MockTransactionServiceClientMockRecorder) FindMonthlyPaymentMethods(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyPaymentMethods", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindMonthlyPaymentMethods), varargs...)
+}
+
+// FindMonthlyPaymentMethodsByCardNumber mocks base method.
+func (m *MockTransactionServiceClient) FindMonthlyPaymentMethodsByCardNumber(ctx context.Context, in *pb.FindByYearCardNumberTransactionRequest, opts ...grpc.CallOption) (*pb.ApiResponseTransactionMonthMethod, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyPaymentMethodsByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyPaymentMethodsByCardNumber indicates an expected call of FindMonthlyPaymentMethodsByCardNumber.
+func (mr *MockTransactionServiceClientMockRecorder) FindMonthlyPaymentMethodsByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyPaymentMethodsByCardNumber", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindMonthlyPaymentMethodsByCardNumber), varargs...)
+}
+
+// FindMonthlyTransactionStatusFailed mocks base method.
+func (m *MockTransactionServiceClient) FindMonthlyTransactionStatusFailed(ctx context.Context, in *pb.FindMonthlyTransactionStatus, opts ...grpc.CallOption) (*pb.ApiResponseTransactionMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTransactionStatusFailed", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTransactionStatusFailed indicates an expected call of FindMonthlyTransactionStatusFailed.
+func (mr *MockTransactionServiceClientMockRecorder) FindMonthlyTransactionStatusFailed(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTransactionStatusFailed", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindMonthlyTransactionStatusFailed), varargs...)
+}
+
+// FindMonthlyTransactionStatusFailedByCardNumber mocks base method.
+func (m *MockTransactionServiceClient) FindMonthlyTransactionStatusFailedByCardNumber(ctx context.Context, in *pb.FindMonthlyTransactionStatusCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseTransactionMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTransactionStatusFailedByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTransactionStatusFailedByCardNumber indicates an expected call of FindMonthlyTransactionStatusFailedByCardNumber.
+func (mr *MockTransactionServiceClientMockRecorder) FindMonthlyTransactionStatusFailedByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTransactionStatusFailedByCardNumber", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindMonthlyTransactionStatusFailedByCardNumber), varargs...)
+}
+
+// FindMonthlyTransactionStatusSuccess mocks base method.
+func (m *MockTransactionServiceClient) FindMonthlyTransactionStatusSuccess(ctx context.Context, in *pb.FindMonthlyTransactionStatus, opts ...grpc.CallOption) (*pb.ApiResponseTransactionMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTransactionStatusSuccess", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTransactionStatusSuccess indicates an expected call of FindMonthlyTransactionStatusSuccess.
+func (mr *MockTransactionServiceClientMockRecorder) FindMonthlyTransactionStatusSuccess(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTransactionStatusSuccess", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindMonthlyTransactionStatusSuccess), varargs...)
+}
+
+// FindMonthlyTransactionStatusSuccessByCardNumber mocks base method.
+func (m *MockTransactionServiceClient) FindMonthlyTransactionStatusSuccessByCardNumber(ctx context.Context, in *pb.FindMonthlyTransactionStatusCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseTransactionMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTransactionStatusSuccessByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTransactionStatusSuccessByCardNumber indicates an expected call of FindMonthlyTransactionStatusSuccessByCardNumber.
+func (mr *MockTransactionServiceClientMockRecorder) FindMonthlyTransactionStatusSuccessByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTransactionStatusSuccessByCardNumber", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindMonthlyTransactionStatusSuccessByCardNumber), varargs...)
+}
+
 // FindTransactionByMerchantId mocks base method.
 func (m *MockTransactionServiceClient) FindTransactionByMerchantId(ctx context.Context, in *pb.FindTransactionByMerchantIdRequest, opts ...grpc.CallOption) (*pb.ApiResponseTransactions, error) {
 	m.ctrl.T.Helper()
@@ -221,6 +381,166 @@ func (mr *MockTransactionServiceClientMockRecorder) FindTransactionByMerchantId(
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindTransactionByMerchantId", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindTransactionByMerchantId), varargs...)
+}
+
+// FindYearlyAmounts mocks base method.
+func (m *MockTransactionServiceClient) FindYearlyAmounts(ctx context.Context, in *pb.FindYearTransactionStatus, opts ...grpc.CallOption) (*pb.ApiResponseTransactionYearAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyAmounts", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyAmounts indicates an expected call of FindYearlyAmounts.
+func (mr *MockTransactionServiceClientMockRecorder) FindYearlyAmounts(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyAmounts", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindYearlyAmounts), varargs...)
+}
+
+// FindYearlyAmountsByCardNumber mocks base method.
+func (m *MockTransactionServiceClient) FindYearlyAmountsByCardNumber(ctx context.Context, in *pb.FindByYearCardNumberTransactionRequest, opts ...grpc.CallOption) (*pb.ApiResponseTransactionYearAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyAmountsByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyAmountsByCardNumber indicates an expected call of FindYearlyAmountsByCardNumber.
+func (mr *MockTransactionServiceClientMockRecorder) FindYearlyAmountsByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyAmountsByCardNumber", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindYearlyAmountsByCardNumber), varargs...)
+}
+
+// FindYearlyPaymentMethods mocks base method.
+func (m *MockTransactionServiceClient) FindYearlyPaymentMethods(ctx context.Context, in *pb.FindYearTransactionStatus, opts ...grpc.CallOption) (*pb.ApiResponseTransactionYearMethod, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyPaymentMethods", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyPaymentMethods indicates an expected call of FindYearlyPaymentMethods.
+func (mr *MockTransactionServiceClientMockRecorder) FindYearlyPaymentMethods(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyPaymentMethods", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindYearlyPaymentMethods), varargs...)
+}
+
+// FindYearlyPaymentMethodsByCardNumber mocks base method.
+func (m *MockTransactionServiceClient) FindYearlyPaymentMethodsByCardNumber(ctx context.Context, in *pb.FindByYearCardNumberTransactionRequest, opts ...grpc.CallOption) (*pb.ApiResponseTransactionYearMethod, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyPaymentMethodsByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyPaymentMethodsByCardNumber indicates an expected call of FindYearlyPaymentMethodsByCardNumber.
+func (mr *MockTransactionServiceClientMockRecorder) FindYearlyPaymentMethodsByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyPaymentMethodsByCardNumber", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindYearlyPaymentMethodsByCardNumber), varargs...)
+}
+
+// FindYearlyTransactionStatusFailed mocks base method.
+func (m *MockTransactionServiceClient) FindYearlyTransactionStatusFailed(ctx context.Context, in *pb.FindYearTransactionStatus, opts ...grpc.CallOption) (*pb.ApiResponseTransactionYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTransactionStatusFailed", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTransactionStatusFailed indicates an expected call of FindYearlyTransactionStatusFailed.
+func (mr *MockTransactionServiceClientMockRecorder) FindYearlyTransactionStatusFailed(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTransactionStatusFailed", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindYearlyTransactionStatusFailed), varargs...)
+}
+
+// FindYearlyTransactionStatusFailedByCardNumber mocks base method.
+func (m *MockTransactionServiceClient) FindYearlyTransactionStatusFailedByCardNumber(ctx context.Context, in *pb.FindYearTransactionStatusCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseTransactionYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTransactionStatusFailedByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTransactionStatusFailedByCardNumber indicates an expected call of FindYearlyTransactionStatusFailedByCardNumber.
+func (mr *MockTransactionServiceClientMockRecorder) FindYearlyTransactionStatusFailedByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTransactionStatusFailedByCardNumber", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindYearlyTransactionStatusFailedByCardNumber), varargs...)
+}
+
+// FindYearlyTransactionStatusSuccess mocks base method.
+func (m *MockTransactionServiceClient) FindYearlyTransactionStatusSuccess(ctx context.Context, in *pb.FindYearTransactionStatus, opts ...grpc.CallOption) (*pb.ApiResponseTransactionYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTransactionStatusSuccess", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTransactionStatusSuccess indicates an expected call of FindYearlyTransactionStatusSuccess.
+func (mr *MockTransactionServiceClientMockRecorder) FindYearlyTransactionStatusSuccess(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTransactionStatusSuccess", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindYearlyTransactionStatusSuccess), varargs...)
+}
+
+// FindYearlyTransactionStatusSuccessByCardNumber mocks base method.
+func (m *MockTransactionServiceClient) FindYearlyTransactionStatusSuccessByCardNumber(ctx context.Context, in *pb.FindYearTransactionStatusCardNumber, opts ...grpc.CallOption) (*pb.ApiResponseTransactionYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTransactionStatusSuccessByCardNumber", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTransactionStatusSuccessByCardNumber indicates an expected call of FindYearlyTransactionStatusSuccessByCardNumber.
+func (mr *MockTransactionServiceClientMockRecorder) FindYearlyTransactionStatusSuccessByCardNumber(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTransactionStatusSuccessByCardNumber", reflect.TypeOf((*MockTransactionServiceClient)(nil).FindYearlyTransactionStatusSuccessByCardNumber), varargs...)
 }
 
 // RestoreAllTransaction mocks base method.
@@ -387,6 +707,21 @@ func (mr *MockTransactionServiceServerMockRecorder) FindAllTransaction(arg0, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransaction", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindAllTransaction), arg0, arg1)
 }
 
+// FindAllTransactionByCardNumber mocks base method.
+func (m *MockTransactionServiceServer) FindAllTransactionByCardNumber(arg0 context.Context, arg1 *pb.FindAllTransactionCardNumberRequest) (*pb.ApiResponsePaginationTransaction, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAllTransactionByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationTransaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAllTransactionByCardNumber indicates an expected call of FindAllTransactionByCardNumber.
+func (mr *MockTransactionServiceServerMockRecorder) FindAllTransactionByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransactionByCardNumber", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindAllTransactionByCardNumber), arg0, arg1)
+}
+
 // FindByActiveTransaction mocks base method.
 func (m *MockTransactionServiceServer) FindByActiveTransaction(arg0 context.Context, arg1 *pb.FindAllTransactionRequest) (*pb.ApiResponsePaginationTransactionDeleteAt, error) {
 	m.ctrl.T.Helper()
@@ -400,21 +735,6 @@ func (m *MockTransactionServiceServer) FindByActiveTransaction(arg0 context.Cont
 func (mr *MockTransactionServiceServerMockRecorder) FindByActiveTransaction(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActiveTransaction", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindByActiveTransaction), arg0, arg1)
-}
-
-// FindByCardNumberTransaction mocks base method.
-func (m *MockTransactionServiceServer) FindByCardNumberTransaction(arg0 context.Context, arg1 *pb.FindByCardNumberTransactionRequest) (*pb.ApiResponseTransactions, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByCardNumberTransaction", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseTransactions)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FindByCardNumberTransaction indicates an expected call of FindByCardNumberTransaction.
-func (mr *MockTransactionServiceServerMockRecorder) FindByCardNumberTransaction(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByCardNumberTransaction", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindByCardNumberTransaction), arg0, arg1)
 }
 
 // FindByIdTransaction mocks base method.
@@ -447,6 +767,126 @@ func (mr *MockTransactionServiceServerMockRecorder) FindByTrashedTransaction(arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashedTransaction", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindByTrashedTransaction), arg0, arg1)
 }
 
+// FindMonthlyAmounts mocks base method.
+func (m *MockTransactionServiceServer) FindMonthlyAmounts(arg0 context.Context, arg1 *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyAmounts", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyAmounts indicates an expected call of FindMonthlyAmounts.
+func (mr *MockTransactionServiceServerMockRecorder) FindMonthlyAmounts(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyAmounts", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindMonthlyAmounts), arg0, arg1)
+}
+
+// FindMonthlyAmountsByCardNumber mocks base method.
+func (m *MockTransactionServiceServer) FindMonthlyAmountsByCardNumber(arg0 context.Context, arg1 *pb.FindByYearCardNumberTransactionRequest) (*pb.ApiResponseTransactionMonthAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyAmountsByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyAmountsByCardNumber indicates an expected call of FindMonthlyAmountsByCardNumber.
+func (mr *MockTransactionServiceServerMockRecorder) FindMonthlyAmountsByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyAmountsByCardNumber", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindMonthlyAmountsByCardNumber), arg0, arg1)
+}
+
+// FindMonthlyPaymentMethods mocks base method.
+func (m *MockTransactionServiceServer) FindMonthlyPaymentMethods(arg0 context.Context, arg1 *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionMonthMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyPaymentMethods", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyPaymentMethods indicates an expected call of FindMonthlyPaymentMethods.
+func (mr *MockTransactionServiceServerMockRecorder) FindMonthlyPaymentMethods(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyPaymentMethods", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindMonthlyPaymentMethods), arg0, arg1)
+}
+
+// FindMonthlyPaymentMethodsByCardNumber mocks base method.
+func (m *MockTransactionServiceServer) FindMonthlyPaymentMethodsByCardNumber(arg0 context.Context, arg1 *pb.FindByYearCardNumberTransactionRequest) (*pb.ApiResponseTransactionMonthMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyPaymentMethodsByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyPaymentMethodsByCardNumber indicates an expected call of FindMonthlyPaymentMethodsByCardNumber.
+func (mr *MockTransactionServiceServerMockRecorder) FindMonthlyPaymentMethodsByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyPaymentMethodsByCardNumber", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindMonthlyPaymentMethodsByCardNumber), arg0, arg1)
+}
+
+// FindMonthlyTransactionStatusFailed mocks base method.
+func (m *MockTransactionServiceServer) FindMonthlyTransactionStatusFailed(arg0 context.Context, arg1 *pb.FindMonthlyTransactionStatus) (*pb.ApiResponseTransactionMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTransactionStatusFailed", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTransactionStatusFailed indicates an expected call of FindMonthlyTransactionStatusFailed.
+func (mr *MockTransactionServiceServerMockRecorder) FindMonthlyTransactionStatusFailed(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTransactionStatusFailed", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindMonthlyTransactionStatusFailed), arg0, arg1)
+}
+
+// FindMonthlyTransactionStatusFailedByCardNumber mocks base method.
+func (m *MockTransactionServiceServer) FindMonthlyTransactionStatusFailedByCardNumber(arg0 context.Context, arg1 *pb.FindMonthlyTransactionStatusCardNumber) (*pb.ApiResponseTransactionMonthStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTransactionStatusFailedByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTransactionStatusFailedByCardNumber indicates an expected call of FindMonthlyTransactionStatusFailedByCardNumber.
+func (mr *MockTransactionServiceServerMockRecorder) FindMonthlyTransactionStatusFailedByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTransactionStatusFailedByCardNumber", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindMonthlyTransactionStatusFailedByCardNumber), arg0, arg1)
+}
+
+// FindMonthlyTransactionStatusSuccess mocks base method.
+func (m *MockTransactionServiceServer) FindMonthlyTransactionStatusSuccess(arg0 context.Context, arg1 *pb.FindMonthlyTransactionStatus) (*pb.ApiResponseTransactionMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTransactionStatusSuccess", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTransactionStatusSuccess indicates an expected call of FindMonthlyTransactionStatusSuccess.
+func (mr *MockTransactionServiceServerMockRecorder) FindMonthlyTransactionStatusSuccess(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTransactionStatusSuccess", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindMonthlyTransactionStatusSuccess), arg0, arg1)
+}
+
+// FindMonthlyTransactionStatusSuccessByCardNumber mocks base method.
+func (m *MockTransactionServiceServer) FindMonthlyTransactionStatusSuccessByCardNumber(arg0 context.Context, arg1 *pb.FindMonthlyTransactionStatusCardNumber) (*pb.ApiResponseTransactionMonthStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTransactionStatusSuccessByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionMonthStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTransactionStatusSuccessByCardNumber indicates an expected call of FindMonthlyTransactionStatusSuccessByCardNumber.
+func (mr *MockTransactionServiceServerMockRecorder) FindMonthlyTransactionStatusSuccessByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTransactionStatusSuccessByCardNumber", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindMonthlyTransactionStatusSuccessByCardNumber), arg0, arg1)
+}
+
 // FindTransactionByMerchantId mocks base method.
 func (m *MockTransactionServiceServer) FindTransactionByMerchantId(arg0 context.Context, arg1 *pb.FindTransactionByMerchantIdRequest) (*pb.ApiResponseTransactions, error) {
 	m.ctrl.T.Helper()
@@ -460,6 +900,126 @@ func (m *MockTransactionServiceServer) FindTransactionByMerchantId(arg0 context.
 func (mr *MockTransactionServiceServerMockRecorder) FindTransactionByMerchantId(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindTransactionByMerchantId", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindTransactionByMerchantId), arg0, arg1)
+}
+
+// FindYearlyAmounts mocks base method.
+func (m *MockTransactionServiceServer) FindYearlyAmounts(arg0 context.Context, arg1 *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyAmounts", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyAmounts indicates an expected call of FindYearlyAmounts.
+func (mr *MockTransactionServiceServerMockRecorder) FindYearlyAmounts(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyAmounts", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindYearlyAmounts), arg0, arg1)
+}
+
+// FindYearlyAmountsByCardNumber mocks base method.
+func (m *MockTransactionServiceServer) FindYearlyAmountsByCardNumber(arg0 context.Context, arg1 *pb.FindByYearCardNumberTransactionRequest) (*pb.ApiResponseTransactionYearAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyAmountsByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyAmountsByCardNumber indicates an expected call of FindYearlyAmountsByCardNumber.
+func (mr *MockTransactionServiceServerMockRecorder) FindYearlyAmountsByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyAmountsByCardNumber", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindYearlyAmountsByCardNumber), arg0, arg1)
+}
+
+// FindYearlyPaymentMethods mocks base method.
+func (m *MockTransactionServiceServer) FindYearlyPaymentMethods(arg0 context.Context, arg1 *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionYearMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyPaymentMethods", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyPaymentMethods indicates an expected call of FindYearlyPaymentMethods.
+func (mr *MockTransactionServiceServerMockRecorder) FindYearlyPaymentMethods(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyPaymentMethods", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindYearlyPaymentMethods), arg0, arg1)
+}
+
+// FindYearlyPaymentMethodsByCardNumber mocks base method.
+func (m *MockTransactionServiceServer) FindYearlyPaymentMethodsByCardNumber(arg0 context.Context, arg1 *pb.FindByYearCardNumberTransactionRequest) (*pb.ApiResponseTransactionYearMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyPaymentMethodsByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyPaymentMethodsByCardNumber indicates an expected call of FindYearlyPaymentMethodsByCardNumber.
+func (mr *MockTransactionServiceServerMockRecorder) FindYearlyPaymentMethodsByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyPaymentMethodsByCardNumber", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindYearlyPaymentMethodsByCardNumber), arg0, arg1)
+}
+
+// FindYearlyTransactionStatusFailed mocks base method.
+func (m *MockTransactionServiceServer) FindYearlyTransactionStatusFailed(arg0 context.Context, arg1 *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTransactionStatusFailed", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTransactionStatusFailed indicates an expected call of FindYearlyTransactionStatusFailed.
+func (mr *MockTransactionServiceServerMockRecorder) FindYearlyTransactionStatusFailed(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTransactionStatusFailed", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindYearlyTransactionStatusFailed), arg0, arg1)
+}
+
+// FindYearlyTransactionStatusFailedByCardNumber mocks base method.
+func (m *MockTransactionServiceServer) FindYearlyTransactionStatusFailedByCardNumber(arg0 context.Context, arg1 *pb.FindYearTransactionStatusCardNumber) (*pb.ApiResponseTransactionYearStatusFailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTransactionStatusFailedByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearStatusFailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTransactionStatusFailedByCardNumber indicates an expected call of FindYearlyTransactionStatusFailedByCardNumber.
+func (mr *MockTransactionServiceServerMockRecorder) FindYearlyTransactionStatusFailedByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTransactionStatusFailedByCardNumber", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindYearlyTransactionStatusFailedByCardNumber), arg0, arg1)
+}
+
+// FindYearlyTransactionStatusSuccess mocks base method.
+func (m *MockTransactionServiceServer) FindYearlyTransactionStatusSuccess(arg0 context.Context, arg1 *pb.FindYearTransactionStatus) (*pb.ApiResponseTransactionYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTransactionStatusSuccess", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTransactionStatusSuccess indicates an expected call of FindYearlyTransactionStatusSuccess.
+func (mr *MockTransactionServiceServerMockRecorder) FindYearlyTransactionStatusSuccess(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTransactionStatusSuccess", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindYearlyTransactionStatusSuccess), arg0, arg1)
+}
+
+// FindYearlyTransactionStatusSuccessByCardNumber mocks base method.
+func (m *MockTransactionServiceServer) FindYearlyTransactionStatusSuccessByCardNumber(arg0 context.Context, arg1 *pb.FindYearTransactionStatusCardNumber) (*pb.ApiResponseTransactionYearStatusSuccess, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTransactionStatusSuccessByCardNumber", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionYearStatusSuccess)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTransactionStatusSuccessByCardNumber indicates an expected call of FindYearlyTransactionStatusSuccessByCardNumber.
+func (mr *MockTransactionServiceServerMockRecorder) FindYearlyTransactionStatusSuccessByCardNumber(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTransactionStatusSuccessByCardNumber", reflect.TypeOf((*MockTransactionServiceServer)(nil).FindYearlyTransactionStatusSuccessByCardNumber), arg0, arg1)
 }
 
 // RestoreAllTransaction mocks base method.

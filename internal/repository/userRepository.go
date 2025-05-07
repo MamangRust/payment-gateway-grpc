@@ -5,10 +5,10 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	recordmapper "MamangRust/paymentgatewaygrpc/internal/mapper/record"
 	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/user_errors"
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 )
 
 type userRepository struct {
@@ -37,11 +37,7 @@ func (r *userRepository) FindAllUsers(req *requests.FindAllUsers) ([]*record.Use
 	res, err := r.db.GetUsersWithPagination(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no users found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-
-		return nil, nil, fmt.Errorf("failed to retrieve users: invalid pagination (page %d, size %d) or search criteria '%s'", req.Page, req.PageSize, req.Search)
+		return nil, nil, user_errors.ErrFindAllUsers
 	}
 
 	var totalCount int
@@ -59,9 +55,10 @@ func (r *userRepository) FindById(user_id int) (*record.UserRecord, error) {
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found with ID: %d", user_id)
+			return nil, user_errors.ErrUserNotFound
 		}
-		return nil, fmt.Errorf("failed to find user with ID %d: %w", user_id, err)
+
+		return nil, user_errors.ErrUserNotFound
 	}
 
 	return r.mapping.ToUserRecord(res), nil
@@ -79,11 +76,7 @@ func (r *userRepository) FindByActive(req *requests.FindAllUsers) ([]*record.Use
 	res, err := r.db.GetActiveUsersWithPagination(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no active users found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-
-		return nil, nil, fmt.Errorf("failed to find active users: invalid parameters (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
+		return nil, nil, user_errors.ErrFindActiveUsers
 	}
 
 	var totalCount int
@@ -108,11 +101,7 @@ func (r *userRepository) FindByTrashed(req *requests.FindAllUsers) ([]*record.Us
 	res, err := r.db.GetTrashedUsersWithPagination(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no trashed users found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-
-		return nil, nil, fmt.Errorf("failed to find trashed users: invalid parameters (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
+		return nil, nil, user_errors.ErrFindTrashedUsers
 	}
 
 	var totalCount int
@@ -130,9 +119,10 @@ func (r *userRepository) FindByEmail(email string) (*record.UserRecord, error) {
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found with email: %s", email)
+			return nil, user_errors.ErrUserNotFound
 		}
-		return nil, fmt.Errorf("failed to find user with email %s: %w", email, err)
+
+		return nil, user_errors.ErrUserNotFound
 	}
 
 	return r.mapping.ToUserRecord(res), nil
@@ -149,10 +139,7 @@ func (r *userRepository) CreateUser(request *requests.CreateUserRequest) (*recor
 	user, err := r.db.CreateUser(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("failed to create user: invalid or incomplete user data")
-		}
-		return nil, fmt.Errorf("failed to create user: invalid or incomplete user data")
+		return nil, user_errors.ErrCreateUser
 	}
 
 	return r.mapping.ToUserRecord(user), nil
@@ -170,11 +157,7 @@ func (r *userRepository) UpdateUser(request *requests.UpdateUserRequest) (*recor
 	res, err := r.db.UpdateUser(r.ctx, req)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("failed to update user ID %d: user not found or invalid update data", request.UserID)
-		}
-
-		return nil, fmt.Errorf("failed to update user ID %d: user not found or invalid update data", request.UserID)
+		return nil, user_errors.ErrUpdateUser
 	}
 
 	return r.mapping.ToUserRecord(res), nil
@@ -184,11 +167,7 @@ func (r *userRepository) TrashedUser(user_id int) (*record.UserRecord, error) {
 	res, err := r.db.TrashUser(r.ctx, int32(user_id))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("failed to move user ID %d to trash: user not found or already trashed", user_id)
-		}
-
-		return nil, fmt.Errorf("failed to move user ID %d to trash: user not found or already trashed", user_id)
+		return nil, user_errors.ErrTrashedUser
 	}
 
 	return r.mapping.ToUserRecord(res), nil
@@ -198,11 +177,7 @@ func (r *userRepository) RestoreUser(user_id int) (*record.UserRecord, error) {
 	res, err := r.db.RestoreUser(r.ctx, int32(user_id))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("failed to restore user ID %d: user not found in trash", user_id)
-		}
-
-		return nil, fmt.Errorf("failed to restore user ID %d: user not found in trash", user_id)
+		return nil, user_errors.ErrRestoreUser
 	}
 
 	return r.mapping.ToUserRecord(res), nil
@@ -212,11 +187,7 @@ func (r *userRepository) DeleteUserPermanent(user_id int) (bool, error) {
 	err := r.db.DeleteUserPermanently(r.ctx, int32(user_id))
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("failed to permanently delete user ID %d: user not found", user_id)
-		}
-
-		return false, fmt.Errorf("failed to permanently delete user ID %d: user not found", user_id)
+		return false, user_errors.ErrDeleteUserPermanent
 	}
 
 	return true, nil
@@ -226,11 +197,7 @@ func (r *userRepository) RestoreAllUser() (bool, error) {
 	err := r.db.RestoreAllUsers(r.ctx)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("no trashed users available to restore")
-		}
-
-		return false, fmt.Errorf("no trashed users available to restore")
+		return false, user_errors.ErrRestoreAllUsers
 	}
 
 	return true, nil
@@ -240,11 +207,7 @@ func (r *userRepository) DeleteAllUserPermanent() (bool, error) {
 	err := r.db.DeleteAllPermanentUsers(r.ctx)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("cannot permanently delete all users: operation not allowed")
-		}
-
-		return false, fmt.Errorf("cannot permanently delete all users: operation not allowed")
+		return false, user_errors.ErrDeleteAllUsers
 	}
 	return true, nil
 }

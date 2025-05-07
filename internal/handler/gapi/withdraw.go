@@ -2,15 +2,14 @@ package gapi
 
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
+	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	protomapper "MamangRust/paymentgatewaygrpc/internal/mapper/proto"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
 	"MamangRust/paymentgatewaygrpc/internal/service"
-	"MamangRust/paymentgatewaygrpc/pkg/errors_custom"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/withdraw_errors"
 	"context"
 	"math"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -48,14 +47,7 @@ func (w *withdrawHandleGrpc) FindAllWithdraw(ctx context.Context, req *pb.FindAl
 	withdraws, totalRecords, err := w.withdrawService.FindAll(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -94,14 +86,7 @@ func (w *withdrawHandleGrpc) FindAllWithdrawByCardNumber(ctx context.Context, re
 	withdraws, totalRecords, err := w.withdrawService.FindAllByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -122,27 +107,13 @@ func (w *withdrawHandleGrpc) FindByIdWithdraw(ctx context.Context, req *pb.FindB
 	id := int(req.GetWithdrawId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Withdraw ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcWithdrawInvalidID
 	}
 
 	withdraw, err := w.withdrawService.FindById(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := w.mapping.ToProtoResponseWithdraw("success", "Successfully fetched withdraw", withdraw)
@@ -155,25 +126,11 @@ func (s *withdrawHandleGrpc) FindMonthlyWithdrawStatusSuccess(ctx context.Contex
 	month := int(req.GetMonth())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidYear
 	}
 
 	if month <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid month parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidMonth
 	}
 
 	reqService := requests.MonthStatusWithdraw{
@@ -184,14 +141,7 @@ func (s *withdrawHandleGrpc) FindMonthlyWithdrawStatusSuccess(ctx context.Contex
 	records, err := s.withdrawService.FindMonthWithdrawStatusSuccess(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseWithdrawMonthStatusSuccess("success", "Successfully fetched withdraw", records)
@@ -203,27 +153,13 @@ func (s *withdrawHandleGrpc) FindYearlyWithdrawStatusSuccess(ctx context.Context
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidYear
 	}
 
 	records, err := s.withdrawService.FindYearlyWithdrawStatusSuccess(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseWithdrawYearStatusSuccess("success", "Successfully fetched yearly Withdraw status success", records)
@@ -236,25 +172,11 @@ func (s *withdrawHandleGrpc) FindMonthlyWithdrawStatusFailed(ctx context.Context
 	month := int(req.GetMonth())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidYear
 	}
 
 	if month <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid month parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidMonth
 	}
 
 	reqService := requests.MonthStatusWithdraw{
@@ -265,14 +187,7 @@ func (s *withdrawHandleGrpc) FindMonthlyWithdrawStatusFailed(ctx context.Context
 	records, err := s.withdrawService.FindMonthWithdrawStatusFailed(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseWithdrawMonthStatusFailed("success", "success fetched monthly Withdraw status Failed", records)
@@ -284,27 +199,13 @@ func (s *withdrawHandleGrpc) FindYearlyWithdrawStatusFailed(ctx context.Context,
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidYear
 	}
 
 	records, err := s.withdrawService.FindYearlyWithdrawStatusFailed(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseWithdrawYearStatusFailed("success", "success fetched yearly Withdraw status Failed", records)
@@ -318,36 +219,15 @@ func (s *withdrawHandleGrpc) FindMonthlyWithdrawStatusSuccessCardNumber(ctx cont
 	cardNumber := req.GetCardNumber()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidYear
 	}
 
 	if month <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid month parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidMonth
 	}
 
 	if cardNumber == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthStatusWithdrawCardNumber{
@@ -359,14 +239,7 @@ func (s *withdrawHandleGrpc) FindMonthlyWithdrawStatusSuccessCardNumber(ctx cont
 	records, err := s.withdrawService.FindMonthWithdrawStatusSuccessByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseWithdrawMonthStatusSuccess("success", "Successfully fetched withdraw", records)
@@ -379,25 +252,11 @@ func (s *withdrawHandleGrpc) FindYearlyWithdrawStatusSuccessCardNumber(ctx conte
 	cardNumber := req.GetCardNumber()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidYear
 	}
 
 	if cardNumber == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.YearStatusWithdrawCardNumber{
@@ -408,10 +267,7 @@ func (s *withdrawHandleGrpc) FindYearlyWithdrawStatusSuccessCardNumber(ctx conte
 	records, err := s.withdrawService.FindYearlyWithdrawStatusSuccessByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", &pb.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch yearly Withdraw status success: " + err.Message,
-		})
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseWithdrawYearStatusSuccess("success", "Successfully fetched yearly Withdraw status success", records)
@@ -425,36 +281,15 @@ func (s *withdrawHandleGrpc) FindMonthlyWithdrawStatusFailedCardNumber(ctx conte
 	cardNumber := req.GetCardNumber()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidYear
 	}
 
 	if month <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid month parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidMonth
 	}
 
 	if cardNumber == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthStatusWithdrawCardNumber{
@@ -466,14 +301,7 @@ func (s *withdrawHandleGrpc) FindMonthlyWithdrawStatusFailedCardNumber(ctx conte
 	records, err := s.withdrawService.FindMonthWithdrawStatusFailedByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseWithdrawMonthStatusFailed("success", "Successfully fetched monthly Withdraw status failed", records)
@@ -486,14 +314,7 @@ func (s *withdrawHandleGrpc) FindYearlyWithdrawStatusFailedCardNumber(ctx contex
 	cardNumber := req.GetCardNumber()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidYear
 	}
 
 	reqService := requests.YearStatusWithdrawCardNumber{
@@ -503,14 +324,7 @@ func (s *withdrawHandleGrpc) FindYearlyWithdrawStatusFailedCardNumber(ctx contex
 
 	records, err := s.withdrawService.FindYearlyWithdrawStatusFailedByCardNumber(&reqService)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseWithdrawYearStatusFailed("success", "Successfully fetched yearly Withdraw status failed", records)
@@ -522,27 +336,13 @@ func (w *withdrawHandleGrpc) FindMonthlyWithdraws(ctx context.Context, req *pb.F
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidYear
 	}
 
 	withdraws, err := w.withdrawService.FindMonthlyWithdraws(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := w.mapping.ToProtoResponseWithdrawMonthAmount("success", "Successfully fetched monthly withdraws", withdraws)
@@ -554,27 +354,13 @@ func (w *withdrawHandleGrpc) FindYearlyWithdraws(ctx context.Context, req *pb.Fi
 	year := int(req.GetYear())
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidYear
 	}
 
 	withdraws, err := w.withdrawService.FindYearlyWithdraws(year)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := w.mapping.ToProtoResponseWithdrawYearAmount("success", "Successfully fetched yearly withdraws", withdraws)
@@ -587,25 +373,11 @@ func (w *withdrawHandleGrpc) FindMonthlyWithdrawsByCardNumber(ctx context.Contex
 	cardNumber := req.GetCardNumber()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidYear
 	}
 
 	if cardNumber == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.YearMonthCardNumber{
@@ -616,14 +388,7 @@ func (w *withdrawHandleGrpc) FindMonthlyWithdrawsByCardNumber(ctx context.Contex
 	withdraws, err := w.withdrawService.FindMonthlyWithdrawsByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := w.mapping.ToProtoResponseWithdrawMonthAmount("success", "Successfully fetched monthly withdraws by card number", withdraws)
@@ -636,25 +401,11 @@ func (w *withdrawHandleGrpc) FindYearlyWithdrawsByCardNumber(ctx context.Context
 	cardNumber := req.GetCardNumber()
 
 	if year <= 0 {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid year parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidYear
 	}
 
 	if cardNumber == "" {
-		return nil, status.Errorf(
-			codes.Code(codes.InvalidArgument),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "invalid_input",
-				Message: "Invalid card_number parameter",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.YearMonthCardNumber{
@@ -665,14 +416,7 @@ func (w *withdrawHandleGrpc) FindYearlyWithdrawsByCardNumber(ctx context.Context
 	withdraws, err := w.withdrawService.FindYearlyWithdrawsByCardNumber(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := w.mapping.ToProtoResponseWithdrawYearAmount("success", "Successfully fetched yearly withdraws by card number", withdraws)
@@ -701,14 +445,7 @@ func (w *withdrawHandleGrpc) FindByActive(ctx context.Context, req *pb.FindAllWi
 	res, totalRecords, err := w.withdrawService.FindByActive(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -745,14 +482,7 @@ func (w *withdrawHandleGrpc) FindByTrashed(ctx context.Context, req *pb.FindAllW
 	res, totalRecords, err := w.withdrawService.FindByTrashed(&reqService)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -777,27 +507,13 @@ func (w *withdrawHandleGrpc) CreateWithdraw(ctx context.Context, req *pb.CreateW
 	}
 
 	if err := request.Validate(); err != nil {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Unable to create new topup. Please check your input.",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcValidateCreateWithdrawRequest
 	}
 
 	withdraw, err := w.withdrawService.Create(request)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := w.mapping.ToProtoResponseWithdraw("success", "Successfully created withdraw", withdraw)
@@ -810,14 +526,7 @@ func (w *withdrawHandleGrpc) UpdateWithdraw(ctx context.Context, req *pb.UpdateW
 	id := int(req.GetWithdrawId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Withdraw ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcWithdrawInvalidID
 	}
 
 	request := &requests.UpdateWithdrawRequest{
@@ -828,27 +537,13 @@ func (w *withdrawHandleGrpc) UpdateWithdraw(ctx context.Context, req *pb.UpdateW
 	}
 
 	if err := request.Validate(); err != nil {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Unable to process topup update. Please review your data.",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcValidateUpdateWithdrawRequest
 	}
 
 	withdraw, err := w.withdrawService.Update(request)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := w.mapping.ToProtoResponseWithdraw("success", "Successfully updated withdraw", withdraw)
@@ -860,27 +555,13 @@ func (w *withdrawHandleGrpc) TrashedWithdraw(ctx context.Context, req *pb.FindBy
 	id := int(req.GetWithdrawId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Merchant ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcWithdrawInvalidID
 	}
 
 	withdraw, err := w.withdrawService.TrashedWithdraw(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := w.mapping.ToProtoResponseWithdraw("success", "Successfully trashed withdraw", withdraw)
@@ -892,27 +573,13 @@ func (w *withdrawHandleGrpc) RestoreWithdraw(ctx context.Context, req *pb.FindBy
 	id := int(req.GetWithdrawId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Merchant ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcWithdrawInvalidID
 	}
 
 	withdraw, err := w.withdrawService.RestoreWithdraw(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := w.mapping.ToProtoResponseWithdraw("success", "Successfully restored withdraw", withdraw)
@@ -924,27 +591,13 @@ func (w *withdrawHandleGrpc) DeleteWithdrawPermanent(ctx context.Context, req *p
 	id := int(req.GetWithdrawId())
 
 	if id == 0 {
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  "validation_error",
-				Message: "Merchant ID parameter cannot be empty and must be a positive number",
-				Code:    int32(codes.InvalidArgument),
-			}),
-		)
+		return nil, withdraw_errors.ErrGrpcWithdrawInvalidID
 	}
 
 	_, err := w.withdrawService.DeleteWithdrawPermanent(id)
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := w.mapping.ToProtoResponseWithdrawDelete("success", "Successfully deleted withdraw permanently")
@@ -956,14 +609,7 @@ func (s *withdrawHandleGrpc) RestoreAllWithdraw(ctx context.Context, _ *emptypb.
 	_, err := s.withdrawService.RestoreAllWithdraw()
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseWithdrawAll("success", "Successfully restore all withdraw")
@@ -975,14 +621,7 @@ func (s *withdrawHandleGrpc) DeleteAllWithdrawPermanent(ctx context.Context, _ *
 	_, err := s.withdrawService.DeleteAllWithdrawPermanent()
 
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Code(err.Code),
-			errors_custom.GrpcErrorToJson(&pb.ErrorResponse{
-				Status:  err.Status,
-				Message: err.Message,
-				Code:    int32(err.Code),
-			}),
-		)
+		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
 	so := s.mapping.ToProtoResponseWithdrawAll("success", "Successfully delete withdraw permanent")

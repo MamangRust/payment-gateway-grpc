@@ -5,6 +5,7 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/service"
 	"MamangRust/paymentgatewaygrpc/internal/repository"
+	refreshtoken_errors "MamangRust/paymentgatewaygrpc/pkg/errors/refresh_token_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
 
 	"go.uber.org/zap"
@@ -30,10 +31,7 @@ func (r *refreshTokenService) FindByToken(token string) (*response.RefreshTokenR
 	if err != nil {
 		r.logger.Error("Failed to find refresh token", zap.Error(err))
 
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find refresh token: ",
-		}
+		return nil, refreshtoken_errors.ErrFailedFindByToken
 	}
 
 	return r.mapping.ToRefreshTokenResponse(refreshToken), nil
@@ -44,10 +42,7 @@ func (r *refreshTokenService) FindByUserId(user_id int) (*response.RefreshTokenR
 
 	if err != nil {
 		r.logger.Error("Failed to find refresh token", zap.Error(err))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find refresh token: ",
-		}
+		return nil, refreshtoken_errors.ErrFailedFindByUserID
 	}
 
 	return r.mapping.ToRefreshTokenResponse(refreshToken), nil
@@ -58,10 +53,7 @@ func (r *refreshTokenService) UpdateRefreshToken(req *requests.UpdateRefreshToke
 
 	if err != nil {
 		r.logger.Error("Failed to update refresh token", zap.Error(err))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to update refresh token: ",
-		}
+		return nil, refreshtoken_errors.ErrFailedUpdateRefreshToken
 	}
 
 	return r.mapping.ToRefreshTokenResponse(refreshToken), nil
@@ -72,10 +64,7 @@ func (r *refreshTokenService) DeleteRefreshToken(token string) *response.ErrorRe
 
 	if err != nil {
 		r.logger.Error("Failed to delete refresh token", zap.Error(err))
-		return &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to delete refresh token: ",
-		}
+		return refreshtoken_errors.ErrFailedDeleteRefreshToken
 	}
 
 	return nil

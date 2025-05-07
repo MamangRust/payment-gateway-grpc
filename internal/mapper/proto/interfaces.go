@@ -16,6 +16,7 @@ type AuthProtoMapper interface {
 type UserProtoMapper interface {
 	ToProtoResponsesUser(status string, message string, pbResponse []*response.UserResponse) *pb.ApiResponsesUser
 	ToProtoResponseUser(status string, message string, pbResponse *response.UserResponse) *pb.ApiResponseUser
+	ToProtoResponseUserDeleteAt(status string, message string, pbResponse *response.UserResponseDeleteAt) *pb.ApiResponseUserDeleteAt
 	ToProtoResponseUserDelete(status string, message string) *pb.ApiResponseUserDelete
 	ToProtoResponseUserAll(status string, message string) *pb.ApiResponseUserAll
 	ToProtoResponsePaginationUserDeleteAt(pagination *pb.PaginationMeta, status string, message string, users []*response.UserResponseDeleteAt) *pb.ApiResponsePaginationUserDeleteAt
@@ -78,6 +79,7 @@ type SaldoProtoMapper interface {
 
 type TopupProtoMapper interface {
 	ToProtoResponseTopup(status string, message string, s *response.TopupResponse) *pb.ApiResponseTopup
+	ToProtoResponseTopupDeletAt(status string, message string, s *response.TopupResponseDeleteAt) *pb.ApiResponseTopupDeleteAt
 	ToProtoResponseTopupDelete(status string, message string) *pb.ApiResponseTopupDelete
 	ToProtoResponseTopupAll(status string, message string) *pb.ApiResponseTopupAll
 

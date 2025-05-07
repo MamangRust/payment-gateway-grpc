@@ -79,8 +79,8 @@ type TopupServiceClient interface {
 	FindByTrashed(ctx context.Context, in *FindAllTopupRequest, opts ...grpc.CallOption) (*ApiResponsePaginationTopupDeleteAt, error)
 	CreateTopup(ctx context.Context, in *CreateTopupRequest, opts ...grpc.CallOption) (*ApiResponseTopup, error)
 	UpdateTopup(ctx context.Context, in *UpdateTopupRequest, opts ...grpc.CallOption) (*ApiResponseTopup, error)
-	TrashedTopup(ctx context.Context, in *FindByIdTopupRequest, opts ...grpc.CallOption) (*ApiResponseTopup, error)
-	RestoreTopup(ctx context.Context, in *FindByIdTopupRequest, opts ...grpc.CallOption) (*ApiResponseTopup, error)
+	TrashedTopup(ctx context.Context, in *FindByIdTopupRequest, opts ...grpc.CallOption) (*ApiResponseTopupDeleteAt, error)
+	RestoreTopup(ctx context.Context, in *FindByIdTopupRequest, opts ...grpc.CallOption) (*ApiResponseTopupDeleteAt, error)
 	DeleteTopupPermanent(ctx context.Context, in *FindByIdTopupRequest, opts ...grpc.CallOption) (*ApiResponseTopupDelete, error)
 	RestoreAllTopup(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ApiResponseTopupAll, error)
 	DeleteAllTopupPermanent(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ApiResponseTopupAll, error)
@@ -334,9 +334,9 @@ func (c *topupServiceClient) UpdateTopup(ctx context.Context, in *UpdateTopupReq
 	return out, nil
 }
 
-func (c *topupServiceClient) TrashedTopup(ctx context.Context, in *FindByIdTopupRequest, opts ...grpc.CallOption) (*ApiResponseTopup, error) {
+func (c *topupServiceClient) TrashedTopup(ctx context.Context, in *FindByIdTopupRequest, opts ...grpc.CallOption) (*ApiResponseTopupDeleteAt, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ApiResponseTopup)
+	out := new(ApiResponseTopupDeleteAt)
 	err := c.cc.Invoke(ctx, TopupService_TrashedTopup_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -344,9 +344,9 @@ func (c *topupServiceClient) TrashedTopup(ctx context.Context, in *FindByIdTopup
 	return out, nil
 }
 
-func (c *topupServiceClient) RestoreTopup(ctx context.Context, in *FindByIdTopupRequest, opts ...grpc.CallOption) (*ApiResponseTopup, error) {
+func (c *topupServiceClient) RestoreTopup(ctx context.Context, in *FindByIdTopupRequest, opts ...grpc.CallOption) (*ApiResponseTopupDeleteAt, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ApiResponseTopup)
+	out := new(ApiResponseTopupDeleteAt)
 	err := c.cc.Invoke(ctx, TopupService_RestoreTopup_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -412,8 +412,8 @@ type TopupServiceServer interface {
 	FindByTrashed(context.Context, *FindAllTopupRequest) (*ApiResponsePaginationTopupDeleteAt, error)
 	CreateTopup(context.Context, *CreateTopupRequest) (*ApiResponseTopup, error)
 	UpdateTopup(context.Context, *UpdateTopupRequest) (*ApiResponseTopup, error)
-	TrashedTopup(context.Context, *FindByIdTopupRequest) (*ApiResponseTopup, error)
-	RestoreTopup(context.Context, *FindByIdTopupRequest) (*ApiResponseTopup, error)
+	TrashedTopup(context.Context, *FindByIdTopupRequest) (*ApiResponseTopupDeleteAt, error)
+	RestoreTopup(context.Context, *FindByIdTopupRequest) (*ApiResponseTopupDeleteAt, error)
 	DeleteTopupPermanent(context.Context, *FindByIdTopupRequest) (*ApiResponseTopupDelete, error)
 	RestoreAllTopup(context.Context, *emptypb.Empty) (*ApiResponseTopupAll, error)
 	DeleteAllTopupPermanent(context.Context, *emptypb.Empty) (*ApiResponseTopupAll, error)
@@ -499,10 +499,10 @@ func (UnimplementedTopupServiceServer) CreateTopup(context.Context, *CreateTopup
 func (UnimplementedTopupServiceServer) UpdateTopup(context.Context, *UpdateTopupRequest) (*ApiResponseTopup, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateTopup not implemented")
 }
-func (UnimplementedTopupServiceServer) TrashedTopup(context.Context, *FindByIdTopupRequest) (*ApiResponseTopup, error) {
+func (UnimplementedTopupServiceServer) TrashedTopup(context.Context, *FindByIdTopupRequest) (*ApiResponseTopupDeleteAt, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TrashedTopup not implemented")
 }
-func (UnimplementedTopupServiceServer) RestoreTopup(context.Context, *FindByIdTopupRequest) (*ApiResponseTopup, error) {
+func (UnimplementedTopupServiceServer) RestoreTopup(context.Context, *FindByIdTopupRequest) (*ApiResponseTopupDeleteAt, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RestoreTopup not implemented")
 }
 func (UnimplementedTopupServiceServer) DeleteTopupPermanent(context.Context, *FindByIdTopupRequest) (*ApiResponseTopupDelete, error) {

@@ -123,6 +123,66 @@ func (mr *MockMerchantServiceClientMockRecorder) FindAllMerchant(ctx, in any, op
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllMerchant", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindAllMerchant), varargs...)
 }
 
+// FindAllTransactionByApikey mocks base method.
+func (m *MockMerchantServiceClient) FindAllTransactionByApikey(ctx context.Context, in *pb.FindAllMerchantApikey, opts ...grpc.CallOption) (*pb.ApiResponsePaginationMerchantTransaction, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindAllTransactionByApikey", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationMerchantTransaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAllTransactionByApikey indicates an expected call of FindAllTransactionByApikey.
+func (mr *MockMerchantServiceClientMockRecorder) FindAllTransactionByApikey(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransactionByApikey", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindAllTransactionByApikey), varargs...)
+}
+
+// FindAllTransactionByMerchant mocks base method.
+func (m *MockMerchantServiceClient) FindAllTransactionByMerchant(ctx context.Context, in *pb.FindAllMerchantTransaction, opts ...grpc.CallOption) (*pb.ApiResponsePaginationMerchantTransaction, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindAllTransactionByMerchant", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationMerchantTransaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAllTransactionByMerchant indicates an expected call of FindAllTransactionByMerchant.
+func (mr *MockMerchantServiceClientMockRecorder) FindAllTransactionByMerchant(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransactionByMerchant", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindAllTransactionByMerchant), varargs...)
+}
+
+// FindAllTransactionMerchant mocks base method.
+func (m *MockMerchantServiceClient) FindAllTransactionMerchant(ctx context.Context, in *pb.FindAllMerchantRequest, opts ...grpc.CallOption) (*pb.ApiResponsePaginationMerchantTransaction, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindAllTransactionMerchant", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationMerchantTransaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAllTransactionMerchant indicates an expected call of FindAllTransactionMerchant.
+func (mr *MockMerchantServiceClientMockRecorder) FindAllTransactionMerchant(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransactionMerchant", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindAllTransactionMerchant), varargs...)
+}
+
 // FindByActive mocks base method.
 func (m *MockMerchantServiceClient) FindByActive(ctx context.Context, in *pb.FindAllMerchantRequest, opts ...grpc.CallOption) (*pb.ApiResponsePaginationMerchantDeleteAt, error) {
 	m.ctrl.T.Helper()
@@ -221,6 +281,366 @@ func (mr *MockMerchantServiceClientMockRecorder) FindByTrashed(ctx, in any, opts
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindByTrashed), varargs...)
+}
+
+// FindMonthlyAmountByApikey mocks base method.
+func (m *MockMerchantServiceClient) FindMonthlyAmountByApikey(ctx context.Context, in *pb.FindYearMerchantByApikey, opts ...grpc.CallOption) (*pb.ApiResponseMerchantMonthlyAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyAmountByApikey", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyAmountByApikey indicates an expected call of FindMonthlyAmountByApikey.
+func (mr *MockMerchantServiceClientMockRecorder) FindMonthlyAmountByApikey(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyAmountByApikey", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindMonthlyAmountByApikey), varargs...)
+}
+
+// FindMonthlyAmountByMerchants mocks base method.
+func (m *MockMerchantServiceClient) FindMonthlyAmountByMerchants(ctx context.Context, in *pb.FindYearMerchantById, opts ...grpc.CallOption) (*pb.ApiResponseMerchantMonthlyAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyAmountByMerchants", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyAmountByMerchants indicates an expected call of FindMonthlyAmountByMerchants.
+func (mr *MockMerchantServiceClientMockRecorder) FindMonthlyAmountByMerchants(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyAmountByMerchants", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindMonthlyAmountByMerchants), varargs...)
+}
+
+// FindMonthlyAmountMerchant mocks base method.
+func (m *MockMerchantServiceClient) FindMonthlyAmountMerchant(ctx context.Context, in *pb.FindYearMerchant, opts ...grpc.CallOption) (*pb.ApiResponseMerchantMonthlyAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyAmountMerchant", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyAmountMerchant indicates an expected call of FindMonthlyAmountMerchant.
+func (mr *MockMerchantServiceClientMockRecorder) FindMonthlyAmountMerchant(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyAmountMerchant", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindMonthlyAmountMerchant), varargs...)
+}
+
+// FindMonthlyPaymentMethodByApikey mocks base method.
+func (m *MockMerchantServiceClient) FindMonthlyPaymentMethodByApikey(ctx context.Context, in *pb.FindYearMerchantByApikey, opts ...grpc.CallOption) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyPaymentMethodByApikey", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyPaymentMethodByApikey indicates an expected call of FindMonthlyPaymentMethodByApikey.
+func (mr *MockMerchantServiceClientMockRecorder) FindMonthlyPaymentMethodByApikey(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyPaymentMethodByApikey", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindMonthlyPaymentMethodByApikey), varargs...)
+}
+
+// FindMonthlyPaymentMethodByMerchants mocks base method.
+func (m *MockMerchantServiceClient) FindMonthlyPaymentMethodByMerchants(ctx context.Context, in *pb.FindYearMerchantById, opts ...grpc.CallOption) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyPaymentMethodByMerchants", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyPaymentMethodByMerchants indicates an expected call of FindMonthlyPaymentMethodByMerchants.
+func (mr *MockMerchantServiceClientMockRecorder) FindMonthlyPaymentMethodByMerchants(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyPaymentMethodByMerchants", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindMonthlyPaymentMethodByMerchants), varargs...)
+}
+
+// FindMonthlyPaymentMethodsMerchant mocks base method.
+func (m *MockMerchantServiceClient) FindMonthlyPaymentMethodsMerchant(ctx context.Context, in *pb.FindYearMerchant, opts ...grpc.CallOption) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyPaymentMethodsMerchant", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyPaymentMethodsMerchant indicates an expected call of FindMonthlyPaymentMethodsMerchant.
+func (mr *MockMerchantServiceClientMockRecorder) FindMonthlyPaymentMethodsMerchant(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyPaymentMethodsMerchant", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindMonthlyPaymentMethodsMerchant), varargs...)
+}
+
+// FindMonthlyTotalAmountByApikey mocks base method.
+func (m *MockMerchantServiceClient) FindMonthlyTotalAmountByApikey(ctx context.Context, in *pb.FindYearMerchantByApikey, opts ...grpc.CallOption) (*pb.ApiResponseMerchantMonthlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTotalAmountByApikey", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTotalAmountByApikey indicates an expected call of FindMonthlyTotalAmountByApikey.
+func (mr *MockMerchantServiceClientMockRecorder) FindMonthlyTotalAmountByApikey(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTotalAmountByApikey", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindMonthlyTotalAmountByApikey), varargs...)
+}
+
+// FindMonthlyTotalAmountByMerchants mocks base method.
+func (m *MockMerchantServiceClient) FindMonthlyTotalAmountByMerchants(ctx context.Context, in *pb.FindYearMerchantById, opts ...grpc.CallOption) (*pb.ApiResponseMerchantMonthlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTotalAmountByMerchants", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTotalAmountByMerchants indicates an expected call of FindMonthlyTotalAmountByMerchants.
+func (mr *MockMerchantServiceClientMockRecorder) FindMonthlyTotalAmountByMerchants(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTotalAmountByMerchants", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindMonthlyTotalAmountByMerchants), varargs...)
+}
+
+// FindMonthlyTotalAmountMerchant mocks base method.
+func (m *MockMerchantServiceClient) FindMonthlyTotalAmountMerchant(ctx context.Context, in *pb.FindYearMerchant, opts ...grpc.CallOption) (*pb.ApiResponseMerchantMonthlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTotalAmountMerchant", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTotalAmountMerchant indicates an expected call of FindMonthlyTotalAmountMerchant.
+func (mr *MockMerchantServiceClientMockRecorder) FindMonthlyTotalAmountMerchant(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTotalAmountMerchant", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindMonthlyTotalAmountMerchant), varargs...)
+}
+
+// FindYearlyAmountByApikey mocks base method.
+func (m *MockMerchantServiceClient) FindYearlyAmountByApikey(ctx context.Context, in *pb.FindYearMerchantByApikey, opts ...grpc.CallOption) (*pb.ApiResponseMerchantYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyAmountByApikey", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyAmountByApikey indicates an expected call of FindYearlyAmountByApikey.
+func (mr *MockMerchantServiceClientMockRecorder) FindYearlyAmountByApikey(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyAmountByApikey", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindYearlyAmountByApikey), varargs...)
+}
+
+// FindYearlyAmountByMerchants mocks base method.
+func (m *MockMerchantServiceClient) FindYearlyAmountByMerchants(ctx context.Context, in *pb.FindYearMerchantById, opts ...grpc.CallOption) (*pb.ApiResponseMerchantYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyAmountByMerchants", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyAmountByMerchants indicates an expected call of FindYearlyAmountByMerchants.
+func (mr *MockMerchantServiceClientMockRecorder) FindYearlyAmountByMerchants(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyAmountByMerchants", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindYearlyAmountByMerchants), varargs...)
+}
+
+// FindYearlyAmountMerchant mocks base method.
+func (m *MockMerchantServiceClient) FindYearlyAmountMerchant(ctx context.Context, in *pb.FindYearMerchant, opts ...grpc.CallOption) (*pb.ApiResponseMerchantYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyAmountMerchant", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyAmountMerchant indicates an expected call of FindYearlyAmountMerchant.
+func (mr *MockMerchantServiceClientMockRecorder) FindYearlyAmountMerchant(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyAmountMerchant", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindYearlyAmountMerchant), varargs...)
+}
+
+// FindYearlyPaymentMethodByApikey mocks base method.
+func (m *MockMerchantServiceClient) FindYearlyPaymentMethodByApikey(ctx context.Context, in *pb.FindYearMerchantByApikey, opts ...grpc.CallOption) (*pb.ApiResponseMerchantYearlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyPaymentMethodByApikey", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyPaymentMethodByApikey indicates an expected call of FindYearlyPaymentMethodByApikey.
+func (mr *MockMerchantServiceClientMockRecorder) FindYearlyPaymentMethodByApikey(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyPaymentMethodByApikey", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindYearlyPaymentMethodByApikey), varargs...)
+}
+
+// FindYearlyPaymentMethodByMerchants mocks base method.
+func (m *MockMerchantServiceClient) FindYearlyPaymentMethodByMerchants(ctx context.Context, in *pb.FindYearMerchantById, opts ...grpc.CallOption) (*pb.ApiResponseMerchantYearlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyPaymentMethodByMerchants", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyPaymentMethodByMerchants indicates an expected call of FindYearlyPaymentMethodByMerchants.
+func (mr *MockMerchantServiceClientMockRecorder) FindYearlyPaymentMethodByMerchants(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyPaymentMethodByMerchants", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindYearlyPaymentMethodByMerchants), varargs...)
+}
+
+// FindYearlyPaymentMethodMerchant mocks base method.
+func (m *MockMerchantServiceClient) FindYearlyPaymentMethodMerchant(ctx context.Context, in *pb.FindYearMerchant, opts ...grpc.CallOption) (*pb.ApiResponseMerchantYearlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyPaymentMethodMerchant", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyPaymentMethodMerchant indicates an expected call of FindYearlyPaymentMethodMerchant.
+func (mr *MockMerchantServiceClientMockRecorder) FindYearlyPaymentMethodMerchant(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyPaymentMethodMerchant", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindYearlyPaymentMethodMerchant), varargs...)
+}
+
+// FindYearlyTotalAmountByApikey mocks base method.
+func (m *MockMerchantServiceClient) FindYearlyTotalAmountByApikey(ctx context.Context, in *pb.FindYearMerchantByApikey, opts ...grpc.CallOption) (*pb.ApiResponseMerchantYearlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTotalAmountByApikey", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTotalAmountByApikey indicates an expected call of FindYearlyTotalAmountByApikey.
+func (mr *MockMerchantServiceClientMockRecorder) FindYearlyTotalAmountByApikey(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTotalAmountByApikey", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindYearlyTotalAmountByApikey), varargs...)
+}
+
+// FindYearlyTotalAmountByMerchants mocks base method.
+func (m *MockMerchantServiceClient) FindYearlyTotalAmountByMerchants(ctx context.Context, in *pb.FindYearMerchantById, opts ...grpc.CallOption) (*pb.ApiResponseMerchantYearlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTotalAmountByMerchants", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTotalAmountByMerchants indicates an expected call of FindYearlyTotalAmountByMerchants.
+func (mr *MockMerchantServiceClientMockRecorder) FindYearlyTotalAmountByMerchants(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTotalAmountByMerchants", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindYearlyTotalAmountByMerchants), varargs...)
+}
+
+// FindYearlyTotalAmountMerchant mocks base method.
+func (m *MockMerchantServiceClient) FindYearlyTotalAmountMerchant(ctx context.Context, in *pb.FindYearMerchant, opts ...grpc.CallOption) (*pb.ApiResponseMerchantYearlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlyTotalAmountMerchant", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTotalAmountMerchant indicates an expected call of FindYearlyTotalAmountMerchant.
+func (mr *MockMerchantServiceClientMockRecorder) FindYearlyTotalAmountMerchant(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTotalAmountMerchant", reflect.TypeOf((*MockMerchantServiceClient)(nil).FindYearlyTotalAmountMerchant), varargs...)
 }
 
 // RestoreAllMerchant mocks base method.
@@ -387,6 +807,51 @@ func (mr *MockMerchantServiceServerMockRecorder) FindAllMerchant(arg0, arg1 any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllMerchant", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindAllMerchant), arg0, arg1)
 }
 
+// FindAllTransactionByApikey mocks base method.
+func (m *MockMerchantServiceServer) FindAllTransactionByApikey(arg0 context.Context, arg1 *pb.FindAllMerchantApikey) (*pb.ApiResponsePaginationMerchantTransaction, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAllTransactionByApikey", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationMerchantTransaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAllTransactionByApikey indicates an expected call of FindAllTransactionByApikey.
+func (mr *MockMerchantServiceServerMockRecorder) FindAllTransactionByApikey(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransactionByApikey", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindAllTransactionByApikey), arg0, arg1)
+}
+
+// FindAllTransactionByMerchant mocks base method.
+func (m *MockMerchantServiceServer) FindAllTransactionByMerchant(arg0 context.Context, arg1 *pb.FindAllMerchantTransaction) (*pb.ApiResponsePaginationMerchantTransaction, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAllTransactionByMerchant", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationMerchantTransaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAllTransactionByMerchant indicates an expected call of FindAllTransactionByMerchant.
+func (mr *MockMerchantServiceServerMockRecorder) FindAllTransactionByMerchant(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransactionByMerchant", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindAllTransactionByMerchant), arg0, arg1)
+}
+
+// FindAllTransactionMerchant mocks base method.
+func (m *MockMerchantServiceServer) FindAllTransactionMerchant(arg0 context.Context, arg1 *pb.FindAllMerchantRequest) (*pb.ApiResponsePaginationMerchantTransaction, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAllTransactionMerchant", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponsePaginationMerchantTransaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAllTransactionMerchant indicates an expected call of FindAllTransactionMerchant.
+func (mr *MockMerchantServiceServerMockRecorder) FindAllTransactionMerchant(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllTransactionMerchant", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindAllTransactionMerchant), arg0, arg1)
+}
+
 // FindByActive mocks base method.
 func (m *MockMerchantServiceServer) FindByActive(arg0 context.Context, arg1 *pb.FindAllMerchantRequest) (*pb.ApiResponsePaginationMerchantDeleteAt, error) {
 	m.ctrl.T.Helper()
@@ -460,6 +925,276 @@ func (m *MockMerchantServiceServer) FindByTrashed(arg0 context.Context, arg1 *pb
 func (mr *MockMerchantServiceServerMockRecorder) FindByTrashed(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindByTrashed), arg0, arg1)
+}
+
+// FindMonthlyAmountByApikey mocks base method.
+func (m *MockMerchantServiceServer) FindMonthlyAmountByApikey(arg0 context.Context, arg1 *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantMonthlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyAmountByApikey", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyAmountByApikey indicates an expected call of FindMonthlyAmountByApikey.
+func (mr *MockMerchantServiceServerMockRecorder) FindMonthlyAmountByApikey(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyAmountByApikey", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindMonthlyAmountByApikey), arg0, arg1)
+}
+
+// FindMonthlyAmountByMerchants mocks base method.
+func (m *MockMerchantServiceServer) FindMonthlyAmountByMerchants(arg0 context.Context, arg1 *pb.FindYearMerchantById) (*pb.ApiResponseMerchantMonthlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyAmountByMerchants", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyAmountByMerchants indicates an expected call of FindMonthlyAmountByMerchants.
+func (mr *MockMerchantServiceServerMockRecorder) FindMonthlyAmountByMerchants(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyAmountByMerchants", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindMonthlyAmountByMerchants), arg0, arg1)
+}
+
+// FindMonthlyAmountMerchant mocks base method.
+func (m *MockMerchantServiceServer) FindMonthlyAmountMerchant(arg0 context.Context, arg1 *pb.FindYearMerchant) (*pb.ApiResponseMerchantMonthlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyAmountMerchant", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyAmountMerchant indicates an expected call of FindMonthlyAmountMerchant.
+func (mr *MockMerchantServiceServerMockRecorder) FindMonthlyAmountMerchant(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyAmountMerchant", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindMonthlyAmountMerchant), arg0, arg1)
+}
+
+// FindMonthlyPaymentMethodByApikey mocks base method.
+func (m *MockMerchantServiceServer) FindMonthlyPaymentMethodByApikey(arg0 context.Context, arg1 *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyPaymentMethodByApikey", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyPaymentMethodByApikey indicates an expected call of FindMonthlyPaymentMethodByApikey.
+func (mr *MockMerchantServiceServerMockRecorder) FindMonthlyPaymentMethodByApikey(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyPaymentMethodByApikey", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindMonthlyPaymentMethodByApikey), arg0, arg1)
+}
+
+// FindMonthlyPaymentMethodByMerchants mocks base method.
+func (m *MockMerchantServiceServer) FindMonthlyPaymentMethodByMerchants(arg0 context.Context, arg1 *pb.FindYearMerchantById) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyPaymentMethodByMerchants", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyPaymentMethodByMerchants indicates an expected call of FindMonthlyPaymentMethodByMerchants.
+func (mr *MockMerchantServiceServerMockRecorder) FindMonthlyPaymentMethodByMerchants(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyPaymentMethodByMerchants", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindMonthlyPaymentMethodByMerchants), arg0, arg1)
+}
+
+// FindMonthlyPaymentMethodsMerchant mocks base method.
+func (m *MockMerchantServiceServer) FindMonthlyPaymentMethodsMerchant(arg0 context.Context, arg1 *pb.FindYearMerchant) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyPaymentMethodsMerchant", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyPaymentMethodsMerchant indicates an expected call of FindMonthlyPaymentMethodsMerchant.
+func (mr *MockMerchantServiceServerMockRecorder) FindMonthlyPaymentMethodsMerchant(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyPaymentMethodsMerchant", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindMonthlyPaymentMethodsMerchant), arg0, arg1)
+}
+
+// FindMonthlyTotalAmountByApikey mocks base method.
+func (m *MockMerchantServiceServer) FindMonthlyTotalAmountByApikey(arg0 context.Context, arg1 *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantMonthlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTotalAmountByApikey", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTotalAmountByApikey indicates an expected call of FindMonthlyTotalAmountByApikey.
+func (mr *MockMerchantServiceServerMockRecorder) FindMonthlyTotalAmountByApikey(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTotalAmountByApikey", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindMonthlyTotalAmountByApikey), arg0, arg1)
+}
+
+// FindMonthlyTotalAmountByMerchants mocks base method.
+func (m *MockMerchantServiceServer) FindMonthlyTotalAmountByMerchants(arg0 context.Context, arg1 *pb.FindYearMerchantById) (*pb.ApiResponseMerchantMonthlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTotalAmountByMerchants", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTotalAmountByMerchants indicates an expected call of FindMonthlyTotalAmountByMerchants.
+func (mr *MockMerchantServiceServerMockRecorder) FindMonthlyTotalAmountByMerchants(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTotalAmountByMerchants", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindMonthlyTotalAmountByMerchants), arg0, arg1)
+}
+
+// FindMonthlyTotalAmountMerchant mocks base method.
+func (m *MockMerchantServiceServer) FindMonthlyTotalAmountMerchant(arg0 context.Context, arg1 *pb.FindYearMerchant) (*pb.ApiResponseMerchantMonthlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTotalAmountMerchant", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantMonthlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTotalAmountMerchant indicates an expected call of FindMonthlyTotalAmountMerchant.
+func (mr *MockMerchantServiceServerMockRecorder) FindMonthlyTotalAmountMerchant(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTotalAmountMerchant", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindMonthlyTotalAmountMerchant), arg0, arg1)
+}
+
+// FindYearlyAmountByApikey mocks base method.
+func (m *MockMerchantServiceServer) FindYearlyAmountByApikey(arg0 context.Context, arg1 *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyAmountByApikey", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyAmountByApikey indicates an expected call of FindYearlyAmountByApikey.
+func (mr *MockMerchantServiceServerMockRecorder) FindYearlyAmountByApikey(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyAmountByApikey", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindYearlyAmountByApikey), arg0, arg1)
+}
+
+// FindYearlyAmountByMerchants mocks base method.
+func (m *MockMerchantServiceServer) FindYearlyAmountByMerchants(arg0 context.Context, arg1 *pb.FindYearMerchantById) (*pb.ApiResponseMerchantYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyAmountByMerchants", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyAmountByMerchants indicates an expected call of FindYearlyAmountByMerchants.
+func (mr *MockMerchantServiceServerMockRecorder) FindYearlyAmountByMerchants(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyAmountByMerchants", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindYearlyAmountByMerchants), arg0, arg1)
+}
+
+// FindYearlyAmountMerchant mocks base method.
+func (m *MockMerchantServiceServer) FindYearlyAmountMerchant(arg0 context.Context, arg1 *pb.FindYearMerchant) (*pb.ApiResponseMerchantYearlyAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyAmountMerchant", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyAmountMerchant indicates an expected call of FindYearlyAmountMerchant.
+func (mr *MockMerchantServiceServerMockRecorder) FindYearlyAmountMerchant(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyAmountMerchant", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindYearlyAmountMerchant), arg0, arg1)
+}
+
+// FindYearlyPaymentMethodByApikey mocks base method.
+func (m *MockMerchantServiceServer) FindYearlyPaymentMethodByApikey(arg0 context.Context, arg1 *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantYearlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyPaymentMethodByApikey", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyPaymentMethodByApikey indicates an expected call of FindYearlyPaymentMethodByApikey.
+func (mr *MockMerchantServiceServerMockRecorder) FindYearlyPaymentMethodByApikey(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyPaymentMethodByApikey", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindYearlyPaymentMethodByApikey), arg0, arg1)
+}
+
+// FindYearlyPaymentMethodByMerchants mocks base method.
+func (m *MockMerchantServiceServer) FindYearlyPaymentMethodByMerchants(arg0 context.Context, arg1 *pb.FindYearMerchantById) (*pb.ApiResponseMerchantYearlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyPaymentMethodByMerchants", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyPaymentMethodByMerchants indicates an expected call of FindYearlyPaymentMethodByMerchants.
+func (mr *MockMerchantServiceServerMockRecorder) FindYearlyPaymentMethodByMerchants(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyPaymentMethodByMerchants", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindYearlyPaymentMethodByMerchants), arg0, arg1)
+}
+
+// FindYearlyPaymentMethodMerchant mocks base method.
+func (m *MockMerchantServiceServer) FindYearlyPaymentMethodMerchant(arg0 context.Context, arg1 *pb.FindYearMerchant) (*pb.ApiResponseMerchantYearlyPaymentMethod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyPaymentMethodMerchant", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyPaymentMethod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyPaymentMethodMerchant indicates an expected call of FindYearlyPaymentMethodMerchant.
+func (mr *MockMerchantServiceServerMockRecorder) FindYearlyPaymentMethodMerchant(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyPaymentMethodMerchant", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindYearlyPaymentMethodMerchant), arg0, arg1)
+}
+
+// FindYearlyTotalAmountByApikey mocks base method.
+func (m *MockMerchantServiceServer) FindYearlyTotalAmountByApikey(arg0 context.Context, arg1 *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantYearlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTotalAmountByApikey", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTotalAmountByApikey indicates an expected call of FindYearlyTotalAmountByApikey.
+func (mr *MockMerchantServiceServerMockRecorder) FindYearlyTotalAmountByApikey(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTotalAmountByApikey", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindYearlyTotalAmountByApikey), arg0, arg1)
+}
+
+// FindYearlyTotalAmountByMerchants mocks base method.
+func (m *MockMerchantServiceServer) FindYearlyTotalAmountByMerchants(arg0 context.Context, arg1 *pb.FindYearMerchantById) (*pb.ApiResponseMerchantYearlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTotalAmountByMerchants", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTotalAmountByMerchants indicates an expected call of FindYearlyTotalAmountByMerchants.
+func (mr *MockMerchantServiceServerMockRecorder) FindYearlyTotalAmountByMerchants(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTotalAmountByMerchants", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindYearlyTotalAmountByMerchants), arg0, arg1)
+}
+
+// FindYearlyTotalAmountMerchant mocks base method.
+func (m *MockMerchantServiceServer) FindYearlyTotalAmountMerchant(arg0 context.Context, arg1 *pb.FindYearMerchant) (*pb.ApiResponseMerchantYearlyTotalAmount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlyTotalAmountMerchant", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantYearlyTotalAmount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlyTotalAmountMerchant indicates an expected call of FindYearlyTotalAmountMerchant.
+func (mr *MockMerchantServiceServerMockRecorder) FindYearlyTotalAmountMerchant(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlyTotalAmountMerchant", reflect.TypeOf((*MockMerchantServiceServer)(nil).FindYearlyTotalAmountMerchant), arg0, arg1)
 }
 
 // RestoreAllMerchant mocks base method.

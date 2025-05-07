@@ -2,9 +2,9 @@ package api
 
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/merchant_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
 	"net/http"
 	"strconv"
@@ -113,11 +113,7 @@ func (h *merchantHandleApi) FindAll(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve merchant data", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve merchant data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindAllMerchants(c)
 	}
 
 	so := h.mapping.ToApiResponsesMerchant(res)
@@ -164,11 +160,7 @@ func (h *merchantHandleApi) FindAllTransactions(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve transaction data", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve transaction data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindAllTransactions(c)
 	}
 
 	so := h.mapping.ToApiResponseMerchantsTransactionResponse(res)
@@ -193,11 +185,7 @@ func (h *merchantHandleApi) FindAllTransactions(c echo.Context) error {
 func (h *merchantHandleApi) FindAllTransactionByMerchant(c echo.Context) error {
 	merchantID, err := strconv.Atoi(c.Param("merchant_id"))
 	if err != nil || merchantID <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid merchant ID",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidMerchantID(c)
 	}
 
 	page, err := strconv.Atoi(c.QueryParam("page"))
@@ -225,11 +213,7 @@ func (h *merchantHandleApi) FindAllTransactionByMerchant(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve transaction data", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve transaction data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindAllTransactionByMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseMerchantsTransactionResponse(res)
@@ -253,11 +237,7 @@ func (h *merchantHandleApi) FindById(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid merchant ID",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidMerchantID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -270,11 +250,7 @@ func (h *merchantHandleApi) FindById(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve merchant data", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve merchant data: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindByIdMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseMerchant(res)
@@ -298,11 +274,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodsMerchant(c echo.Context) er
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -313,11 +285,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodsMerchant(c echo.Context) er
 	res, err := h.merchant.FindMonthlyPaymentMethodsMerchant(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find monthly payment methods for merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find monthly payment methods for merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindMonthlyPaymentMethodsMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyPaymentMethods(res)
@@ -341,11 +309,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodMerchant(c echo.Context) erro
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -356,11 +320,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodMerchant(c echo.Context) erro
 	res, err := h.merchant.FindYearlyPaymentMethodMerchant(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find yearly payment methods for merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find yearly payment methods for merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindYearlyPaymentMethodMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyPaymentMethods(res)
@@ -384,11 +344,7 @@ func (h *merchantHandleApi) FindMonthlyAmountMerchant(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -399,11 +355,7 @@ func (h *merchantHandleApi) FindMonthlyAmountMerchant(c echo.Context) error {
 	res, err := h.merchant.FindMonthlyAmountMerchant(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find monthly amount for merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find monthly amount for merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindMonthlyAmountMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyAmounts(res)
@@ -427,11 +379,7 @@ func (h *merchantHandleApi) FindYearlyAmountMerchant(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -442,11 +390,7 @@ func (h *merchantHandleApi) FindYearlyAmountMerchant(c echo.Context) error {
 	res, err := h.merchant.FindYearlyAmountMerchant(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find yearly amount for merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find yearly amount for merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindYearlyAmountMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyAmounts(res)
@@ -470,11 +414,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountMerchant(c echo.Context) error
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -485,11 +425,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountMerchant(c echo.Context) error
 	res, err := h.merchant.FindMonthlyTotalAmountMerchant(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find monthly amount for merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find monthly amount for merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindMonthlyTotalAmountMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyTotalAmounts(res)
@@ -513,11 +449,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountMerchant(c echo.Context) error 
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -528,11 +460,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountMerchant(c echo.Context) error 
 	res, err := h.merchant.FindYearlyTotalAmountMerchant(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find yearly amount for merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find yearly amount for merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindYearlyTotalAmountMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyTotalAmounts(res)
@@ -559,20 +487,12 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodByMerchants(c echo.Context) 
 
 	merchantID, err := strconv.Atoi(merchantIDStr)
 	if err != nil || merchantID <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid merchant ID",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidMerchantID(c)
 	}
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -584,11 +504,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodByMerchants(c echo.Context) 
 	res, err := h.merchant.FindMonthlyPaymentMethodByMerchants(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find monthly payment methods by merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find monthly payment methods by merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindMonthlyPaymentMethodByMerchants(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyPaymentMethods(res)
@@ -615,20 +531,12 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodByMerchants(c echo.Context) e
 
 	merchantID, err := strconv.Atoi(merchantIDStr)
 	if err != nil || merchantID <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid merchant ID",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidMerchantID(c)
 	}
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -640,11 +548,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodByMerchants(c echo.Context) e
 	res, err := h.merchant.FindYearlyPaymentMethodByMerchants(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find yearly payment methods by merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find yearly payment methods by merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindYearlyPaymentMethodByMerchants(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyPaymentMethods(res)
@@ -671,20 +575,12 @@ func (h *merchantHandleApi) FindMonthlyAmountByMerchants(c echo.Context) error {
 
 	merchantID, err := strconv.Atoi(merchantIDStr)
 	if err != nil || merchantID <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid merchant ID",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidMerchantID(c)
 	}
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -696,11 +592,7 @@ func (h *merchantHandleApi) FindMonthlyAmountByMerchants(c echo.Context) error {
 	res, err := h.merchant.FindMonthlyAmountByMerchants(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find monthly amount by merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find monthly amount by merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindMonthlyAmountByMerchants(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyAmounts(res)
@@ -728,21 +620,13 @@ func (h *merchantHandleApi) FindYearlyAmountByMerchants(c echo.Context) error {
 	merchantID, err := strconv.Atoi(merchantIDStr)
 
 	if err != nil || merchantID <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid merchant ID",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidMerchantID(c)
 	}
 
 	year, err := strconv.Atoi(yearStr)
 
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -756,11 +640,7 @@ func (h *merchantHandleApi) FindYearlyAmountByMerchants(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to find yearly amount by merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find yearly amount by merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindYearlyAmountByMerchants(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyAmounts(res)
@@ -787,20 +667,12 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountByMerchants(c echo.Context) er
 
 	merchantID, err := strconv.Atoi(merchantIDStr)
 	if err != nil || merchantID <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid merchant ID",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidMerchantID(c)
 	}
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -812,11 +684,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountByMerchants(c echo.Context) er
 	res, err := h.merchant.FindMonthlyTotalAmountByMerchants(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find monthly amount by merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find monthly amount by merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindMonthlyTotalAmountMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyTotalAmounts(res)
@@ -843,20 +711,12 @@ func (h *merchantHandleApi) FindYearlyTotalAmountByMerchants(c echo.Context) err
 
 	merchantID, err := strconv.Atoi(merchantIDStr)
 	if err != nil || merchantID <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid merchant ID",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidMerchantID(c)
 	}
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -868,11 +728,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountByMerchants(c echo.Context) err
 	res, err := h.merchant.FindYearlyTotalAmountByMerchants(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find yearly amount by merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find yearly amount by merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindYearlyTotalAmountMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyTotalAmounts(res)
@@ -922,11 +778,7 @@ func (h *merchantHandleApi) FindAllTransactionByApikey(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve transaction data", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve transaction data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindAllTransactionByApikey(c)
 	}
 
 	so := h.mapping.ToApiResponseMerchantsTransactionResponse(res)
@@ -953,11 +805,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodByApikeys(c echo.Context) er
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -969,11 +817,7 @@ func (h *merchantHandleApi) FindMonthlyPaymentMethodByApikeys(c echo.Context) er
 	res, err := h.merchant.FindMonthlyPaymentMethodByApikey(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find monthly payment methods by merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find monthly payment methods by merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindMonthlyPaymentMethodsMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyPaymentMethods(res)
@@ -1000,11 +844,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodByApikeys(c echo.Context) err
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1016,11 +856,7 @@ func (h *merchantHandleApi) FindYearlyPaymentMethodByApikeys(c echo.Context) err
 	res, err := h.merchant.FindYearlyPaymentMethodByApikey(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find yearly payment methods by merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find yearly payment methods by merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindYearlyPaymentMethodMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyPaymentMethods(res)
@@ -1047,11 +883,7 @@ func (h *merchantHandleApi) FindMonthlyAmountByApikeys(c echo.Context) error {
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1063,11 +895,7 @@ func (h *merchantHandleApi) FindMonthlyAmountByApikeys(c echo.Context) error {
 	res, err := h.merchant.FindMonthlyAmountByApikey(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find monthly amount by merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find monthly amount by merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindMonthlyAmountMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyAmounts(res)
@@ -1094,11 +922,7 @@ func (h *merchantHandleApi) FindYearlyAmountByApikeys(c echo.Context) error {
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1110,11 +934,7 @@ func (h *merchantHandleApi) FindYearlyAmountByApikeys(c echo.Context) error {
 	res, err := h.merchant.FindYearlyAmountByApikey(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find yearly amount by merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find yearly amount by merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindYearlyAmountMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyAmounts(res)
@@ -1141,11 +961,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountByApikeys(c echo.Context) erro
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1157,11 +973,7 @@ func (h *merchantHandleApi) FindMonthlyTotalAmountByApikeys(c echo.Context) erro
 	res, err := h.merchant.FindMonthlyTotalAmountByApikey(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find monthly amount by merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find monthly amount by merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindMonthlyTotalAmountMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseMonthlyTotalAmounts(res)
@@ -1188,11 +1000,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountByApikeys(c echo.Context) error
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1204,11 +1012,7 @@ func (h *merchantHandleApi) FindYearlyTotalAmountByApikeys(c echo.Context) error
 	res, err := h.merchant.FindYearlyTotalAmountByApikey(ctx, req)
 	if err != nil {
 		h.logger.Debug("Failed to find yearly amount by merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to find yearly amount by merchant: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindYearlyTotalAmountMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseYearlyTotalAmounts(res)
@@ -1232,6 +1036,10 @@ func (h *merchantHandleApi) FindYearlyTotalAmountByApikeys(c echo.Context) error
 func (h *merchantHandleApi) FindByApiKey(c echo.Context) error {
 	apiKey := c.QueryParam("api_key")
 
+	if apiKey == "" {
+		return merchant_errors.ErrApiInvalidApiKey(c)
+	}
+
 	ctx := c.Request().Context()
 
 	req := &pb.FindByApiKeyRequest{
@@ -1242,11 +1050,7 @@ func (h *merchantHandleApi) FindByApiKey(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve merchant data", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve merchant data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindByApiKeyMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseMerchant(res)
@@ -1270,11 +1074,7 @@ func (h *merchantHandleApi) FindByMerchantUserId(c echo.Context) error {
 	id, ok := c.Get("user_id").(int32)
 
 	if !ok {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid merchant ID",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidUserID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1287,11 +1087,7 @@ func (h *merchantHandleApi) FindByMerchantUserId(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve merchant data", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve merchant data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindByUserId(c)
 	}
 
 	so := h.mapping.ToApiResponseMerchants(res)
@@ -1337,11 +1133,7 @@ func (h *merchantHandleApi) FindByActive(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve merchant data", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve merchant data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindAllMerchantsActive(c)
 	}
 
 	so := h.mapping.ToApiResponsesMerchantDeleteAt(res)
@@ -1388,11 +1180,7 @@ func (h *merchantHandleApi) FindByTrashed(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve merchant data", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve merchant data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedFindAllMerchantsTrashed(c)
 	}
 
 	so := h.mapping.ToApiResponsesMerchantDeleteAt(res)
@@ -1417,20 +1205,12 @@ func (h *merchantHandleApi) Create(c echo.Context) error {
 
 	if err := c.Bind(&body); err != nil {
 		h.logger.Debug("Bad Request", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiBindCreateMerchant(c)
 	}
 
 	if err := body.Validate(); err != nil {
 		h.logger.Debug("Validation Error", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Validation Error: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiValidateCreateMerchant(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1444,11 +1224,7 @@ func (h *merchantHandleApi) Create(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to create merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to create merchant:",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedCreateMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseMerchant(res)
@@ -1472,31 +1248,19 @@ func (h *merchantHandleApi) Update(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid merchant ID",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidMerchantID(c)
 	}
 
 	var body requests.UpdateMerchantRequest
 
 	if err := c.Bind(&body); err != nil {
 		h.logger.Debug("Bad Request", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiBindUpdateMerchant(c)
 	}
 
 	if err := body.Validate(); err != nil {
 		h.logger.Debug("Validation Error", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Validation Error: ",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiValidateUpdateMerchant(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1511,11 +1275,7 @@ func (h *merchantHandleApi) Update(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to update merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to update merchant: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedUpdateMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseMerchant(res)
@@ -1543,11 +1303,7 @@ func (h *merchantHandleApi) TrashedMerchant(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Bad Request", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidMerchantID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1559,11 +1315,7 @@ func (h *merchantHandleApi) TrashedMerchant(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to trashed merchant", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to trashed merchant:",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedTrashMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseMerchant(res)
@@ -1591,11 +1343,7 @@ func (h *merchantHandleApi) RestoreMerchant(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Bad Request", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidMerchantID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1607,11 +1355,7 @@ func (h *merchantHandleApi) RestoreMerchant(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to restore merchant", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to restore merchant:",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedRestoreMerchant(c)
 	}
 
 	so := h.mapping.ToApiResponseMerchant(res)
@@ -1637,11 +1381,7 @@ func (h *merchantHandleApi) Delete(c echo.Context) error {
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid ID",
-			Code:    http.StatusBadRequest,
-		})
+		return merchant_errors.ErrApiInvalidMerchantID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1653,11 +1393,7 @@ func (h *merchantHandleApi) Delete(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to delete merchant", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to delete merchant:",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedDeleteMerchantPermanent(c)
 	}
 
 	so := h.mapping.ToApiResponseMerchantDeleteAt(res)
@@ -1682,11 +1418,7 @@ func (h *merchantHandleApi) RestoreAllMerchant(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Error("Failed to restore all merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently restore all merchant",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedRestoreAllMerchant(c)
 	}
 
 	h.logger.Debug("Successfully restored all merchant")
@@ -1713,11 +1445,7 @@ func (h *merchantHandleApi) DeleteAllMerchantPermanent(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Error("Failed to permanently delete all merchant", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently delete all merchant",
-			Code:    http.StatusInternalServerError,
-		})
+		return merchant_errors.ErrApiFailedDeleteAllMerchantPermanent(c)
 	}
 
 	h.logger.Debug("Successfully deleted all merchant permanently")

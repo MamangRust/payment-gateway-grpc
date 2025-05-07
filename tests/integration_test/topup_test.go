@@ -618,7 +618,7 @@ func (s *ServerTestSuite) TestRestoreTopup() {
 			TopupId: 1,
 		}
 
-		expectedResponse := &pb.ApiResponseTopupRestore{
+		expectedResponse := &pb.ApiResponseTopupDeleteAt{
 			Status:  "error",
 			Message: "Failed to restore topup",
 		}
@@ -635,7 +635,7 @@ func (s *ServerTestSuite) TestRestoreTopup() {
 			TopupId: -1,
 		}
 
-		expectedResponse := &pb.ApiResponseTopupRestore{
+		expectedResponse := &pb.ApiResponseTopupDeleteAt{
 			Status:  "error",
 			Message: "Invalid topup id",
 		}

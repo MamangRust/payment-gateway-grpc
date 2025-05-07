@@ -5,6 +5,7 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	recordmapper "MamangRust/paymentgatewaygrpc/internal/mapper/record"
 	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/role_errors"
 	"context"
 	"database/sql"
 	"errors"
@@ -37,10 +38,7 @@ func (r *roleRepository) FindAllRoles(req *requests.FindAllRoles) ([]*record.Rol
 	res, err := r.db.GetRoles(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no role found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-		return nil, nil, fmt.Errorf("failed to retrieve role (page %d, size %d, search '%s'): %w", req.Page, req.PageSize, req.Search, err)
+		return nil, nil, role_errors.ErrFindAllRoles
 	}
 
 	var totalCount int
@@ -69,9 +67,10 @@ func (r *roleRepository) FindByName(name string) (*record.RoleRecord, error) {
 	res, err := r.db.GetRoleByName(r.ctx, name)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("role not found with name: '%s'", name)
+			return nil, role_errors.ErrRoleNotFound
 		}
-		return nil, fmt.Errorf("failed to find role by name '%s': %w", name, err)
+
+		return nil, role_errors.ErrRoleNotFound
 	}
 	return r.mapping.ToRoleRecord(res), nil
 }
@@ -80,9 +79,10 @@ func (r *roleRepository) FindByUserId(user_id int) ([]*record.RoleRecord, error)
 	res, err := r.db.GetUserRoles(r.ctx, int32(user_id))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("no roles assigned to user ID: %d", user_id)
+			return nil, role_errors.ErrRoleNotFound
 		}
-		return nil, fmt.Errorf("failed to get roles for user ID %d: %w", user_id, err)
+
+		return nil, role_errors.ErrRoleNotFound
 	}
 	return r.mapping.ToRolesRecord(res), nil
 }
@@ -99,10 +99,7 @@ func (r *roleRepository) FindByActiveRole(req *requests.FindAllRoles) ([]*record
 	res, err := r.db.GetActiveRoles(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no active roles found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-		return nil, nil, fmt.Errorf("failed to find active roles (page %d, size %d, search '%s'): %w", req.Page, req.PageSize, req.Search, err)
+		return nil, nil, role_errors.ErrFindActiveRoles
 	}
 
 	var totalCount int
@@ -127,10 +124,7 @@ func (r *roleRepository) FindByTrashedRole(req *requests.FindAllRoles) ([]*recor
 	res, err := r.db.GetTrashedRoles(r.ctx, reqDb)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, fmt.Errorf("no trashed roles found matching the criteria (page %d, size %d, search '%s')", req.Page, req.PageSize, req.Search)
-		}
-		return nil, nil, fmt.Errorf("failed to find trashed roles (page %d, size %d, search '%s'): %w", req.Page, req.PageSize, req.Search, err)
+		return nil, nil, role_errors.ErrFindTrashedRoles
 	}
 
 	var totalCount int
@@ -147,10 +141,7 @@ func (r *roleRepository) CreateRole(req *requests.CreateRoleRequest) (*record.Ro
 	res, err := r.db.CreateRole(r.ctx, req.Name)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("invalid role data: %w", err)
-		}
-		return nil, fmt.Errorf("failed to create role: invalid or incomplete role data: %w", err)
+		return nil, role_errors.ErrCreateRole
 	}
 
 	return r.mapping.ToRoleRecord(res), nil
@@ -163,10 +154,7 @@ func (r *roleRepository) UpdateRole(req *requests.UpdateRoleRequest) (*record.Ro
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("role ID %d not found for update", *req.ID)
-		}
-		return nil, fmt.Errorf("failed to update role ID %d: role not found or invalid update data", *req.ID)
+		return nil, role_errors.ErrUpdateRole
 	}
 
 	return r.mapping.ToRoleRecord(res), nil
@@ -175,10 +163,7 @@ func (r *roleRepository) UpdateRole(req *requests.UpdateRoleRequest) (*record.Ro
 func (r *roleRepository) TrashedRole(id int) (*record.RoleRecord, error) {
 	res, err := r.db.TrashRole(r.ctx, int32(id))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("role with ID %d not found or already trashed", id)
-		}
-		return nil, fmt.Errorf("failed to trash role ID %d: %w", id, err)
+		return nil, role_errors.ErrTrashedRole
 	}
 	return r.mapping.ToRoleRecord(res), nil
 }
@@ -186,10 +171,7 @@ func (r *roleRepository) TrashedRole(id int) (*record.RoleRecord, error) {
 func (r *roleRepository) RestoreRole(id int) (*record.RoleRecord, error) {
 	res, err := r.db.RestoreRole(r.ctx, int32(id))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("role with ID %d not found in trash", id)
-		}
-		return nil, fmt.Errorf("failed to restore role ID %d: %w", id, err)
+		return nil, role_errors.ErrRestoreRole
 	}
 	return r.mapping.ToRoleRecord(res), nil
 }
@@ -197,10 +179,7 @@ func (r *roleRepository) RestoreRole(id int) (*record.RoleRecord, error) {
 func (r *roleRepository) DeleteRolePermanent(role_id int) (bool, error) {
 	err := r.db.DeletePermanentRole(r.ctx, int32(role_id))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("role ID %d not found or still in use", role_id)
-		}
-		return false, fmt.Errorf("failed to permanently delete role ID %d: %w", role_id, err)
+		return false, role_errors.ErrDeleteRolePermanent
 	}
 	return true, nil
 }
@@ -209,10 +188,7 @@ func (r *roleRepository) RestoreAllRole() (bool, error) {
 	err := r.db.RestoreAllRoles(r.ctx)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("no trashed roles available to restore")
-		}
-		return false, fmt.Errorf("failed to restore trashed roles: %w", err)
+		return false, role_errors.ErrRestoreAllRoles
 	}
 
 	return true, nil
@@ -222,10 +198,7 @@ func (r *roleRepository) DeleteAllRolePermanent() (bool, error) {
 	err := r.db.DeleteAllPermanentRoles(r.ctx)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, fmt.Errorf("no trashed roles available to delete permanently")
-		}
-		return false, fmt.Errorf("failed to permanently delete roles: %w", err)
+		return false, role_errors.ErrDeleteAllRoles
 	}
 
 	return true, nil

@@ -1887,6 +1887,66 @@ func (x *ApiResponseTopup) GetData() *TopupResponse {
 	return nil
 }
 
+type ApiResponseTopupDeleteAt struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Data          *TopupResponseDeleteAt `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApiResponseTopupDeleteAt) Reset() {
+	*x = ApiResponseTopupDeleteAt{}
+	mi := &file_topup_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApiResponseTopupDeleteAt) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApiResponseTopupDeleteAt) ProtoMessage() {}
+
+func (x *ApiResponseTopupDeleteAt) ProtoReflect() protoreflect.Message {
+	mi := &file_topup_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApiResponseTopupDeleteAt.ProtoReflect.Descriptor instead.
+func (*ApiResponseTopupDeleteAt) Descriptor() ([]byte, []int) {
+	return file_topup_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ApiResponseTopupDeleteAt) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ApiResponseTopupDeleteAt) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *ApiResponseTopupDeleteAt) GetData() *TopupResponseDeleteAt {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
 type ApiResponsesTopup struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
@@ -1898,7 +1958,7 @@ type ApiResponsesTopup struct {
 
 func (x *ApiResponsesTopup) Reset() {
 	*x = ApiResponsesTopup{}
-	mi := &file_topup_proto_msgTypes[30]
+	mi := &file_topup_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1910,7 +1970,7 @@ func (x *ApiResponsesTopup) String() string {
 func (*ApiResponsesTopup) ProtoMessage() {}
 
 func (x *ApiResponsesTopup) ProtoReflect() protoreflect.Message {
-	mi := &file_topup_proto_msgTypes[30]
+	mi := &file_topup_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1923,7 +1983,7 @@ func (x *ApiResponsesTopup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApiResponsesTopup.ProtoReflect.Descriptor instead.
 func (*ApiResponsesTopup) Descriptor() ([]byte, []int) {
-	return file_topup_proto_rawDescGZIP(), []int{30}
+	return file_topup_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ApiResponsesTopup) GetStatus() string {
@@ -1959,7 +2019,7 @@ type ApiResponsePaginationTopup struct {
 
 func (x *ApiResponsePaginationTopup) Reset() {
 	*x = ApiResponsePaginationTopup{}
-	mi := &file_topup_proto_msgTypes[31]
+	mi := &file_topup_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1971,7 +2031,7 @@ func (x *ApiResponsePaginationTopup) String() string {
 func (*ApiResponsePaginationTopup) ProtoMessage() {}
 
 func (x *ApiResponsePaginationTopup) ProtoReflect() protoreflect.Message {
-	mi := &file_topup_proto_msgTypes[31]
+	mi := &file_topup_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1984,7 +2044,7 @@ func (x *ApiResponsePaginationTopup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApiResponsePaginationTopup.ProtoReflect.Descriptor instead.
 func (*ApiResponsePaginationTopup) Descriptor() ([]byte, []int) {
-	return file_topup_proto_rawDescGZIP(), []int{31}
+	return file_topup_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ApiResponsePaginationTopup) GetStatus() string {
@@ -2027,7 +2087,7 @@ type ApiResponsePaginationTopupDeleteAt struct {
 
 func (x *ApiResponsePaginationTopupDeleteAt) Reset() {
 	*x = ApiResponsePaginationTopupDeleteAt{}
-	mi := &file_topup_proto_msgTypes[32]
+	mi := &file_topup_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2039,7 +2099,7 @@ func (x *ApiResponsePaginationTopupDeleteAt) String() string {
 func (*ApiResponsePaginationTopupDeleteAt) ProtoMessage() {}
 
 func (x *ApiResponsePaginationTopupDeleteAt) ProtoReflect() protoreflect.Message {
-	mi := &file_topup_proto_msgTypes[32]
+	mi := &file_topup_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2052,7 +2112,7 @@ func (x *ApiResponsePaginationTopupDeleteAt) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ApiResponsePaginationTopupDeleteAt.ProtoReflect.Descriptor instead.
 func (*ApiResponsePaginationTopupDeleteAt) Descriptor() ([]byte, []int) {
-	return file_topup_proto_rawDescGZIP(), []int{32}
+	return file_topup_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *ApiResponsePaginationTopupDeleteAt) GetStatus() string {
@@ -2093,7 +2153,7 @@ type ApiResponseTopupDelete struct {
 
 func (x *ApiResponseTopupDelete) Reset() {
 	*x = ApiResponseTopupDelete{}
-	mi := &file_topup_proto_msgTypes[33]
+	mi := &file_topup_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2105,7 +2165,7 @@ func (x *ApiResponseTopupDelete) String() string {
 func (*ApiResponseTopupDelete) ProtoMessage() {}
 
 func (x *ApiResponseTopupDelete) ProtoReflect() protoreflect.Message {
-	mi := &file_topup_proto_msgTypes[33]
+	mi := &file_topup_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2118,7 +2178,7 @@ func (x *ApiResponseTopupDelete) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApiResponseTopupDelete.ProtoReflect.Descriptor instead.
 func (*ApiResponseTopupDelete) Descriptor() ([]byte, []int) {
-	return file_topup_proto_rawDescGZIP(), []int{33}
+	return file_topup_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ApiResponseTopupDelete) GetStatus() string {
@@ -2145,7 +2205,7 @@ type ApiResponseTopupAll struct {
 
 func (x *ApiResponseTopupAll) Reset() {
 	*x = ApiResponseTopupAll{}
-	mi := &file_topup_proto_msgTypes[34]
+	mi := &file_topup_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2157,7 +2217,7 @@ func (x *ApiResponseTopupAll) String() string {
 func (*ApiResponseTopupAll) ProtoMessage() {}
 
 func (x *ApiResponseTopupAll) ProtoReflect() protoreflect.Message {
-	mi := &file_topup_proto_msgTypes[34]
+	mi := &file_topup_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2170,7 +2230,7 @@ func (x *ApiResponseTopupAll) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApiResponseTopupAll.ProtoReflect.Descriptor instead.
 func (*ApiResponseTopupAll) Descriptor() ([]byte, []int) {
-	return file_topup_proto_rawDescGZIP(), []int{34}
+	return file_topup_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *ApiResponseTopupAll) GetStatus() string {
@@ -2335,7 +2395,11 @@ const file_topup_proto_rawDesc = "" +
 	"\x10ApiResponseTopup\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12%\n" +
-	"\x04data\x18\x03 \x01(\v2\x11.pb.TopupResponseR\x04data\"l\n" +
+	"\x04data\x18\x03 \x01(\v2\x11.pb.TopupResponseR\x04data\"{\n" +
+	"\x18ApiResponseTopupDeleteAt\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12-\n" +
+	"\x04data\x18\x03 \x01(\v2\x19.pb.TopupResponseDeleteAtR\x04data\"l\n" +
 	"\x11ApiResponsesTopup\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12%\n" +
@@ -2359,7 +2423,7 @@ const file_topup_proto_rawDesc = "" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"G\n" +
 	"\x13ApiResponseTopupAll\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xad\x14\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\xbd\x14\n" +
 	"\fTopupService\x12G\n" +
 	"\fFindAllTopup\x12\x17.pb.FindAllTopupRequest\x1a\x1e.pb.ApiResponsePaginationTopup\x12_\n" +
 	"\x18FindAllTopupByCardNumber\x12#.pb.FindAllTopupByCardNumberRequest\x1a\x1e.pb.ApiResponsePaginationTopup\x12?\n" +
@@ -2384,9 +2448,9 @@ const file_topup_proto_rawDesc = "" +
 	"\fFindByActive\x12\x17.pb.FindAllTopupRequest\x1a&.pb.ApiResponsePaginationTopupDeleteAt\x12P\n" +
 	"\rFindByTrashed\x12\x17.pb.FindAllTopupRequest\x1a&.pb.ApiResponsePaginationTopupDeleteAt\x12;\n" +
 	"\vCreateTopup\x12\x16.pb.CreateTopupRequest\x1a\x14.pb.ApiResponseTopup\x12;\n" +
-	"\vUpdateTopup\x12\x16.pb.UpdateTopupRequest\x1a\x14.pb.ApiResponseTopup\x12>\n" +
-	"\fTrashedTopup\x12\x18.pb.FindByIdTopupRequest\x1a\x14.pb.ApiResponseTopup\x12>\n" +
-	"\fRestoreTopup\x12\x18.pb.FindByIdTopupRequest\x1a\x14.pb.ApiResponseTopup\x12L\n" +
+	"\vUpdateTopup\x12\x16.pb.UpdateTopupRequest\x1a\x14.pb.ApiResponseTopup\x12F\n" +
+	"\fTrashedTopup\x12\x18.pb.FindByIdTopupRequest\x1a\x1c.pb.ApiResponseTopupDeleteAt\x12F\n" +
+	"\fRestoreTopup\x12\x18.pb.FindByIdTopupRequest\x1a\x1c.pb.ApiResponseTopupDeleteAt\x12L\n" +
 	"\x14DeleteTopupPermanent\x12\x18.pb.FindByIdTopupRequest\x1a\x1a.pb.ApiResponseTopupDelete\x12D\n" +
 	"\x0fRestoreAllTopup\x12\x16.google.protobuf.Empty\x1a\x17.pb.ApiResponseTopupAll\"\x00\x12L\n" +
 	"\x17DeleteAllTopupPermanent\x12\x16.google.protobuf.Empty\x1a\x17.pb.ApiResponseTopupAll\"\x00B+Z)MamangRust/paymentgatewaygrpc/internal/pbb\x06proto3"
@@ -2403,7 +2467,7 @@ func file_topup_proto_rawDescGZIP() []byte {
 	return file_topup_proto_rawDescData
 }
 
-var file_topup_proto_msgTypes = make([]protoimpl.MessageInfo, 35)
+var file_topup_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
 var file_topup_proto_goTypes = []any{
 	(*FindAllTopupRequest)(nil),                // 0: pb.FindAllTopupRequest
 	(*FindAllTopupByCardNumberRequest)(nil),    // 1: pb.FindAllTopupByCardNumberRequest
@@ -2435,17 +2499,18 @@ var file_topup_proto_goTypes = []any{
 	(*ApiResponseTopupMonthAmount)(nil),        // 27: pb.ApiResponseTopupMonthAmount
 	(*ApiResponseTopupYearAmount)(nil),         // 28: pb.ApiResponseTopupYearAmount
 	(*ApiResponseTopup)(nil),                   // 29: pb.ApiResponseTopup
-	(*ApiResponsesTopup)(nil),                  // 30: pb.ApiResponsesTopup
-	(*ApiResponsePaginationTopup)(nil),         // 31: pb.ApiResponsePaginationTopup
-	(*ApiResponsePaginationTopupDeleteAt)(nil), // 32: pb.ApiResponsePaginationTopupDeleteAt
-	(*ApiResponseTopupDelete)(nil),             // 33: pb.ApiResponseTopupDelete
-	(*ApiResponseTopupAll)(nil),                // 34: pb.ApiResponseTopupAll
-	(*wrapperspb.StringValue)(nil),             // 35: google.protobuf.StringValue
-	(*PaginationMeta)(nil),                     // 36: pb.PaginationMeta
-	(*emptypb.Empty)(nil),                      // 37: google.protobuf.Empty
+	(*ApiResponseTopupDeleteAt)(nil),           // 30: pb.ApiResponseTopupDeleteAt
+	(*ApiResponsesTopup)(nil),                  // 31: pb.ApiResponsesTopup
+	(*ApiResponsePaginationTopup)(nil),         // 32: pb.ApiResponsePaginationTopup
+	(*ApiResponsePaginationTopupDeleteAt)(nil), // 33: pb.ApiResponsePaginationTopupDeleteAt
+	(*ApiResponseTopupDelete)(nil),             // 34: pb.ApiResponseTopupDelete
+	(*ApiResponseTopupAll)(nil),                // 35: pb.ApiResponseTopupAll
+	(*wrapperspb.StringValue)(nil),             // 36: google.protobuf.StringValue
+	(*PaginationMeta)(nil),                     // 37: pb.PaginationMeta
+	(*emptypb.Empty)(nil),                      // 38: google.protobuf.Empty
 }
 var file_topup_proto_depIdxs = []int32{
-	35, // 0: pb.TopupResponseDeleteAt.deleted_at:type_name -> google.protobuf.StringValue
+	36, // 0: pb.TopupResponseDeleteAt.deleted_at:type_name -> google.protobuf.StringValue
 	13, // 1: pb.ApiResponseTopupMonthStatusSuccess.data:type_name -> pb.TopupMonthStatusSuccessResponse
 	14, // 2: pb.ApiResponseTopupYearStatusSuccess.data:type_name -> pb.TopupYearStatusSuccessResponse
 	15, // 3: pb.ApiResponseTopupMonthStatusFailed.data:type_name -> pb.TopupMonthStatusFailedResponse
@@ -2455,74 +2520,75 @@ var file_topup_proto_depIdxs = []int32{
 	19, // 7: pb.ApiResponseTopupMonthAmount.data:type_name -> pb.TopupMonthAmountResponse
 	20, // 8: pb.ApiResponseTopupYearAmount.data:type_name -> pb.TopupYearlyAmountResponse
 	11, // 9: pb.ApiResponseTopup.data:type_name -> pb.TopupResponse
-	11, // 10: pb.ApiResponsesTopup.data:type_name -> pb.TopupResponse
-	11, // 11: pb.ApiResponsePaginationTopup.data:type_name -> pb.TopupResponse
-	36, // 12: pb.ApiResponsePaginationTopup.pagination:type_name -> pb.PaginationMeta
-	12, // 13: pb.ApiResponsePaginationTopupDeleteAt.data:type_name -> pb.TopupResponseDeleteAt
-	36, // 14: pb.ApiResponsePaginationTopupDeleteAt.pagination:type_name -> pb.PaginationMeta
-	0,  // 15: pb.TopupService.FindAllTopup:input_type -> pb.FindAllTopupRequest
-	1,  // 16: pb.TopupService.FindAllTopupByCardNumber:input_type -> pb.FindAllTopupByCardNumberRequest
-	2,  // 17: pb.TopupService.FindByIdTopup:input_type -> pb.FindByIdTopupRequest
-	3,  // 18: pb.TopupService.FindMonthlyTopupStatusSuccess:input_type -> pb.FindMonthlyTopupStatus
-	4,  // 19: pb.TopupService.FindYearlyTopupStatusSuccess:input_type -> pb.FindYearTopupStatus
-	3,  // 20: pb.TopupService.FindMonthlyTopupStatusFailed:input_type -> pb.FindMonthlyTopupStatus
-	4,  // 21: pb.TopupService.FindYearlyTopupStatusFailed:input_type -> pb.FindYearTopupStatus
-	5,  // 22: pb.TopupService.FindMonthlyTopupStatusSuccessByCardNumber:input_type -> pb.FindMonthlyTopupStatusCardNumber
-	6,  // 23: pb.TopupService.FindYearlyTopupStatusSuccessByCardNumber:input_type -> pb.FindYearTopupStatusCardNumber
-	5,  // 24: pb.TopupService.FindMonthlyTopupStatusFailedByCardNumber:input_type -> pb.FindMonthlyTopupStatusCardNumber
-	6,  // 25: pb.TopupService.FindYearlyTopupStatusFailedByCardNumber:input_type -> pb.FindYearTopupStatusCardNumber
-	4,  // 26: pb.TopupService.FindMonthlyTopupMethods:input_type -> pb.FindYearTopupStatus
-	4,  // 27: pb.TopupService.FindYearlyTopupMethods:input_type -> pb.FindYearTopupStatus
-	4,  // 28: pb.TopupService.FindMonthlyTopupAmounts:input_type -> pb.FindYearTopupStatus
-	4,  // 29: pb.TopupService.FindYearlyTopupAmounts:input_type -> pb.FindYearTopupStatus
-	8,  // 30: pb.TopupService.FindMonthlyTopupMethodsByCardNumber:input_type -> pb.FindYearTopupCardNumber
-	8,  // 31: pb.TopupService.FindYearlyTopupMethodsByCardNumber:input_type -> pb.FindYearTopupCardNumber
-	8,  // 32: pb.TopupService.FindMonthlyTopupAmountsByCardNumber:input_type -> pb.FindYearTopupCardNumber
-	8,  // 33: pb.TopupService.FindYearlyTopupAmountsByCardNumber:input_type -> pb.FindYearTopupCardNumber
-	7,  // 34: pb.TopupService.FindByCardNumberTopup:input_type -> pb.FindByCardNumberTopupRequest
-	0,  // 35: pb.TopupService.FindByActive:input_type -> pb.FindAllTopupRequest
-	0,  // 36: pb.TopupService.FindByTrashed:input_type -> pb.FindAllTopupRequest
-	9,  // 37: pb.TopupService.CreateTopup:input_type -> pb.CreateTopupRequest
-	10, // 38: pb.TopupService.UpdateTopup:input_type -> pb.UpdateTopupRequest
-	2,  // 39: pb.TopupService.TrashedTopup:input_type -> pb.FindByIdTopupRequest
-	2,  // 40: pb.TopupService.RestoreTopup:input_type -> pb.FindByIdTopupRequest
-	2,  // 41: pb.TopupService.DeleteTopupPermanent:input_type -> pb.FindByIdTopupRequest
-	37, // 42: pb.TopupService.RestoreAllTopup:input_type -> google.protobuf.Empty
-	37, // 43: pb.TopupService.DeleteAllTopupPermanent:input_type -> google.protobuf.Empty
-	31, // 44: pb.TopupService.FindAllTopup:output_type -> pb.ApiResponsePaginationTopup
-	31, // 45: pb.TopupService.FindAllTopupByCardNumber:output_type -> pb.ApiResponsePaginationTopup
-	29, // 46: pb.TopupService.FindByIdTopup:output_type -> pb.ApiResponseTopup
-	21, // 47: pb.TopupService.FindMonthlyTopupStatusSuccess:output_type -> pb.ApiResponseTopupMonthStatusSuccess
-	22, // 48: pb.TopupService.FindYearlyTopupStatusSuccess:output_type -> pb.ApiResponseTopupYearStatusSuccess
-	23, // 49: pb.TopupService.FindMonthlyTopupStatusFailed:output_type -> pb.ApiResponseTopupMonthStatusFailed
-	24, // 50: pb.TopupService.FindYearlyTopupStatusFailed:output_type -> pb.ApiResponseTopupYearStatusFailed
-	21, // 51: pb.TopupService.FindMonthlyTopupStatusSuccessByCardNumber:output_type -> pb.ApiResponseTopupMonthStatusSuccess
-	22, // 52: pb.TopupService.FindYearlyTopupStatusSuccessByCardNumber:output_type -> pb.ApiResponseTopupYearStatusSuccess
-	23, // 53: pb.TopupService.FindMonthlyTopupStatusFailedByCardNumber:output_type -> pb.ApiResponseTopupMonthStatusFailed
-	24, // 54: pb.TopupService.FindYearlyTopupStatusFailedByCardNumber:output_type -> pb.ApiResponseTopupYearStatusFailed
-	25, // 55: pb.TopupService.FindMonthlyTopupMethods:output_type -> pb.ApiResponseTopupMonthMethod
-	26, // 56: pb.TopupService.FindYearlyTopupMethods:output_type -> pb.ApiResponseTopupYearMethod
-	27, // 57: pb.TopupService.FindMonthlyTopupAmounts:output_type -> pb.ApiResponseTopupMonthAmount
-	28, // 58: pb.TopupService.FindYearlyTopupAmounts:output_type -> pb.ApiResponseTopupYearAmount
-	25, // 59: pb.TopupService.FindMonthlyTopupMethodsByCardNumber:output_type -> pb.ApiResponseTopupMonthMethod
-	26, // 60: pb.TopupService.FindYearlyTopupMethodsByCardNumber:output_type -> pb.ApiResponseTopupYearMethod
-	27, // 61: pb.TopupService.FindMonthlyTopupAmountsByCardNumber:output_type -> pb.ApiResponseTopupMonthAmount
-	28, // 62: pb.TopupService.FindYearlyTopupAmountsByCardNumber:output_type -> pb.ApiResponseTopupYearAmount
-	29, // 63: pb.TopupService.FindByCardNumberTopup:output_type -> pb.ApiResponseTopup
-	32, // 64: pb.TopupService.FindByActive:output_type -> pb.ApiResponsePaginationTopupDeleteAt
-	32, // 65: pb.TopupService.FindByTrashed:output_type -> pb.ApiResponsePaginationTopupDeleteAt
-	29, // 66: pb.TopupService.CreateTopup:output_type -> pb.ApiResponseTopup
-	29, // 67: pb.TopupService.UpdateTopup:output_type -> pb.ApiResponseTopup
-	29, // 68: pb.TopupService.TrashedTopup:output_type -> pb.ApiResponseTopup
-	29, // 69: pb.TopupService.RestoreTopup:output_type -> pb.ApiResponseTopup
-	33, // 70: pb.TopupService.DeleteTopupPermanent:output_type -> pb.ApiResponseTopupDelete
-	34, // 71: pb.TopupService.RestoreAllTopup:output_type -> pb.ApiResponseTopupAll
-	34, // 72: pb.TopupService.DeleteAllTopupPermanent:output_type -> pb.ApiResponseTopupAll
-	44, // [44:73] is the sub-list for method output_type
-	15, // [15:44] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	12, // 10: pb.ApiResponseTopupDeleteAt.data:type_name -> pb.TopupResponseDeleteAt
+	11, // 11: pb.ApiResponsesTopup.data:type_name -> pb.TopupResponse
+	11, // 12: pb.ApiResponsePaginationTopup.data:type_name -> pb.TopupResponse
+	37, // 13: pb.ApiResponsePaginationTopup.pagination:type_name -> pb.PaginationMeta
+	12, // 14: pb.ApiResponsePaginationTopupDeleteAt.data:type_name -> pb.TopupResponseDeleteAt
+	37, // 15: pb.ApiResponsePaginationTopupDeleteAt.pagination:type_name -> pb.PaginationMeta
+	0,  // 16: pb.TopupService.FindAllTopup:input_type -> pb.FindAllTopupRequest
+	1,  // 17: pb.TopupService.FindAllTopupByCardNumber:input_type -> pb.FindAllTopupByCardNumberRequest
+	2,  // 18: pb.TopupService.FindByIdTopup:input_type -> pb.FindByIdTopupRequest
+	3,  // 19: pb.TopupService.FindMonthlyTopupStatusSuccess:input_type -> pb.FindMonthlyTopupStatus
+	4,  // 20: pb.TopupService.FindYearlyTopupStatusSuccess:input_type -> pb.FindYearTopupStatus
+	3,  // 21: pb.TopupService.FindMonthlyTopupStatusFailed:input_type -> pb.FindMonthlyTopupStatus
+	4,  // 22: pb.TopupService.FindYearlyTopupStatusFailed:input_type -> pb.FindYearTopupStatus
+	5,  // 23: pb.TopupService.FindMonthlyTopupStatusSuccessByCardNumber:input_type -> pb.FindMonthlyTopupStatusCardNumber
+	6,  // 24: pb.TopupService.FindYearlyTopupStatusSuccessByCardNumber:input_type -> pb.FindYearTopupStatusCardNumber
+	5,  // 25: pb.TopupService.FindMonthlyTopupStatusFailedByCardNumber:input_type -> pb.FindMonthlyTopupStatusCardNumber
+	6,  // 26: pb.TopupService.FindYearlyTopupStatusFailedByCardNumber:input_type -> pb.FindYearTopupStatusCardNumber
+	4,  // 27: pb.TopupService.FindMonthlyTopupMethods:input_type -> pb.FindYearTopupStatus
+	4,  // 28: pb.TopupService.FindYearlyTopupMethods:input_type -> pb.FindYearTopupStatus
+	4,  // 29: pb.TopupService.FindMonthlyTopupAmounts:input_type -> pb.FindYearTopupStatus
+	4,  // 30: pb.TopupService.FindYearlyTopupAmounts:input_type -> pb.FindYearTopupStatus
+	8,  // 31: pb.TopupService.FindMonthlyTopupMethodsByCardNumber:input_type -> pb.FindYearTopupCardNumber
+	8,  // 32: pb.TopupService.FindYearlyTopupMethodsByCardNumber:input_type -> pb.FindYearTopupCardNumber
+	8,  // 33: pb.TopupService.FindMonthlyTopupAmountsByCardNumber:input_type -> pb.FindYearTopupCardNumber
+	8,  // 34: pb.TopupService.FindYearlyTopupAmountsByCardNumber:input_type -> pb.FindYearTopupCardNumber
+	7,  // 35: pb.TopupService.FindByCardNumberTopup:input_type -> pb.FindByCardNumberTopupRequest
+	0,  // 36: pb.TopupService.FindByActive:input_type -> pb.FindAllTopupRequest
+	0,  // 37: pb.TopupService.FindByTrashed:input_type -> pb.FindAllTopupRequest
+	9,  // 38: pb.TopupService.CreateTopup:input_type -> pb.CreateTopupRequest
+	10, // 39: pb.TopupService.UpdateTopup:input_type -> pb.UpdateTopupRequest
+	2,  // 40: pb.TopupService.TrashedTopup:input_type -> pb.FindByIdTopupRequest
+	2,  // 41: pb.TopupService.RestoreTopup:input_type -> pb.FindByIdTopupRequest
+	2,  // 42: pb.TopupService.DeleteTopupPermanent:input_type -> pb.FindByIdTopupRequest
+	38, // 43: pb.TopupService.RestoreAllTopup:input_type -> google.protobuf.Empty
+	38, // 44: pb.TopupService.DeleteAllTopupPermanent:input_type -> google.protobuf.Empty
+	32, // 45: pb.TopupService.FindAllTopup:output_type -> pb.ApiResponsePaginationTopup
+	32, // 46: pb.TopupService.FindAllTopupByCardNumber:output_type -> pb.ApiResponsePaginationTopup
+	29, // 47: pb.TopupService.FindByIdTopup:output_type -> pb.ApiResponseTopup
+	21, // 48: pb.TopupService.FindMonthlyTopupStatusSuccess:output_type -> pb.ApiResponseTopupMonthStatusSuccess
+	22, // 49: pb.TopupService.FindYearlyTopupStatusSuccess:output_type -> pb.ApiResponseTopupYearStatusSuccess
+	23, // 50: pb.TopupService.FindMonthlyTopupStatusFailed:output_type -> pb.ApiResponseTopupMonthStatusFailed
+	24, // 51: pb.TopupService.FindYearlyTopupStatusFailed:output_type -> pb.ApiResponseTopupYearStatusFailed
+	21, // 52: pb.TopupService.FindMonthlyTopupStatusSuccessByCardNumber:output_type -> pb.ApiResponseTopupMonthStatusSuccess
+	22, // 53: pb.TopupService.FindYearlyTopupStatusSuccessByCardNumber:output_type -> pb.ApiResponseTopupYearStatusSuccess
+	23, // 54: pb.TopupService.FindMonthlyTopupStatusFailedByCardNumber:output_type -> pb.ApiResponseTopupMonthStatusFailed
+	24, // 55: pb.TopupService.FindYearlyTopupStatusFailedByCardNumber:output_type -> pb.ApiResponseTopupYearStatusFailed
+	25, // 56: pb.TopupService.FindMonthlyTopupMethods:output_type -> pb.ApiResponseTopupMonthMethod
+	26, // 57: pb.TopupService.FindYearlyTopupMethods:output_type -> pb.ApiResponseTopupYearMethod
+	27, // 58: pb.TopupService.FindMonthlyTopupAmounts:output_type -> pb.ApiResponseTopupMonthAmount
+	28, // 59: pb.TopupService.FindYearlyTopupAmounts:output_type -> pb.ApiResponseTopupYearAmount
+	25, // 60: pb.TopupService.FindMonthlyTopupMethodsByCardNumber:output_type -> pb.ApiResponseTopupMonthMethod
+	26, // 61: pb.TopupService.FindYearlyTopupMethodsByCardNumber:output_type -> pb.ApiResponseTopupYearMethod
+	27, // 62: pb.TopupService.FindMonthlyTopupAmountsByCardNumber:output_type -> pb.ApiResponseTopupMonthAmount
+	28, // 63: pb.TopupService.FindYearlyTopupAmountsByCardNumber:output_type -> pb.ApiResponseTopupYearAmount
+	29, // 64: pb.TopupService.FindByCardNumberTopup:output_type -> pb.ApiResponseTopup
+	33, // 65: pb.TopupService.FindByActive:output_type -> pb.ApiResponsePaginationTopupDeleteAt
+	33, // 66: pb.TopupService.FindByTrashed:output_type -> pb.ApiResponsePaginationTopupDeleteAt
+	29, // 67: pb.TopupService.CreateTopup:output_type -> pb.ApiResponseTopup
+	29, // 68: pb.TopupService.UpdateTopup:output_type -> pb.ApiResponseTopup
+	30, // 69: pb.TopupService.TrashedTopup:output_type -> pb.ApiResponseTopupDeleteAt
+	30, // 70: pb.TopupService.RestoreTopup:output_type -> pb.ApiResponseTopupDeleteAt
+	34, // 71: pb.TopupService.DeleteTopupPermanent:output_type -> pb.ApiResponseTopupDelete
+	35, // 72: pb.TopupService.RestoreAllTopup:output_type -> pb.ApiResponseTopupAll
+	35, // 73: pb.TopupService.DeleteAllTopupPermanent:output_type -> pb.ApiResponseTopupAll
+	45, // [45:74] is the sub-list for method output_type
+	16, // [16:45] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_topup_proto_init() }
@@ -2537,7 +2603,7 @@ func file_topup_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_topup_proto_rawDesc), len(file_topup_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   35,
+			NumMessages:   36,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

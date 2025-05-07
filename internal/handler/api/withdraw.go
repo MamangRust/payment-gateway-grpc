@@ -2,9 +2,9 @@ package api
 
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/withdraw_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
 	"net/http"
 	"strconv"
@@ -103,11 +103,7 @@ func (h *withdrawHandleApi) FindAll(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve withdraw data", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve withdraw data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindAllWithdraw(c)
 	}
 
 	so := h.mapping.ToApiResponsePaginationWithdraw(res)
@@ -131,10 +127,7 @@ func (h *withdrawHandleApi) FindAll(c echo.Context) error {
 func (h *withdrawHandleApi) FindAllByCardNumber(c echo.Context) error {
 	cardNumber := c.Param("card_number")
 	if cardNumber == "" {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Card number is required",
-		})
+		return withdraw_errors.ErrApiInvalidCardNumber(c)
 	}
 
 	page, err := strconv.Atoi(c.QueryParam("page"))
@@ -163,11 +156,7 @@ func (h *withdrawHandleApi) FindAllByCardNumber(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve withdraw data", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve withdraw data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindAllWithdrawByCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponsePaginationWithdraw(res)
@@ -192,11 +181,7 @@ func (h *withdrawHandleApi) FindById(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Invalid withdraw ID", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid withdraw ID",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiWithdrawInvalidID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -210,11 +195,7 @@ func (h *withdrawHandleApi) FindById(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve withdraw data", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve withdraw data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindByIdWithdraw(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdraw(withdraw)
@@ -241,20 +222,12 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusSuccess(c echo.Context) err
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidYear(c)
 	}
 
 	month, err := strconv.Atoi(monthStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid month",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidMonth(c)
 	}
 
 	ctx := c.Request().Context()
@@ -267,11 +240,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusSuccess(c echo.Context) err
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly Withdraw status success", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly Withdraw status success: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindMonthlyWithdrawStatusSuccess(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdrawMonthStatusSuccess(res)
@@ -296,11 +265,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusSuccess(c echo.Context) erro
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -312,11 +277,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusSuccess(c echo.Context) erro
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly Withdraw status success", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly Withdraw status success: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindYearlyWithdrawStatusSuccess(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdrawYearStatusSuccess(res)
@@ -343,20 +304,12 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusFailed(c echo.Context) erro
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidYear(c)
 	}
 
 	month, err := strconv.Atoi(monthStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid month",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidMonth(c)
 	}
 
 	ctx := c.Request().Context()
@@ -369,11 +322,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusFailed(c echo.Context) erro
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly Withdraw status Failed", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly Withdraw status Failed: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindMonthlyWithdrawStatusFailed(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdrawMonthStatusFailed(res)
@@ -398,11 +347,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusFailed(c echo.Context) error
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -414,11 +359,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusFailed(c echo.Context) error
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly Withdraw status Failed", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly Withdraw status Failed: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindYearlyWithdrawStatusFailed(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdrawYearStatusFailed(res)
@@ -445,22 +386,18 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusSuccessByCardNumber(c echo.
 	monthStr := c.QueryParam("month")
 	cardNumber := c.QueryParam("card_number")
 
+	if cardNumber == "" {
+		return withdraw_errors.ErrApiInvalidCardNumber(c)
+	}
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidYear(c)
 	}
 
 	month, err := strconv.Atoi(monthStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid month",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidMonth(c)
 	}
 
 	ctx := c.Request().Context()
@@ -474,11 +411,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusSuccessByCardNumber(c echo.
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly Withdraw status success", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly Withdraw status success: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindMonthlyWithdrawStatusSuccessCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdrawMonthStatusSuccess(res)
@@ -503,13 +436,13 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusSuccessByCardNumber(c echo.C
 	yearStr := c.QueryParam("year")
 	card_number := c.QueryParam("card_number")
 
+	if card_number == "" {
+		return withdraw_errors.ErrApiInvalidCardNumber(c)
+	}
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -522,11 +455,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusSuccessByCardNumber(c echo.C
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly Withdraw status success", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly Withdraw status success: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindYearlyWithdrawStatusSuccessCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdrawYearStatusSuccess(res)
@@ -553,22 +482,18 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusFailedByCardNumber(c echo.C
 	monthStr := c.QueryParam("month")
 	card_number := c.QueryParam("card_number")
 
+	if card_number == "" {
+		return withdraw_errors.ErrApiInvalidCardNumber(c)
+	}
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidYear(c)
 	}
 
 	month, err := strconv.Atoi(monthStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid month",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidMonth(c)
 	}
 
 	ctx := c.Request().Context()
@@ -582,11 +507,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawStatusFailedByCardNumber(c echo.C
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly Withdraw status Failed", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly Withdraw status Failed: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindMonthlyWithdrawStatusFailedCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdrawMonthStatusFailed(res)
@@ -611,13 +532,13 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusFailedByCardNumber(c echo.Co
 	yearStr := c.QueryParam("year")
 	cardNumber := c.QueryParam("card_number")
 
+	if cardNumber == "" {
+		return withdraw_errors.ErrApiInvalidCardNumber(c)
+	}
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Bad Request: Invalid year",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -630,11 +551,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawStatusFailedByCardNumber(c echo.Co
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly Withdraw status Failed", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly Withdraw status Failed: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindYearlyWithdrawStatusFailedCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdrawYearStatusFailed(res)
@@ -659,11 +576,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdraws(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -673,11 +586,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdraws(c echo.Context) error {
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly withdraws", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly withdraws",
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindMonthlyWithdraws(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdrawMonthAmount(res)
@@ -702,11 +611,7 @@ func (h *withdrawHandleApi) FindYearlyWithdraws(c echo.Context) error {
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -716,11 +621,7 @@ func (h *withdrawHandleApi) FindYearlyWithdraws(c echo.Context) error {
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly withdraws", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly withdraws",
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindYearlyWithdraws(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdrawYearAmount(res)
@@ -744,14 +645,16 @@ func (h *withdrawHandleApi) FindYearlyWithdraws(c echo.Context) error {
 func (h *withdrawHandleApi) FindMonthlyWithdrawsByCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
+
+	if cardNumber == "" {
+		h.logger.Debug("Invalid card number parameter")
+		return withdraw_errors.ErrApiInvalidCardNumber(c)
+	}
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -762,11 +665,7 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawsByCardNumber(c echo.Context) err
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly withdraws by card number", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve monthly withdraws by card number",
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindMonthlyWithdrawsByCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdrawMonthAmount(res)
@@ -790,14 +689,16 @@ func (h *withdrawHandleApi) FindMonthlyWithdrawsByCardNumber(c echo.Context) err
 func (h *withdrawHandleApi) FindYearlyWithdrawsByCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
+
+	if cardNumber == "" {
+		h.logger.Debug("Invalid card number parameter")
+		return withdraw_errors.ErrApiInvalidCardNumber(c)
+	}
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
 		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid year parameter",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiInvalidYear(c)
 	}
 
 	ctx := c.Request().Context()
@@ -808,11 +709,7 @@ func (h *withdrawHandleApi) FindYearlyWithdrawsByCardNumber(c echo.Context) erro
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly withdraws by card number", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve yearly withdraws by card number",
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindYearlyWithdrawsByCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdrawYearAmount(res)
@@ -845,11 +742,7 @@ func (h *withdrawHandleApi) FindByCardNumber(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve withdraw data", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve withdraw data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindByCardNumber(c)
 	}
 
 	so := h.mapping.ToApiResponsesWithdraw(withdraw)
@@ -892,11 +785,7 @@ func (h *withdrawHandleApi) FindByActive(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve withdraw data", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve withdraw data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindByActiveWithdraw(c)
 	}
 
 	so := h.mapping.ToApiResponsePaginationWithdrawDeleteAt(res)
@@ -939,11 +828,7 @@ func (h *withdrawHandleApi) FindByTrashed(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to retrieve withdraw data", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve withdraw data: ",
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedFindByTrashedWithdraw(c)
 	}
 
 	so := h.mapping.ToApiResponsePaginationWithdrawDeleteAt(res)
@@ -968,21 +853,13 @@ func (h *withdrawHandleApi) Create(c echo.Context) error {
 	if err := c.Bind(&body); err != nil {
 		h.logger.Debug("Invalid request body", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid request body",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiBindCreateWithdraw(c)
 	}
 
 	if err := body.Validate(); err != nil {
 		h.logger.Debug("Validation Error: " + err.Error())
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Validation Error: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiValidateCreateWithdraw(c)
 	}
 
 	ctx := c.Request().Context()
@@ -996,11 +873,7 @@ func (h *withdrawHandleApi) Create(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to create withdraw", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to create withdraw: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedCreateWithdraw(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdraw(res)
@@ -1026,11 +899,7 @@ func (h *withdrawHandleApi) Update(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Invalid withdraw ID", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid withdraw ID",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiWithdrawInvalidID(c)
 	}
 
 	var body requests.UpdateWithdrawRequest
@@ -1038,21 +907,13 @@ func (h *withdrawHandleApi) Update(c echo.Context) error {
 	if err := c.Bind(&body); err != nil {
 		h.logger.Debug("Invalid request body", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid request body",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiBindUpdateWithdraw(c)
 	}
 
 	if err := body.Validate(); err != nil {
 		h.logger.Debug("Validation Error: " + err.Error())
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Validation Error: " + err.Error(),
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiValidateUpdateWithdraw(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1067,11 +928,7 @@ func (h *withdrawHandleApi) Update(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to update withdraw", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to update withdraw: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedUpdateWithdraw(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdraw(res)
@@ -1096,11 +953,7 @@ func (h *withdrawHandleApi) TrashWithdraw(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Invalid withdraw ID", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid withdraw ID",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiWithdrawInvalidID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1112,11 +965,7 @@ func (h *withdrawHandleApi) TrashWithdraw(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to trash withdraw", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to trash withdraw: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedTrashedWithdraw(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdraw(res)
@@ -1140,11 +989,7 @@ func (h *withdrawHandleApi) RestoreWithdraw(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Invalid withdraw ID", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid withdraw ID",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiWithdrawInvalidID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1156,11 +1001,7 @@ func (h *withdrawHandleApi) RestoreWithdraw(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to restore withdraw", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to restore withdraw: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedRestoreWithdraw(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdraw(res)
@@ -1185,11 +1026,7 @@ func (h *withdrawHandleApi) DeleteWithdrawPermanent(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Invalid withdraw ID", zap.Error(err))
 
-		return c.JSON(http.StatusBadRequest, response.ErrorResponse{
-			Status:  "error",
-			Message: "Invalid withdraw ID",
-			Code:    http.StatusBadRequest,
-		})
+		return withdraw_errors.ErrApiWithdrawInvalidID(c)
 	}
 
 	ctx := c.Request().Context()
@@ -1201,11 +1038,7 @@ func (h *withdrawHandleApi) DeleteWithdrawPermanent(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to delete withdraw permanently", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to delete withdraw permanently: " + err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedDeleteWithdrawPermanent(c)
 	}
 
 	so := h.mapping.ToApiResponseWithdrawDelete(res)
@@ -1230,11 +1063,7 @@ func (h *withdrawHandleApi) RestoreAllWithdraw(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Error("Failed to restore all withdraw", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently restore all withdraw",
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedRestoreAllWithdraw(c)
 	}
 
 	h.logger.Debug("Successfully restored all withdraw")
@@ -1262,11 +1091,7 @@ func (h *withdrawHandleApi) DeleteAllWithdrawPermanent(c echo.Context) error {
 	if err != nil {
 		h.logger.Error("Failed to permanently delete all withdraw", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to permanently delete all withdraw",
-			Code:    http.StatusInternalServerError,
-		})
+		return withdraw_errors.ErrApiFailedDeleteAllWithdrawPermanent(c)
 	}
 
 	h.logger.Debug("Successfully deleted all withdraw permanently")

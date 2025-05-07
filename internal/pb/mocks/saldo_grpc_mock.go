@@ -203,6 +203,86 @@ func (mr *MockSaldoServiceClientMockRecorder) FindByTrashed(ctx, in any, opts ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockSaldoServiceClient)(nil).FindByTrashed), varargs...)
 }
 
+// FindMonthlySaldoBalances mocks base method.
+func (m *MockSaldoServiceClient) FindMonthlySaldoBalances(ctx context.Context, in *pb.FindYearlySaldo, opts ...grpc.CallOption) (*pb.ApiResponseMonthSaldoBalances, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlySaldoBalances", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMonthSaldoBalances)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlySaldoBalances indicates an expected call of FindMonthlySaldoBalances.
+func (mr *MockSaldoServiceClientMockRecorder) FindMonthlySaldoBalances(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlySaldoBalances", reflect.TypeOf((*MockSaldoServiceClient)(nil).FindMonthlySaldoBalances), varargs...)
+}
+
+// FindMonthlyTotalSaldoBalance mocks base method.
+func (m *MockSaldoServiceClient) FindMonthlyTotalSaldoBalance(ctx context.Context, in *pb.FindMonthlySaldoTotalBalance, opts ...grpc.CallOption) (*pb.ApiResponseMonthTotalSaldo, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindMonthlyTotalSaldoBalance", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseMonthTotalSaldo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTotalSaldoBalance indicates an expected call of FindMonthlyTotalSaldoBalance.
+func (mr *MockSaldoServiceClientMockRecorder) FindMonthlyTotalSaldoBalance(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTotalSaldoBalance", reflect.TypeOf((*MockSaldoServiceClient)(nil).FindMonthlyTotalSaldoBalance), varargs...)
+}
+
+// FindYearTotalSaldoBalance mocks base method.
+func (m *MockSaldoServiceClient) FindYearTotalSaldoBalance(ctx context.Context, in *pb.FindYearlySaldo, opts ...grpc.CallOption) (*pb.ApiResponseYearTotalSaldo, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearTotalSaldoBalance", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseYearTotalSaldo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearTotalSaldoBalance indicates an expected call of FindYearTotalSaldoBalance.
+func (mr *MockSaldoServiceClientMockRecorder) FindYearTotalSaldoBalance(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearTotalSaldoBalance", reflect.TypeOf((*MockSaldoServiceClient)(nil).FindYearTotalSaldoBalance), varargs...)
+}
+
+// FindYearlySaldoBalances mocks base method.
+func (m *MockSaldoServiceClient) FindYearlySaldoBalances(ctx context.Context, in *pb.FindYearlySaldo, opts ...grpc.CallOption) (*pb.ApiResponseYearSaldoBalances, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindYearlySaldoBalances", varargs...)
+	ret0, _ := ret[0].(*pb.ApiResponseYearSaldoBalances)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlySaldoBalances indicates an expected call of FindYearlySaldoBalances.
+func (mr *MockSaldoServiceClientMockRecorder) FindYearlySaldoBalances(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlySaldoBalances", reflect.TypeOf((*MockSaldoServiceClient)(nil).FindYearlySaldoBalances), varargs...)
+}
+
 // RestoreAllSaldo mocks base method.
 func (m *MockSaldoServiceClient) RestoreAllSaldo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*pb.ApiResponseSaldoAll, error) {
 	m.ctrl.T.Helper()
@@ -425,6 +505,66 @@ func (m *MockSaldoServiceServer) FindByTrashed(arg0 context.Context, arg1 *pb.Fi
 func (mr *MockSaldoServiceServerMockRecorder) FindByTrashed(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByTrashed", reflect.TypeOf((*MockSaldoServiceServer)(nil).FindByTrashed), arg0, arg1)
+}
+
+// FindMonthlySaldoBalances mocks base method.
+func (m *MockSaldoServiceServer) FindMonthlySaldoBalances(arg0 context.Context, arg1 *pb.FindYearlySaldo) (*pb.ApiResponseMonthSaldoBalances, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlySaldoBalances", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMonthSaldoBalances)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlySaldoBalances indicates an expected call of FindMonthlySaldoBalances.
+func (mr *MockSaldoServiceServerMockRecorder) FindMonthlySaldoBalances(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlySaldoBalances", reflect.TypeOf((*MockSaldoServiceServer)(nil).FindMonthlySaldoBalances), arg0, arg1)
+}
+
+// FindMonthlyTotalSaldoBalance mocks base method.
+func (m *MockSaldoServiceServer) FindMonthlyTotalSaldoBalance(arg0 context.Context, arg1 *pb.FindMonthlySaldoTotalBalance) (*pb.ApiResponseMonthTotalSaldo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMonthlyTotalSaldoBalance", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseMonthTotalSaldo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMonthlyTotalSaldoBalance indicates an expected call of FindMonthlyTotalSaldoBalance.
+func (mr *MockSaldoServiceServerMockRecorder) FindMonthlyTotalSaldoBalance(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMonthlyTotalSaldoBalance", reflect.TypeOf((*MockSaldoServiceServer)(nil).FindMonthlyTotalSaldoBalance), arg0, arg1)
+}
+
+// FindYearTotalSaldoBalance mocks base method.
+func (m *MockSaldoServiceServer) FindYearTotalSaldoBalance(arg0 context.Context, arg1 *pb.FindYearlySaldo) (*pb.ApiResponseYearTotalSaldo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearTotalSaldoBalance", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseYearTotalSaldo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearTotalSaldoBalance indicates an expected call of FindYearTotalSaldoBalance.
+func (mr *MockSaldoServiceServerMockRecorder) FindYearTotalSaldoBalance(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearTotalSaldoBalance", reflect.TypeOf((*MockSaldoServiceServer)(nil).FindYearTotalSaldoBalance), arg0, arg1)
+}
+
+// FindYearlySaldoBalances mocks base method.
+func (m *MockSaldoServiceServer) FindYearlySaldoBalances(arg0 context.Context, arg1 *pb.FindYearlySaldo) (*pb.ApiResponseYearSaldoBalances, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindYearlySaldoBalances", arg0, arg1)
+	ret0, _ := ret[0].(*pb.ApiResponseYearSaldoBalances)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindYearlySaldoBalances indicates an expected call of FindYearlySaldoBalances.
+func (mr *MockSaldoServiceServerMockRecorder) FindYearlySaldoBalances(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindYearlySaldoBalances", reflect.TypeOf((*MockSaldoServiceServer)(nil).FindYearlySaldoBalances), arg0, arg1)
 }
 
 // RestoreAllSaldo mocks base method.

@@ -26,9 +26,10 @@ gen:
 	mockgen -source=internal/service/interfaces.go -destination=internal/service/mocks/mock.go
 	mockgen -source=internal/repository/interfaces.go -destination=internal/repository/mocks/mock.go
 
-	mockgen -source=internal/mapper/response/interfaces.go -destination=internal/mapper/response/mocks/mock.go
+	mockgen -source=internal/mapper/response/service/interfaces.go -destination=internal/mapper/response/mocks/mock.go
 	mockgen -source=internal/mapper/record/interfaces.go -destination=internal/mapper/record/mocks/mock.go
 	mockgen -source=internal/mapper/proto/interfaces.go -destination=internal/mapper/proto/mocks/mock.go
+	mockgen -source=internal/mapper/response/api/interfaces.go -destination=internal/mapper/response/api/mocks/mock.go
 
 
 	mockgen -source=internal/pb/auth_grpc.pb.go -destination=internal/pb/mocks/auth_grpc_mock.go
