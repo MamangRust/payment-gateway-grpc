@@ -1,0 +1,1417 @@
+{
+	"info": {
+		"_postman_id": "5e808070-1aea-4113-8d6c-521699fba7e3",
+		"name": "Topup",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12455638"
+	},
+	"item": [
+		{
+			"name": "Sender",
+			"item": [
+				{
+					"name": "Find All Topup",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer YOUR_JWT_TOKEN"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups?page=1&page_size=10&search=test",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "test"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups?page=1&page_size=10&search=test\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Topups By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer YOUR_JWT_TOKEN"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/card-number/1234567890?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"card-number",
+								"1234567890"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/card-number/1234567890?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find by Topup id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Topup Trashed",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/trashed/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"trashed",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/topups/trashed/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find By Active",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer YOUR_JWT_TOKEN"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/active?page=1&page_size=10&search=active",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"active"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "active"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/active?page=1&page_size=10&search=active\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Trashed Topups",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer YOUR_JWT_TOKEN"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/trashed?page=1&page_size=10&search=old",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"trashed"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "old"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/trashed?page=1&page_size=10&search=old\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Create Topup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"card_number\": \"1234567890\",\n    \"topup_amount\": 100000,\n    \"topup_method\": \"bank_transfer\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/topups/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"create"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/topups/create\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"card_number\": \"1234567890\",\n    \"topup_amount\": 100000,\n    \"topup_method\": \"bank_transfer\"\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Topup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"card_number\": \"1234567890\",\n    \"topup_id\": 123,\n    \"topup_amount\": 150000,\n    \"topup_method\": \"credit_card\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/topups/update/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"update",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/topups/update/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"card_number\": \"1234567890\",\n    \"topup_id\": 123,\n    \"topup_amount\": 150000,\n    \"topup_method\": \"credit_card\"\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Topup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/restore/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"restore",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/topups/restore/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Permanent Topup",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/permanent/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"permanent",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X DELETE \"http://localhost:5000/api/topups/permanent/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Permanent All Topup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/trashed/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"trashed",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/topups/trashed/all\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Restore All Topup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/restore/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"restore",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/topups/restore/all\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Receiver",
+			"item": [
+				{
+					"name": "Find All Topup",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups?page=1&page_size=10&search=test",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "test"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups?page=1&page_size=10&search=test\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Topups By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/card-number/1234567890?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"card-number",
+								"1234567890"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/card-number/1234567890?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find by Topup id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Topup Trashed",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/trashed/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"trashed",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/topups/trashed/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find By Active",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/active?page=1&page_size=10&search=active",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"active"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "active"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/active?page=1&page_size=10&search=active\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find Trashed Topups",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/trashed?page=1&page_size=10&search=old",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"trashed"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "old"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/trashed?page=1&page_size=10&search=old\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Create Topup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"card_number\": \"1234567890\",\n    \"topup_amount\": 100000,\n    \"topup_method\": \"bank_transfer\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/topups/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"create"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/topups/create\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"card_number\": \"1234567890\",\n    \"topup_amount\": 100000,\n    \"topup_method\": \"bank_transfer\"\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Topup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"card_number\": \"1234567890\",\n    \"topup_id\": 123,\n    \"topup_amount\": 150000,\n    \"topup_method\": \"credit_card\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/topups/update/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"update",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/topups/update/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"card_number\": \"1234567890\",\n    \"topup_id\": 123,\n    \"topup_amount\": 150000,\n    \"topup_method\": \"credit_card\"\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Topup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/restore/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"restore",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/topups/restore/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Permanent Topup",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/permanent/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"permanent",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl -X DELETE \"http://localhost:5000/api/topups/permanent/123\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Permanent All Topup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/permanent/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"permanent",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/topups/trashed/all\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Restore All Topup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_receiver}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/restore/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"restore",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/topups/restore/all\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "By Card",
+			"item": [
+				{
+					"name": "Month Success by Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/monthly-success-by-card?year=2025&month=07&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"monthly-success-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "month",
+									"value": "07"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/monthly-success-by-card?year=2025&month=07&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Success by Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/yearly-success-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"yearly-success-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/yearly-success-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month Failed By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/monthly-failed-by-card?year=2025&month=07&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"monthly-failed-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "month",
+									"value": "07"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/monthly-failed-by-card?year=2025&month=07&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Failed By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/yearly-failed-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"yearly-failed-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/yearly-failed-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month Method By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/monthly-methods-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"monthly-methods-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/monthly-methods-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Method By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/yearly-methods-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"yearly-methods-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/yearly-methods-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month Amount By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/monthly-amounts-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"monthly-amounts-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/monthly-amounts-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Amount By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/topups/yearly-amounts-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"topups",
+								"yearly-amounts-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/yearly-amounts-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Month Success",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/topups/monthly-success?year=2025&month=07",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"topups",
+						"monthly-success"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						},
+						{
+							"key": "month",
+							"value": "07"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/monthly-success?year=2025&month=07\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Success",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/topups/yearly-success?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"topups",
+						"yearly-success"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/yearly-success?year=2025\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		},
+		{
+			"name": "Month Failed",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/topups/monthly-failed?year=2025&month=07",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"topups",
+						"monthly-failed"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						},
+						{
+							"key": "month",
+							"value": "07"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/monthly-failed?year=2025&month=07\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Failed",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/topups/yearly-failed?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"topups",
+						"yearly-failed"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/yearly-failed?year=2025\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		},
+		{
+			"name": "Month Topup Method",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/topups/monthly-methods?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"topups",
+						"monthly-methods"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/monthly-methods?year=2025\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Topup Method",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/topups/yearly-methods?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"topups",
+						"yearly-methods"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/yearly-methods?year=2025\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		},
+		{
+			"name": "Month Topup Amount",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/topups/monthly-amounts?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"topups",
+						"monthly-amounts"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/monthly-amounts?year=2025\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\n"
+			},
+			"response": []
+		},
+		{
+			"name": "Year Topup Amount",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/topups/yearly-amounts?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"topups",
+						"yearly-amounts"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/topups/yearly-amounts?year=2025\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\""
+			},
+			"response": []
+		}
+	]
+}

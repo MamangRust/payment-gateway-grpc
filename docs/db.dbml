@@ -1,0 +1,60 @@
+Table "users" {
+  "user_id" serial [pk, increment]
+  "firstname" VARCHAR(100) [not null]
+  "lastname" varchar(100) [not null]
+  "email" varchar(100) [unique, not null]
+  "password" varchar(100) [not null]
+  "noc_transfer" varchar(100) [unique, not null, default: 0]
+  "created_at" timestamp [default: `current_timestamp`]
+  "updated_at" timestamp [default: `current_timestamp`]
+}
+
+Table "topups" {
+  "topup_id" SERIAL [pk, increment]
+  "user_id" INTEGER [not null]
+  "topup_no" TEXT [not null]
+  "topup_amount" INTEGER [not null]
+  "topup_method" TEXT [not null]
+  "topup_time" TIMESTAMP [not null]
+  "created_at" timestamp [default: `current_timestamp`]
+  "updated_at" timestamp [default: `current_timestamp`]
+}
+
+Table "saldo" {
+  "saldo_id" SERIAL [pk, increment]
+  "user_id" INTEGER [not null]
+  "total_balance" INTEGER [not null]
+  "withdraw_amount" INTEGER [default: 0]
+  "withdraw_time" TIMESTAMP [default: NULL]
+  "created_at" timestamp [default: `current_timestamp`]
+  "updated_at" timestamp [default: `current_timestamp`]
+}
+
+Table "transfers" {
+  "transfer_id" SERIAL [pk, increment]
+  "transfer_from" INTEGER [not null]
+  "transfer_to" INTEGER [not null]
+  "transfer_amount" INTEGER [not null, default: 0]
+  "transfer_time" TIMESTAMP [not null]
+  "created_at" timestamp [default: `current_timestamp`]
+  "updated_at" timestamp [default: `current_timestamp`]
+}
+
+Table "withdraws" {
+  "withdraw_id" SERIAL [pk, increment]
+  "user_id" INTEGER [not null]
+  "withdraw_amount" INTEGER [not null]
+  "withdraw_time" TIMESTAMP [not null]
+  "created_at" timestamp [default: `current_timestamp`]
+  "updated_at" timestamp [default: `current_timestamp`]
+}
+
+Ref:"users"."user_id" < "topups"."user_id" [update: cascade, delete: cascade]
+
+Ref:"users"."user_id" < "saldo"."user_id" [update: cascade, delete: cascade]
+
+Ref:"users"."user_id" < "transfers"."transfer_from" [update: cascade, delete: cascade]
+
+Ref:"users"."user_id" < "transfers"."transfer_to" [update: cascade, delete: cascade]
+
+Ref:"users"."user_id" < "withdraws"."user_id" [update: cascade, delete: cascade]

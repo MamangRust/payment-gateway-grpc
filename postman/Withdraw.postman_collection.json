@@ -1,0 +1,1261 @@
+{
+	"info": {
+		"_postman_id": "fa76829d-dace-4f64-9fdd-c2c99d338df0",
+		"name": "Withdraw",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12455638"
+	},
+	"item": [
+		{
+			"name": "By Card",
+			"item": [
+				{
+					"name": "Month Success By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/monthly-success-by-card?year=2025&month=07&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"monthly-success-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "month",
+									"value": "07"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/monthly-success-by-card?year=2025&month=07&card_number=1234567890\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Success By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/yearly-success-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"yearly-success-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/yearly-success-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month Failed By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/monthly-failed-by-card?year=2025&month=07&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"monthly-failed-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "month",
+									"value": "07"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/monthly-failed-by-card?year=2025&month=07&card_number=1234567890\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Failed By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/yearly-failed-by-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"yearly-failed-by-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/yearly-failed-by-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Month Amount By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/monthly-amount-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"monthly-amount-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/monthly-amount-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Year Amount By Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/yearly-amount-card?year=2025&card_number=1234567890",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"yearly-amount-card"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2025"
+								},
+								{
+									"key": "card_number",
+									"value": "1234567890"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/yearly-amount-card?year=2025&card_number=1234567890\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Sender",
+			"item": [
+				{
+					"name": "Find All Withdraw",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws?page=1&page_size=10&search=test",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "test"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws?page=1&page_size=10&search=test\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/card-number/1234567890?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"card-number",
+								"1234567890"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/card-number/1234567890?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find id Withdraw",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find All Active",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/active?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"active"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/active?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find All Trashed",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/trashed?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"trashed"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/trashed?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Create Withdraw",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"card_number\": \"1234567890\",\n    \"withdraw_amount\": 50000,\n    \"withdraw_time\": \"2025-07-15T14:30:00Z\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"create"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/withdraws/create\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"card_number\": \"1234567890\",\n    \"withdraw_amount\": 50000,\n    \"withdraw_time\": \"2025-07-15T14:30:00Z\"\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Withdraw",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"card_number\": \"1234567890\",\n    \"withdraw_id\": 123,\n    \"withdraw_amount\": 75000,\n    \"withdraw_time\": \"2025-07-15T14:30:00Z\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/update/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"update",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/withdraws/update/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"card_number\": \"1234567890\",\n    \"withdraw_id\": 123,\n    \"withdraw_amount\": 75000,\n    \"withdraw_time\": \"2025-07-15T14:30:00Z\"\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "Trash Withdraw",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/trashed/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"trashed",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/withdraws/trashed/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Withdraw",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/restore/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"restore",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/withdraws/restore/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Permanent",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/permanent/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"permanent",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X DELETE \"http://localhost:5000/api/withdraws/permanent/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Restore All",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/restore/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"restore",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/withdraws/restore/all\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete All Permanent",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/permanent/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"permanent",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/withdraws/permanent/all\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Receiver",
+			"item": [
+				{
+					"name": "Find All Withdraw",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws?page=1&page_size=10&search=test",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "test"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws?page=1&page_size=10&search=test\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find By Card Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/card-number/1234567890?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"card-number",
+								"1234567890"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/card-number/1234567890?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find id Withdraw",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find All Active",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/active?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"active"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/active?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Find All Trashed",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/trashed?page=1&page_size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"trashed"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/trashed?page=1&page_size=10\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Create Withdraw",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"card_number\": \"1234567890\",\n    \"withdraw_amount\": 50000,\n    \"withdraw_time\": \"2025-07-15T14:30:00Z\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"create"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/withdraws/create\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"card_number\": \"1234567890\",\n    \"withdraw_amount\": 50000,\n    \"withdraw_time\": \"2025-07-15T14:30:00Z\"\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Withdraw",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"card_number\": \"1234567890\",\n    \"withdraw_id\": 123,\n    \"withdraw_amount\": 75000,\n    \"withdraw_time\": \"2025-07-15T14:30:00Z\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/update/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"update",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/withdraws/update/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"card_number\": \"1234567890\",\n    \"withdraw_id\": 123,\n    \"withdraw_amount\": 75000,\n    \"withdraw_time\": \"2025-07-15T14:30:00Z\"\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "Trash Withdraw",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/trashed/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"trashed",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/withdraws/trashed/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Withdraw",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/restore/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"restore",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/withdraws/restore/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Permanent",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/permanent/123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"permanent",
+								"123"
+							]
+						},
+						"description": "Generated from cURL: curl -X DELETE \"http://localhost:5000/api/withdraws/permanent/123\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Restore All",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/restore/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"restore",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/withdraws/restore/all\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete All Permanent",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{secret_key_sender}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/withdraws/permanent/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"withdraws",
+								"permanent",
+								"all"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST \"http://localhost:5000/api/withdraws/permanent/all\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Month Success",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/withdraws/monthly-success?year=2025&month=07",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"withdraws",
+						"monthly-success"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						},
+						{
+							"key": "month",
+							"value": "07"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/monthly-success?year=2025&month=07\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Failed",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/withdraws/yearly-failed?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"withdraws",
+						"yearly-failed"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/yearly-failed?year=2025\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Success",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/withdraws/yearly-success?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"withdraws",
+						"yearly-success"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/yearly-success?year=2025\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+			},
+			"response": []
+		},
+		{
+			"name": "Month Failed ",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/withdraws/monthly-failed?year=2025&month=07",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"withdraws",
+						"monthly-failed"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						},
+						{
+							"key": "month",
+							"value": "07"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/monthly-failed?year=2025&month=07\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+			},
+			"response": []
+		},
+		{
+			"name": "Month Amount",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/withdraws/monthly-amount?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"withdraws",
+						"monthly-amount"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/monthly-amount?year=2025\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+			},
+			"response": []
+		},
+		{
+			"name": "Year Amount",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{secret_key_sender}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:5000/api/withdraws/yearly-amount?year=2025",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"withdraws",
+						"yearly-amount"
+					],
+					"query": [
+						{
+							"key": "year",
+							"value": "2025"
+						}
+					]
+				},
+				"description": "Generated from cURL: curl -X GET \"http://localhost:5000/api/withdraws/yearly-amount?year=2025\" \\\n  -H \"Authorization: Bearer {{secret_key_sender}}\""
+			},
+			"response": []
+		}
+	]
+}
