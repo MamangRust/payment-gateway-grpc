@@ -2,6 +2,7 @@ package seeder
 
 import (
 	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
+	"MamangRust/paymentgatewaygrpc/pkg/hash"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
 	"context"
 	"fmt"
@@ -12,6 +13,7 @@ type Deps struct {
 	DB     *db.Queries
 	Ctx    context.Context
 	Logger logger.LoggerInterface
+	Hash   hash.HashPassword
 }
 
 type Seeder struct {
@@ -28,7 +30,7 @@ type Seeder struct {
 
 func NewSeeder(deps Deps) *Seeder {
 	return &Seeder{
-		User:        NewUserSeeder(deps.DB, deps.Ctx, deps.Logger),
+		User:        NewUserSeeder(deps.DB, deps.Ctx, deps.Logger, deps.Hash),
 		Role:        NewRoleSeeder(deps.DB, deps.Ctx, deps.Logger),
 		Saldo:       NewSaldoSeeder(deps.DB, deps.Ctx, deps.Logger),
 		Topup:       NewTopupSeeder(deps.DB, deps.Ctx, deps.Logger),

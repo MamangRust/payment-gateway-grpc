@@ -100,6 +100,7 @@ func NewServer() (*Server, error) {
 			DB:     DB,
 			Ctx:    ctx,
 			Logger: logger,
+			Hash:   hash,
 		})
 
 		if err := seeder.Run(); err != nil {
