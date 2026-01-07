@@ -30,7 +30,7 @@ func (s *authHandleGrpc) LoginUser(ctx context.Context, req *pb.LoginRequest) (*
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	return s.mapping.ToProtoResponseLogin("success", "Login successful", res), nil
+	return s.mapping.ToProtoResponseLogin("success", "Login successfully", res), nil
 }
 
 func (s *authHandleGrpc) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.ApiResponseRefreshToken, error) {
@@ -40,7 +40,7 @@ func (s *authHandleGrpc) RefreshToken(ctx context.Context, req *pb.RefreshTokenR
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	return s.mapping.ToProtoResponseRefreshToken("success", "Refresh token successful", res), nil
+	return s.mapping.ToProtoResponseRefreshToken("success", "Refresh token successfully", res), nil
 }
 
 func (s *authHandleGrpc) GetMe(ctx context.Context, req *pb.GetMeRequest) (*pb.ApiResponseGetMe, error) {
@@ -50,7 +50,7 @@ func (s *authHandleGrpc) GetMe(ctx context.Context, req *pb.GetMeRequest) (*pb.A
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	return s.mapping.ToProtoResponseGetMe("success", "Refresh token successful", res), nil
+	return s.mapping.ToProtoResponseGetMe("success", "Refresh token successfully", res), nil
 }
 
 func (s *authHandleGrpc) RegisterUser(ctx context.Context, req *pb.RegisterRequest) (*pb.ApiResponseRegister, error) {
@@ -67,5 +67,5 @@ func (s *authHandleGrpc) RegisterUser(ctx context.Context, req *pb.RegisterReque
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	return s.mapping.ToProtoResponseRegister("success", "Registration successful", res), nil
+	return s.mapping.ToProtoResponseRegister("success", "Registration successfully", res), nil
 }

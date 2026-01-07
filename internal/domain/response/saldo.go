@@ -43,9 +43,15 @@ type SaldoYearBalanceResponse struct {
 }
 
 type ApiResponseSaldo struct {
-	Status  string        `json:"status"`
-	Message string        `json:"message"`
-	Data    SaldoResponse `json:"data"`
+	Status  string         `json:"status"`
+	Message string         `json:"message"`
+	Data    *SaldoResponse `json:"data"`
+}
+
+type ApiResponseSaldoDeleteAt struct {
+	Status  string                 `json:"status"`
+	Message string                 `json:"message"`
+	Data    *SaldoResponseDeleteAt `json:"data"`
 }
 
 type ApiResponsesSaldo struct {

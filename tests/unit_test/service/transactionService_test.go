@@ -1,1019 +1,398 @@
 package test
 
 import (
+	"errors"
+	"testing"
+
 	"MamangRust/paymentgatewaygrpc/internal/domain/record"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	mock_responsemapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/mocks"
-	mock_repository "MamangRust/paymentgatewaygrpc/internal/repository/mocks"
+	mock_responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/mocks"
+	mocks "MamangRust/paymentgatewaygrpc/internal/repository/mocks"
 	"MamangRust/paymentgatewaygrpc/internal/service"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/transaction_errors"
 	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
-	"errors"
-	"testing"
-	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 )
 
-func TestFindAllTransactions_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_transaction_repo := mock_repository.NewMockTransactionRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTransactionResponseMapper(ctrl)
-
-	transactionService := service.NewTransactionService(nil, nil, nil, mock_transaction_repo, mock_logger, mock_mapping)
-
-	page := 1
-	pageSize := 2
-	search := "example search"
-
-	transactions := []*record.TransactionRecord{
-		{
-			ID:              1,
-			CardNumber:      "1234",
-			Amount:          500000,
-			PaymentMethod:   "Credit Card",
-			MerchantID:      10,
-			TransactionTime: "2024-12-25T10:00:00Z",
-			CreatedAt:       "2024-12-25T10:00:00Z",
-			UpdatedAt:       "2024-12-25T11:00:00Z",
-			DeletedAt:       nil,
-		},
-		{
-			ID:              2,
-			CardNumber:      "5678",
-			Amount:          300000,
-			PaymentMethod:   "Bank Transfer",
-			MerchantID:      12,
-			TransactionTime: "2024-12-25T12:00:00Z",
-			CreatedAt:       "2024-12-25T12:00:00Z",
-			UpdatedAt:       "2024-12-25T13:00:00Z",
-			DeletedAt:       nil,
-		},
-	}
-	totalRecords := 3
-
-	mock_transaction_repo.EXPECT().FindAllTransactions(search, page, pageSize).Return(transactions, totalRecords, nil).Times(1)
-
-	mappedTransactions := []*response.TransactionResponse{
-		{
-			ID:              1,
-			CardNumber:      "1234",
-			Amount:          500000,
-			PaymentMethod:   "Credit Card",
-			MerchantID:      10,
-			TransactionTime: "2024-12-25T10:00:00Z",
-			CreatedAt:       "2024-12-25T10:00:00Z",
-			UpdatedAt:       "2024-12-25T11:00:00Z",
-		},
-		{
-			ID:              2,
-			CardNumber:      "5678",
-			Amount:          300000,
-			PaymentMethod:   "Bank Transfer",
-			MerchantID:      12,
-			TransactionTime: "2024-12-25T12:00:00Z",
-			CreatedAt:       "2024-12-25T12:00:00Z",
-			UpdatedAt:       "2024-12-25T13:00:00Z",
-		},
-	}
-	mock_mapping.EXPECT().ToTransactionsResponse(transactions).Return(mappedTransactions).Times(1)
-
-	result, totalPages, errResp := transactionService.FindAll(page, pageSize, search)
-
-	assert.NotNil(t, result)
-	assert.Nil(t, errResp)
-	assert.Equal(t, 3, totalPages)
-	assert.Equal(t, mappedTransactions, result)
+type TransactionServiceSuite struct {
+	suite.Suite
+	mockMerchantRepo    *mocks.MockMerchantRepository
+	mockCardRepo        *mocks.MockCardRepository
+	mockSaldoRepo       *mocks.MockSaldoRepository
+	mockTransactionRepo *mocks.MockTransactionRepository
+	mockLogger          *mock_logger.MockLoggerInterface
+	mockMapper          *mock_responseservice.MockTransactionResponseMapper
+	mockCtrl            *gomock.Controller
 }
 
-func TestFindAllTransactions_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_transaction_repo := mock_repository.NewMockTransactionRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	transactionService := service.NewTransactionService(nil, nil, nil, mock_transaction_repo, mock_logger, nil)
-
-	page := 1
-	pageSize := 2
-	search := "example search"
-
-	mock_transaction_repo.EXPECT().FindAllTransactions(search, page, pageSize).Return(nil, 0, errors.New("database error")).Times(1)
-	mock_logger.EXPECT().Error("failed to fetch transactions", zap.Error(errors.New("database error"))).Times(1)
-
-	result, totalPages, errResp := transactionService.FindAll(page, pageSize, search)
-
-	assert.Nil(t, result)
-	assert.Equal(t, 0, totalPages)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to fetch transactions", errResp.Message)
+func (suite *TransactionServiceSuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.mockMerchantRepo = mocks.NewMockMerchantRepository(suite.mockCtrl)
+	suite.mockCardRepo = mocks.NewMockCardRepository(suite.mockCtrl)
+	suite.mockSaldoRepo = mocks.NewMockSaldoRepository(suite.mockCtrl)
+	suite.mockTransactionRepo = mocks.NewMockTransactionRepository(suite.mockCtrl)
+	suite.mockLogger = mock_logger.NewMockLoggerInterface(suite.mockCtrl)
+	suite.mockMapper = mock_responseservice.NewMockTransactionResponseMapper(suite.mockCtrl)
 }
 
-func TestFindByIdTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionServiceSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
+}
 
-	mock_transaction_repo := mock_repository.NewMockTransactionRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTransactionResponseMapper(ctrl)
+func (suite *TransactionServiceSuite) TestFindAll_Success() {
+	req := &requests.FindAllTransactions{Search: "success", Page: 1, PageSize: 10}
+	total := 1
+	mockTransactions := []*record.TransactionRecord{{ID: 1, TransactionNo: "TX001"}}
+	expectedResponse := []*response.TransactionResponse{{ID: 1, TransactionNo: "TX001"}}
 
-	transactionService := service.NewTransactionService(nil, nil, nil, mock_transaction_repo, mock_logger, mock_mapping)
+	suite.mockLogger.EXPECT().Debug("Fetching transaction", gomock.Any())
+	suite.mockTransactionRepo.EXPECT().FindAllTransactions(req).Return(mockTransactions, &total, nil)
+	suite.mockMapper.EXPECT().ToTransactionsResponse(mockTransactions).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched transaction", gomock.Any())
 
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindAll(req)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+	suite.Equal(1, *totalRes)
+}
+
+func (suite *TransactionServiceSuite) TestFindAll_Failure() {
+	req := &requests.FindAllTransactions{Search: "success", Page: 1, PageSize: 10}
+	dbError := errors.New("database error")
+
+	suite.mockLogger.EXPECT().Debug("Fetching transaction", gomock.Any())
+	suite.mockTransactionRepo.EXPECT().FindAllTransactions(req).Return(nil, nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to fetch transaction", gomock.Any())
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindAll(req)
+
+	suite.Nil(result)
+	suite.Nil(totalRes)
+	suite.Equal(transaction_errors.ErrFailedFindAllTransactions, err)
+}
+
+func (suite *TransactionServiceSuite) TestFindAllByCardNumber_Success() {
+	req := &requests.FindAllTransactionCardNumber{CardNumber: "1111-xxxx", Page: 1, PageSize: 10}
+	total := 1
+	mockTransactions := []*record.TransactionRecord{{ID: 2, CardNumber: "1111-xxxx"}}
+	expectedResponse := []*response.TransactionResponse{{ID: 2, CardNumber: "1111-xxxx"}}
+
+	suite.mockLogger.EXPECT().Debug("Fetching transaction", gomock.Any())
+	suite.mockTransactionRepo.EXPECT().FindAllTransactionByCardNumber(req).Return(mockTransactions, &total, nil)
+	suite.mockMapper.EXPECT().ToTransactionsResponse(mockTransactions).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched transaction", gomock.Any())
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindAllByCardNumber(req)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+	suite.Equal(1, *totalRes)
+}
+
+func (suite *TransactionServiceSuite) TestFindAllByCardNumber_Failure() {
+	req := &requests.FindAllTransactionCardNumber{CardNumber: "1111-xxxx", Page: 1, PageSize: 10}
+	dbError := errors.New("database error")
+
+	suite.mockLogger.EXPECT().Debug("Fetching transaction", gomock.Any())
+	suite.mockTransactionRepo.EXPECT().FindAllTransactionByCardNumber(req).Return(nil, nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to fetch transaction", gomock.Any())
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindAllByCardNumber(req)
+
+	suite.Nil(result)
+	suite.Nil(totalRes)
+	suite.Equal(transaction_errors.ErrFailedFindAllByCardNumber, err)
+}
+
+func (suite *TransactionServiceSuite) TestFindById_Success() {
+	transactionID := 1
+	mockTransaction := &record.TransactionRecord{ID: transactionID, TransactionNo: "TX001"}
+	expectedResponse := &response.TransactionResponse{ID: transactionID, TransactionNo: "TX001"}
+
+	suite.mockLogger.EXPECT().Debug("Fetching transaction by ID", zap.Int("transaction_id", transactionID))
+	suite.mockTransactionRepo.EXPECT().FindById(transactionID).Return(mockTransaction, nil)
+	suite.mockMapper.EXPECT().ToTransactionResponse(mockTransaction).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched transaction", zap.Int("transaction_id", transactionID))
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindById(transactionID)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+}
+
+func (suite *TransactionServiceSuite) TestFindById_NotFound() {
+	transactionID := 99
+	repoError := errors.New("transaction not found")
+
+	suite.mockLogger.EXPECT().Debug("Fetching transaction by ID", zap.Int("transaction_id", transactionID))
+	suite.mockTransactionRepo.EXPECT().FindById(transactionID).Return(nil, repoError)
+	suite.mockLogger.EXPECT().Error("failed to find transaction", gomock.Any())
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindById(transactionID)
+
+	suite.Nil(result)
+	suite.Equal(transaction_errors.ErrTransactionNotFound, err)
+}
+
+func (suite *TransactionServiceSuite) TestFindByActive_Success() {
+	req := &requests.FindAllTransactions{Search: "active", Page: 1, PageSize: 10}
+	total := 1
+	mockTransactions := []*record.TransactionRecord{{ID: 1, TransactionNo: "TX001", DeletedAt: nil}}
+	expectedResponse := []*response.TransactionResponseDeleteAt{{ID: 1, TransactionNo: "TX001", DeletedAt: nil}}
+
+	suite.mockLogger.EXPECT().Debug("Fetching active transaction", gomock.Any())
+	suite.mockTransactionRepo.EXPECT().FindByActive(req).Return(mockTransactions, &total, nil)
+	suite.mockMapper.EXPECT().ToTransactionsResponseDeleteAt(mockTransactions).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched active transaction", gomock.Any())
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByActive(req)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+	suite.Equal(1, *totalRes)
+}
+
+func (suite *TransactionServiceSuite) TestFindByActive_Failure() {
+	req := &requests.FindAllTransactions{Search: "active", Page: 1, PageSize: 10}
+	dbError := errors.New("database error")
+
+	suite.mockLogger.EXPECT().Debug("Fetching active transaction", gomock.Any())
+	suite.mockTransactionRepo.EXPECT().FindByActive(req).Return(nil, nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to fetch active transaction", gomock.Any())
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByActive(req)
+
+	suite.Nil(result)
+	suite.Nil(totalRes)
+	suite.Equal(transaction_errors.ErrFailedFindByActiveTransactions, err)
+}
+
+func (suite *TransactionServiceSuite) TestFindByTrashed_Success() {
+	req := &requests.FindAllTransactions{Page: 1, PageSize: 10}
+	total := 1
+	trashedTime := "2024-01-01T00:00:00Z"
+	mockTransactions := []*record.TransactionRecord{{ID: 2, TransactionNo: "TX002", DeletedAt: &trashedTime}}
+	expectedResponse := []*response.TransactionResponseDeleteAt{{ID: 2, TransactionNo: "TX002", DeletedAt: &trashedTime}}
+
+	suite.mockLogger.EXPECT().Debug("Fetching trashed transaction", gomock.Any())
+	suite.mockTransactionRepo.EXPECT().FindByTrashed(req).Return(mockTransactions, &total, nil)
+	suite.mockMapper.EXPECT().ToTransactionsResponseDeleteAt(mockTransactions).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched trashed transaction", gomock.Any())
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByTrashed(req)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+	suite.Equal(1, *totalRes)
+}
+
+func (suite *TransactionServiceSuite) TestFindByTrashed_Failure() {
+	req := &requests.FindAllTransactions{Page: 1, PageSize: 10}
+	dbError := errors.New("database error")
+
+	suite.mockLogger.EXPECT().Debug("Fetching trashed transaction", gomock.Any())
+	suite.mockTransactionRepo.EXPECT().FindByTrashed(req).Return(nil, nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to fetch trashed transaction", gomock.Any())
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByTrashed(req)
+
+	suite.Nil(result)
+	suite.Nil(totalRes)
+	suite.Equal(transaction_errors.ErrFailedFindByTrashedTransactions, err)
+}
+
+func (suite *TransactionServiceSuite) TestFindTransactionByMerchantId_Success() {
+	merchantID := 5
+	mockTransactions := []*record.TransactionRecord{{ID: 1, MerchantID: merchantID}}
+	expectedResponse := []*response.TransactionResponse{{ID: 1, MerchantID: merchantID}}
+
+	suite.mockLogger.EXPECT().Debug("Starting FindTransactionByMerchantId process", zap.Int("merchant_id", merchantID))
+	suite.mockTransactionRepo.EXPECT().FindTransactionByMerchantId(merchantID).Return(mockTransactions, nil)
+	suite.mockMapper.EXPECT().ToTransactionsResponse(mockTransactions).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched transaction by merchant ID", zap.Int("merchant_id", merchantID))
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindTransactionByMerchantId(merchantID)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+}
+
+func (suite *TransactionServiceSuite) TestFindTransactionByMerchantId_Failure() {
+	merchantID := 99
+	dbError := errors.New("database error")
+
+	suite.mockLogger.EXPECT().Debug("Starting FindTransactionByMerchantId process", zap.Int("merchant_id", merchantID))
+	suite.mockTransactionRepo.EXPECT().FindTransactionByMerchantId(merchantID).Return(nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to fetch transaction by merchant ID", gomock.Any(), gomock.Any())
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindTransactionByMerchantId(merchantID)
+
+	suite.Nil(result)
+	suite.Equal(transaction_errors.ErrFailedFindByMerchantID, err)
+}
+
+func (suite *TransactionServiceSuite) TestTrashedTransaction_Success() {
+	transactionID := 1
+	trashedTransaction := &record.TransactionRecord{ID: transactionID}
+	expectedResponse := &response.TransactionResponseDeleteAt{ID: transactionID}
+
+	suite.mockLogger.EXPECT().Debug("Starting TrashedTransaction process", zap.Int("transaction_id", transactionID))
+	suite.mockTransactionRepo.EXPECT().TrashedTransaction(transactionID).Return(trashedTransaction, nil)
+	suite.mockMapper.EXPECT().ToTransactionResponseDeleteAt(trashedTransaction).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully trashed transaction", zap.Int("transaction_id", transactionID))
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.TrashedTransaction(transactionID)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+}
+
+func (suite *TransactionServiceSuite) TestTrashedTransaction_Failure() {
+	transactionID := 1
+	dbError := errors.New("failed to trash")
+
+	suite.mockLogger.EXPECT().Debug("Starting TrashedTransaction process", zap.Int("transaction_id", transactionID))
+	suite.mockLogger.EXPECT().Error("Failed to move transaction to trash", gomock.Any())
+	suite.mockTransactionRepo.EXPECT().TrashedTransaction(transactionID).Return(nil, dbError)
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.TrashedTransaction(transactionID)
+
+	suite.Nil(result)
+	suite.Equal(transaction_errors.ErrFailedTrashedTransaction, err)
+}
+
+func (suite *TransactionServiceSuite) TestRestoreTransaction_Success() {
+	transactionID := 1
+	restoredTransaction := &record.TransactionRecord{ID: transactionID, DeletedAt: nil}
+	expectedResponse := &response.TransactionResponseDeleteAt{ID: transactionID, DeletedAt: nil}
+
+	suite.mockLogger.EXPECT().Debug("Starting RestoreTransaction process", zap.Int("transaction_id", transactionID))
+	suite.mockTransactionRepo.EXPECT().RestoreTransaction(transactionID).Return(restoredTransaction, nil)
+	suite.mockMapper.EXPECT().ToTransactionResponseDeleteAt(restoredTransaction).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully restored transaction", zap.Int("transaction_id", transactionID))
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreTransaction(transactionID)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+}
+
+func (suite *TransactionServiceSuite) TestRestoreTransaction_Failure() {
+	transactionID := 1
+	dbError := errors.New("failed to restore")
+
+	suite.mockLogger.EXPECT().Debug("Starting RestoreTransaction process", zap.Int("transaction_id", transactionID))
+	suite.mockLogger.EXPECT().Error("Failed to restore transaction from trash", gomock.Any())
+	suite.mockTransactionRepo.EXPECT().RestoreTransaction(transactionID).Return(nil, dbError)
+
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreTransaction(transactionID)
+
+	suite.Nil(result)
+	suite.Equal(transaction_errors.ErrFailedRestoreTransaction, err)
+}
+
+func (suite *TransactionServiceSuite) TestDeleteTransactionPermanent_Success() {
 	transactionID := 1
 
-	transaction := &record.TransactionRecord{
-		ID:              1,
-		CardNumber:      "1234",
-		Amount:          500000,
-		PaymentMethod:   "Credit Card",
-		MerchantID:      10,
-		TransactionTime: "2024-12-25T10:00:00Z",
-		CreatedAt:       "2024-12-25T10:00:00Z",
-		UpdatedAt:       "2024-12-25T11:00:00Z",
-		DeletedAt:       nil,
-	}
+	suite.mockLogger.EXPECT().Debug("Starting DeleteTransactionPermanent process", zap.Int("transaction_id", transactionID))
+	suite.mockTransactionRepo.EXPECT().DeleteTransactionPermanent(transactionID).Return(true, nil)
+	suite.mockLogger.EXPECT().Debug("Successfully permanently deleted transaction", zap.Int("transaction_id", transactionID))
 
-	mock_transaction_repo.EXPECT().FindById(transactionID).Return(transaction, nil).Times(1)
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteTransactionPermanent(transactionID)
 
-	mappedTransaction := &response.TransactionResponse{
-		ID:              1,
-		CardNumber:      "1234",
-		Amount:          500000,
-		PaymentMethod:   "Credit Card",
-		MerchantID:      10,
-		TransactionTime: "2024-12-25T10:00:00Z",
-		CreatedAt:       "2024-12-25T10:00:00Z",
-		UpdatedAt:       "2024-12-25T11:00:00Z",
-	}
-	mock_mapping.EXPECT().ToTransactionResponse(transaction).Return(mappedTransaction).Times(1)
-
-	result, errResp := transactionService.FindById(transactionID)
-
-	assert.NotNil(t, result)
-	assert.Nil(t, errResp)
-	assert.Equal(t, mappedTransaction, result)
+	suite.Nil(err)
+	suite.True(result)
 }
 
-func TestFindByIdTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_transaction_repo := mock_repository.NewMockTransactionRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	transactionService := service.NewTransactionService(nil, nil, nil, mock_transaction_repo, mock_logger, nil)
-
+func (suite *TransactionServiceSuite) TestDeleteTransactionPermanent_Failure() {
 	transactionID := 1
+	dbError := errors.New("failed to delete permanently")
 
-	mock_transaction_repo.EXPECT().FindById(transactionID).Return(nil, errors.New("transaction not found")).Times(1)
-	mock_logger.EXPECT().Error("failed to find transaction", zap.Error(errors.New("transaction not found"))).Times(1)
+	suite.mockLogger.EXPECT().Debug("Starting DeleteTransactionPermanent process", zap.Int("transaction_id", transactionID))
+	suite.mockLogger.EXPECT().Error("Failed to permanently delete transaction", gomock.Any())
+	suite.mockTransactionRepo.EXPECT().DeleteTransactionPermanent(transactionID).Return(false, dbError)
 
-	result, errResp := transactionService.FindById(transactionID)
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteTransactionPermanent(transactionID)
 
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Transaction not found", errResp.Message)
+	suite.False(result)
+	suite.Equal(transaction_errors.ErrFailedDeleteTransactionPermanent, err)
 }
 
-func TestFindByActiveTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionServiceSuite) TestRestoreAllTransaction_Success() {
+	suite.mockLogger.EXPECT().Debug("Restoring all transactions")
+	suite.mockTransactionRepo.EXPECT().RestoreAllTransaction().Return(true, nil)
+	suite.mockLogger.EXPECT().Debug("Successfully restored all transactions")
 
-	mock_transaction_repo := mock_repository.NewMockTransactionRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTransactionResponseMapper(ctrl)
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreAllTransaction()
 
-	transactionService := service.NewTransactionService(nil, nil, nil, mock_transaction_repo, mock_logger, mock_mapping)
-
-	transactions := []*record.TransactionRecord{
-		{
-			ID:              1,
-			CardNumber:      "1234",
-			Amount:          500000,
-			PaymentMethod:   "Credit Card",
-			MerchantID:      10,
-			TransactionTime: "2024-12-25T10:00:00Z",
-			CreatedAt:       "2024-12-25T10:00:00Z",
-			UpdatedAt:       "2024-12-25T11:00:00Z",
-			DeletedAt:       nil,
-		},
-		{
-			ID:              2,
-			CardNumber:      "5678",
-			Amount:          300000,
-			PaymentMethod:   "Bank Transfer",
-			MerchantID:      12,
-			TransactionTime: "2024-12-25T12:00:00Z",
-			CreatedAt:       "2024-12-25T12:00:00Z",
-			UpdatedAt:       "2024-12-25T13:00:00Z",
-			DeletedAt:       nil,
-		},
-	}
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 2
-
-	mock_transaction_repo.EXPECT().FindByActive(search, page, pageSize).Return(transactions, expected, nil).Times(1)
-
-	mappedTransactions := []*response.TransactionResponseDeleteAt{
-		{
-			ID:              1,
-			CardNumber:      "1234",
-			Amount:          500000,
-			PaymentMethod:   "Credit Card",
-			MerchantID:      10,
-			TransactionTime: "2024-12-25T10:00:00Z",
-			CreatedAt:       "2024-12-25T10:00:00Z",
-			UpdatedAt:       "2024-12-25T11:00:00Z",
-		},
-		{
-			ID:              2,
-			CardNumber:      "5678",
-			Amount:          300000,
-			PaymentMethod:   "Bank Transfer",
-			MerchantID:      12,
-			TransactionTime: "2024-12-25T12:00:00Z",
-			CreatedAt:       "2024-12-25T12:00:00Z",
-			UpdatedAt:       "2024-12-25T13:00:00Z",
-		},
-	}
-
-	mock_mapping.EXPECT().ToTransactionsResponseDeleteAt(transactions).Return(mappedTransactions).Times(1)
-	mock_logger.EXPECT().Debug("Successfully fetched active transaction records", zap.Int("record_count", 2)).Times(1)
-
-	result, totalRecord, errResp := transactionService.FindByActive(pageSize, page, search)
-
-	assert.NotNil(t, result)
-	assert.Nil(t, errResp)
-	assert.Len(t, result, expected)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, mappedTransactions, result)
+	suite.Nil(err)
+	suite.True(result)
 }
 
-func TestFindByActiveTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionServiceSuite) TestRestoreAllTransaction_Failure() {
+	dbError := errors.New("failed to restore all")
 
-	mock_transaction_repo := mock_repository.NewMockTransactionRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.mockLogger.EXPECT().Debug("Restoring all transactions")
+	suite.mockLogger.EXPECT().Error("Failed to restore all transaction", gomock.Any())
+	suite.mockTransactionRepo.EXPECT().RestoreAllTransaction().Return(false, dbError)
 
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 0
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreAllTransaction()
 
-	transactionService := service.NewTransactionService(nil, nil, nil, mock_transaction_repo, mock_logger, nil)
-
-	mock_transaction_repo.EXPECT().FindByActive(search, page, pageSize).Return(nil, expected, errors.New("no active transactions found")).Times(1)
-	mock_logger.EXPECT().Error("Failed to fetch active transaction records", zap.Error(errors.New("no active transactions found"))).Times(1)
-
-	result, totalRecord, errResp := transactionService.FindByActive(pageSize, page, search)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "No active transaction records found", errResp.Message)
+	suite.False(result)
+	suite.Equal(transaction_errors.ErrFailedRestoreAllTransactions, err)
 }
 
-func TestFindByTrashedTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionServiceSuite) TestDeleteAllTransactionPermanent_Success() {
+	suite.mockLogger.EXPECT().Debug("Permanently deleting all transactions")
+	suite.mockTransactionRepo.EXPECT().DeleteAllTransactionPermanent().Return(true, nil)
+	suite.mockLogger.EXPECT().Debug("Successfully deleted all transactions permanently")
 
-	mock_transaction_repo := mock_repository.NewMockTransactionRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTransactionResponseMapper(ctrl)
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteAllTransactionPermanent()
 
-	transactionService := service.NewTransactionService(nil, nil, nil, mock_transaction_repo, mock_logger, mock_mapping)
-
-	transactions := []*record.TransactionRecord{
-		{
-			ID:              1,
-			CardNumber:      "1234",
-			Amount:          500000,
-			PaymentMethod:   "Credit Card",
-			MerchantID:      10,
-			TransactionTime: "2024-12-25T10:00:00Z",
-			CreatedAt:       "2024-12-25T10:00:00Z",
-			UpdatedAt:       "2024-12-25T11:00:00Z",
-			DeletedAt:       nil,
-		},
-		{
-			ID:              2,
-			CardNumber:      "5678",
-			Amount:          300000,
-			PaymentMethod:   "Bank Transfer",
-			MerchantID:      12,
-			TransactionTime: "2024-12-25T12:00:00Z",
-			CreatedAt:       "2024-12-25T12:00:00Z",
-			UpdatedAt:       "2024-12-25T13:00:00Z",
-			DeletedAt:       nil,
-		},
-	}
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 2
-
-	mock_transaction_repo.EXPECT().FindByTrashed(search, page, pageSize).Return(transactions, expected, nil).Times(1)
-
-	mappedTransactions := []*response.TransactionResponseDeleteAt{
-		{
-			ID:              1,
-			CardNumber:      "1234",
-			Amount:          500000,
-			PaymentMethod:   "Credit Card",
-			MerchantID:      10,
-			TransactionTime: "2024-12-25T10:00:00Z",
-			CreatedAt:       "2024-12-25T10:00:00Z",
-			UpdatedAt:       "2024-12-25T11:00:00Z",
-		},
-		{
-			ID:              2,
-			CardNumber:      "5678",
-			Amount:          300000,
-			PaymentMethod:   "Bank Transfer",
-			MerchantID:      12,
-			TransactionTime: "2024-12-25T12:00:00Z",
-			CreatedAt:       "2024-12-25T12:00:00Z",
-			UpdatedAt:       "2024-12-25T13:00:00Z",
-		},
-	}
-
-	mock_logger.EXPECT().Info("Fetching trashed transaction records")
-
-	mock_mapping.EXPECT().ToTransactionsResponseDeleteAt(transactions).Return(mappedTransactions).Times(1)
-	mock_logger.EXPECT().Debug("Successfully fetched trashed transaction records", zap.Int("record_count", len(transactions))).Times(1)
-
-	result, totalRecord, errResp := transactionService.FindByTrashed(pageSize, page, search)
-
-	assert.NotNil(t, result)
-	assert.Nil(t, errResp)
-	assert.Len(t, result, 2)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, mappedTransactions, result)
+	suite.Nil(err)
+	suite.True(result)
 }
 
-func TestFindByTrashedTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionServiceSuite) TestDeleteAllTransactionPermanent_Failure() {
+	dbError := errors.New("failed to delete all permanently")
 
-	mock_transaction_repo := mock_repository.NewMockTransactionRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.mockLogger.EXPECT().Debug("Permanently deleting all transactions")
+	suite.mockLogger.EXPECT().Error("Failed to permanently delete all transaction", gomock.Any())
+	suite.mockTransactionRepo.EXPECT().DeleteAllTransactionPermanent().Return(false, dbError)
 
-	transactionService := service.NewTransactionService(nil, nil, nil, mock_transaction_repo, mock_logger, nil)
+	svc := service.NewTransactionService(suite.mockMerchantRepo, suite.mockCardRepo, suite.mockSaldoRepo, suite.mockTransactionRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteAllTransactionPermanent()
 
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 0
-
-	mock_logger.EXPECT().Info("Fetching trashed transaction records")
-
-	mock_transaction_repo.EXPECT().FindByTrashed(search, page, pageSize).Return(nil, expected, errors.New("no trashed transactions found")).Times(1)
-	mock_logger.EXPECT().Error("Failed to fetch trashed transaction records", zap.Error(errors.New("no trashed transactions found"))).Times(1)
-
-	result, totalRecord, errResp := transactionService.FindByTrashed(pageSize, page, search)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "No trashed transaction records found", errResp.Message)
+	suite.False(result)
+	suite.Equal(transaction_errors.ErrFailedDeleteAllTransactionsPermanent, err)
 }
 
-func TestFindByCardNumberTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_transaction_repo := mock_repository.NewMockTransactionRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTransactionResponseMapper(ctrl)
-
-	transactionService := service.NewTransactionService(nil, nil, nil, mock_transaction_repo, mock_logger, mock_mapping)
-
-	cardNumber := "1234"
-	transactions := []*record.TransactionRecord{
-		{
-			ID:              1,
-			CardNumber:      "1234",
-			Amount:          500000,
-			PaymentMethod:   "Credit Card",
-			MerchantID:      10,
-			TransactionTime: "2024-12-25T10:00:00Z",
-			CreatedAt:       "2024-12-25T10:00:00Z",
-			UpdatedAt:       "2024-12-25T11:00:00Z",
-			DeletedAt:       nil,
-		},
-		{
-			ID:              2,
-			CardNumber:      "5678",
-			Amount:          300000,
-			PaymentMethod:   "Bank Transfer",
-			MerchantID:      12,
-			TransactionTime: "2024-12-25T12:00:00Z",
-			CreatedAt:       "2024-12-25T12:00:00Z",
-			UpdatedAt:       "2024-12-25T13:00:00Z",
-			DeletedAt:       nil,
-		},
-	}
-
-	mock_transaction_repo.EXPECT().FindByCardNumber(cardNumber).Return(transactions, nil).Times(1)
-
-	mappedTransactions := []*response.TransactionResponse{
-		{
-			ID:              1,
-			CardNumber:      "1234",
-			Amount:          500000,
-			PaymentMethod:   "Credit Card",
-			MerchantID:      10,
-			TransactionTime: "2024-12-25T10:00:00Z",
-			CreatedAt:       "2024-12-25T10:00:00Z",
-			UpdatedAt:       "2024-12-25T11:00:00Z",
-		},
-		{
-			ID:              2,
-			CardNumber:      "5678",
-			Amount:          300000,
-			PaymentMethod:   "Bank Transfer",
-			MerchantID:      12,
-			TransactionTime: "2024-12-25T12:00:00Z",
-			CreatedAt:       "2024-12-25T12:00:00Z",
-			UpdatedAt:       "2024-12-25T13:00:00Z",
-		},
-	}
-
-	mock_mapping.EXPECT().ToTransactionsResponse(transactions).Return(mappedTransactions).Times(1)
-	mock_logger.EXPECT().Debug("Successfully fetched transactions by card number", zap.String("card_number", cardNumber), zap.Int("record_count", len(transactions))).Times(1)
-
-	result, errResp := transactionService.FindByCardNumber(cardNumber)
-
-	assert.NotNil(t, result)
-	assert.Nil(t, errResp)
-	assert.Len(t, result, 2)
-	assert.Equal(t, mappedTransactions, result)
-}
-
-func TestFindByCardNumberTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_transaction_repo := mock_repository.NewMockTransactionRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	transactionService := service.NewTransactionService(nil, nil, nil, mock_transaction_repo, mock_logger, nil)
-
-	cardNumber := "1234"
-
-	mock_transaction_repo.EXPECT().FindByCardNumber(cardNumber).Return(nil, errors.New("no transactions found")).Times(1)
-	mock_logger.EXPECT().Error("Failed to fetch transactions by card number", zap.Error(errors.New("no transactions found")), zap.String("card_number", cardNumber)).Times(1)
-
-	result, errResp := transactionService.FindByCardNumber(cardNumber)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "No transactions found for the given card number", errResp.Message)
-}
-
-func TestCreateTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantRepo := mock_repository.NewMockMerchantRepository(ctrl)
-	mockCardRepo := mock_repository.NewMockCardRepository(ctrl)
-	mockSaldoRepo := mock_repository.NewMockSaldoRepository(ctrl)
-	mockTransactionRepo := mock_repository.NewMockTransactionRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapping := mock_responsemapper.NewMockTransactionResponseMapper(ctrl)
-
-	transactionService := service.NewTransactionService(
-		mockMerchantRepo,
-		mockCardRepo,
-		mockSaldoRepo,
-		mockTransactionRepo,
-		mockLogger,
-		mockMapping,
-	)
-
-	apiKey := "test-api-key"
-	merchantID := 1
-	merchantUserID := 2
-
-	merchant := &record.MerchantRecord{
-		ID:     merchantID,
-		UserID: merchantUserID,
-	}
-
-	request := &requests.CreateTransactionRequest{
-		CardNumber: "4111111111111111",
-		Amount:     1000,
-	}
-
-	customerCard := &record.CardRecord{
-		CardNumber: request.CardNumber,
-	}
-
-	merchantCard := &record.CardRecord{
-		CardNumber: "4222222222222222",
-	}
-
-	customerSaldo := &record.SaldoRecord{
-		CardNumber:   customerCard.CardNumber,
-		TotalBalance: 5000,
-	}
-
-	merchantSaldo := &record.SaldoRecord{
-		CardNumber:   merchantCard.CardNumber,
-		TotalBalance: 10000,
-	}
-
-	transaction := &record.TransactionRecord{
-		ID:         1,
-		CardNumber: request.CardNumber,
-		Amount:     request.Amount,
-	}
-
-	expectedResponse := &response.TransactionResponse{
-		ID:     1,
-		Amount: request.Amount,
-	}
-
-	mockMerchantRepo.EXPECT().
-		FindByApiKey(apiKey).
-		Return(merchant, nil)
-
-	mockCardRepo.EXPECT().
-		FindCardByCardNumber(request.CardNumber).
-		Return(customerCard, nil)
-
-	mockSaldoRepo.EXPECT().
-		FindByCardNumber(customerCard.CardNumber).
-		Return(customerSaldo, nil)
-
-	mockSaldoRepo.EXPECT().
-		UpdateSaldoBalance(gomock.Any()).
-		DoAndReturn(func(req *requests.UpdateSaldoBalance) (*record.SaldoRecord, error) {
-			assert.Equal(t, customerCard.CardNumber, req.CardNumber)
-			assert.Equal(t, 4000, req.TotalBalance) // 5000 - 1000
-			return customerSaldo, nil
-		})
-
-	mockTransactionRepo.EXPECT().
-		CreateTransaction(gomock.Any()).
-		DoAndReturn(func(req *requests.CreateTransactionRequest) (*record.TransactionRecord, error) {
-			assert.Equal(t, merchantID, *req.MerchantID)
-			return transaction, nil
-		})
-
-	mockCardRepo.EXPECT().
-		FindCardByUserId(merchant.UserID).
-		Return(merchantCard, nil)
-
-	mockSaldoRepo.EXPECT().
-		FindByCardNumber(merchantCard.CardNumber).
-		Return(merchantSaldo, nil)
-
-	mockLogger.EXPECT().
-		Debug("Updating merchant saldo", gomock.Any())
-
-	mockSaldoRepo.EXPECT().
-		UpdateSaldoBalance(gomock.Any()).
-		DoAndReturn(func(req *requests.UpdateSaldoBalance) (*record.SaldoRecord, error) {
-			assert.Equal(t, merchantCard.CardNumber, req.CardNumber)
-			assert.Equal(t, 11000, req.TotalBalance)
-			return merchantSaldo, nil
-		})
-
-	mockMapping.EXPECT().
-		ToTransactionResponse(transaction).
-		Return(expectedResponse)
-
-	result, errResp := transactionService.Create(apiKey, request)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
-}
-
-func TestUpdateTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantRepo := mock_repository.NewMockMerchantRepository(ctrl)
-	mockCardRepo := mock_repository.NewMockCardRepository(ctrl)
-	mockSaldoRepo := mock_repository.NewMockSaldoRepository(ctrl)
-	mockTransactionRepo := mock_repository.NewMockTransactionRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapping := mock_responsemapper.NewMockTransactionResponseMapper(ctrl)
-
-	transactionService := service.NewTransactionService(
-		mockMerchantRepo,
-		mockCardRepo,
-		mockSaldoRepo,
-		mockTransactionRepo,
-		mockLogger,
-		mockMapping,
-	)
-
-	apiKey := "test-api-key"
-	merchantID := 1
-	cardNumber := "1234567890"
-	oldAmount := 1000
-	newAmount := 500
-	layout := "2006-01-02 15:04:05"
-	transactionTime := time.Now().Format(layout)
-	parsedTime, _ := time.Parse(layout, transactionTime)
-
-	updateRequest := &requests.UpdateTransactionRequest{
-		TransactionID:   1,
-		Amount:          newAmount,
-		PaymentMethod:   "credit_card",
-		TransactionTime: parsedTime,
-	}
-
-	existingTransaction := &record.TransactionRecord{
-		ID:              1,
-		MerchantID:      merchantID,
-		CardNumber:      cardNumber,
-		Amount:          oldAmount,
-		PaymentMethod:   "credit_card",
-		TransactionTime: transactionTime,
-	}
-
-	merchant := &record.MerchantRecord{
-		ID:     merchantID,
-		ApiKey: apiKey,
-	}
-
-	card := &record.CardRecord{
-		CardNumber: cardNumber,
-	}
-
-	saldo := &record.SaldoRecord{
-		CardNumber:   cardNumber,
-		TotalBalance: 2000,
-	}
-
-	expectedResponse := &response.TransactionResponse{
-		ID:              1,
-		CardNumber:      cardNumber,
-		Amount:          newAmount,
-		PaymentMethod:   "credit_card",
-		TransactionTime: transactionTime,
-	}
-
-	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
-	mockLogger.EXPECT().Error(gomock.Any(), gomock.Any()).AnyTimes()
-	mockLogger.EXPECT().Info(gomock.Any()).AnyTimes()
-
-	mockTransactionRepo.EXPECT().
-		FindById(updateRequest.TransactionID).
-		Return(existingTransaction, nil)
-
-	mockMerchantRepo.EXPECT().
-		FindByApiKey(apiKey).
-		Return(merchant, nil)
-
-	mockCardRepo.EXPECT().
-		FindCardByCardNumber(cardNumber).
-		Return(card, nil)
-
-	mockSaldoRepo.EXPECT().
-		FindByCardNumber(cardNumber).
-		Return(saldo, nil)
-
-	mockSaldoRepo.EXPECT().
-		UpdateSaldoBalance(gomock.Any()).
-		Return(&record.SaldoRecord{
-			CardNumber:   cardNumber,
-			TotalBalance: saldo.TotalBalance + oldAmount,
-		}, nil)
-
-	mockSaldoRepo.EXPECT().
-		UpdateSaldoBalance(gomock.Any()).
-		Return(&record.SaldoRecord{
-			CardNumber:   cardNumber,
-			TotalBalance: saldo.TotalBalance - newAmount,
-		}, nil)
-
-	mockTransactionRepo.EXPECT().
-		UpdateTransaction(gomock.Any()).
-		Return(existingTransaction, nil)
-
-	mockMapping.EXPECT().
-		ToTransactionResponse(gomock.Any()).
-		Return(expectedResponse)
-
-	result, err := transactionService.Update(apiKey, updateRequest)
-
-	assert.Nil(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedResponse, result)
-}
-
-func TestUpdateTransaction_InsufficientBalance(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantRepo := mock_repository.NewMockMerchantRepository(ctrl)
-	mockCardRepo := mock_repository.NewMockCardRepository(ctrl)
-	mockSaldoRepo := mock_repository.NewMockSaldoRepository(ctrl)
-	mockTransactionRepo := mock_repository.NewMockTransactionRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapping := mock_responsemapper.NewMockTransactionResponseMapper(ctrl)
-
-	transactionService := service.NewTransactionService(
-		mockMerchantRepo,
-		mockCardRepo,
-		mockSaldoRepo,
-		mockTransactionRepo,
-		mockLogger,
-		mockMapping,
-	)
-
-	apiKey := "test-api-key"
-	merchantID := 1
-	cardNumber := "1234567890"
-	oldAmount := 1000
-	newAmount := 5000
-	layout := "2006-01-02 15:04:05"
-	transactionTime := time.Now().Format(layout)
-	parsedTime, _ := time.Parse(layout, transactionTime)
-
-	updateRequest := &requests.UpdateTransactionRequest{
-		TransactionID:   1,
-		Amount:          newAmount,
-		PaymentMethod:   "credit_card",
-		TransactionTime: parsedTime,
-	}
-
-	existingTransaction := &record.TransactionRecord{
-		ID:              1,
-		MerchantID:      merchantID,
-		CardNumber:      cardNumber,
-		Amount:          oldAmount,
-		PaymentMethod:   "credit_card",
-		TransactionTime: transactionTime,
-	}
-
-	merchant := &record.MerchantRecord{
-		ID:     merchantID,
-		ApiKey: apiKey,
-	}
-
-	card := &record.CardRecord{
-		CardNumber: cardNumber,
-	}
-
-	saldo := &record.SaldoRecord{
-		CardNumber:   cardNumber,
-		TotalBalance: 2000,
-	}
-
-	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
-	mockLogger.EXPECT().Error(gomock.Any(), gomock.Any()).AnyTimes()
-	mockLogger.EXPECT().Info(gomock.Any()).AnyTimes()
-
-	mockTransactionRepo.EXPECT().
-		FindById(updateRequest.TransactionID).
-		Return(existingTransaction, nil)
-
-	mockMerchantRepo.EXPECT().
-		FindByApiKey(apiKey).
-		Return(merchant, nil)
-
-	mockCardRepo.EXPECT().
-		FindCardByCardNumber(cardNumber).
-		Return(card, nil)
-
-	mockSaldoRepo.EXPECT().
-		FindByCardNumber(cardNumber).
-		Return(saldo, nil)
-
-	mockSaldoRepo.EXPECT().
-		UpdateSaldoBalance(gomock.Any()).
-		Return(&record.SaldoRecord{
-			CardNumber:   cardNumber,
-			TotalBalance: saldo.TotalBalance + oldAmount,
-		}, nil)
-
-	result, err := transactionService.Update(apiKey, updateRequest)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, err)
-	assert.Equal(t, "error", err.Status)
-	assert.Equal(t, "Insufficient balance for updated transaction", err.Message)
-}
-
-func TestTrashedTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionRepo := mock_repository.NewMockTransactionRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapping := mock_responsemapper.NewMockTransactionResponseMapper(ctrl)
-
-	transactionService := service.NewTransactionService(
-		nil, nil, nil,
-		mockTransactionRepo,
-		mockLogger,
-		mockMapping,
-	)
-
-	transactionID := 1
-	expectedRecord := &record.TransactionRecord{
-		ID: transactionID,
-	}
-	expectedResponse := &response.TransactionResponse{
-		ID: transactionID,
-	}
-
-	mockTransactionRepo.EXPECT().
-		TrashedTransaction(transactionID).
-		Return(expectedRecord, nil)
-
-	mockMapping.EXPECT().
-		ToTransactionResponse(expectedRecord).
-		Return(expectedResponse)
-
-	mockLogger.EXPECT().
-		Debug("Successfully trashed transaction", zap.Int("transaction_id", transactionID))
-
-	result, errResp := transactionService.TrashedTransaction(transactionID)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
-}
-
-func TestTrashedTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionRepo := mock_repository.NewMockTransactionRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	transactionService := service.NewTransactionService(
-		nil, nil, nil,
-		mockTransactionRepo,
-		mockLogger,
-		nil,
-	)
-
-	transactionID := 1
-
-	mockTransactionRepo.EXPECT().
-		TrashedTransaction(transactionID).
-		Return(nil, errors.New("database error"))
-
-	mockLogger.EXPECT().
-		Error("Failed to trash transaction", gomock.Any(), zap.Int("transaction_id", transactionID))
-
-	result, errResp := transactionService.TrashedTransaction(transactionID)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to trash transaction", errResp.Message)
-}
-
-func TestRestoreTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionRepo := mock_repository.NewMockTransactionRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapping := mock_responsemapper.NewMockTransactionResponseMapper(ctrl)
-
-	transactionService := service.NewTransactionService(
-		nil, nil, nil,
-		mockTransactionRepo,
-		mockLogger,
-		mockMapping,
-	)
-
-	transactionID := 1
-	expectedRecord := &record.TransactionRecord{
-		ID: transactionID,
-	}
-	expectedResponse := &response.TransactionResponse{
-		ID: transactionID,
-	}
-
-	mockTransactionRepo.EXPECT().
-		RestoreTransaction(transactionID).
-		Return(expectedRecord, nil)
-
-	mockMapping.EXPECT().
-		ToTransactionResponse(expectedRecord).
-		Return(expectedResponse)
-
-	mockLogger.EXPECT().
-		Debug("Successfully restored transaction", zap.Int("transaction_id", transactionID))
-
-	result, errResp := transactionService.RestoreTransaction(transactionID)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
-}
-
-func TestRestoreTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionRepo := mock_repository.NewMockTransactionRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	transactionService := service.NewTransactionService(
-		nil, nil, nil,
-		mockTransactionRepo,
-		mockLogger,
-		nil,
-	)
-
-	transactionID := 1
-
-	mockTransactionRepo.EXPECT().
-		RestoreTransaction(transactionID).
-		Return(nil, errors.New("database error"))
-
-	mockLogger.EXPECT().
-		Error("Failed to restore transaction", gomock.Any(), zap.Int("transaction_id", transactionID))
-
-	result, errResp := transactionService.RestoreTransaction(transactionID)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to restore transaction", errResp.Message)
-}
-
-func TestDeleteTransactionPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionRepo := mock_repository.NewMockTransactionRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	transactionService := service.NewTransactionService(
-		nil, nil, nil,
-		mockTransactionRepo,
-		mockLogger,
-		nil,
-	)
-
-	transactionID := 1
-
-	mockTransactionRepo.EXPECT().
-		DeleteTransactionPermanent(transactionID).
-		Return(nil)
-
-	mockLogger.EXPECT().
-		Debug("Successfully permanently deleted transaction", zap.Int("transaction_id", transactionID))
-
-	result, errResp := transactionService.DeleteTransactionPermanent(transactionID)
-
-	assert.Nil(t, errResp)
-	assert.Nil(t, result)
-}
-
-func TestDeleteTransactionPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionRepo := mock_repository.NewMockTransactionRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	transactionService := service.NewTransactionService(
-		nil, nil, nil,
-		mockTransactionRepo,
-		mockLogger,
-		nil,
-	)
-
-	transactionID := 1
-
-	mockTransactionRepo.EXPECT().
-		DeleteTransactionPermanent(transactionID).
-		Return(errors.New("database error"))
-
-	mockLogger.EXPECT().
-		Error("Failed to permanently delete transaction", gomock.Any(), zap.Int("transaction_id", transactionID))
-
-	result, errResp := transactionService.DeleteTransactionPermanent(transactionID)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to permanently delete transaction", errResp.Message)
+func TestTransactionServiceSuite(t *testing.T) {
+	suite.Run(t, new(TransactionServiceSuite))
 }

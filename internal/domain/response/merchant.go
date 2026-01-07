@@ -109,9 +109,15 @@ type ApiResponsesMerchant struct {
 }
 
 type ApiResponseMerchant struct {
-	Status  string           `json:"status"`
-	Message string           `json:"message"`
-	Data    MerchantResponse `json:"data"`
+	Status  string            `json:"status"`
+	Message string            `json:"message"`
+	Data    *MerchantResponse `json:"data"`
+}
+
+type ApiResponseMerchantDeleteAt struct {
+	Status  string                    `json:"status"`
+	Message string                    `json:"message"`
+	Data    *MerchantResponseDeleteAt `json:"data"`
 }
 
 type ApiResponseMerchantDelete struct {

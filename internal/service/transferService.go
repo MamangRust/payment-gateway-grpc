@@ -773,7 +773,7 @@ func (s *transferService) UpdateTransaction(request *requests.UpdateTransferRequ
 	return so, nil
 }
 
-func (s *transferService) TrashedTransfer(transfer_id int) (*response.TransferResponse, *response.ErrorResponse) {
+func (s *transferService) TrashedTransfer(transfer_id int) (*response.TransferResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Starting trashed transfer process",
 		zap.Int("transfer_id", transfer_id),
 	)
@@ -786,7 +786,7 @@ func (s *transferService) TrashedTransfer(transfer_id int) (*response.TransferRe
 		return nil, transfer_errors.ErrFailedTrashedTransfer
 	}
 
-	so := s.mapping.ToTransferResponse(res)
+	so := s.mapping.ToTransferResponseDeleteAt(res)
 
 	s.logger.Debug("successfully trashed transfer",
 		zap.Int("transfer_id", transfer_id),
@@ -795,7 +795,7 @@ func (s *transferService) TrashedTransfer(transfer_id int) (*response.TransferRe
 	return so, nil
 }
 
-func (s *transferService) RestoreTransfer(transfer_id int) (*response.TransferResponse, *response.ErrorResponse) {
+func (s *transferService) RestoreTransfer(transfer_id int) (*response.TransferResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Starting restore transfer process",
 		zap.Int("transfer_id", transfer_id),
 	)
@@ -808,7 +808,7 @@ func (s *transferService) RestoreTransfer(transfer_id int) (*response.TransferRe
 		return nil, transfer_errors.ErrFailedRestoreTransfer
 	}
 
-	so := s.mapping.ToTransferResponse(res)
+	so := s.mapping.ToTransferResponseDeleteAt(res)
 
 	s.logger.Debug("successfully restore transfer",
 		zap.Int("transfer_id", transfer_id),

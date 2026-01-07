@@ -564,14 +564,14 @@ func (mr *MockTopupServiceClientMockRecorder) RestoreAllTopup(ctx, in any, opts 
 }
 
 // RestoreTopup mocks base method.
-func (m *MockTopupServiceClient) RestoreTopup(ctx context.Context, in *pb.FindByIdTopupRequest, opts ...grpc.CallOption) (*pb.ApiResponseTopup, error) {
+func (m *MockTopupServiceClient) RestoreTopup(ctx context.Context, in *pb.FindByIdTopupRequest, opts ...grpc.CallOption) (*pb.ApiResponseTopupDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "RestoreTopup", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseTopup)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -604,14 +604,14 @@ func (mr *MockTopupServiceClientMockRecorder) TrashedTopup(ctx, in any, opts ...
 }
 
 // UpdateTopup mocks base method.
-func (m *MockTopupServiceClient) UpdateTopup(ctx context.Context, in *pb.UpdateTopupRequest, opts ...grpc.CallOption) (*pb.ApiResponseTopupDeleteAt, error) {
+func (m *MockTopupServiceClient) UpdateTopup(ctx context.Context, in *pb.UpdateTopupRequest, opts ...grpc.CallOption) (*pb.ApiResponseTopup, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "UpdateTopup", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseTopupDeleteAt)
+	ret0, _ := ret[0].(*pb.ApiResponseTopup)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1038,10 +1038,10 @@ func (mr *MockTopupServiceServerMockRecorder) RestoreAllTopup(arg0, arg1 any) *g
 }
 
 // RestoreTopup mocks base method.
-func (m *MockTopupServiceServer) RestoreTopup(arg0 context.Context, arg1 *pb.FindByIdTopupRequest) (*pb.ApiResponseTopup, error) {
+func (m *MockTopupServiceServer) RestoreTopup(arg0 context.Context, arg1 *pb.FindByIdTopupRequest) (*pb.ApiResponseTopupDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RestoreTopup", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseTopup)
+	ret0, _ := ret[0].(*pb.ApiResponseTopupDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1068,10 +1068,10 @@ func (mr *MockTopupServiceServerMockRecorder) TrashedTopup(arg0, arg1 any) *gomo
 }
 
 // UpdateTopup mocks base method.
-func (m *MockTopupServiceServer) UpdateTopup(arg0 context.Context, arg1 *pb.UpdateTopupRequest) (*pb.ApiResponseTopupDeleteAt, error) {
+func (m *MockTopupServiceServer) UpdateTopup(arg0 context.Context, arg1 *pb.UpdateTopupRequest) (*pb.ApiResponseTopup, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateTopup", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseTopupDeleteAt)
+	ret0, _ := ret[0].(*pb.ApiResponseTopup)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -68,6 +68,12 @@ type ApiResponseCard struct {
 	Data    *CardResponse `json:"data"`
 }
 
+type ApiResponseCardDeleteAt struct {
+	Status  string                `json:"status"`
+	Message string                `json:"message"`
+	Data    *CardResponseDeleteAt `json:"data"`
+}
+
 type ApiResponseCardDelete struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`

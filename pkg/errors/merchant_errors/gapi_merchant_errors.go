@@ -15,7 +15,7 @@ var (
 	ErrGrpcMerchantInvalidYear   = response.NewGrpcError("year", "Invalid Merchant Year", int(codes.InvalidArgument))
 
 	ErrGrpcFailedFindAllMerchant       = response.NewGrpcError("merchant", "Failed to fetch all merchants", int(codes.Internal))
-	ErrGrpcFailedFindByIdMerchant      = response.NewGrpcError("merchant", "Failed to fetch merchant by ID", int(codes.Internal))
+	ErrGrpcFailedFindByIdMerchant      = response.NewGrpcError("merchant", "Failed to fetch merchant by ID", int(codes.InvalidArgument))
 	ErrGrpcFailedFindByApiKey          = response.NewGrpcError("merchant", "Failed to fetch merchant by API key", int(codes.Internal))
 	ErrGrpcFailedFindByMerchantUserId  = response.NewGrpcError("merchant", "Failed to fetch merchant by user ID", int(codes.Internal))
 	ErrGrpcFailedFindByActiveMerchant  = response.NewGrpcError("merchant", "Failed to fetch active merchants", int(codes.Internal))

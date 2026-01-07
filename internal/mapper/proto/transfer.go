@@ -69,6 +69,14 @@ func (m *transferProtoMapper) ToProtoResponseTransfer(status string, message str
 	}
 }
 
+func (m *transferProtoMapper) ToProtoResponseTransferDeleteAt(status string, message string, pbResponse *response.TransferResponseDeleteAt) *pb.ApiResponseTransferDeleteAt {
+	return &pb.ApiResponseTransferDeleteAt{
+		Status:  status,
+		Message: message,
+		Data:    m.mapResponseTransferDeleteAt(pbResponse),
+	}
+}
+
 func (m *transferProtoMapper) ToProtoResponseTransfers(status string, message string, pbResponse []*response.TransferResponse) *pb.ApiResponseTransfers {
 	return &pb.ApiResponseTransfers{
 		Status:  status,

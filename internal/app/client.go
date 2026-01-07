@@ -9,6 +9,7 @@ import (
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
 	"context"
 	"flag"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +17,7 @@ import (
 
 	_ "MamangRust/paymentgatewaygrpc/docs"
 
+	"github.com/grafana/pyroscope-go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/spf13/viper"
@@ -27,7 +29,7 @@ import (
 )
 
 var (
-	addr = flag.String("addr", "localhost:50051", "the address to connect to")
+	addr = flag.String("addr", "server:50051", "the address to connect to")
 )
 
 // @title PaymentGateway gRPC
@@ -42,6 +44,29 @@ var (
 // @name Authorization
 func RunClient() {
 	flag.Parse()
+
+	_, err := pyroscope.Start(pyroscope.Config{
+		ApplicationName: "client",
+		ServerAddress:   os.Getenv("PYROSCOPE_SERVER"),
+
+		ProfileTypes: []pyroscope.ProfileType{
+			pyroscope.ProfileCPU,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
+			pyroscope.ProfileInuseObjects,
+			pyroscope.ProfileInuseSpace,
+		},
+
+		Tags: map[string]string{
+			"service": "grpc-client-echo",
+			"env":     os.Getenv("ENV"),
+			"version": os.Getenv("VERSION"),
+		},
+	})
+
+	if err != nil {
+		log.Fatal("Failed to initialize pyroscope:", err)
+	}
 
 	logger, err := logger.NewLogger()
 	limiter := middlewares.NewRateLimiter(20, 50)
@@ -65,9 +90,10 @@ func RunClient() {
 	e := echo.New()
 
 	e.Use(limiter.Limit)
+	e.Use(middlewares.PyroscopeMiddleware())
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:1420", "http://localhost:33451"},
+		AllowOrigins: []string{"http://localhost:1420", "http://localhost:33451", "http://localhost:5173"},
 		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions},
 		AllowHeaders: []string{
 			echo.HeaderOrigin,

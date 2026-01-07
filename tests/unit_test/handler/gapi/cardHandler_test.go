@@ -11,21 +11,34 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func TestFindAllCard_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+type CardHandleGrpcTestSuite struct {
+	suite.Suite
+	Ctrl            *gomock.Controller
+	MockCardService *mock_service.MockCardService
+	MockProtoMapper *mock_protomapper.MockCardProtoMapper
+	Handler         gapi.CardHandleGrpc
+}
 
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
+func (suite *CardHandleGrpcTestSuite) SetupTest() {
+	suite.Ctrl = gomock.NewController(suite.T())
+	suite.MockCardService = mock_service.NewMockCardService(suite.Ctrl)
+	suite.MockProtoMapper = mock_protomapper.NewMockCardProtoMapper(suite.Ctrl)
+	suite.Handler = gapi.NewCardHandleGrpc(suite.MockCardService, suite.MockProtoMapper)
+}
 
+func (suite *CardHandleGrpcTestSuite) TearDownTest() {
+	suite.Ctrl.Finish()
+}
+
+func (suite *CardHandleGrpcTestSuite) TestFindAllCard_Success() {
 	req := &pb.FindAllCardRequest{
 		Page:     1,
 		PageSize: 10,
@@ -33,1073 +46,372 @@ func TestFindAllCard_Success(t *testing.T) {
 	}
 
 	mockCards := []*response.CardResponse{
-		{ID: 1, CardNumber: "1222"},
-		{ID: 2, CardNumber: "1222"},
+		{ID: 1, CardNumber: "1234567890123456", CardType: "Credit", UserID: 1},
+		{ID: 2, CardNumber: "6543210987654321", CardType: "Debit", UserID: 2},
+	}
+	mockProtoCards := []*pb.CardResponse{
+		{Id: 1, CardNumber: "1234567890123456", CardType: "Credit", UserId: 1},
+		{Id: 2, CardNumber: "6543210987654321", CardType: "Debit", UserId: 2},
 	}
 
-	mockCardService.EXPECT().FindAll(1, 10, "test").Return(mockCards, 2, nil)
-	mockProtoMapper.EXPECT().ToResponsesCard(mockCards).Return([]*pb.CardResponse{
-		{Id: 1, CardNumber: "1222"},
-		{Id: 2, CardNumber: "1222"},
-	})
-
-	res, err := cardHandler.FindAllCard(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched card records", res.GetMessage())
-	assert.Equal(t, int32(1), res.GetPagination().GetCurrentPage())
-	assert.Equal(t, int32(10), res.GetPagination().GetPageSize())
-	assert.Equal(t, int32(2), res.GetPagination().GetTotalRecords())
-	assert.Equal(t, 2, len(res.GetData()))
-}
-
-func TestFindAllCard_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	req := &pb.FindAllCardRequest{
-		Page:     1,
-		PageSize: 10,
-		Search:   "test",
-	}
-
-	mockCardService.EXPECT().FindAll(1, 10, "test").Return(nil, 0, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to fetch card records",
-	})
-
-	res, err := cardHandler.FindAllCard(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Failed to fetch card records")
-}
-
-func TestFindAllCard_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	req := &pb.FindAllCardRequest{
-		Page:     1,
-		PageSize: 10,
-		Search:   "empty",
-	}
-
-	mockCardService.EXPECT().FindAll(1, 10, "empty").Return([]*response.CardResponse{}, 0, nil)
-	mockProtoMapper.EXPECT().ToResponsesCard([]*response.CardResponse{}).Return([]*pb.CardResponse{})
-
-	res, err := cardHandler.FindAllCard(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched card records", res.GetMessage())
-	assert.Equal(t, int32(0), res.GetPagination().GetTotalRecords())
-	assert.Equal(t, 0, len(res.GetData()))
-}
-
-func TestFindByIdCard_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	req := &pb.FindByIdCardRequest{CardId: 1}
-
-	mockCard := &response.CardResponse{ID: 1, CardNumber: "Card 1"}
-	mockCardService.EXPECT().FindById(1).Return(mockCard, nil)
-	mockProtoMapper.EXPECT().ToResponseCard(mockCard).Return(&pb.CardResponse{
-		Id:         1,
-		CardNumber: "Card 1",
-	})
-
-	res, err := cardHandler.FindByIdCard(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched card record", res.GetMessage())
-	assert.Equal(t, "Card 1", res.GetData().GetCardNumber())
-}
-
-func TestFindByIdCard_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	req := &pb.FindByIdCardRequest{CardId: 1}
-
-	mockCardService.EXPECT().FindById(1).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Card not found",
-	})
-
-	res, err := cardHandler.FindByIdCard(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Card not found")
-}
-
-func TestFindByIdCard_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	req := &pb.FindByIdCardRequest{CardId: 0}
-
-	res, err := cardHandler.FindByIdCard(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-
-	assert.True(t, ok)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, err.Error(), "Invalid card id")
-}
-
-func TestFindByUserIdCard_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	req := &pb.FindByUserIdCardRequest{UserId: 1}
-
-	mockCard := &response.CardResponse{ID: 1, CardNumber: "Card 1"}
-	mockCardService.EXPECT().FindByUserID(1).Return(mockCard, nil)
-	mockProtoMapper.EXPECT().ToResponseCard(mockCard).Return(&pb.CardResponse{
-		Id:         1,
-		CardNumber: "Card 1",
-	})
-
-	res, err := cardHandler.FindByUserIdCard(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched card record", res.GetMessage())
-	assert.Equal(t, "Card 1", res.GetData().GetCardNumber())
-}
-
-func TestFindByUserIdCard_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	req := &pb.FindByUserIdCardRequest{UserId: 1}
-
-	mockCardService.EXPECT().FindByUserID(1).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Card not found",
-	})
-
-	res, err := cardHandler.FindByUserIdCard(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Card not found")
-}
-
-func TestFindByUserIdCard_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	req := &pb.FindByUserIdCardRequest{UserId: 0}
-
-	res, err := cardHandler.FindByUserIdCard(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-
-	assert.True(t, ok)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, err.Error(), "Invalid user id")
-}
-
-func TestFindByActiveCard_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	activeCards := []*response.CardResponseDeleteAt{
-		{ID: 1, CardNumber: "Active Card 1"},
-		{ID: 2, CardNumber: "Active Card 2"},
-	}
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 2
-
-	req := &pb.FindAllCardRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockCardService.EXPECT().FindByActive(pageSize, page, search).Return(activeCards, expected, nil)
-	mockProtoMapper.EXPECT().ToResponsesCardDeletedAt(activeCards).Return([]*pb.CardResponseDeleteAt{
-		{Id: 1, CardNumber: "Active Card 1"},
-		{Id: 2, CardNumber: "Active Card 2"},
-	})
-
-	res, err := cardHandler.FindByActiveCard(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched card record", res.GetMessage())
-	assert.Len(t, res.GetData(), 2)
-	assert.Equal(t, "Active Card 1", res.GetData()[0].GetCardNumber())
-	assert.Equal(t, "Active Card 2", res.GetData()[1].GetCardNumber())
-}
-
-func TestFindByActiveCard_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 0
-
-	req := &pb.FindAllCardRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockCardService.EXPECT().FindByActive(pageSize, page, search).Return(nil, expected, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Card not found",
-	})
-
-	res, err := cardHandler.FindByActiveCard(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Card not found")
-}
-
-func TestFindByActiveCard_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 0
-
-	req := &pb.FindAllCardRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockCardService.EXPECT().FindByActive(pageSize, page, search).Return([]*response.CardResponseDeleteAt{}, expected, nil)
-	mockProtoMapper.EXPECT().ToResponsesCardDeletedAt([]*response.CardResponseDeleteAt{}).Return([]*pb.CardResponseDeleteAt{})
-
-	res, err := cardHandler.FindByActiveCard(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched card record", res.GetMessage())
-	assert.Len(t, res.GetData(), 0)
-}
-
-func TestFindByTrashedCard_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	trashedCards := []*response.CardResponseDeleteAt{
-		{ID: 1, CardNumber: "Trashed Card 1"},
-		{ID: 2, CardNumber: "Trashed Card 2"},
-	}
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 2
-
-	req := &pb.FindAllCardRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockCardService.EXPECT().FindByTrashed(pageSize, page, search).Return(trashedCards, expected, nil)
-	mockProtoMapper.EXPECT().ToResponsesCardDeletedAt(trashedCards).Return([]*pb.CardResponseDeleteAt{
-		{Id: 1, CardNumber: "Trashed Card 1"},
-		{Id: 2, CardNumber: "Trashed Card 2"},
-	})
-
-	res, err := cardHandler.FindByTrashedCard(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched card record", res.GetMessage())
-	assert.Len(t, res.GetData(), 2)
-	assert.Equal(t, "Trashed Card 1", res.GetData()[0].GetCardNumber())
-	assert.Equal(t, "Trashed Card 2", res.GetData()[1].GetCardNumber())
-}
-
-func TestFindByTrashedCard_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 0
-
-	req := &pb.FindAllCardRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockCardService.EXPECT().FindByTrashed(pageSize, page, search).Return(nil, expected, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Card not found",
-	})
-
-	res, err := cardHandler.FindByTrashedCard(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Card not found")
-}
-
-func TestFindByTrashedCard_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	page := 1
-	pageSize := 1
-	search := ""
-
-	expected := 0
-
-	req := &pb.FindAllCardRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockCardService.EXPECT().FindByTrashed(pageSize, page, search).Return([]*response.CardResponseDeleteAt{}, expected, nil)
-	mockProtoMapper.EXPECT().ToResponsesCardDeletedAt([]*response.CardResponseDeleteAt{}).Return([]*pb.CardResponseDeleteAt{})
-
-	res, err := cardHandler.FindByTrashedCard(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched card record", res.GetMessage())
-	assert.Len(t, res.GetData(), 0)
-}
-
-func TestFindByCardNumber_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	card := response.CardResponse{
-		ID:         1,
-		CardNumber: "1234567890123456",
-	}
-
-	req := &pb.FindByCardNumberRequest{CardNumber: "1234567890123456"}
-
-	mockCardService.EXPECT().FindByCardNumber("1234567890123456").Return(&card, nil)
-	mockProtoMapper.EXPECT().ToResponseCard(&card).Return(&pb.CardResponse{
-		Id:         1,
-		CardNumber: "1234567890123456",
-	})
-
-	res, err := cardHandler.FindByCardNumber(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched card record", res.GetMessage())
-	assert.NotNil(t, res.GetData())
-	assert.Equal(t, "1234567890123456", res.GetData().GetCardNumber())
-}
-
-func TestFindByCardNumber_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	req := &pb.FindByCardNumberRequest{CardNumber: "1234567890123456"}
-
-	mockCardService.EXPECT().FindByCardNumber("1234567890123456").Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Card not found",
-	})
-
-	res, err := cardHandler.FindByCardNumber(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Card not found")
-}
-
-func TestCreateCard_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	now := time.Now().UTC()
-	expireDate := now.AddDate(5, 0, 0)
-	expireDateProto := timestamppb.New(expireDate)
-
-	req := &pb.CreateCardRequest{
-		UserId:       1,
-		CardType:     "credit",
-		ExpireDate:   expireDateProto,
-		Cvv:          "123",
-		CardProvider: "mandiri",
-	}
-
-	mockCreateCardRequest := &requests.CreateCardRequest{
-		UserID:       1,
-		CardType:     "credit",
-		ExpireDate:   expireDate,
-		CVV:          "123",
-		CardProvider: "mandiri",
-	}
-
-	mockCard := &response.CardResponse{
-		ID:           1,
-		UserID:       1,
-		CardType:     "credit",
-		ExpireDate:   expireDate.String(),
-		CVV:          "123",
-		CardProvider: "mandiri",
-		CreatedAt:    now.String(),
-		UpdatedAt:    now.String(),
-	}
-
-	mockCardService.EXPECT().
-		CreateCard(mockCreateCardRequest).
-		Return(mockCard, nil).
-		Times(1)
-
-	mockProtoMapper.EXPECT().
-		ToResponseCard(mockCard).
-		Return(&pb.CardResponse{
-			Id:           1,
-			UserId:       1,
-			CardType:     "credit",
-			ExpireDate:   expireDateProto.String(),
-			Cvv:          "123",
-			CardProvider: "mandiri",
-			CreatedAt:    timestamppb.New(now).String(),
-			UpdatedAt:    timestamppb.New(now).String(),
+	totalRecords := 2
+	suite.MockCardService.EXPECT().
+		FindAll(gomock.Eq(&requests.FindAllCards{Page: 1, PageSize: 10, Search: "test"})).
+		Return(mockCards, &totalRecords, nil)
+
+	suite.MockProtoMapper.EXPECT().
+		ToProtoResponsePaginationCard(gomock.Any(), "success", "Successfully fetched card records", mockCards).
+		Return(&pb.ApiResponsePaginationCard{
+			Status:  "success",
+			Message: "Successfully fetched card records",
+			Data:    mockProtoCards,
+			Pagination: &pb.PaginationMeta{
+				CurrentPage:  1,
+				PageSize:     10,
+				TotalPages:   1,
+				TotalRecords: 2,
+			},
 		})
 
-	response, err := cardHandler.CreateCard(context.Background(), req)
+	res, err := suite.Handler.FindAllCard(context.Background(), req)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, response)
-	assert.Equal(t, "success", response.GetStatus())
-	assert.Equal(t, "Successfully created card", response.GetMessage())
-
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("Successfully fetched card records", res.GetMessage())
+	suite.Equal(int32(2), res.GetPagination().GetTotalRecords())
+	suite.Equal(2, len(res.GetData()))
 }
 
-func TestCreateCard_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *CardHandleGrpcTestSuite) TestFindAllCard_Failure() {
+	req := &pb.FindAllCardRequest{Page: 1, PageSize: 10, Search: "test"}
+	serviceError := &response.ErrorResponse{Status: "error", Message: "Failed to fetch cards"}
 
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
+	totalRecords := 0
+	suite.MockCardService.EXPECT().FindAll(gomock.Any()).Return(nil, &totalRecords, serviceError)
 
-	reqMock := requests.CreateCardRequest{
-		UserID:       1,
-		CardType:     "s",
-		ExpireDate:   time.Now(),
-		CVV:          "123",
-		CardProvider: "mandiri",
+	res, _ := suite.Handler.FindAllCard(context.Background(), req)
+
+	suite.Nil(res)
+}
+
+func (suite *CardHandleGrpcTestSuite) TestFindByIdCard_Success() {
+	req := &pb.FindByIdCardRequest{CardId: 1}
+	mockCard := &response.CardResponse{ID: 1, CardNumber: "1234567890123456", CardType: "Credit", UserID: 1}
+	mockProtoCard := &pb.CardResponse{Id: 1, CardNumber: "1234567890123456", CardType: "Credit", UserId: 1}
+
+	suite.MockCardService.EXPECT().FindById(1).Return(mockCard, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseCard("success", "Successfully fetched card record", mockCard).Return(&pb.ApiResponseCard{
+		Status:  "success",
+		Message: "Successfully fetched card record",
+		Data:    mockProtoCard,
+	})
+
+	res, err := suite.Handler.FindByIdCard(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("1234567890123456", res.GetData().GetCardNumber())
+}
+
+func (suite *CardHandleGrpcTestSuite) TestFindByIdCard_InvalidId() {
+	req := &pb.FindByIdCardRequest{CardId: 0}
+
+	res, err := suite.Handler.FindByIdCard(context.Background(), req)
+
+	suite.Nil(res)
+	suite.Error(err)
+	statusErr, ok := status.FromError(err)
+	suite.True(ok)
+	suite.Equal(codes.InvalidArgument, statusErr.Code())
+	suite.Contains(statusErr.Message(), "Invalid card ID")
+}
+
+func (suite *CardHandleGrpcTestSuite) TestFindByUserIdCard_Success() {
+	req := &pb.FindByUserIdCardRequest{UserId: 1}
+	mockCard := &response.CardResponse{ID: 1, CardNumber: "1234567890123456", CardType: "Credit", UserID: 1}
+	mockProtoCard := &pb.CardResponse{Id: 1, CardNumber: "1234567890123456", CardType: "Credit", UserId: 1}
+
+	suite.MockCardService.EXPECT().FindByUserID(1).Return(mockCard, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseCard("success", "Successfully fetched card record", mockCard).Return(&pb.ApiResponseCard{
+		Status:  "success",
+		Message: "Successfully fetched card record",
+		Data:    mockProtoCard,
+	})
+
+	res, err := suite.Handler.FindByUserIdCard(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("1234567890123456", res.GetData().GetCardNumber())
+}
+
+func (suite *CardHandleGrpcTestSuite) TestFindByCardNumber_Success() {
+	req := &pb.FindByCardNumberRequest{CardNumber: "1234567890123456"}
+	mockCard := &response.CardResponse{ID: 1, CardNumber: "1234567890123456", CardType: "Credit", UserID: 1}
+	mockProtoCard := &pb.CardResponse{Id: 1, CardNumber: "1234567890123456", CardType: "Credit", UserId: 1}
+
+	suite.MockCardService.EXPECT().FindByCardNumber("1234567890123456").Return(mockCard, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseCard("success", "Successfully fetched card record", mockCard).Return(&pb.ApiResponseCard{
+		Status:  "success",
+		Message: "Successfully fetched card record",
+		Data:    mockProtoCard,
+	})
+
+	res, err := suite.Handler.FindByCardNumber(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("1234567890123456", res.GetData().GetCardNumber())
+}
+
+func (suite *CardHandleGrpcTestSuite) TestFindByActiveCard_Success() {
+	req := &pb.FindAllCardRequest{Page: 1, PageSize: 10, Search: ""}
+	activeCards := []*response.CardResponseDeleteAt{
+		{ID: 1, CardNumber: "1234567890123456", CardType: "Credit", UserID: 1},
 	}
+	totalRecords := 1
+	suite.MockCardService.EXPECT().FindByActive(gomock.Any()).Return(activeCards, &totalRecords, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponsePaginationCardDeletedAt(gomock.Any(), "success", "Successfully fetched card record", activeCards).Return(&pb.ApiResponsePaginationCardDeleteAt{
+		Status:  "success",
+		Message: "Successfully fetched card record",
+		Data: []*pb.CardResponseDeleteAt{
+			{Id: 1, CardNumber: "1234567890123456", CardType: "Credit", UserId: 1},
+		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 10, TotalPages: 1, TotalRecords: 1},
+	})
 
+	res, err := suite.Handler.FindByActiveCard(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Len(res.GetData(), 1)
+}
+
+func (suite *CardHandleGrpcTestSuite) TestFindByTrashedCard_Success() {
+	req := &pb.FindAllCardRequest{Page: 1, PageSize: 10, Search: ""}
+	trashedCards := []*response.CardResponseDeleteAt{
+		{ID: 1, CardNumber: "1234567890123456", CardType: "Credit", UserID: 1},
+	}
+	totalRecords := 1
+	suite.MockCardService.EXPECT().FindByTrashed(gomock.Any()).Return(trashedCards, &totalRecords, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponsePaginationCardDeletedAt(gomock.Any(), "success", "Successfully fetched card record", trashedCards).Return(&pb.ApiResponsePaginationCardDeleteAt{
+		Status:  "success",
+		Message: "Successfully fetched card record",
+		Data: []*pb.CardResponseDeleteAt{
+			{Id: 1, CardNumber: "1234567890123456", CardType: "Credit", UserId: 1},
+		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 10, TotalPages: 1, TotalRecords: 1},
+	})
+
+	res, err := suite.Handler.FindByTrashedCard(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Len(res.GetData(), 1)
+}
+
+func (suite *CardHandleGrpcTestSuite) TestCreateCard_Success() {
+	expireDate := time.Now().AddDate(2, 0, 0)
 	req := &pb.CreateCardRequest{
 		UserId:       1,
-		CardType:     "s",
-		ExpireDate:   timestamppb.Now(),
-		Cvv:          "",
-		CardProvider: "mandiri",
-	}
-
-	if err := reqMock.Validate(); err != nil {
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "card type must be credit or debit")
-	}
-
-	response, err := cardHandler.CreateCard(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, response)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-}
-
-func TestCreateCard_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	now := time.Now().UTC()
-	expireDate := now.AddDate(5, 0, 0)
-	expireDateProto := timestamppb.New(expireDate)
-
-	req := &pb.CreateCardRequest{
-		UserId:       1,
 		CardType:     "credit",
-		ExpireDate:   expireDateProto,
+		ExpireDate:   timestamppb.New(expireDate),
 		Cvv:          "123",
-		CardProvider: "mandiri",
-	}
-
-	mockCreateCardRequest := &requests.CreateCardRequest{
-		UserID:       1,
-		CardType:     "credit",
-		ExpireDate:   expireDate,
-		CVV:          "123",
-		CardProvider: "mandiri",
-	}
-
-	mockError := &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to create card",
-	}
-	mockCardService.EXPECT().
-		CreateCard(mockCreateCardRequest).
-		Return(nil, mockError).
-		Times(1)
-
-	mockProtoMapper.EXPECT().
-		ToResponseCard(gomock.Any()).
-		Times(0)
-
-	response, err := cardHandler.CreateCard(context.Background(), req)
-
-	assert.Nil(t, response)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.Internal, statusErr.Code())
-
-}
-
-func TestUpdateCard_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	now := time.Now().UTC()
-	expireDate := now.AddDate(5, 0, 0)
-	expireDateProto := timestamppb.New(expireDate)
-
-	req := &pb.UpdateCardRequest{
-		CardId:       1,
-		UserId:       1,
-		CardType:     "credit",
-		ExpireDate:   expireDateProto,
-		Cvv:          "123",
-		CardProvider: "mandiri",
-	}
-
-	mockUpdateCardRequest := &requests.UpdateCardRequest{
-		CardID:       1,
-		UserID:       1,
-		CardType:     "credit",
-		ExpireDate:   expireDate,
-		CVV:          "123",
-		CardProvider: "mandiri",
+		CardProvider: "alfamart",
 	}
 
 	mockCard := &response.CardResponse{
 		ID:           1,
-		UserID:       1,
+		CardNumber:   "1234567890123456",
 		CardType:     "credit",
-		ExpireDate:   expireDate.String(),
+		UserID:       1,
+		ExpireDate:   expireDate.Format(time.RFC3339),
 		CVV:          "123",
-		CardProvider: "mandiri",
+		CardProvider: "alfamart",
+		CreatedAt:    time.Now().Format(time.RFC3339),
 	}
 
-	mockCardService.EXPECT().
-		UpdateCard(mockUpdateCardRequest).
-		Return(mockCard, nil).
-		Times(1)
-
-	mockProtoMapper.EXPECT().
-		ToResponseCard(mockCard).
-		Times(1)
-
-	response, err := cardHandler.UpdateCard(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, response)
-	assert.Equal(t, "success", response.GetStatus())
-	assert.Equal(t, "Successfully updated card", response.GetMessage())
-
-}
-
-func TestUpdateCard_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	now := time.Now().UTC()
-	expireDate := now.AddDate(5, 0, 0)
-	expireDateProto := timestamppb.New(expireDate)
-
-	req := &pb.UpdateCardRequest{
-		CardId:       1,
+	mockProtoCard := &pb.CardResponse{
+		Id:           1,
+		CardNumber:   "1234567890123456",
+		CardType:     "credit",
 		UserId:       1,
-		CardType:     "credit",
-		ExpireDate:   expireDateProto,
+		ExpireDate:   expireDate.Format(time.RFC3339),
 		Cvv:          "123",
-		CardProvider: "mandiri",
+		CardProvider: "alfamart",
 	}
 
-	mockUpdateCardRequest := &requests.UpdateCardRequest{
-		CardID:       1,
-		UserID:       1,
-		CardType:     "credit",
-		ExpireDate:   expireDate,
-		CVV:          "123",
-		CardProvider: "mandiri",
-	}
+	suite.MockCardService.EXPECT().CreateCard(gomock.Any()).Return(mockCard, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseCard("success", "Successfully created card", mockCard).Return(&pb.ApiResponseCard{
+		Status:  "success",
+		Message: "Successfully created card",
+		Data:    mockProtoCard,
+	})
 
-	mockError := &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to update card",
-	}
-	mockCardService.EXPECT().
-		UpdateCard(mockUpdateCardRequest).
-		Return(nil, mockError).
-		Times(1)
+	res, err := suite.Handler.CreateCard(context.Background(), req)
 
-	mockProtoMapper.EXPECT().
-		ToResponseCard(gomock.Any()).
-		Times(0)
-
-	response, err := cardHandler.UpdateCard(context.Background(), req)
-
-	assert.Nil(t, response)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-
-	assert.True(t, ok)
-	assert.Equal(t, codes.Internal, statusErr.Code())
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("credit", res.GetData().GetCardType())
 }
 
-func TestUpdateCard_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *CardHandleGrpcTestSuite) TestCreateCard_ValidationError() {
+	req := &pb.CreateCardRequest{
+		UserId:       0,
+		CardType:     "",
+		ExpireDate:   nil,
+		Cvv:          "",
+		CardProvider: "",
+	}
 
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
+	res, err := suite.Handler.CreateCard(context.Background(), req)
 
-	now := time.Now().UTC()
-	expireDate := now.AddDate(5, 0, 0)
-	expireDateProto := timestamppb.New(expireDate)
+	suite.Nil(res)
+	suite.Error(err)
+	statusErr, ok := status.FromError(err)
+	suite.True(ok)
+	suite.Equal(codes.InvalidArgument, statusErr.Code())
+	suite.Contains(statusErr.Message(), "Invalid input for create card")
+}
 
+func (suite *CardHandleGrpcTestSuite) TestUpdateCard_Success() {
+	cardId := 1
+	expireDate := time.Now().AddDate(2, 0, 0)
 	req := &pb.UpdateCardRequest{
-		CardId:       1,
+		CardId:       int32(cardId),
 		UserId:       1,
-		CardType:     "s",
-		ExpireDate:   expireDateProto,
-		Cvv:          "123",
-		CardProvider: "mandiri",
+		CardType:     "debit",
+		ExpireDate:   timestamppb.New(expireDate),
+		Cvv:          "456",
+		CardProvider: "alfamart",
 	}
 
-	mockUpdateCardRequest := &requests.UpdateCardRequest{
-		CardID:       1,
-		UserID:       1,
-		CardType:     "s",
-		ExpireDate:   expireDate,
-		CVV:          "123",
-		CardProvider: "mandiri",
-	}
-
-	if err := mockUpdateCardRequest.Validate(); err != nil {
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "card type must be credit or debit")
-	}
-
-	response, err := cardHandler.UpdateCard(context.Background(), req)
-
-	assert.Nil(t, response)
-	assert.Error(t, err)
-}
-
-func TestTrashedCard_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	req := &pb.FindByIdCardRequest{
-		CardId: 1,
-	}
-
-	mockCardResponse := &response.CardResponse{
+	mockCard := &response.CardResponse{
 		ID:           1,
+		CardNumber:   "1234567890123456",
+		CardType:     "debit",
 		UserID:       1,
-		CardType:     "credit",
-		ExpireDate:   "2029-12-26",
-		CVV:          "123",
-		CardProvider: "mandiri",
+		ExpireDate:   expireDate.Format(time.RFC3339),
+		CVV:          "456",
+		CardProvider: "alfamart",
 	}
 
-	mockCardService.EXPECT().
-		TrashedCard(1).
-		Return(mockCardResponse, nil).
-		Times(1)
+	mockProtoCard := &pb.CardResponse{
+		Id:           1,
+		CardNumber:   "1234567890123456",
+		CardType:     "debit",
+		UserId:       1,
+		ExpireDate:   expireDate.Format(time.RFC3339),
+		Cvv:          "456",
+		CardProvider: "alfamart",
+	}
 
-	mockProtoMapper.EXPECT().
-		ToResponseCard(mockCardResponse).
-		Return(&pb.CardResponse{
-			Id:           1,
-			UserId:       1,
-			CardType:     "credit",
-			ExpireDate:   "2029-12-26",
-			Cvv:          "123",
-			CardProvider: "mandiri",
-		}).Times(1)
+	suite.MockCardService.EXPECT().UpdateCard(gomock.Any()).Return(mockCard, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseCard("success", "Successfully updated card", mockCard).Return(&pb.ApiResponseCard{
+		Status:  "success",
+		Message: "Successfully updated card",
+		Data:    mockProtoCard,
+	})
 
-	response, err := cardHandler.TrashedCard(context.Background(), req)
+	res, err := suite.Handler.UpdateCard(context.Background(), req)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, response)
-	assert.Equal(t, "success", response.GetStatus())
-	assert.Equal(t, "Successfully trashed card", response.GetMessage())
-	assert.NotNil(t, response.GetData())
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("debit", res.GetData().GetCardType())
 }
 
-func TestTrashedCard_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *CardHandleGrpcTestSuite) TestTrashedCard_Success() {
+	req := &pb.FindByIdCardRequest{CardId: 1}
+	mockCard := &response.CardResponseDeleteAt{ID: 1, CardNumber: "1234567890123456"}
 
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, nil)
+	suite.MockCardService.EXPECT().TrashedCard(1).Return(mockCard, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseCardDeleteAt("success", "Successfully trashed card", mockCard).Return(&pb.ApiResponseCardDeleteAt{
+		Status:  "success",
+		Message: "Successfully trashed card",
+		Data:    &pb.CardResponseDeleteAt{Id: 1, CardNumber: "1234567890123456"},
+	})
 
-	req := &pb.FindByIdCardRequest{
-		CardId: 1,
-	}
+	res, err := suite.Handler.TrashedCard(context.Background(), req)
 
-	mockError := &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to trashed card",
-	}
-
-	mockCardService.EXPECT().
-		TrashedCard(1).
-		Return(nil, mockError).
-		Times(1)
-
-	response, err := cardHandler.TrashedCard(context.Background(), req)
-
-	assert.Nil(t, response)
-	assert.Error(t, err)
-
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
 }
 
-func TestTrashedCard_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *CardHandleGrpcTestSuite) TestRestoreCard_Success() {
+	req := &pb.FindByIdCardRequest{CardId: 1}
+	mockCard := &response.CardResponseDeleteAt{ID: 1, CardNumber: "1234567890123456"}
 
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, nil)
+	suite.MockCardService.EXPECT().RestoreCard(1).Return(mockCard, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseCardDeleteAt("success", "Successfully restored card", mockCard).Return(&pb.ApiResponseCardDeleteAt{
+		Status:  "success",
+		Message: "Successfully restored card",
+		Data:    &pb.CardResponseDeleteAt{Id: 1, CardNumber: "1234567890123456"},
+	})
 
-	req := &pb.FindByIdCardRequest{
-		CardId: 0,
-	}
+	res, err := suite.Handler.RestoreCard(context.Background(), req)
 
-	mockCardService.EXPECT().
-		TrashedCard(0).
-		Return(nil, &response.ErrorResponse{Status: "error", Message: "Invalid card id"}).
-		Times(1)
-
-	response, err := cardHandler.TrashedCard(context.Background(), req)
-
-	assert.Nil(t, response)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, statusErr.Message(), "Invalid Id")
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
 }
 
-func TestRestoreCard_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *CardHandleGrpcTestSuite) TestDeleteCardPermanent_Success() {
+	req := &pb.FindByIdCardRequest{CardId: 1}
 
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockCardProtoMapper(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, mockProtoMapper)
-
-	req := &pb.FindByIdCardRequest{
-		CardId: 1,
-	}
-
-	mockCardResponse := &response.CardResponse{
-		ID:           1,
-		UserID:       1,
-		CardType:     "credit",
-		ExpireDate:   "2029-12-26",
-		CVV:          "123",
-		CardProvider: "mandiri",
-	}
-
-	mockCardService.EXPECT().
-		RestoreCard(1).
-		Return(mockCardResponse, nil).
-		Times(1)
-
-	mockProtoMapper.EXPECT().
-		ToResponseCard(mockCardResponse).
-		Return(&pb.CardResponse{
-			Id:           1,
-			UserId:       1,
-			CardType:     "credit",
-			ExpireDate:   "2029-12-26",
-			Cvv:          "123",
-			CardProvider: "mandiri",
-		}).Times(1)
-
-	response, err := cardHandler.RestoreCard(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, response)
-	assert.Equal(t, "success", response.GetStatus())
-	assert.Equal(t, "Successfully restored card", response.GetMessage())
-	assert.NotNil(t, response.GetData())
-}
-
-func TestRestoreCard_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, nil)
-
-	req := &pb.FindByIdCardRequest{
-		CardId: 1,
-	}
-
-	mockError := &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to restore card",
-	}
-
-	mockCardService.EXPECT().
-		RestoreCard(1).
-		Return(nil, mockError).
-		Times(1)
-
-	response, err := cardHandler.RestoreCard(context.Background(), req)
-
-	assert.Nil(t, response)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.Internal, statusErr.Code())
-	assert.Contains(t, statusErr.Message(), "Failed to restore card")
-}
-
-func TestRestoreCard_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, nil)
-
-	req := &pb.FindByIdCardRequest{
-		CardId: 0,
-	}
-
-	response, err := cardHandler.RestoreCard(context.Background(), req)
-
-	assert.Nil(t, response)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-
-	assert.Contains(t, err.Error(), "Failed to restore card: ")
-}
-
-func TestDeleteCardPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, nil)
-
-	req := &pb.FindByIdCardRequest{
-		CardId: 1,
-	}
-
-	mockResponse := &pb.ApiResponseCardDelete{
+	suite.MockCardService.EXPECT().DeleteCardPermanent(1).Return(true, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseCardDelete("success", "Successfully deleted card").Return(&pb.ApiResponseCardDelete{
 		Status:  "success",
 		Message: "Successfully deleted card",
-	}
+	})
 
-	mockCardService.EXPECT().
-		DeleteCardPermanent(1).
-		Return(mockResponse, nil).
-		Times(1)
+	res, err := suite.Handler.DeleteCardPermanent(context.Background(), req)
 
-	response, err := cardHandler.DeleteCardPermanent(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, response)
-	assert.Equal(t, "success", response.GetStatus())
-	assert.Equal(t, "Successfully deleted card", response.GetMessage())
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
 }
 
-func TestDeleteCardPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *CardHandleGrpcTestSuite) TestRestoreAllCard_Success() {
+	req := &emptypb.Empty{}
 
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, nil)
+	suite.MockCardService.EXPECT().RestoreAllCard().Return(true, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseCardAll("success", "Successfully restore card").Return(&pb.ApiResponseCardAll{
+		Status:  "success",
+		Message: "Successfully restore card",
+	})
 
-	req := &pb.FindByIdCardRequest{
-		CardId: 1,
-	}
+	res, err := suite.Handler.RestoreAllCard(context.Background(), req)
 
-	mockCardService.EXPECT().
-		DeleteCardPermanent(1).
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to delete card",
-		}).
-		Times(1)
-
-	response, err := cardHandler.DeleteCardPermanent(context.Background(), req)
-
-	assert.Nil(t, response)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.Internal, statusErr.Code())
-	assert.Contains(t, statusErr.Message(), "Failed to delete card")
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
 }
 
-func TestDeleteCardPermanent_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *CardHandleGrpcTestSuite) TestDeleteAllCardPermanent_Success() {
+	req := &emptypb.Empty{}
 
-	mockCardService := mock_service.NewMockCardService(ctrl)
-	cardHandler := gapi.NewCardHandleGrpc(mockCardService, nil)
+	suite.MockCardService.EXPECT().DeleteAllCardPermanent().Return(true, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseCardAll("success", "Successfully delete card permanent").Return(&pb.ApiResponseCardAll{
+		Status:  "success",
+		Message: "Successfully delete card permanent",
+	})
 
-	req := &pb.FindByIdCardRequest{
-		CardId: 0,
-	}
+	res, err := suite.Handler.DeleteAllCardPermanent(context.Background(), req)
 
-	response, err := cardHandler.DeleteCardPermanent(context.Background(), req)
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+}
 
-	assert.Nil(t, response)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, err.Error(), "Failed to delete card: ")
+func TestCardHandleGrpcSuite(t *testing.T) {
+	suite.Run(t, new(CardHandleGrpcTestSuite))
 }

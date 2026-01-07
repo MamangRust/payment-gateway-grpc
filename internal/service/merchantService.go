@@ -722,7 +722,7 @@ func (s *merchantService) UpdateMerchant(request *requests.UpdateMerchantRequest
 	return so, nil
 }
 
-func (s *merchantService) TrashedMerchant(merchant_id int) (*response.MerchantResponse, *response.ErrorResponse) {
+func (s *merchantService) TrashedMerchant(merchant_id int) (*response.MerchantResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Trashing merchant", zap.Int("merchant_id", merchant_id))
 
 	res, err := s.merchantRepository.TrashedMerchant(merchant_id)
@@ -734,12 +734,12 @@ func (s *merchantService) TrashedMerchant(merchant_id int) (*response.MerchantRe
 
 	s.logger.Debug("Successfully trashed merchant", zap.Int("merchant_id", merchant_id))
 
-	so := s.mapping.ToMerchantResponse(res)
+	so := s.mapping.ToMerchantResponseDeleteAt(res)
 
 	return so, nil
 }
 
-func (s *merchantService) RestoreMerchant(merchant_id int) (*response.MerchantResponse, *response.ErrorResponse) {
+func (s *merchantService) RestoreMerchant(merchant_id int) (*response.MerchantResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Restoring merchant", zap.Int("merchant_id", merchant_id))
 
 	res, err := s.merchantRepository.RestoreMerchant(merchant_id)
@@ -750,7 +750,7 @@ func (s *merchantService) RestoreMerchant(merchant_id int) (*response.MerchantRe
 	}
 	s.logger.Debug("Successfully restored merchant", zap.Int("merchant_id", merchant_id))
 
-	so := s.mapping.ToMerchantResponse(res)
+	so := s.mapping.ToMerchantResponseDeleteAt(res)
 
 	return so, nil
 }

@@ -14,14 +14,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type userHandleApi struct {
+type UserHandleApi struct {
 	client  pb.UserServiceClient
 	logger  logger.LoggerInterface
 	mapping apimapper.UserResponseMapper
 }
 
-func NewHandlerUser(client pb.UserServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.UserResponseMapper) *userHandleApi {
-	userHandler := &userHandleApi{
+func NewHandlerUser(client pb.UserServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.UserResponseMapper) *UserHandleApi {
+	userHandler := &UserHandleApi{
 		client:  client,
 		logger:  logger,
 		mapping: mapping,
@@ -58,7 +58,7 @@ func NewHandlerUser(client pb.UserServiceClient, router *echo.Echo, logger logge
 // @Success 200 {object} response.ApiResponsePaginationUser "List of users"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve user data"
 // @Router /api/user [get]
-func (h *userHandleApi) FindAllUser(c echo.Context) error {
+func (h *UserHandleApi) FindAllUser(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -102,7 +102,7 @@ func (h *userHandleApi) FindAllUser(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid user ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve user data"
 // @Router /api/user/{id} [get]
-func (h *userHandleApi) FindById(c echo.Context) error {
+func (h *UserHandleApi) FindById(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
@@ -140,7 +140,7 @@ func (h *userHandleApi) FindById(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsesUser "List of active users"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve user data"
 // @Router /api/user/active [get]
-func (h *userHandleApi) FindByActive(c echo.Context) error {
+func (h *UserHandleApi) FindByActive(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -186,7 +186,7 @@ func (h *userHandleApi) FindByActive(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsesUser "List of trashed user data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve user data"
 // @Router /api/user/trashed [get]
-func (h *userHandleApi) FindByTrashed(c echo.Context) error {
+func (h *UserHandleApi) FindByTrashed(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -231,7 +231,7 @@ func (h *userHandleApi) FindByTrashed(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to create user"
 // @Router /api/user/create [post]
-func (h *userHandleApi) Create(c echo.Context) error {
+func (h *UserHandleApi) Create(c echo.Context) error {
 	var body requests.CreateUserRequest
 
 	if err := c.Bind(&body); err != nil {
@@ -279,13 +279,12 @@ func (h *userHandleApi) Create(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to update user"
 // @Router /api/user/update/{id} [post]
-func (h *userHandleApi) Update(c echo.Context) error {
+func (h *UserHandleApi) Update(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
 
-	if err != nil {
-		h.logger.Debug("Invalid request body", zap.Error(err))
+	if err != nil || idInt <= 0 {
 		return user_errors.ErrApiUserInvalidId(c)
 	}
 
@@ -336,7 +335,7 @@ func (h *userHandleApi) Update(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve trashed user"
 // @Router /api/user/trashed/{id} [post]
-func (h *userHandleApi) TrashedUser(c echo.Context) error {
+func (h *UserHandleApi) TrashedUser(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
@@ -374,7 +373,7 @@ func (h *userHandleApi) TrashedUser(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid user ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore user"
 // @Router /api/user/restore/{id} [post]
-func (h *userHandleApi) RestoreUser(c echo.Context) error {
+func (h *UserHandleApi) RestoreUser(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
@@ -412,7 +411,7 @@ func (h *userHandleApi) RestoreUser(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete user:"
 // @Router /api/user/delete/{id} [delete]
-func (h *userHandleApi) DeleteUserPermanent(c echo.Context) error {
+func (h *UserHandleApi) DeleteUserPermanent(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
@@ -450,7 +449,7 @@ func (h *userHandleApi) DeleteUserPermanent(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid user ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore user"
 // @Router /api/user/restore/all [post]
-func (h *userHandleApi) RestoreAllUser(c echo.Context) error {
+func (h *UserHandleApi) RestoreAllUser(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.client.RestoreAllUser(ctx, &emptypb.Empty{})
@@ -479,7 +478,7 @@ func (h *userHandleApi) RestoreAllUser(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete user:"
 // @Router /api/user/delete/all [post]
-func (h *userHandleApi) DeleteAllUserPermanent(c echo.Context) error {
+func (h *UserHandleApi) DeleteAllUserPermanent(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.client.DeleteAllUserPermanent(ctx, &emptypb.Empty{})

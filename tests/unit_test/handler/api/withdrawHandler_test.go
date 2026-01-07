@@ -1,1157 +1,599 @@
 package test
 
 import (
-	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	"MamangRust/paymentgatewaygrpc/internal/handler/api"
-	"MamangRust/paymentgatewaygrpc/internal/pb"
-	mock_pb "MamangRust/paymentgatewaygrpc/internal/pb/mocks"
-	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
+	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
+	"MamangRust/paymentgatewaygrpc/internal/domain/response"
+	"MamangRust/paymentgatewaygrpc/internal/handler/api"
+	mock_apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api/mocks"
+	"MamangRust/paymentgatewaygrpc/internal/pb"
+	mock_pb "MamangRust/paymentgatewaygrpc/internal/pb/mocks"
+	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
+
 	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func TestFindAllWithdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+type WithdrawHandlerTestSuite struct {
+	suite.Suite
+	Ctrl               *gomock.Controller
+	MockWithdrawClient *mock_pb.MockWithdrawServiceClient
+	MockLogger         *mock_logger.MockLoggerInterface
+	MockMapper         *mock_apimapper.MockWithdrawResponseMapper
+	E                  *echo.Echo
+	Handler            *api.WithdrawHandleApi
+}
 
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+func (suite *WithdrawHandlerTestSuite) SetupTest() {
+	suite.Ctrl = gomock.NewController(suite.T())
+	suite.MockWithdrawClient = mock_pb.NewMockWithdrawServiceClient(suite.Ctrl)
+	suite.MockLogger = mock_logger.NewMockLoggerInterface(suite.Ctrl)
+	suite.MockMapper = mock_apimapper.NewMockWithdrawResponseMapper(suite.Ctrl)
+	suite.E = echo.New()
+	suite.Handler = api.NewHandlerWithdraw(suite.MockWithdrawClient, suite.E, suite.MockLogger, suite.MockMapper)
+}
 
-	expectedResponse := &pb.ApiResponsePaginationWithdraw{
+func (suite *WithdrawHandlerTestSuite) TearDownTest() {
+	suite.Ctrl.Finish()
+}
+
+func (suite *WithdrawHandlerTestSuite) TestFindAll_Success() {
+	grpcResponse := &pb.ApiResponsePaginationWithdraw{
 		Status:  "success",
 		Message: "Withdraws retrieved successfully",
 		Data: []*pb.WithdrawResponse{
-			{
-				WithdrawId: 1,
-				CardNumber: "1234567890123456",
-				CreatedAt:  "2022-01-01T00:00:00Z",
-				UpdatedAt:  "2022-01-01T00:00:00Z",
-			},
-			{
-				WithdrawId: 2,
-				CardNumber: "9876543210987654",
-				CreatedAt:  "2022-01-02T00:00:00Z",
-				UpdatedAt:  "2022-01-02T00:00:00Z",
-			},
+			{WithdrawId: 1, WithdrawNo: "WD123", CardNumber: "1234", WithdrawAmount: 100000},
+			{WithdrawId: 2, WithdrawNo: "WD124", CardNumber: "5678", WithdrawAmount: 200000},
 		},
-		Pagination: &pb.PaginationMeta{
-			CurrentPage: 1,
-			PageSize:    2,
-			TotalPages:  1,
-		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 2, TotalPages: 1},
+	}
+	expectedApiResponse := &response.ApiResponsePaginationWithdraw{
+		Status:     grpcResponse.Status,
+		Message:    grpcResponse.Message,
+		Data:       []*response.WithdrawResponse{{ID: 1, WithdrawNo: "WD123", CardNumber: "1234", WithdrawAmount: 100000}, {ID: 2, WithdrawNo: "WD124", CardNumber: "5678", WithdrawAmount: 200000}},
+		Pagination: &response.PaginationMeta{CurrentPage: 1, PageSize: 2, TotalPages: 1},
 	}
 
-	mockWithdrawClient.EXPECT().
-		FindAllWithdraw(gomock.Any(), &pb.FindAllWithdrawRequest{
-			Page:     1,
-			PageSize: 10,
-			Search:   "",
-		}).
-		Return(expectedResponse, nil)
+	suite.MockWithdrawClient.EXPECT().FindAllWithdraw(gomock.Any(), &pb.FindAllWithdrawRequest{Page: 1, PageSize: 10, Search: "test"}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationWithdraw(grpcResponse).Return(expectedApiResponse)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/withdraw?page=1&page_size=10", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/withdraw?page=1&page_size=10&search=test", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
+	err := suite.Handler.FindAll(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err := handler.FindAll(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsePaginationWithdraw
+	var resp response.ApiResponsePaginationWithdraw
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Withdraws retrieved successfully", resp.Message)
-	assert.Len(t, resp.Data, 2)
+	suite.NoError(err)
+	suite.Equal("success", resp.Status)
+	suite.Len(resp.Data, 2)
 }
 
-func TestFindAllWithdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *WithdrawHandlerTestSuite) TestFindAll_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockWithdrawClient.EXPECT().FindAllWithdraw(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve withdraw data", zap.Error(grpcError)).Times(1)
 
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockWithdrawClient.EXPECT().
-		FindAllWithdraw(gomock.Any(), &pb.FindAllWithdrawRequest{
-			Page:     1,
-			PageSize: 10,
-			Search:   "",
-		}).
-		Return(nil, fmt.Errorf("internal server error"))
-
-	mockLogger.EXPECT().Debug("Failed to retrieve withdraw data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/withdraw?page=1&page_size=10", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/withdraw", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err := handler.FindAll(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to retrieve withdraw data: ", resp.Message)
+	err := suite.Handler.FindAll(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestFindAllWithdraw_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockWithdrawClient.EXPECT().
-		FindAllWithdraw(gomock.Any(), &pb.FindAllWithdrawRequest{
-			Page:     1,
-			PageSize: 10,
-			Search:   "",
-		}).
-		Return(&pb.ApiResponsePaginationWithdraw{
-			Status:     "success",
-			Message:    "No withdraws found",
-			Data:       []*pb.WithdrawResponse{},
-			Pagination: &pb.PaginationMeta{},
-		}, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/withdraw?page=1&page_size=10", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err := handler.FindAll(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsePaginationWithdraw
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "No withdraws found", resp.Message)
-	assert.Len(t, resp.Data, 0)
-}
-
-func TestFindByIdWithdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	expectedResponse := &pb.WithdrawResponse{
-		WithdrawId: 1,
-		CardNumber: "1234567890123456",
-		CreatedAt:  "2022-01-01T00:00:00Z",
-		UpdatedAt:  "2022-01-01T00:00:00Z",
-	}
-
-	expect := &pb.ApiResponseWithdraw{
+func (suite *WithdrawHandlerTestSuite) TestFindAllByCardNumber_Success() {
+	cardNumber := "1234567890123456"
+	grpcResponse := &pb.ApiResponsePaginationWithdraw{
 		Status:  "success",
-		Message: "Withdraw retrieved successfully",
-		Data:    expectedResponse,
+		Message: "Withdraws for card retrieved successfully",
+		Data: []*pb.WithdrawResponse{
+			{WithdrawId: 1, WithdrawNo: "WD123", CardNumber: cardNumber, WithdrawAmount: 100000},
+		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 1, TotalPages: 1},
+	}
+	expectedApiResponse := &response.ApiResponsePaginationWithdraw{
+		Status:     grpcResponse.Status,
+		Message:    grpcResponse.Message,
+		Data:       []*response.WithdrawResponse{{ID: 1, WithdrawNo: "WD123", CardNumber: cardNumber, WithdrawAmount: 100000}},
+		Pagination: &response.PaginationMeta{CurrentPage: 1, PageSize: 1, TotalPages: 1},
 	}
 
-	mockWithdrawClient.EXPECT().
-		FindByIdWithdraw(gomock.Any(), &pb.FindByIdWithdrawRequest{
-			WithdrawId: 1,
-		}).
-		Return(expect, nil)
+	suite.MockWithdrawClient.EXPECT().FindAllWithdrawByCardNumber(gomock.Any(), &pb.FindAllWithdrawByCardNumberRequest{CardNumber: cardNumber, Page: 1, PageSize: 10, Search: ""}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationWithdraw(grpcResponse).Return(expectedApiResponse)
 
-	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/withdraw/card-number/%s?page=1&page_size=10", cardNumber), nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("card_number")
+	c.SetParamValues(cardNumber)
+
+	err := suite.Handler.FindAllByCardNumber(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponsePaginationWithdraw
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestFindAllByCardNumber_Failure() {
+	cardNumber := "1234567890123456"
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockWithdrawClient.EXPECT().FindAllWithdrawByCardNumber(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve withdraw data", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/withdraw/card-number/%s", cardNumber), nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("card_number")
+	c.SetParamValues(cardNumber)
+
+	err := suite.Handler.FindAllByCardNumber(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestFindById_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseWithdraw{Status: "success", Data: &pb.WithdrawResponse{WithdrawId: int32(id), WithdrawNo: "WD123", CardNumber: "1234", WithdrawAmount: 100000}}
+	expectedApiResponse := &response.ApiResponseWithdraw{Status: "success", Data: &response.WithdrawResponse{ID: id, WithdrawNo: "WD123", CardNumber: "1234", WithdrawAmount: 100000}}
+
+	suite.MockWithdrawClient.EXPECT().FindByIdWithdraw(gomock.Any(), &pb.FindByIdWithdrawRequest{WithdrawId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseWithdraw(grpcResponse).Return(expectedApiResponse)
+
 	req := httptest.NewRequest(http.MethodGet, "/api/withdraw/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
+	err := suite.Handler.FindById(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err := handler.FindById(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseWithdraw
+	var resp response.ApiResponseWithdraw
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Withdraw retrieved successfully", resp.Message)
-
-	assert.Equal(t, expectedResponse.WithdrawId, resp.Data.WithdrawId)
-	assert.Equal(t, expectedResponse.CardNumber, resp.Data.CardNumber)
-	assert.Equal(t, expectedResponse.CreatedAt, resp.Data.CreatedAt)
-	assert.Equal(t, expectedResponse.UpdatedAt, resp.Data.UpdatedAt)
+	suite.NoError(err)
+	suite.Equal(int(id), resp.Data.ID)
 }
 
-func TestFindByIdWithdraw_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	e := echo.New()
+func (suite *WithdrawHandlerTestSuite) TestFindById_InvalidID() {
 	req := httptest.NewRequest(http.MethodGet, "/api/withdraw/abc", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("abc")
 
-	mockLogger.EXPECT().Debug("Invalid withdraw ID", gomock.Any()).Times(1)
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err := handler.FindById(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Invalid withdraw ID", resp.Message)
-}
-
-func TestFindByCardNumberWithdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	expectedResponse := []*pb.WithdrawResponse{
-		{
-
-			WithdrawId:     1,
-			CardNumber:     "1234567890123456",
-			WithdrawAmount: 50000,
-			CreatedAt:      "2022-01-01T00:00:00Z",
-			UpdatedAt:      "2022-01-01T00:00:00Z",
-		},
-		{
-
-			WithdrawId:     2,
-			CardNumber:     "9876543210987654",
-			WithdrawAmount: 75000,
-			CreatedAt:      "2022-01-02T00:00:00Z",
-			UpdatedAt:      "2022-01-02T00:00:00Z",
-		},
-	}
-	expected := &pb.ApiResponsesWithdraw{
-		Status:  "success",
-		Message: "Withdraw retrieved successfully",
-		Data:    expectedResponse,
-	}
-
-	mockWithdrawClient.EXPECT().
-		FindByCardNumber(gomock.Any(), &pb.FindByCardNumberRequest{
-			CardNumber: "1234567890123456",
-		}).
-		Return(expected, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/withdraw?card_number=1234567890123456", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err := handler.FindByCardNumber(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsesWithdraw
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Withdraw retrieved successfully", resp.Message)
-
-	assert.Equal(t, expectedResponse[0].WithdrawId, resp.Data[0].WithdrawId)
-	assert.Equal(t, expectedResponse[0].CardNumber, resp.Data[0].CardNumber)
-	assert.Equal(t, expectedResponse[0].WithdrawAmount, resp.Data[0].WithdrawAmount)
-}
-
-func TestFindByCardNumberWithdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockWithdrawClient.EXPECT().
-		FindByCardNumber(gomock.Any(), &pb.FindByCardNumberRequest{
-			CardNumber: "1234567890123456",
-		}).
-		Return(nil, fmt.Errorf("withdraw not found"))
-
-	mockLogger.EXPECT().Debug("Failed to retrieve withdraw data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/withdraw?card_number=1234567890123456", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err := handler.FindByCardNumber(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to retrieve withdraw data: ", resp.Message)
-}
-
-func TestFindByActiveWithdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	expectedResponse := &pb.ApiResponsePaginationWithdrawDeleteAt{
-		Status:  "success",
-		Message: "Withdraw retrieved successfully",
-		Data: []*pb.WithdrawResponseDeleteAt{
-			{
-				WithdrawId:     1,
-				CardNumber:     "1234567890123456",
-				WithdrawAmount: 50000,
-				CreatedAt:      "2022-01-01T00:00:00Z",
-				UpdatedAt:      "2022-01-01T00:00:00Z",
-			},
-			{
-				WithdrawId:     2,
-				CardNumber:     "9876543210987654",
-				WithdrawAmount: 75000,
-				CreatedAt:      "2022-01-02T00:00:00Z",
-				UpdatedAt:      "2022-01-02T00:00:00Z",
-			},
-		},
-	}
-	request := &pb.FindAllWithdrawRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockWithdrawClient.EXPECT().
-		FindByActive(gomock.Any(), request).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/withdraw/active", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err := handler.FindByActive(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsesWithdraw
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Withdraw retrieved successfully", resp.Message)
-
-	assert.Equal(t, expectedResponse.Data[0].WithdrawId, resp.Data[0].WithdrawId)
-	assert.Equal(t, expectedResponse.Data[0].CardNumber, resp.Data[0].CardNumber)
-	assert.Equal(t, expectedResponse.Data[0].WithdrawAmount, resp.Data[0].WithdrawAmount)
-}
-
-func TestFindByActiveWithdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockWithdrawClient.EXPECT().
-		FindByActive(gomock.Any(), gomock.Any()).
-		Return(nil, fmt.Errorf("internal server error"))
-
-	mockLogger.EXPECT().Debug("Failed to retrieve withdraw data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/withdraw/active", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err := handler.FindByActive(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to retrieve withdraw data: ", resp.Message)
-}
-
-func TestFindByTrashedWithdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	expectedResponse := &pb.ApiResponsePaginationWithdrawDeleteAt{
-		Status:  "success",
-		Message: "Withdraw retrieved successfully",
-		Data: []*pb.WithdrawResponseDeleteAt{
-			{
-				WithdrawId:     1,
-				CardNumber:     "1234567890123456",
-				WithdrawAmount: 50000,
-				CreatedAt:      "2022-01-01T00:00:00Z",
-				UpdatedAt:      "2022-01-01T00:00:00Z",
-			},
-		},
-	}
-
-	request := &pb.FindAllWithdrawRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockWithdrawClient.EXPECT().
-		FindByTrashed(gomock.Any(), request).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/withdraw/trashed", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err := handler.FindByTrashed(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsesWithdraw
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Withdraw retrieved successfully", resp.Message)
-
-	assert.Equal(t, expectedResponse.Data[0].WithdrawId, resp.Data[0].WithdrawId)
-	assert.Equal(t, expectedResponse.Data[0].CardNumber, resp.Data[0].CardNumber)
-	assert.Equal(t, expectedResponse.Data[0].WithdrawAmount, resp.Data[0].WithdrawAmount)
-}
-
-func TestFindByTrashedWithdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockWithdrawClient.EXPECT().
-		FindByTrashed(gomock.Any(), gomock.Any()).
-		Return(nil, fmt.Errorf("database connection error"))
-
-	mockLogger.EXPECT().Debug("Failed to retrieve withdraw data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/withdraw/trashed", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err := handler.FindByTrashed(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to retrieve withdraw data: ", resp.Message)
-}
-
-func TestCreateWithdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	requestBody := requests.CreateWithdrawRequest{
-		CardNumber:     "1234567890123456",
-		WithdrawAmount: 50000,
-		WithdrawTime:   time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
-	}
-
-	expectedGRPCRequest := &pb.CreateWithdrawRequest{
-		CardNumber:     requestBody.CardNumber,
-		WithdrawAmount: int32(requestBody.WithdrawAmount),
-		WithdrawTime:   timestamppb.New(requestBody.WithdrawTime),
-	}
-
-	expectedGRPCResponse := &pb.WithdrawResponse{
-		WithdrawId:     1,
-		CardNumber:     "1234567890123456",
-		WithdrawAmount: 50000,
-		WithdrawTime:   "2022-01-01T00:00:00Z",
-	}
-
-	expectedAPIResponse := &pb.ApiResponseWithdraw{
-		Status:  "success",
-		Message: "Withdraw created successfully",
-		Data:    expectedGRPCResponse,
-	}
-
-	mockWithdrawClient.EXPECT().
-		CreateWithdraw(gomock.Any(), expectedGRPCRequest).
-		Return(expectedAPIResponse, nil)
-
-	e := echo.New()
-	requestBodyBytes, err := json.Marshal(requestBody)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
-
-	httpReq := httptest.NewRequest(http.MethodPost, "/api/withdraw", bytes.NewReader(requestBodyBytes))
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err = handler.Create(c)
-
-	assert.NoError(t, err)
-
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseWithdraw
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Withdraw created successfully", resp.Message)
-	assert.NotNil(t, resp.Data)
-	assert.Equal(t, expectedGRPCResponse, resp.Data)
-}
-
-func TestCreateWithdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	requestBody := requests.CreateWithdrawRequest{
-		CardNumber:     "1234567890123456",
-		WithdrawAmount: 50000,
-		WithdrawTime:   time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
-	}
-
-	expectedGRPCRequest := &pb.CreateWithdrawRequest{
-		CardNumber:     requestBody.CardNumber,
-		WithdrawAmount: int32(requestBody.WithdrawAmount),
-		WithdrawTime:   timestamppb.New(requestBody.WithdrawTime),
-	}
-
-	mockWithdrawClient.EXPECT().
-		CreateWithdraw(gomock.Any(), expectedGRPCRequest).
-		Return(nil, fmt.Errorf("internal server error"))
-
-	mockLogger.EXPECT().Debug("Failed to create withdraw", gomock.Any()).Times(1)
-
-	e := echo.New()
-	requestBodyBytes, err := json.Marshal(requestBody)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
-
-	httpReq := httptest.NewRequest(http.MethodPost, "/api/withdraw", bytes.NewReader(requestBodyBytes))
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err = handler.Create(c)
-
-	assert.NoError(t, err)
-
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to create withdraw: internal server error", resp.Message)
-}
-
-func TestCreateWithdraw_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	requestBody := requests.CreateWithdrawRequest{
-		CardNumber:     "",
-		WithdrawAmount: 50000,
-		WithdrawTime:   time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
-	}
-
-	e := echo.New()
-	requestBodyBytes, err := json.Marshal(requestBody)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
-
-	httpReq := httptest.NewRequest(http.MethodPost, "/api/withdraw", bytes.NewReader(requestBodyBytes))
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
-
-	mockLogger.EXPECT().Debug("Validation Error: Key: 'CreateWithdrawRequest.CardNumber' Error:Field validation for 'CardNumber' failed on the 'required' tag", gomock.Any()).Times(1)
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err = handler.Create(c)
-
-	assert.NoError(t, err)
-
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Validation Error: ")
-}
-
-func TestUpdateWithdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	body := requests.UpdateWithdrawRequest{
-		WithdrawID:     1,
-		CardNumber:     "1234567890123456",
-		WithdrawAmount: 50000,
-		WithdrawTime:   time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
-	}
-
-	withdrawID := 1
-
-	expectedResponse := &pb.WithdrawResponse{
-		WithdrawId:     int32(withdrawID),
-		CardNumber:     "1234567890123456",
-		WithdrawAmount: 50000,
-		WithdrawTime:   "2022-01-01T00:00:00Z",
-	}
-
-	mockResponse := &pb.ApiResponseWithdraw{
-		Status:  "success",
-		Message: "Successfully updated withdraw",
-		Data:    expectedResponse,
-	}
-
-	mockWithdrawClient.EXPECT().
-		UpdateWithdraw(gomock.Any(), &pb.UpdateWithdrawRequest{
-			WithdrawId:     int32(withdrawID),
-			CardNumber:     body.CardNumber,
-			WithdrawAmount: int32(body.WithdrawAmount),
-			WithdrawTime:   timestamppb.New(body.WithdrawTime),
-		}).
-		Return(mockResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/withdraw/%d", withdrawID), bytes.NewReader(bodyBytes))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues(fmt.Sprintf("%d", withdrawID))
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err := handler.Update(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseWithdraw
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, mockResponse.Data.WithdrawId, resp.Data.WithdrawId)
-	assert.Equal(t, mockResponse.Data.CardNumber, resp.Data.CardNumber)
-	assert.Equal(t, mockResponse.Data.WithdrawAmount, resp.Data.WithdrawAmount)
-}
-
-func TestUpdateWithdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	body := requests.UpdateWithdrawRequest{
-		CardNumber:     "1234567890123456",
-		WithdrawAmount: 50000,
-		WithdrawTime:   time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
-	}
-
-	mockLogger.EXPECT().Debug(
-		"Validation Error: Key: 'UpdateWithdrawRequest.WithdrawID' Error:Field validation for 'WithdrawID' failed on the 'required' tag",
-		gomock.Any()).Times(1)
-
-	mockWithdrawClient.EXPECT().
-		UpdateWithdraw(gomock.Any(), gomock.Any()).
-		Return(nil, fmt.Errorf("service unavailable")).
-		Times(0)
-	e := echo.New()
-	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/withdraw/%d", 1), bytes.NewReader(bodyBytes)) // Request path should have the correct ID
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("1")
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err := handler.Update(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Validation Error: Key: 'UpdateWithdrawRequest.WithdrawID' Error:Field validation for 'WithdrawID' failed on the 'required' tag")
-}
-
-func TestUpdateWithdraw_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	request := requests.UpdateWithdrawRequest{
-		CardNumber:     "",
-		WithdrawID:     1,
-		WithdrawAmount: 0,
-		WithdrawTime:   time.Time{},
-	}
-	expectedValidationError := "Validation Error: " +
-		"Key: 'UpdateWithdrawRequest.CardNumber' Error:Field validation for 'CardNumber' failed on the 'required' tag\n" +
-		"Key: 'UpdateWithdrawRequest.WithdrawAmount' Error:Field validation for 'WithdrawAmount' failed on the 'required' tag\n" +
-		"Key: 'UpdateWithdrawRequest.WithdrawTime' Error:Field validation for 'WithdrawTime' failed on the 'required' tag"
-
-	mockLogger.EXPECT().Debug(expectedValidationError, gomock.Any()).Times(1)
-
-	e := echo.New()
-	requestBodyBytes, err := json.Marshal(request)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
-	httpReq := httptest.NewRequest(http.MethodPut, "/api/withdraw/update/1", bytes.NewReader(requestBodyBytes))
-	httpReq.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("1")
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-	err = handler.Update(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	fmt.Println("Error message:", resp.Message)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Validation Error:")
-}
-
-func TestTrashWithdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockResponse := &pb.ApiResponseWithdraw{
-		Status:  "success",
-		Message: "Successfully trashed withdraw",
-		Data: &pb.WithdrawResponse{
-			WithdrawId:     1,
-			CardNumber:     "1234567890123456",
-			WithdrawAmount: 50000,
-			WithdrawTime:   "2022-01-01T00:00:00Z",
-		},
-	}
-
-	// Mock the gRPC call
-	mockWithdrawClient.EXPECT().
-		TrashedWithdraw(gomock.Any(), &pb.FindByIdWithdrawRequest{WithdrawId: 1}).
-		Return(mockResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/withdraw/1", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("1")
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	// Call the handler
-	err := handler.TrashWithdraw(c)
-
-	// Assertions
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseWithdraw
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Successfully trashed withdraw", resp.Message)
-}
-
-func TestTrashWithdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockWithdrawClient.EXPECT().
-		TrashedWithdraw(gomock.Any(), &pb.FindByIdWithdrawRequest{WithdrawId: 1}).
-		Return(nil, fmt.Errorf("service unavailable")).
-		Times(1)
-
-	mockLogger.EXPECT().
-		Debug("Failed to trash withdraw", gomock.Any()).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/withdraw/1", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("1")
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err := handler.TrashWithdraw(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to trash withdraw")
-}
-
-func TestTrashWithdraw_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockLogger.EXPECT().
+	suite.MockLogger.EXPECT().
 		Debug("Invalid withdraw ID", gomock.Any()).
 		Times(1)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/withdraw/invalid", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("invalid")
-
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-
-	err := handler.TrashWithdraw(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Invalid withdraw ID", resp.Message)
+	err := suite.Handler.FindById(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
 }
 
-func TestRestoreWithdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *WithdrawHandlerTestSuite) TestFindByActive_Success() {
+	grpcResponse := &pb.ApiResponsePaginationWithdrawDeleteAt{Status: "success", Data: []*pb.WithdrawResponseDeleteAt{{WithdrawId: 1, WithdrawNo: "WD123"}}}
+	expectedApiResponse := &response.ApiResponsePaginationWithdrawDeleteAt{Status: "success", Data: []*response.WithdrawResponseDeleteAt{{ID: 1, WithdrawNo: "WD123"}}}
 
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockWithdrawClient.EXPECT().FindByActive(gomock.Any(), &pb.FindAllWithdrawRequest{Page: 1, PageSize: 10, Search: ""}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationWithdrawDeleteAt(grpcResponse).Return(expectedApiResponse)
 
-	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/withdraw/active", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.FindByActive(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponsePaginationWithdrawDeleteAt
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestFindByActive_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockWithdrawClient.EXPECT().FindByActive(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve withdraw data", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/withdraw/active", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.FindByActive(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestFindByTrashed_Success() {
+	grpcResponse := &pb.ApiResponsePaginationWithdrawDeleteAt{Status: "success", Data: []*pb.WithdrawResponseDeleteAt{{WithdrawId: 2, WithdrawNo: "WD999"}}}
+	expectedApiResponse := &response.ApiResponsePaginationWithdrawDeleteAt{Status: "success", Data: []*response.WithdrawResponseDeleteAt{{ID: 2, WithdrawNo: "WD999"}}}
+
+	suite.MockWithdrawClient.EXPECT().FindByTrashed(gomock.Any(), &pb.FindAllWithdrawRequest{Page: 1, PageSize: 10, Search: ""}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationWithdrawDeleteAt(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/withdraw/trashed", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.FindByTrashed(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponsePaginationWithdrawDeleteAt
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestFindByTrashed_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockWithdrawClient.EXPECT().FindByTrashed(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve withdraw data", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/withdraw/trashed", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.FindByTrashed(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestCreate_Success() {
+	withdrawTime := time.Now()
+	requestBody := requests.CreateWithdrawRequest{
+		CardNumber:     "1234567890123456",
+		WithdrawAmount: 150000,
+		WithdrawTime:   withdrawTime,
+	}
+	grpcRequest := &pb.CreateWithdrawRequest{
+		CardNumber:     requestBody.CardNumber,
+		WithdrawAmount: int32(requestBody.WithdrawAmount),
+		WithdrawTime:   timestamppb.New(withdrawTime),
+	}
+	grpcResponse := &pb.ApiResponseWithdraw{Status: "success", Data: &pb.WithdrawResponse{WithdrawId: 3, WithdrawNo: "WD125", CardNumber: requestBody.CardNumber, WithdrawAmount: int32(requestBody.WithdrawAmount)}}
+	expectedApiResponse := &response.ApiResponseWithdraw{Status: "success", Data: &response.WithdrawResponse{ID: 3, WithdrawNo: "WD125", CardNumber: requestBody.CardNumber, WithdrawAmount: requestBody.WithdrawAmount}}
+
+	suite.MockWithdrawClient.EXPECT().CreateWithdraw(gomock.Any(), grpcRequest).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseWithdraw(grpcResponse).Return(expectedApiResponse)
+
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/withdraw/create", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.Create(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponseWithdraw
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Equal("WD125", resp.Data.WithdrawNo)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestCreate_Failure() {
+	requestBody := requests.CreateWithdrawRequest{
+		CardNumber:     "1234567890123456",
+		WithdrawAmount: 150000,
+		WithdrawTime:   time.Now(),
+	}
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockWithdrawClient.EXPECT().CreateWithdraw(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to create withdraw", zap.Error(grpcError)).Times(1)
+
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/withdraw/create", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.Create(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestCreate_ValidationError() {
+	invalidRequestBody := requests.CreateWithdrawRequest{
+		CardNumber:     "",
+		WithdrawAmount: 40000,
+	}
+
+	bodyBytes, _ := json.Marshal(invalidRequestBody)
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/withdraw/create",
+		bytes.NewReader(bodyBytes),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	suite.MockLogger.EXPECT().
+		Debug(gomock.Any()).
+		Times(1)
+
+	err := suite.Handler.Create(c)
+
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestUpdate_Success() {
 	id := 1
+	withdrawTime := time.Now()
+	requestBody := requests.UpdateWithdrawRequest{
+		CardNumber:     "1234567890123456",
+		WithdrawAmount: 200000,
+		WithdrawTime:   withdrawTime,
+	}
+	grpcRequest := &pb.UpdateWithdrawRequest{
+		WithdrawId:     int32(id),
+		CardNumber:     requestBody.CardNumber,
+		WithdrawAmount: int32(requestBody.WithdrawAmount),
+		WithdrawTime:   timestamppb.New(withdrawTime),
+	}
+	grpcResponse := &pb.ApiResponseWithdraw{Status: "success", Data: &pb.WithdrawResponse{WithdrawId: int32(id), WithdrawAmount: int32(requestBody.WithdrawAmount)}}
+	expectedApiResponse := &response.ApiResponseWithdraw{Status: "success", Data: &response.WithdrawResponse{ID: id, WithdrawAmount: requestBody.WithdrawAmount}}
 
-	mockWithdrawClient.EXPECT().
-		RestoreWithdraw(gomock.Any(), &pb.FindByIdWithdrawRequest{
-			WithdrawId: int32(id),
-		}).
-		Return(&pb.ApiResponseWithdraw{
-			Status:  "success",
-			Message: "Withdraw restored successfully",
-		}, nil).Times(1)
+	suite.MockWithdrawClient.EXPECT().UpdateWithdraw(gomock.Any(), grpcRequest).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseWithdraw(grpcResponse).Return(expectedApiResponse)
 
-	req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/withdraw/restore/%d", id), nil)
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/withdraw/update/%d", id), bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
-	c.SetParamValues(fmt.Sprintf("%d", id))
+	c.SetParamValues(strconv.Itoa(id))
 
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-	err := handler.RestoreWithdraw(c)
+	err := suite.Handler.Update(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseWithdraw
+	var resp response.ApiResponseWithdraw
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Withdraw restored successfully", resp.Message)
+	suite.NoError(err)
+	suite.Equal(int(200000), resp.Data.WithdrawAmount)
 }
 
-func TestRestoreWithdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *WithdrawHandlerTestSuite) TestUpdate_InvalidID() {
+	req := httptest.NewRequest(http.MethodPost, "/api/withdraw/update/abc", nil)
+	suite.MockLogger.EXPECT().
+		Debug("Invalid withdraw ID", gomock.Any()).
+		Times(1)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("abc")
 
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	err := suite.Handler.Update(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
+}
 
-	e := echo.New()
+func (suite *WithdrawHandlerTestSuite) TestUpdate_ValidationError() {
 	id := 1
+	invalidRequestBody := requests.UpdateWithdrawRequest{
+		CardNumber:     "",
+		WithdrawAmount: 40000,
+	}
 
-	mockWithdrawClient.EXPECT().
-		RestoreWithdraw(gomock.Any(), &pb.FindByIdWithdrawRequest{
-			WithdrawId: int32(id),
-		}).
-		Return(nil, fmt.Errorf("gRPC service unavailable")).Times(1)
+	bodyBytes, _ := json.Marshal(invalidRequestBody)
+	req := httptest.NewRequest(
+		http.MethodPost,
+		fmt.Sprintf("/api/withdraw/update/%d", id),
+		bytes.NewReader(bodyBytes),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
-	mockLogger.EXPECT().Debug("Failed to restore withdraw", gomock.Any()).Times(1)
-
-	req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/withdraw/restore/%d", id), nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
-	c.SetParamValues(fmt.Sprintf("%d", id))
+	c.SetParamValues(strconv.Itoa(id))
 
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-	err := handler.RestoreWithdraw(c)
+	suite.MockLogger.EXPECT().
+		Debug(gomock.Any()).
+		Times(1)
 
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	err := suite.Handler.Update(c)
 
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to restore withdraw")
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
 }
 
-func TestRestoreWithdraw_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	e := echo.New()
-	id := "invalid"
-
-	mockLogger.EXPECT().Debug("Invalid withdraw ID", gomock.Any()).Times(1)
-
-	req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/withdraw/restore/%s", id), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues(id)
-
-	handler := api.NewHandlerWithdraw(nil, e, mockLogger)
-	err := handler.RestoreWithdraw(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Invalid withdraw ID", resp.Message)
-}
-
-func TestDeleteWithdrawPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	e := echo.New()
+func (suite *WithdrawHandlerTestSuite) TestTrashWithdraw_Success() {
 	id := 1
+	grpcResponse := &pb.ApiResponseWithdrawDeleteAt{Status: "success", Data: &pb.WithdrawResponseDeleteAt{WithdrawId: int32(id)}}
+	expectedApiResponse := &response.ApiResponseWithdrawDeleteAt{Status: "success", Data: &response.WithdrawResponseDeleteAt{ID: id}}
 
-	mockWithdrawClient.EXPECT().
-		DeleteWithdrawPermanent(gomock.Any(), &pb.FindByIdWithdrawRequest{
-			WithdrawId: int32(id),
-		}).
-		Return(&pb.ApiResponseWithdrawDelete{
-			Status:  "success",
-			Message: "Withdraw deleted permanently",
-		}, nil).Times(1)
+	suite.MockWithdrawClient.EXPECT().TrashedWithdraw(gomock.Any(), &pb.FindByIdWithdrawRequest{WithdrawId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseWithdrawDeleteAt(grpcResponse).Return(expectedApiResponse)
 
-	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/withdraw/delete-permanent/%d", id), nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/withdraw/trashed/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
-	c.SetParamValues(fmt.Sprintf("%d", id))
+	c.SetParamValues("1")
 
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-	err := handler.DeleteWithdrawPermanent(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseWithdrawDelete
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Withdraw deleted permanently", resp.Message)
+	err := suite.Handler.TrashWithdraw(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 }
 
-func TestDeleteWithdrawPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *WithdrawHandlerTestSuite) TestTrashWithdraw_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockWithdrawClient.EXPECT().TrashedWithdraw(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to trash withdraw", zap.Error(grpcError)).Times(1)
 
-	mockWithdrawClient := mock_pb.NewMockWithdrawServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	req := httptest.NewRequest(http.MethodPost, "/api/withdraw/trashed/1", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("1")
 
-	e := echo.New()
+	err := suite.Handler.TrashWithdraw(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestRestoreWithdraw_Success() {
 	id := 1
+	grpcResponse := &pb.ApiResponseWithdrawDeleteAt{Status: "success", Data: &pb.WithdrawResponseDeleteAt{WithdrawId: int32(id)}}
+	expectedApiResponse := &response.ApiResponseWithdrawDeleteAt{Status: "success", Data: &response.WithdrawResponseDeleteAt{ID: id}}
 
-	mockWithdrawClient.EXPECT().
-		DeleteWithdrawPermanent(gomock.Any(), &pb.FindByIdWithdrawRequest{
-			WithdrawId: int32(id),
-		}).
-		Return(nil, fmt.Errorf("gRPC service unavailable")).Times(1)
+	suite.MockWithdrawClient.EXPECT().RestoreWithdraw(gomock.Any(), &pb.FindByIdWithdrawRequest{WithdrawId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseWithdrawDeleteAt(grpcResponse).Return(expectedApiResponse)
 
-	mockLogger.EXPECT().Debug("Failed to delete withdraw permanently", gomock.Any()).Times(1)
-
-	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/withdraw/delete-permanent/%d", id), nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/withdraw/restore/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
-	c.SetParamValues(fmt.Sprintf("%d", id))
+	c.SetParamValues("1")
 
-	handler := api.NewHandlerWithdraw(mockWithdrawClient, e, mockLogger)
-	err := handler.DeleteWithdrawPermanent(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to delete withdraw permanently")
+	err := suite.Handler.RestoreWithdraw(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 }
 
-func TestDeleteWithdrawPermanent_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *WithdrawHandlerTestSuite) TestRestoreWithdraw_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockWithdrawClient.EXPECT().RestoreWithdraw(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to restore withdraw", zap.Error(grpcError)).Times(1)
 
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	e := echo.New()
-	id := "invalid"
-
-	mockLogger.EXPECT().Debug("Invalid withdraw ID", gomock.Any()).Times(1)
-
-	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/withdraw/delete-permanent/%s", id), nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/withdraw/restore/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
-	c.SetParamValues(id)
+	c.SetParamValues("1")
 
-	handler := api.NewHandlerWithdraw(nil, e, mockLogger)
-	err := handler.DeleteWithdrawPermanent(c)
+	err := suite.Handler.RestoreWithdraw(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
 
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
+func (suite *WithdrawHandlerTestSuite) TestDeleteWithdrawPermanent_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseWithdrawDelete{Status: "success"}
+	expectedApiResponse := &response.ApiResponseWithdrawDelete{Status: "success"}
 
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Invalid withdraw ID", resp.Message)
+	suite.MockWithdrawClient.EXPECT().DeleteWithdrawPermanent(gomock.Any(), &pb.FindByIdWithdrawRequest{WithdrawId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseWithdrawDelete(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/withdraw/permanent/1", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("1")
+
+	err := suite.Handler.DeleteWithdrawPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestDeleteWithdrawPermanent_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockWithdrawClient.EXPECT().DeleteWithdrawPermanent(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to delete withdraw permanently", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/withdraw/permanent/1", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("1")
+
+	err := suite.Handler.DeleteWithdrawPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestRestoreAllWithdraw_Success() {
+	grpcResponse := &pb.ApiResponseWithdrawAll{Status: "success"}
+	expectedApiResponse := &response.ApiResponseWithdrawAll{Status: "success"}
+	suite.MockLogger.EXPECT().Debug("Successfully restored all withdraw").Times(1)
+
+	suite.MockWithdrawClient.EXPECT().RestoreAllWithdraw(gomock.Any(), &emptypb.Empty{}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseWithdrawAll(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/withdraw/restore/all", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.RestoreAllWithdraw(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestRestoreAllWithdraw_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockWithdrawClient.EXPECT().RestoreAllWithdraw(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Error("Failed to restore all withdraw", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/withdraw/restore/all", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.RestoreAllWithdraw(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestDeleteAllWithdrawPermanent_Success() {
+	grpcResponse := &pb.ApiResponseWithdrawAll{Status: "success"}
+	expectedApiResponse := &response.ApiResponseWithdrawAll{Status: "success"}
+	suite.MockLogger.EXPECT().Debug("Successfully deleted all withdraw permanently").Times(1)
+
+	suite.MockWithdrawClient.EXPECT().DeleteAllWithdrawPermanent(gomock.Any(), &emptypb.Empty{}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseWithdrawAll(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/withdraw/permanent/all", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.DeleteAllWithdrawPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+}
+
+func (suite *WithdrawHandlerTestSuite) TestDeleteAllWithdrawPermanent_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockWithdrawClient.EXPECT().DeleteAllWithdrawPermanent(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Error("Failed to permanently delete all withdraw", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/withdraw/permanent/all", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.DeleteAllWithdrawPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func TestWithdrawHandlerSuite(t *testing.T) {
+	suite.Run(t, new(WithdrawHandlerTestSuite))
 }

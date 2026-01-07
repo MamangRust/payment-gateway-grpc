@@ -1072,7 +1072,7 @@ func (s *cardService) UpdateCard(request *requests.UpdateCardRequest) (*response
 	return so, nil
 }
 
-func (s *cardService) TrashedCard(card_id int) (*response.CardResponse, *response.ErrorResponse) {
+func (s *cardService) TrashedCard(card_id int) (*response.CardResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Trashing card", zap.Int("card_id", card_id))
 
 	res, err := s.cardRepository.TrashedCard(card_id)
@@ -1085,14 +1085,14 @@ func (s *cardService) TrashedCard(card_id int) (*response.CardResponse, *respons
 		return nil, card_errors.ErrFailedTrashCard
 	}
 
-	so := s.mapping.ToCardResponse(res)
+	so := s.mapping.ToCardResponseDeleteAt(res)
 
 	s.logger.Debug("Successfully trashed card", zap.Int("card_id", so.ID))
 
 	return so, nil
 }
 
-func (s *cardService) RestoreCard(card_id int) (*response.CardResponse, *response.ErrorResponse) {
+func (s *cardService) RestoreCard(card_id int) (*response.CardResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Restoring card", zap.Int("card_id", card_id))
 
 	res, err := s.cardRepository.RestoreCard(card_id)
@@ -1105,7 +1105,7 @@ func (s *cardService) RestoreCard(card_id int) (*response.CardResponse, *respons
 		return nil, card_errors.ErrFailedRestoreCard
 	}
 
-	so := s.mapping.ToCardResponse(res)
+	so := s.mapping.ToCardResponseDeleteAt(res)
 
 	s.logger.Debug("Successfully restored card", zap.Int("card_id", so.ID))
 

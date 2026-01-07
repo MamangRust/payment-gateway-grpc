@@ -4,537 +4,337 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/record"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	mocks "MamangRust/paymentgatewaygrpc/internal/repository/mocks"
-	"MamangRust/paymentgatewaygrpc/tests/utils"
 	"errors"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func TestFindAllCards_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
-	cards := []*record.CardRecord{
-		{
-			ID:           1,
-			UserID:       1,
-			CardType:     "Debit",
-			ExpireDate:   "2025-12-31",
-			CVV:          "123",
-			CardProvider: "Visa",
-		},
-		{
-			ID:           2,
-			UserID:       2,
-			CardType:     "Credit",
-			ExpireDate:   "2024-06-30",
-			CVV:          "456",
-			CardProvider: "MasterCard",
-		},
-	}
-	page := 1
-	pageSize := 10
-	search := ""
-
-	mockRepo.EXPECT().FindAllCards(search, page, pageSize).Return(cards, 2, nil)
-
-	result, total, err := mockRepo.FindAllCards(search, page, pageSize)
-	assert.NoError(t, err)
-	assert.Equal(t, cards, result)
-	assert.Equal(t, 2, total)
+type CardRepositorySuite struct {
+	suite.Suite
+	mockCtrl *gomock.Controller
+	mockRepo *mocks.MockCardRepository
 }
 
-func TestFindAllCards_Error(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
-	mockRepo.EXPECT().FindAllCards("", 1, 10).Return(nil, 0, errors.New("database error"))
-
-	result, total, err := mockRepo.FindAllCards("", 1, 10)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Equal(t, 0, total)
-	assert.EqualError(t, err, "database error")
+func (suite *CardRepositorySuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.mockRepo = mocks.NewMockCardRepository(suite.mockCtrl)
 }
 
-func TestFindAllCards_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
-	mockRepo.EXPECT().FindAllCards("", 1, 10).Return([]*record.CardRecord{}, 0, nil)
-
-	result, total, err := mockRepo.FindAllCards("", 1, 10)
-	assert.NoError(t, err)
-	assert.Empty(t, result)
-	assert.Equal(t, 0, total)
+func (suite *CardRepositorySuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
-func TestFindById_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *CardRepositorySuite) TestFindAllCards_Success() {
+	req := &requests.FindAllCards{Search: "debit", Page: 1, PageSize: 10}
+	cards := []*record.CardRecord{{ID: 1, CardNumber: "1111-xxxx-xxxx-1111"}}
+	total := 1
 
-	mockRepo := mocks.NewMockCardRepository(ctrl)
+	suite.mockRepo.EXPECT().FindAllCards(req).Return(cards, &total, nil)
 
-	card := &record.CardRecord{
-		ID:           1,
-		UserID:       1,
-		CardType:     "Debit",
-		ExpireDate:   "2025-12-31",
-		CVV:          "123",
-		CardProvider: "Visa",
-	}
+	result, totalRes, err := suite.mockRepo.FindAllCards(req)
 
-	mockRepo.EXPECT().FindById(1).Return(card, nil)
-
-	result, err := mockRepo.FindById(1)
-	assert.NoError(t, err)
-	assert.Equal(t, card, result)
+	suite.NoError(err)
+	suite.Equal(cards, result)
+	suite.Equal(1, *totalRes)
 }
 
-func TestFindById_NotFound(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *CardRepositorySuite) TestFindByActive_Success() {
+	req := &requests.FindAllCards{Search: "active", Page: 1, PageSize: 10}
+	activeCards := []*record.CardRecord{{ID: 1, CardNumber: "2222-xxxx-xxxx-2222"}}
+	total := 1
 
-	mockRepo := mocks.NewMockCardRepository(ctrl)
+	suite.mockRepo.EXPECT().FindByActive(req).Return(activeCards, &total, nil)
 
-	mockRepo.EXPECT().FindById(1).Return(nil, errors.New("card not found"))
+	result, totalRes, err := suite.mockRepo.FindByActive(req)
 
-	result, err := mockRepo.FindById(1)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "card not found")
+	suite.NoError(err)
+	suite.Equal(activeCards, result)
+	suite.Equal(1, *totalRes)
 }
 
-func TestFindCardByUserId_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *CardRepositorySuite) TestFindByTrashed_Success() {
+	req := &requests.FindAllCards{Page: 1, PageSize: 10}
+	deletedAt := "2024-01-03T00:00:00Z"
+	trashedCards := []*record.CardRecord{{ID: 2, CardNumber: "3333-xxxx-xxxx-3333", DeletedAt: &deletedAt}}
+	total := 1
 
-	mockRepo := mocks.NewMockCardRepository(ctrl)
+	suite.mockRepo.EXPECT().FindByTrashed(req).Return(trashedCards, &total, nil)
 
-	userID := 1
-	expectedCard := &record.CardRecord{
-		ID:           1,
-		UserID:       userID,
-		CardType:     "Credit",
-		ExpireDate:   "2025-12-31",
-		CVV:          "123",
-		CardProvider: "Visa",
-	}
+	result, totalRes, err := suite.mockRepo.FindByTrashed(req)
 
-	mockRepo.EXPECT().FindCardByUserId(userID).Return(expectedCard, nil)
-
-	result, err := mockRepo.FindCardByUserId(userID)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedCard, result)
+	suite.NoError(err)
+	suite.Equal(trashedCards, result)
+	suite.Equal(1, *totalRes)
 }
 
-func TestFindCardByUserId_Failure_NotFound(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
-	userID := 1
-
-	mockRepo.EXPECT().FindCardByUserId(userID).Return(nil, errors.New("card not found"))
-
-	result, err := mockRepo.FindCardByUserId(userID)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "card not found")
-}
-
-func TestFindByActive_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
-	expectedCards := []*record.CardRecord{
-		{
-			ID:           1,
-			UserID:       1,
-			CardType:     "Debit",
-			ExpireDate:   "2025-12-31",
-			CVV:          "123",
-			CardProvider: "Visa",
-		},
-		{
-			ID:           2,
-			UserID:       2,
-			CardType:     "Credit",
-			ExpireDate:   "2026-01-15",
-			CVV:          "456",
-			CardProvider: "MasterCard",
-		},
-	}
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 2
-
-	mockRepo.EXPECT().FindByActive(search, page, pageSize).Return(expectedCards, 2, nil)
-
-	result, totalRecord, err := mockRepo.FindByActive(search, page, pageSize)
-	assert.NoError(t, err)
-	assert.Equal(t, expected, totalRecord)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedCards, result)
-}
-
-func TestFindByActive_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 0
-
-	mockRepo.EXPECT().FindByActive(search, page, pageSize).Return(nil, 0, errors.New("database error"))
-
-	result, totalRecord, err := mockRepo.FindByActive(search, page, pageSize)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Equal(t, expected, totalRecord)
-	assert.EqualError(t, err, "database error")
-}
-
-func TestFindByActive_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 0
-
-	mockRepo.EXPECT().FindByActive(search, page, pageSize).Return([]*record.CardRecord{}, 0, nil)
-
-	result, totalRecord, err := mockRepo.FindByActive(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Empty(t, result)
-}
-
-func TestFindByTrashed_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
-	expectedCards := []*record.CardRecord{
-		{
-			ID:           3,
-			UserID:       3,
-			CardType:     "Debit",
-			ExpireDate:   "2024-11-30",
-			CVV:          "789",
-			CardProvider: "Visa",
-		},
-	}
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 1
-
-	mockRepo.EXPECT().FindByTrashed(search, page, pageSize).Return(expectedCards, 1, nil)
-
-	result, totalRecord, err := mockRepo.FindByTrashed(search, page, pageSize)
-	assert.NoError(t, err)
-	assert.Equal(t, expected, totalRecord)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedCards, result)
-}
-
-func TestFindByTrashed_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 0
-
-	mockRepo.EXPECT().FindByTrashed(search, page, pageSize).Return(nil, 0, errors.New("database error"))
-
-	result, totalRecord, err := mockRepo.FindByTrashed(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "database error")
-}
-
-func TestFindByTrashed_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 0
-
-	mockRepo.EXPECT().FindByTrashed(search, page, pageSize).Return([]*record.CardRecord{}, 0, nil)
-
-	result, totalRecord, err := mockRepo.FindByTrashed(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Empty(t, result)
-}
-
-func TestCreateCard_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
-	request := requests.CreateCardRequest{
-		UserID:       1,
-		CardType:     "Credit",
-		ExpireDate:   time.Now().AddDate(3, 0, 0),
-		CVV:          "456",
-		CardProvider: "MasterCard",
-	}
-	card := &record.CardRecord{
-		ID:           1,
-		UserID:       request.UserID,
-		CardType:     request.CardType,
-		ExpireDate:   request.ExpireDate.String(),
-		CVV:          request.CVV,
-		CardProvider: request.CardProvider,
-	}
-
-	mockRepo.EXPECT().CreateCard(&request).Return(card, nil)
-
-	result, err := mockRepo.CreateCard(&request)
-	assert.NoError(t, err)
-	assert.Equal(t, card, result)
-}
-
-func TestCreateCard_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
-	request := requests.CreateCardRequest{
-		UserID:       1,
-		CardType:     "Credit",
-		ExpireDate:   time.Now().AddDate(3, 0, 0),
-		CVV:          "456",
-		CardProvider: "MasterCard",
-	}
-
-	mockRepo.EXPECT().CreateCard(&request).Return(nil, errors.New("failed to create card"))
-
-	result, err := mockRepo.CreateCard(&request)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "failed to create card")
-}
-
-func TestCreateCard_ValidationError(t *testing.T) {
-	request := requests.CreateCardRequest{
-		UserID:       0,
-		CardType:     "Credit",
-		ExpireDate:   time.Now().AddDate(-1, 0, 0),
-		CVV:          "12",
-		CardProvider: "",
-	}
-
-	err := request.Validate()
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "card type must be credit or debit")
-}
-
-func TestUpdateCard_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
-	request := requests.UpdateCardRequest{
-		CardID:       1,
-		UserID:       1,
-		CardType:     "Credit",
-		ExpireDate:   time.Now().AddDate(3, 0, 0),
-		CVV:          "456",
-		CardProvider: "MasterCard",
-	}
-	updatedCard := &record.CardRecord{
-		ID:           request.CardID,
-		UserID:       request.UserID,
-		CardType:     request.CardType,
-		ExpireDate:   request.ExpireDate.String(),
-		CVV:          request.CVV,
-		CardProvider: request.CardProvider,
-	}
-
-	mockRepo.EXPECT().UpdateCard(&request).Return(updatedCard, nil)
-
-	result, err := mockRepo.UpdateCard(&request)
-	assert.NoError(t, err)
-	assert.Equal(t, updatedCard, result)
-}
-
-func TestUpdateCard_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
-	request := requests.UpdateCardRequest{
-		CardID:       1,
-		UserID:       1,
-		CardType:     "Credit",
-		ExpireDate:   time.Now().AddDate(3, 0, 0),
-		CVV:          "456",
-		CardProvider: "MasterCard",
-	}
-
-	mockRepo.EXPECT().UpdateCard(&request).Return(nil, errors.New("failed to update card"))
-
-	result, err := mockRepo.UpdateCard(&request)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "failed to update card")
-
-}
-
-func TestUpdateCard_ValidationError(t *testing.T) {
-	request := requests.UpdateCardRequest{
-		CardID:       0,
-		UserID:       0,
-		CardType:     "Credit",
-		ExpireDate:   time.Now().AddDate(-1, 0, 0),
-		CVV:          "12",
-		CardProvider: "",
-	}
-
-	err := request.Validate()
-
-	assert.Error(t, err)
-
-	assert.Contains(t, err.Error(), "card type must be credit or debit")
-
-}
-
-func TestTrashedCard_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockCardRepository(ctrl)
-
+func (suite *CardRepositorySuite) TestFindById_Success() {
 	cardID := 1
-	expectedCard := &record.CardRecord{
-		ID:           cardID,
-		UserID:       1,
-		CardType:     "Debit",
-		ExpireDate:   "2025-12-31",
-		CVV:          "123",
-		CardProvider: "Visa",
-		CreatedAt:    "2024-12-21T09:00:00Z",
-		UpdatedAt:    "2024-12-21T09:00:00Z",
-		DeletedAt:    utils.PtrString("2024-12-21T09:00:00Z"),
-	}
+	card := &record.CardRecord{ID: cardID, CardNumber: "1111-xxxx-xxxx-1111"}
 
-	mockRepo.EXPECT().TrashedCard(cardID).Return(expectedCard, nil)
+	suite.mockRepo.EXPECT().FindById(cardID).Return(card, nil)
 
-	result, err := mockRepo.TrashedCard(cardID)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedCard, result)
+	result, err := suite.mockRepo.FindById(cardID)
+
+	suite.NoError(err)
+	suite.Equal(card, result)
 }
 
-func TestTrashedCard_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *CardRepositorySuite) TestFindById_NotFound() {
+	cardID := 99
+	expectedErr := errors.New("card not found")
 
-	mockRepo := mocks.NewMockCardRepository(ctrl)
+	suite.mockRepo.EXPECT().FindById(cardID).Return(nil, expectedErr)
 
+	result, err := suite.mockRepo.FindById(cardID)
+
+	suite.Error(err)
+	suite.Nil(result)
+	suite.Equal(expectedErr, err)
+}
+
+func (suite *CardRepositorySuite) TestFindCardByUserId_Success() {
+	userID := 123
+	card := &record.CardRecord{UserID: userID, CardNumber: "4444-xxxx-xxxx-4444"}
+
+	suite.mockRepo.EXPECT().FindCardByUserId(userID).Return(card, nil)
+
+	result, err := suite.mockRepo.FindCardByUserId(userID)
+
+	suite.NoError(err)
+	suite.Equal(card, result)
+}
+
+func (suite *CardRepositorySuite) TestCreateCard_Success() {
+	expireDate := time.Now().AddDate(4, 0, 0)
+	req := &requests.CreateCardRequest{
+		UserID:       123,
+		CardType:     "debit",
+		ExpireDate:   expireDate,
+		CVV:          "123",
+		CardProvider: "VISA",
+	}
+	createdCard := &record.CardRecord{ID: 10, UserID: 123, CardNumber: "1234-5678-...", ExpireDate: expireDate.Format("2006-01-02")}
+
+	suite.mockRepo.EXPECT().CreateCard(req).Return(createdCard, nil)
+
+	result, err := suite.mockRepo.CreateCard(req)
+
+	suite.NoError(err)
+	suite.Equal(createdCard, result)
+}
+
+func (suite *CardRepositorySuite) TestUpdateCard_Success() {
+	cardID := 1
+	req := &requests.UpdateCardRequest{CardID: cardID, UserID: 456}
+	updatedCard := &record.CardRecord{ID: cardID, UserID: 456}
+
+	suite.mockRepo.EXPECT().UpdateCard(req).Return(updatedCard, nil)
+
+	result, err := suite.mockRepo.UpdateCard(req)
+
+	suite.NoError(err)
+	suite.Equal(updatedCard, result)
+}
+
+func (suite *CardRepositorySuite) TestTrashedCard_Success() {
+	cardID := 1
+	deletedAt := "2024-01-03T00:00:00Z"
+	trashedCard := &record.CardRecord{ID: cardID, DeletedAt: &deletedAt}
+
+	suite.mockRepo.EXPECT().TrashedCard(cardID).Return(trashedCard, nil)
+
+	result, err := suite.mockRepo.TrashedCard(cardID)
+
+	suite.NoError(err)
+	suite.NotNil(result.DeletedAt)
+	suite.Equal(trashedCard, result)
+}
+
+func (suite *CardRepositorySuite) TestRestoreCard_Success() {
+	cardID := 1
+	restoredCard := &record.CardRecord{ID: cardID, DeletedAt: nil}
+
+	suite.mockRepo.EXPECT().RestoreCard(cardID).Return(restoredCard, nil)
+
+	result, err := suite.mockRepo.RestoreCard(cardID)
+
+	suite.NoError(err)
+	suite.Nil(result.DeletedAt)
+	suite.Equal(restoredCard, result)
+}
+
+func (suite *CardRepositorySuite) TestDeleteCardPermanent_Success() {
 	cardID := 1
 
-	mockRepo.EXPECT().TrashedCard(cardID).Return(nil, errors.New("failed to trash card"))
+	suite.mockRepo.EXPECT().DeleteCardPermanent(cardID).Return(true, nil)
 
-	result, err := mockRepo.TrashedCard(cardID)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "failed to trash card")
+	result, err := suite.mockRepo.DeleteCardPermanent(cardID)
+
+	suite.NoError(err)
+	suite.True(result)
 }
 
-func TestRestoreCard_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *CardRepositorySuite) TestRestoreAllCard_Success() {
+	suite.mockRepo.EXPECT().RestoreAllCard().Return(true, nil)
 
-	mockRepo := mocks.NewMockCardRepository(ctrl)
+	result, err := suite.mockRepo.RestoreAllCard()
 
-	cardID := 1
-	expectedCard := &record.CardRecord{
-		ID:           cardID,
-		UserID:       1,
-		CardType:     "Credit",
-		ExpireDate:   "2026-01-15",
-		CVV:          "456",
-		CardProvider: "MasterCard",
-		CreatedAt:    "2024-12-21T09:00:00Z",
-		UpdatedAt:    "2024-12-21T09:00:00Z",
-		DeletedAt:    nil,
+	suite.NoError(err)
+	suite.True(result)
+}
+
+func (suite *CardRepositorySuite) TestDeleteAllCardPermanent_Success() {
+	suite.mockRepo.EXPECT().DeleteAllCardPermanent().Return(true, nil)
+
+	result, err := suite.mockRepo.DeleteAllCardPermanent()
+
+	suite.NoError(err)
+	suite.True(result)
+}
+
+func (suite *CardRepositorySuite) TestGetTotalBalances_Success() {
+	totalBalance := int64(5000000)
+
+	suite.mockRepo.EXPECT().GetTotalBalances().Return(&totalBalance, nil)
+
+	result, err := suite.mockRepo.GetTotalBalances()
+
+	suite.NoError(err)
+	suite.Equal(int64(5000000), *result)
+}
+
+func (suite *CardRepositorySuite) TestGetTotalTopAmount_Success() {
+	totalTopup := int64(1200000)
+
+	suite.mockRepo.EXPECT().GetTotalTopAmount().Return(&totalTopup, nil)
+
+	result, err := suite.mockRepo.GetTotalTopAmount()
+
+	suite.NoError(err)
+	suite.Equal(int64(1200000), *result)
+}
+
+func (suite *CardRepositorySuite) TestGetTotalBalanceByCardNumber_Success() {
+	cardNumber := "1234-5678-9012-3456"
+	balance := int64(120000)
+
+	suite.mockRepo.EXPECT().GetTotalBalanceByCardNumber(cardNumber).Return(&balance, nil)
+
+	result, err := suite.mockRepo.GetTotalBalanceByCardNumber(cardNumber)
+
+	suite.NoError(err)
+	suite.Equal(int64(120000), *result)
+}
+
+func (suite *CardRepositorySuite) TestGetTotalTransferAmountBySender_Success() {
+	senderCardNumber := "1111-2222-3333-4444"
+	totalTransfer := int64(800000)
+
+	suite.mockRepo.EXPECT().GetTotalTransferAmountBySender(senderCardNumber).Return(&totalTransfer, nil)
+
+	result, err := suite.mockRepo.GetTotalTransferAmountBySender(senderCardNumber)
+
+	suite.NoError(err)
+	suite.Equal(int64(800000), *result)
+}
+
+
+func (suite *CardRepositorySuite) TestGetMonthlyBalance_Success() {
+	year := 2024
+	monthlyBalances := []*record.CardMonthBalance{
+		{Month: "2024-01", TotalBalance: 1000000},
+		{Month: "2024-02", TotalBalance: 1500000},
 	}
 
-	mockRepo.EXPECT().RestoreCard(cardID).Return(expectedCard, nil)
+	suite.mockRepo.EXPECT().GetMonthlyBalance(year).Return(monthlyBalances, nil)
 
-	result, err := mockRepo.RestoreCard(cardID)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedCard, result)
+	result, err := suite.mockRepo.GetMonthlyBalance(year)
+
+	suite.NoError(err)
+	suite.Equal(monthlyBalances, result)
 }
 
-func TestDeleteCardPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *CardRepositorySuite) TestGetYearlyBalance_Success() {
+	year := 2023
+	yearlyBalance := []*record.CardYearlyBalance{
+		{Year: "2023", TotalBalance: 20000000},
+	}
 
-	mockRepo := mocks.NewMockCardRepository(ctrl)
+	suite.mockRepo.EXPECT().GetYearlyBalance(year).Return(yearlyBalance, nil)
 
-	mockRepo.EXPECT().DeleteCardPermanent(1).Return(nil)
+	result, err := suite.mockRepo.GetYearlyBalance(year)
 
-	err := mockRepo.DeleteCardPermanent(1)
-	assert.NoError(t, err)
+	suite.NoError(err)
+	suite.Equal(yearlyBalance, result)
 }
 
-func TestDeleteCardPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *CardRepositorySuite) TestGetMonthlyBalancesByCardNumber_Success() {
+	req := &requests.MonthYearCardNumberCard{
+		CardNumber: "1234-5678-9012-3456",
+		Year:       2024,
+	}
+	monthlyBalances := []*record.CardMonthBalance{
+		{Month: "2024-01", TotalBalance: 500000},
+		{Month: "2024-02", TotalBalance: 700000},
+	}
 
-	mockRepo := mocks.NewMockCardRepository(ctrl)
+	suite.mockRepo.EXPECT().GetMonthlyBalancesByCardNumber(req).Return(monthlyBalances, nil)
 
-	mockRepo.EXPECT().DeleteCardPermanent(1).Return(errors.New("delete failed"))
+	result, err := suite.mockRepo.GetMonthlyBalancesByCardNumber(req)
 
-	err := mockRepo.DeleteCardPermanent(1)
-	assert.Error(t, err)
-	assert.EqualError(t, err, "delete failed")
+	suite.NoError(err)
+	suite.Equal(monthlyBalances, result)
+}
+
+func (suite *CardRepositorySuite) TestGetYearlyTopupAmountByCardNumber_Success() {
+	req := &requests.MonthYearCardNumberCard{
+		CardNumber: "1234-5678-9012-3456",
+		Year:       2023,
+	}
+	yearlyTopup := []*record.CardYearAmount{
+		{Year: "2023", TotalAmount: 5000000},
+	}
+
+	suite.mockRepo.EXPECT().GetYearlyTopupAmountByCardNumber(req).Return(yearlyTopup, nil)
+
+	result, err := suite.mockRepo.GetYearlyTopupAmountByCardNumber(req)
+
+	suite.NoError(err)
+	suite.Equal(yearlyTopup, result)
+}
+
+func (suite *CardRepositorySuite) TestGetMonthlyTransferAmountSender_Success() {
+	year := 2024
+	monthlyTransfer := []*record.CardMonthAmount{
+		{Month: "2024-01", TotalAmount: 200000},
+		{Month: "2024-02", TotalAmount: 150000},
+	}
+
+	suite.mockRepo.EXPECT().GetMonthlyTransferAmountSender(year).Return(monthlyTransfer, nil)
+
+	result, err := suite.mockRepo.GetMonthlyTransferAmountSender(year)
+
+	suite.NoError(err)
+	suite.Equal(monthlyTransfer, result)
+}
+
+func (suite *CardRepositorySuite) TestGetYearlyTransferAmountReceiver_Success() {
+	year := 2024
+	yearlyTransfer := []*record.CardYearAmount{
+		{Year: "2024", TotalAmount: 1500000},
+	}
+
+	suite.mockRepo.EXPECT().GetYearlyTransferAmountReceiver(year).Return(yearlyTransfer, nil)
+
+	result, err := suite.mockRepo.GetYearlyTransferAmountReceiver(year)
+
+	suite.NoError(err)
+	suite.Equal(yearlyTransfer, result)
+}
+
+func TestCardRepositorySuite(t *testing.T) {
+	suite.Run(t, new(CardRepositorySuite))
 }

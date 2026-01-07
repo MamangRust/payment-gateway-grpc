@@ -34,6 +34,14 @@ func (s *roleResponseMapper) ToApiResponseRole(pbResponse *pb.ApiResponseRole) *
 	}
 }
 
+func (s *roleResponseMapper) ToApiResponseRoleDeleteAt(pbResponse *pb.ApiResponseRoleDeleteAt) *response.ApiResponseRoleDeleteAt {
+	return &response.ApiResponseRoleDeleteAt{
+		Status:  pbResponse.Status,
+		Message: pbResponse.Message,
+		Data:    s.mapResponseRoleDeleteAt(pbResponse.Data),
+	}
+}
+
 func (s *roleResponseMapper) ToApiResponsesRole(pbResponse *pb.ApiResponsesRole) *response.ApiResponsesRole {
 	return &response.ApiResponsesRole{
 		Status:  pbResponse.Status,

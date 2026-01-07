@@ -101,6 +101,12 @@ type ApiResponseTransfer struct {
 	Data    *TransferResponse `json:"data"`
 }
 
+type ApiResponseTransferDeleteAt struct {
+	Status  string                    `json:"status"`
+	Message string                    `json:"message"`
+	Data    *TransferResponseDeleteAt `json:"data"`
+}
+
 type ApiResponseTransfers struct {
 	Status  string              `json:"status"`
 	Message string              `json:"message"`

@@ -9,1066 +9,393 @@ import (
 	mock_service "MamangRust/paymentgatewaygrpc/internal/service/mocks"
 	"context"
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func TestFindAllTransfer_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+type TransferHandleGrpcTestSuite struct {
+	suite.Suite
+	Ctrl                *gomock.Controller
+	MockTransferService *mock_service.MockTransferService
+	MockProtoMapper     *mock_protomapper.MockTransferProtoMapper
+	Handler             gapi.TransferHandleGrpc
+}
 
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
+func (suite *TransferHandleGrpcTestSuite) SetupTest() {
+	suite.Ctrl = gomock.NewController(suite.T())
+	suite.MockTransferService = mock_service.NewMockTransferService(suite.Ctrl)
+	suite.MockProtoMapper = mock_protomapper.NewMockTransferProtoMapper(suite.Ctrl)
+	suite.Handler = gapi.NewTransferHandleGrpc(suite.MockTransferService, suite.MockProtoMapper)
+}
 
+func (suite *TransferHandleGrpcTestSuite) TearDownTest() {
+	suite.Ctrl.Finish()
+}
+
+func (suite *TransferHandleGrpcTestSuite) TestFindAllTransfer_Success() {
 	req := &pb.FindAllTransferRequest{
 		Page:     1,
 		PageSize: 10,
 		Search:   "test",
 	}
 
-	transfers := []*response.TransferResponse{
-		{
-			ID:             1,
-			TransferFrom:   "user1",
-			TransferTo:     "user2",
-			TransferAmount: 1000,
-		},
-		{
-			ID:             2,
-			TransferFrom:   "user3",
-			TransferTo:     "user4",
-			TransferAmount: 2000,
-		},
+	mockTransfers := []*response.TransferResponse{
+		{ID: 1, TransferNo: "TR123", TransferFrom: "ACC001", TransferTo: "ACC002", TransferAmount: 100000},
+		{ID: 2, TransferNo: "TR124", TransferFrom: "ACC003", TransferTo: "ACC004", TransferAmount: 200000},
+	}
+	mockProtoTransfers := []*pb.TransferResponse{
+		{Id: 1, TransferNo: "TR123", TransferFrom: "ACC001", TransferTo: "ACC002", TransferAmount: 100000},
+		{Id: 2, TransferNo: "TR124", TransferFrom: "ACC003", TransferTo: "ACC004", TransferAmount: 200000},
 	}
 
-	mockTransferService.EXPECT().FindAll(1, 10, "test").Return(transfers, 2, nil).Times(1)
-	mockTransferMapper.EXPECT().ToResponsesTransfer(transfers).Return([]*pb.TransferResponse{
-		{
-			Id:             1,
-			TransferFrom:   "user1",
-			TransferTo:     "user2",
-			TransferAmount: 1000,
-		},
-		{
-			Id:             2,
-			TransferFrom:   "user3",
-			TransferTo:     "user4",
-			TransferAmount: 2000,
-		},
-	}).Times(1)
+	totalRecords := 2
+	suite.MockTransferService.EXPECT().
+		FindAll(gomock.Eq(&requests.FindAllTranfers{Page: 1, PageSize: 10, Search: "test"})).
+		Return(mockTransfers, &totalRecords, nil)
 
-	res, err := mockHandler.FindAllTransfer(context.Background(), req)
+	suite.MockProtoMapper.EXPECT().
+		ToProtoResponsePaginationTransfer(gomock.Any(), "success", "Successfully fetch transfer records", mockTransfers).
+		Return(&pb.ApiResponsePaginationTransfer{
+			Status:  "success",
+			Message: "Successfully fetch transfer records",
+			Data:    mockProtoTransfers,
+			Pagination: &pb.PaginationMeta{
+				CurrentPage:  1,
+				PageSize:     10,
+				TotalPages:   1,
+				TotalRecords: 2,
+			},
+		})
 
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetch transfer records", res.GetMessage())
-	assert.Len(t, res.GetData(), 2)
-	assert.Equal(t, int32(1), res.GetPagination().GetTotalPages())
-	assert.Equal(t, int32(2), res.GetPagination().GetTotalRecords())
+	res, err := suite.Handler.FindAllTransfer(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("Successfully fetch transfer records", res.GetMessage())
+	suite.Equal(int32(2), res.GetPagination().GetTotalRecords())
+	suite.Equal(2, len(res.GetData()))
 }
 
-func TestFindAllTransfer_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransferHandleGrpcTestSuite) TestFindAllTransfer_Failure() {
+	req := &pb.FindAllTransferRequest{Page: 1, PageSize: 10, Search: "test"}
+	serviceError := &response.ErrorResponse{Status: "error", Message: "Failed to fetch transfers"}
 
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
+	totalRecords := 0
+	suite.MockTransferService.EXPECT().FindAll(gomock.Any()).Return(nil, &totalRecords, serviceError)
 
-	req := &pb.FindAllTransferRequest{
-		Page:     1,
-		PageSize: 10,
-		Search:   "test",
-	}
+	res, _ := suite.Handler.FindAllTransfer(context.Background(), req)
 
-	mockTransferService.EXPECT().FindAll(1, 10, "test").Return(nil, 0, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to fetch transfer records",
-	}).Times(1)
-
-	res, err := mockHandler.FindAllTransfer(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, res)
-	assert.Contains(t, err.Error(), "Failed to fetch transfer records")
+	suite.Nil(res)
 }
 
-func TestFindAllTransfer_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	req := &pb.FindAllTransferRequest{
-		Page:     1,
-		PageSize: 10,
-		Search:   "test",
-	}
-
-	mockTransferService.EXPECT().FindAll(1, 10, "test").Return([]*response.TransferResponse{}, 0, nil).Times(1)
-	mockTransferMapper.EXPECT().ToResponsesTransfer([]*response.TransferResponse{}).Return([]*pb.TransferResponse{}).Times(1)
-
-	res, err := mockHandler.FindAllTransfer(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetch transfer records", res.GetMessage())
-	assert.Len(t, res.GetData(), 0)
-	assert.Equal(t, int32(0), res.GetPagination().GetTotalPages())
-	assert.Equal(t, int32(0), res.GetPagination().GetTotalRecords())
-}
-
-func TestFindTransferById_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	req := &pb.FindByIdTransferRequest{
-		TransferId: 1,
-	}
-
-	transfer := &response.TransferResponse{
-		ID:             1,
-		TransferFrom:   "user1",
-		TransferTo:     "user2",
-		TransferAmount: 1000,
-	}
-
-	mockTransferService.EXPECT().FindById(1).Return(transfer, nil).Times(1)
-	mockTransferMapper.EXPECT().ToResponseTransfer(transfer).Return(&pb.TransferResponse{
-		Id:             1,
-		TransferFrom:   "user1",
-		TransferTo:     "user2",
-		TransferAmount: 1000,
-	}).Times(1)
-
-	res, err := mockHandler.FindTransferById(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetch transfer record", res.GetMessage())
-	assert.Equal(t, int32(1), res.GetData().GetId())
-	assert.Equal(t, int32(1000), res.GetData().GetTransferAmount())
-}
-
-func TestFindTransferById_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	req := &pb.FindByIdTransferRequest{
-		TransferId: 0,
-	}
-
-	res, err := mockHandler.FindTransferById(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, err.Error(), "Invalid transfer id")
-}
-
-func TestFindTransferById_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	req := &pb.FindByIdTransferRequest{
-		TransferId: 1,
-	}
-
-	mockTransferService.EXPECT().FindById(1).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to fetch transfer record",
-	}).Times(1)
-
-	res, err := mockHandler.FindTransferById(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.Internal, statusErr.Code())
-	assert.Contains(t, err.Error(), "Failed to fetch transfer record")
-}
-
-func TestFindByTransferByTransferFrom_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	req := &pb.FindTransferByTransferFromRequest{
-		TransferFrom: "sourceAccount",
-	}
-
-	transfer := []*response.TransferResponse{
-		{
-			ID:             1,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount",
-			TransferAmount: 1000,
-		},
-		{
-			ID:             2,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount2",
-			TransferAmount: 2000,
-		},
-	}
-
-	mockTransferService.EXPECT().FindTransferByTransferFrom("sourceAccount").Return(transfer, nil).Times(1)
-	mockTransferMapper.EXPECT().ToResponsesTransfer(transfer).Return([]*pb.TransferResponse{
-		{
-			Id:             1,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount",
-			TransferAmount: 1000,
-		},
-		{
-			Id:             2,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount2",
-			TransferAmount: 2000,
-		},
-	}).Times(1)
-
-	res, err := mockHandler.FindByTransferByTransferFrom(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetch transfer records", res.GetMessage())
-	assert.Len(t, res.GetData(), 2)
-}
-
-func TestFindByTransferByTransferFrom_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	req := &pb.FindTransferByTransferFromRequest{
-		TransferFrom: "sourceAccount",
-	}
-
-	mockTransferService.EXPECT().FindTransferByTransferFrom("sourceAccount").Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to fetch transfer records",
-	}).Times(1)
-
-	res, err := mockHandler.FindByTransferByTransferFrom(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, res)
-	assert.Contains(t, err.Error(), "Failed to fetch transfer records")
-}
-
-func TestFindByTransferByTransferTo_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	req := &pb.FindTransferByTransferToRequest{
-		TransferTo: "destinationAccount",
-	}
-
-	transfer := []*response.TransferResponse{
-		{
-			ID:             1,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount",
-			TransferAmount: 1000,
-		},
-		{
-			ID:             2,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount2",
-			TransferAmount: 2000,
-		},
-	}
-
-	mockTransferService.EXPECT().FindTransferByTransferTo("destinationAccount").Return(transfer, nil).Times(1)
-	mockTransferMapper.EXPECT().ToResponsesTransfer(transfer).Return([]*pb.TransferResponse{
-		{
-			Id:             1,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount",
-			TransferAmount: 1000,
-		},
-		{
-			Id:             2,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount2",
-			TransferAmount: 2000,
-		},
-	}).Times(1)
-
-	res, err := mockHandler.FindByTransferByTransferTo(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetch transfer records", res.GetMessage())
-	assert.Len(t, res.GetData(), 2)
-}
-
-func TestFindByTransferByTransferTo_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	req := &pb.FindTransferByTransferToRequest{
-		TransferTo: "destinationAccount",
-	}
-
-	mockTransferService.EXPECT().FindTransferByTransferTo("destinationAccount").Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to fetch transfer records",
-	}).Times(1)
-
-	res, err := mockHandler.FindByTransferByTransferTo(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, res)
-	assert.Contains(t, err.Error(), "Failed to fetch transfer records")
-}
-
-func TestFindByActiveTransfer_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	search := ""
-	pageSize := 1
-	page := 1
-	expected := 1
-
-	req := &pb.FindAllTransferRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	transfer := []*response.TransferResponseDeleteAt{
-		{
-			ID:             1,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount",
-			TransferAmount: 1000,
-		},
-		{
-			ID:             2,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount2",
-			TransferAmount: 2000,
-		},
-	}
-
-	mockTransferService.EXPECT().FindByActive(pageSize, page, search).Return(transfer, expected, nil).Times(1)
-	mockTransferMapper.EXPECT().ToResponsesTransferDeleteAt(transfer).Return([]*pb.TransferResponseDeleteAt{
-		{
-			Id:             1,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount",
-			TransferAmount: 1000,
-		},
-		{
-			Id:             2,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount2",
-			TransferAmount: 2000,
-		},
-	}).Times(1)
-
-	res, err := mockHandler.FindByActiveTransfer(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetch transfer records", res.GetMessage())
-	assert.Len(t, res.GetData(), 2)
-}
-
-func TestFindByActiveTransfer_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	search := ""
-	pageSize := 1
-	page := 1
-	expected := 1
-
-	req := &pb.FindAllTransferRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockTransferService.EXPECT().FindByActive(pageSize, page, search).Return([]*response.TransferResponseDeleteAt{}, expected, nil).Times(1)
-	mockTransferMapper.EXPECT().ToResponsesTransferDeleteAt([]*response.TransferResponseDeleteAt{}).Return([]*pb.TransferResponseDeleteAt{}).Times(1)
-
-	res, err := mockHandler.FindByActiveTransfer(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetch transfer records", res.GetMessage())
-	assert.Len(t, res.GetData(), 0)
-}
-
-func TestFindByActiveTransfer_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	search := ""
-	pageSize := 1
-	page := 1
-	expected := 1
-
-	req := &pb.FindAllTransferRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockTransferService.EXPECT().FindByActive(pageSize, page, search).Return(nil, expected, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to fetch transfer records",
-	}).Times(1)
-
-	res, err := mockHandler.FindByActiveTransfer(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, res)
-	assert.Contains(t, err.Error(), "Failed to fetch transfer records")
-}
-
-func TestFindByTrashedTransfer_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	transfer := []*response.TransferResponseDeleteAt{
-		{
-			ID:             1,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount",
-			TransferAmount: 1000,
-		},
-		{
-			ID:             2,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount2",
-			TransferAmount: 2000,
-		},
-	}
-
-	search := ""
-	pageSize := 1
-	page := 1
-	expected := 1
-
-	req := &pb.FindAllTransferRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockTransferService.EXPECT().FindByTrashed(pageSize, page, search).Return(transfer, expected, nil).Times(1)
-	mockTransferMapper.EXPECT().ToResponsesTransferDeleteAt(transfer).Return([]*pb.TransferResponseDeleteAt{
-		{
-			Id:             1,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount",
-			TransferAmount: 1000,
-		},
-		{
-			Id:             2,
-			TransferFrom:   "sourceAccount",
-			TransferTo:     "destinationAccount2",
-			TransferAmount: 2000,
-		},
-	}).Times(1)
-
-	res, err := mockHandler.FindByTrashedTransfer(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetch transfer records", res.GetMessage())
-	assert.Len(t, res.GetData(), 2)
-}
-
-func TestFindByTrashedTransfer_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	search := ""
-	pageSize := 1
-	page := 1
-	expected := 1
-
-	req := &pb.FindAllTransferRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockTransferService.EXPECT().FindByTrashed(pageSize, page, search).Return(nil, expected, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to fetch transfer records",
-	}).Times(1)
-
-	res, err := mockHandler.FindByTrashedTransfer(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, res)
-	assert.Contains(t, err.Error(), "Failed to fetch transfer records")
-}
-
-func TestFindByTrashedTransfer_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	search := ""
-	pageSize := 1
-	page := 1
-	expected := 1
-
-	req := &pb.FindAllTransferRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockTransferService.EXPECT().FindByTrashed(pageSize, page, search).Return([]*response.TransferResponseDeleteAt{}, expected, nil).Times(1)
-	mockTransferMapper.EXPECT().ToResponsesTransferDeleteAt([]*response.TransferResponseDeleteAt{}).Return([]*pb.TransferResponseDeleteAt{}).Times(1)
-
-	res, err := mockHandler.FindByTrashedTransfer(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetch transfer records", res.GetMessage())
-	assert.Len(t, res.GetData(), 0)
-}
-
-func TestCreateTransfer_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	req := &pb.CreateTransferRequest{
-		TransferFrom:   "sourceAccount",
-		TransferTo:     "destinationAccount",
-		TransferAmount: 1000,
-	}
-
-	createReq := &requests.CreateTransferRequest{
-		TransferFrom:   req.GetTransferFrom(),
-		TransferTo:     req.GetTransferTo(),
-		TransferAmount: int(req.GetTransferAmount()),
-	}
-
-	expectedResponse := &response.TransferResponse{
-		ID:             1,
-		TransferFrom:   "sourceAccount",
-		TransferTo:     "destinationAccount",
-		TransferAmount: 1000,
-	}
-
-	mockTransferService.EXPECT().CreateTransaction(createReq).Return(expectedResponse, nil).Times(1)
-	mockTransferMapper.EXPECT().ToResponseTransfer(expectedResponse).Return(&pb.TransferResponse{
-		Id:             1,
-		TransferFrom:   "sourceAccount",
-		TransferTo:     "destinationAccount",
-		TransferAmount: 1000,
-	}).Times(1)
-
-	res, err := mockHandler.CreateTransfer(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully created transfer", res.GetMessage())
-	assert.Equal(t, int32(1), res.GetData().GetId())
-}
-
-func TestCreateTransfer_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	req := &pb.CreateTransferRequest{
-		TransferFrom:   "sourceAccount",
-		TransferTo:     "destinationAccount",
-		TransferAmount: 1000,
-	}
-
-	createReq := &requests.CreateTransferRequest{
-		TransferFrom:   req.GetTransferFrom(),
-		TransferTo:     req.GetTransferTo(),
-		TransferAmount: int(req.GetTransferAmount()),
-	}
-
-	mockTransferService.EXPECT().CreateTransaction(createReq).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to create transfer",
-	}).Times(1)
-
-	res, err := mockHandler.CreateTransfer(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, res)
-	assert.Contains(t, err.Error(), "Failed to create transfer")
-}
-
-func TestCreateTransfer_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	req := &pb.CreateTransferRequest{
-		TransferFrom:   "sourceAccount",
-		TransferTo:     "destinationAccount",
-		TransferAmount: -1000,
-	}
-
-	request := &requests.CreateTransferRequest{
-		TransferFrom:   req.GetTransferFrom(),
-		TransferTo:     req.GetTransferTo(),
-		TransferAmount: int(req.GetTransferAmount()),
-	}
-
-	mockTransferService.EXPECT().CreateTransaction(request).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "validation error",
-	}).Times(1)
-
-	res, err := mockHandler.CreateTransfer(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, res)
-	assert.Contains(t, err.Error(), "validation error")
-}
-
-func TestUpdateTransfer_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockMapper)
-
-	req := &pb.UpdateTransferRequest{
-		TransferId:     1,
-		TransferFrom:   "AccountA",
-		TransferTo:     "AccountB",
-		TransferAmount: 1000,
-	}
-
-	updateReq := &requests.UpdateTransferRequest{
-		TransferID:     1,
-		TransferFrom:   "AccountA",
-		TransferTo:     "AccountB",
-		TransferAmount: 1000,
-	}
-
-	transfer := &response.TransferResponse{
-		ID:             1,
-		TransferFrom:   "AccountA",
-		TransferTo:     "AccountB",
-		TransferAmount: 1000,
-	}
-
-	mockTransferService.EXPECT().UpdateTransaction(updateReq).Return(transfer, nil).Times(1)
-	mockMapper.EXPECT().ToResponseTransfer(transfer).Return(&pb.TransferResponse{
-		Id:             1,
-		TransferFrom:   "AccountA",
-		TransferTo:     "AccountB",
-		TransferAmount: 1000,
-	}).Times(1)
-
-	res, err := mockHandler.UpdateTransfer(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully updated transfer", res.GetMessage())
-	assert.NotNil(t, res.GetData())
-	assert.Equal(t, int32(1), res.GetData().GetId())
-}
-
-func TestUpdateTransfer_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockMapper)
-
-	req := &pb.UpdateTransferRequest{
-		TransferId:     -1,
-		TransferFrom:   "AccountA",
-		TransferTo:     "AccountB",
-		TransferAmount: 1000,
-	}
-
-	res, err := mockHandler.UpdateTransfer(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, res)
-
-	statusErr, ok := status.FromError(err)
-
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, err.Error(), "Transfer ID is required")
-}
-
-func TestUpdateTransfer_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, nil)
-
-	req := &pb.UpdateTransferRequest{
-		TransferId:     2,
-		TransferFrom:   "AccountA",
-		TransferTo:     "AccountB",
-		TransferAmount: 2000,
-	}
-
-	updateReq := &requests.UpdateTransferRequest{
-		TransferID:     2,
-		TransferFrom:   "AccountA",
-		TransferTo:     "AccountB",
-		TransferAmount: 2000,
-	}
-
-	mockTransferService.EXPECT().UpdateTransaction(updateReq).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to update transfer",
-	}).Times(1)
-
-	res, err := mockHandler.UpdateTransfer(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, res)
-	assert.Contains(t, err.Error(), "Failed to update transfer")
-}
-
-func TestUpdateTransfer_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockTransferMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockTransferMapper)
-
-	req := &pb.UpdateTransferRequest{
-		TransferId:     1,
-		TransferFrom:   "sourceAccount",
-		TransferTo:     "destinationAccount",
-		TransferAmount: -1000,
-	}
-
-	request := &requests.UpdateTransferRequest{
-		TransferID:     1,
-		TransferFrom:   req.GetTransferFrom(),
-		TransferTo:     req.GetTransferTo(),
-		TransferAmount: int(req.GetTransferAmount()),
-	}
-
-	mockTransferService.EXPECT().UpdateTransaction(request).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "validation error",
-	}).Times(1)
-
-	res, err := mockHandler.UpdateTransfer(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, res)
-	assert.Contains(t, err.Error(), "validation error")
-}
-
-func TestTrashedTransfer_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockMapper)
-
+func (suite *TransferHandleGrpcTestSuite) TestFindByIdTransfer_Success() {
 	req := &pb.FindByIdTransferRequest{TransferId: 1}
-	expectedResponse := &response.TransferResponse{
-		ID:             1,
-		TransferFrom:   "AccountA",
-		TransferTo:     "AccountB",
-		TransferAmount: 1000,
-	}
+	mockTransfer := &response.TransferResponse{ID: 1, TransferNo: "TR123", TransferAmount: 100000}
+	mockProtoTransfer := &pb.TransferResponse{Id: 1, TransferNo: "TR123", TransferAmount: 100000}
 
-	mockTransferService.EXPECT().TrashedTransfer(1).Return(expectedResponse, nil).Times(1)
-	mockMapper.EXPECT().ToResponseTransfer(expectedResponse).Return(&pb.TransferResponse{
-		Id:             1,
-		TransferFrom:   "AccountA",
-		TransferTo:     "AccountB",
-		TransferAmount: 1000,
-	}).Times(1)
-
-	res, err := mockHandler.TrashedTransfer(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully trashed transfer", res.GetMessage())
-	assert.Equal(t, int32(1), res.GetData().GetId())
-}
-
-func TestTrashedTransfer_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockMapper)
-
-	req := &pb.FindByIdTransferRequest{TransferId: 0}
-
-	res, err := mockHandler.TrashedTransfer(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, res)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, err.Error(), "Transfer ID is required")
-}
-
-func TestTrashedTransfer_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, nil)
-
-	req := &pb.FindByIdTransferRequest{TransferId: 1}
-
-	mockTransferService.EXPECT().TrashedTransfer(1).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to trash transfer",
-	}).Times(1)
-
-	res, err := mockHandler.TrashedTransfer(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, res)
-	assert.Contains(t, err.Error(), "Failed to trash transfer")
-}
-
-func TestRestoreTransfer_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockMapper := mock_protomapper.NewMockTransferProtoMapper(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, mockMapper)
-
-	req := &pb.FindByIdTransferRequest{TransferId: 1}
-	expectedResponse := &response.TransferResponse{
-		ID:             1,
-		TransferFrom:   "AccountA",
-		TransferTo:     "AccountB",
-		TransferAmount: 1000,
-	}
-
-	mockTransferService.EXPECT().RestoreTransfer(1).Return(expectedResponse, nil).Times(1)
-	mockMapper.EXPECT().ToResponseTransfer(expectedResponse).Return(&pb.TransferResponse{
-		Id:             1,
-		TransferFrom:   "AccountA",
-		TransferTo:     "AccountB",
-		TransferAmount: 1000,
-	}).Times(1)
-
-	res, err := mockHandler.RestoreTransfer(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully restored transfer", res.GetMessage())
-	assert.Equal(t, int32(1), res.GetData().GetId())
-}
-
-func TestRestoreTransfer_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, nil)
-
-	req := &pb.FindByIdTransferRequest{TransferId: 0}
-
-	res, err := mockHandler.RestoreTransfer(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, res)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, err.Error(), "Transfer ID is required")
-}
-
-func TestRestoreTransfer_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, nil)
-
-	req := &pb.FindByIdTransferRequest{TransferId: 1}
-
-	mockTransferService.EXPECT().RestoreTransfer(1).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to restore transfer",
-	}).Times(1)
-
-	res, err := mockHandler.RestoreTransfer(context.Background(), req)
-
-	assert.Error(t, err)
-	assert.Nil(t, res)
-	assert.Contains(t, err.Error(), "Failed to restore transfer")
-}
-
-func TestDeleteTransferPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, nil)
-
-	req := &pb.FindByIdTransferRequest{TransferId: 1}
-
-	mockResponse := &pb.ApiResponseTransferDelete{
+	suite.MockTransferService.EXPECT().FindById(1).Return(mockTransfer, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseTransfer("success", "Successfully fetch transfer record", mockTransfer).Return(&pb.ApiResponseTransfer{
 		Status:  "success",
-		Message: "Successfully deleted transfer",
-	}
+		Message: "Successfully fetch transfer record",
+		Data:    mockProtoTransfer,
+	})
 
-	mockTransferService.EXPECT().DeleteTransferPermanent(1).Return(mockResponse, nil).Times(1)
+	res, err := suite.Handler.FindByIdTransfer(context.Background(), req)
 
-	res, err := mockHandler.DeleteTransferPermanent(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully deleted transfer", res.GetMessage())
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("TR123", res.GetData().GetTransferNo())
 }
 
-func TestDeleteTransferPermanent_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, nil)
-
+func (suite *TransferHandleGrpcTestSuite) TestFindByIdTransfer_InvalidId() {
 	req := &pb.FindByIdTransferRequest{TransferId: 0}
 
-	res, err := mockHandler.DeleteTransferPermanent(context.Background(), req)
+	res, err := suite.Handler.FindByIdTransfer(context.Background(), req)
 
-	assert.Error(t, err)
-	assert.Nil(t, res)
-
+	suite.Nil(res)
+	suite.Error(err)
 	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, err.Error(), "Transfer ID is required")
+	suite.True(ok)
+	suite.Equal(codes.InvalidArgument, statusErr.Code())
+	suite.Contains(statusErr.Message(), "Invalid Transfer ID")
 }
 
-func TestDeleteTransferPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransferHandleGrpcTestSuite) TestFindByTransferByTransferFrom_Success() {
+	req := &pb.FindTransferByTransferFromRequest{TransferFrom: "ACC001"}
+	mockTransfers := []*response.TransferResponse{
+		{ID: 1, TransferNo: "TR123", TransferFrom: "ACC001", TransferTo: "ACC002", TransferAmount: 100000},
+	}
 
-	mockTransferService := mock_service.NewMockTransferService(ctrl)
-	mockHandler := gapi.NewTransferHandleGrpc(mockTransferService, nil)
+	suite.MockTransferService.EXPECT().FindTransferByTransferFrom("ACC001").Return(mockTransfers, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseTransfers("success", "Successfully fetch transfer records", mockTransfers).Return(&pb.ApiResponseTransfers{
+		Status:  "success",
+		Message: "Successfully fetch transfer records",
+		Data: []*pb.TransferResponse{
+			{Id: 1, TransferNo: "TR123", TransferFrom: "ACC001", TransferTo: "ACC002", TransferAmount: 100000},
+		},
+	})
 
+	res, err := suite.Handler.FindByTransferByTransferFrom(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Len(res.GetData(), 1)
+}
+
+func (suite *TransferHandleGrpcTestSuite) TestFindByTransferByTransferTo_Success() {
+	req := &pb.FindTransferByTransferToRequest{TransferTo: "ACC002"}
+	mockTransfers := []*response.TransferResponse{
+		{ID: 1, TransferNo: "TR123", TransferFrom: "ACC001", TransferTo: "ACC002", TransferAmount: 100000},
+	}
+
+	suite.MockTransferService.EXPECT().FindTransferByTransferTo("ACC002").Return(mockTransfers, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseTransfers("success", "Successfully fetch transfer records", mockTransfers).Return(&pb.ApiResponseTransfers{
+		Status:  "success",
+		Message: "Successfully fetch transfer records",
+		Data: []*pb.TransferResponse{
+			{Id: 1, TransferNo: "TR123", TransferFrom: "ACC001", TransferTo: "ACC002", TransferAmount: 100000},
+		},
+	})
+
+	res, err := suite.Handler.FindByTransferByTransferTo(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Len(res.GetData(), 1)
+}
+
+func (suite *TransferHandleGrpcTestSuite) TestFindByActiveTransfer_Success() {
+	req := &pb.FindAllTransferRequest{Page: 1, PageSize: 10, Search: ""}
+	activeTransfers := []*response.TransferResponseDeleteAt{
+		{ID: 1, TransferNo: "TR123", TransferFrom: "ACC001", TransferTo: "ACC002", TransferAmount: 100000},
+	}
+	totalRecords := 1
+	suite.MockTransferService.EXPECT().FindByActive(gomock.Any()).Return(activeTransfers, &totalRecords, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponsePaginationTransferDeleteAt(gomock.Any(), "success", "Successfully fetch transfer records", activeTransfers).Return(&pb.ApiResponsePaginationTransferDeleteAt{
+		Status:  "success",
+		Message: "Successfully fetch transfer records",
+		Data: []*pb.TransferResponseDeleteAt{
+			{Id: 1, TransferNo: "TR123", TransferFrom: "ACC001", TransferTo: "ACC002", TransferAmount: 100000},
+		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 10, TotalPages: 1, TotalRecords: 1},
+	})
+
+	res, err := suite.Handler.FindByActiveTransfer(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Len(res.GetData(), 1)
+}
+
+func (suite *TransferHandleGrpcTestSuite) TestFindByTrashedTransfer_Success() {
+	req := &pb.FindAllTransferRequest{Page: 1, PageSize: 10, Search: ""}
+	trashedTransfers := []*response.TransferResponseDeleteAt{
+		{ID: 1, TransferNo: "TR123", TransferFrom: "ACC001", TransferTo: "ACC002", TransferAmount: 100000},
+	}
+	totalRecords := 1
+	suite.MockTransferService.EXPECT().FindByTrashed(gomock.Any()).Return(trashedTransfers, &totalRecords, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponsePaginationTransferDeleteAt(gomock.Any(), "success", "Successfully fetch transfer records", trashedTransfers).Return(&pb.ApiResponsePaginationTransferDeleteAt{
+		Status:  "success",
+		Message: "Successfully fetch transfer records",
+		Data: []*pb.TransferResponseDeleteAt{
+			{Id: 1, TransferNo: "TR123", TransferFrom: "ACC001", TransferTo: "ACC002", TransferAmount: 100000},
+		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 10, TotalPages: 1, TotalRecords: 1},
+	})
+
+	res, err := suite.Handler.FindByTrashedTransfer(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Len(res.GetData(), 1)
+}
+
+func (suite *TransferHandleGrpcTestSuite) TestCreateTransfer_Success() {
+	transferTime := time.Now()
+	req := &pb.CreateTransferRequest{
+		TransferFrom:   "ACC001",
+		TransferTo:     "ACC002",
+		TransferAmount: 150000,
+	}
+
+	mockTransfer := &response.TransferResponse{
+		ID:             1,
+		TransferNo:     "TR125",
+		TransferFrom:   "ACC001",
+		TransferTo:     "ACC002",
+		TransferAmount: 150000,
+		TransferTime:   transferTime.Format(time.RFC3339),
+		CreatedAt:      time.Now().Format(time.RFC3339),
+	}
+
+	mockProtoTransfer := &pb.TransferResponse{
+		Id:             1,
+		TransferNo:     "TR125",
+		TransferFrom:   "ACC001",
+		TransferTo:     "ACC002",
+		TransferAmount: 150000,
+		TransferTime:   transferTime.Format(time.RFC3339),
+	}
+
+	suite.MockTransferService.EXPECT().CreateTransaction(gomock.Any()).Return(mockTransfer, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseTransfer("success", "Successfully created transfer", mockTransfer).Return(&pb.ApiResponseTransfer{
+		Status:  "success",
+		Message: "Successfully created transfer",
+		Data:    mockProtoTransfer,
+	})
+
+	res, err := suite.Handler.CreateTransfer(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal(int32(150000), res.GetData().GetTransferAmount())
+}
+
+func (suite *TransferHandleGrpcTestSuite) TestCreateTransfer_ValidationError() {
+	req := &pb.CreateTransferRequest{
+		TransferFrom:   "",
+		TransferTo:     "",
+		TransferAmount: 40000,
+	}
+
+	res, err := suite.Handler.CreateTransfer(context.Background(), req)
+
+	suite.Nil(res)
+	suite.Error(err)
+	statusErr, ok := status.FromError(err)
+	suite.True(ok)
+	suite.Equal(codes.InvalidArgument, statusErr.Code())
+	suite.Contains(statusErr.Message(), "Invalid input for create transfer")
+}
+
+func (suite *TransferHandleGrpcTestSuite) TestUpdateTransfer_Success() {
+	transferId := 1
+	req := &pb.UpdateTransferRequest{
+		TransferId:     int32(transferId),
+		TransferFrom:   "ACC001",
+		TransferTo:     "ACC002",
+		TransferAmount: 200000,
+	}
+
+	mockTransfer := &response.TransferResponse{
+		ID:             1,
+		TransferNo:     "TR125",
+		TransferAmount: 200000,
+	}
+
+	mockProtoTransfer := &pb.TransferResponse{Id: 1, TransferAmount: 200000}
+
+	suite.MockTransferService.EXPECT().UpdateTransaction(gomock.Any()).Return(mockTransfer, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseTransfer("success", "Successfully updated transfer", mockTransfer).Return(&pb.ApiResponseTransfer{
+		Status:  "success",
+		Message: "Successfully updated transfer",
+		Data:    mockProtoTransfer,
+	})
+
+	res, err := suite.Handler.UpdateTransfer(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal(int32(200000), res.GetData().GetTransferAmount())
+}
+
+func (suite *TransferHandleGrpcTestSuite) TestTrashedTransfer_Success() {
+	req := &pb.FindByIdTransferRequest{TransferId: 1}
+	mockTransfer := &response.TransferResponseDeleteAt{ID: 1, TransferNo: "TR125"}
+
+	suite.MockTransferService.EXPECT().TrashedTransfer(1).Return(mockTransfer, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseTransferDeleteAt("success", "Successfully trashed transfer", mockTransfer).Return(&pb.ApiResponseTransferDeleteAt{
+		Status:  "success",
+		Message: "Successfully trashed transfer",
+		Data:    &pb.TransferResponseDeleteAt{Id: 1, TransferNo: "TR125"},
+	})
+
+	res, err := suite.Handler.TrashedTransfer(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+}
+
+func (suite *TransferHandleGrpcTestSuite) TestRestoreTransfer_Success() {
+	req := &pb.FindByIdTransferRequest{TransferId: 1}
+	mockTransfer := &response.TransferResponseDeleteAt{ID: 1, TransferNo: "TR125"}
+
+	suite.MockTransferService.EXPECT().RestoreTransfer(1).Return(mockTransfer, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseTransferDeleteAt("success", "Successfully restored transfer", mockTransfer).Return(&pb.ApiResponseTransferDeleteAt{
+		Status:  "success",
+		Message: "Successfully restored transfer",
+		Data:    &pb.TransferResponseDeleteAt{Id: 1, TransferNo: "TR125"},
+	})
+
+	res, err := suite.Handler.RestoreTransfer(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+}
+
+func (suite *TransferHandleGrpcTestSuite) TestDeleteTransferPermanent_Success() {
 	req := &pb.FindByIdTransferRequest{TransferId: 1}
 
-	mockTransferService.EXPECT().DeleteTransferPermanent(1).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to delete transfer",
-	}).Times(1)
+	suite.MockTransferService.EXPECT().DeleteTransferPermanent(1).Return(true, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseTransferDelete("success", "Successfully deleted transfer permanently").Return(&pb.ApiResponseTransferDelete{
+		Status:  "success",
+		Message: "Successfully deleted transfer permanently",
+	})
 
-	res, err := mockHandler.DeleteTransferPermanent(context.Background(), req)
+	res, err := suite.Handler.DeleteTransferPermanent(context.Background(), req)
 
-	assert.Error(t, err)
-	assert.Nil(t, res)
-	assert.Contains(t, err.Error(), "Failed to delete transfer")
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+}
+
+func (suite *TransferHandleGrpcTestSuite) TestRestoreAllTransfer_Success() {
+	req := &emptypb.Empty{}
+
+	suite.MockTransferService.EXPECT().RestoreAllTransfer().Return(true, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseTransferAll("success", "Successfully restored all transfers").Return(&pb.ApiResponseTransferAll{
+		Status:  "success",
+		Message: "Successfully restored all transfers",
+	})
+
+	res, err := suite.Handler.RestoreAllTransfer(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+}
+
+func (suite *TransferHandleGrpcTestSuite) TestDeleteAllTransferPermanent_Success() {
+	req := &emptypb.Empty{}
+
+	suite.MockTransferService.EXPECT().DeleteAllTransferPermanent().Return(true, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseTransferAll("success", "Successfully deleted all transfers permanently").Return(&pb.ApiResponseTransferAll{
+		Status:  "success",
+		Message: "Successfully deleted all transfers permanently",
+	})
+
+	res, err := suite.Handler.DeleteAllTransferPermanent(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+}
+
+func TestTransferHandleGrpcSuite(t *testing.T) {
+	suite.Run(t, new(TransferHandleGrpcTestSuite))
 }

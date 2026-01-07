@@ -15,14 +15,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type topupHandleApi struct {
+type TopupHandleApi struct {
 	client  pb.TopupServiceClient
 	logger  logger.LoggerInterface
 	mapping apimapper.TopupResponseMapper
 }
 
-func NewHandlerTopup(client pb.TopupServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.TopupResponseMapper) *topupHandleApi {
-	topupHandler := &topupHandleApi{
+func NewHandlerTopup(client pb.TopupServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.TopupResponseMapper) *TopupHandleApi {
+	topupHandler := &TopupHandleApi{
 		client:  client,
 		logger:  logger,
 		mapping: mapping,
@@ -80,7 +80,7 @@ func NewHandlerTopup(client pb.TopupServiceClient, router *echo.Echo, logger log
 // @Success 200 {object} response.ApiResponsePaginationTopup "List of topup data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve topup data"
 // @Router /api/topups [get]
-func (h topupHandleApi) FindAll(c echo.Context) error {
+func (h TopupHandleApi) FindAll(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -127,7 +127,7 @@ func (h topupHandleApi) FindAll(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsePaginationTopup "List of topups"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve topups data"
 // @Router /api/topups/card-number/{card_number} [get]
-func (h *topupHandleApi) FindAllByCardNumber(c echo.Context) error {
+func (h *TopupHandleApi) FindAllByCardNumber(c echo.Context) error {
 	cardNumber := c.Param("card_number")
 	if cardNumber == "" {
 		return topup_errors.ErrApiInvalidCardNumber(c)
@@ -157,7 +157,7 @@ func (h *topupHandleApi) FindAllByCardNumber(c echo.Context) error {
 	res, err := h.client.FindAllTopupByCardNumber(ctx, req)
 
 	if err != nil {
-		h.logger.Debug("Failed to retrieve transaction data", zap.Error(err))
+		h.logger.Debug("Failed to retrieve topup data", zap.Error(err))
 
 		return topup_errors.ErrApiFailedFindAllByCardNumberTopup(c)
 	}
@@ -178,7 +178,7 @@ func (h *topupHandleApi) FindAllByCardNumber(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve topup data"
 // @Router /api/topups/{id} [get]
-func (h topupHandleApi) FindById(c echo.Context) error {
+func (h TopupHandleApi) FindById(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -217,7 +217,7 @@ func (h topupHandleApi) FindById(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up status for successful transactions"
 // @Router /api/topups/monthly-success [get]
-func (h *topupHandleApi) FindMonthlyTopupStatusSuccess(c echo.Context) error {
+func (h *TopupHandleApi) FindMonthlyTopupStatusSuccess(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 
@@ -261,7 +261,7 @@ func (h *topupHandleApi) FindMonthlyTopupStatusSuccess(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up status for successful transactions"
 // @Router /api/topups/yearly-success [get]
-func (h *topupHandleApi) FindYearlyTopupStatusSuccess(c echo.Context) error {
+func (h *TopupHandleApi) FindYearlyTopupStatusSuccess(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -299,7 +299,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusSuccess(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up status for failed transactions"
 // @Router /api/topups/monthly-failed [get]
-func (h *topupHandleApi) FindMonthlyTopupStatusFailed(c echo.Context) error {
+func (h *TopupHandleApi) FindMonthlyTopupStatusFailed(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 
@@ -343,7 +343,7 @@ func (h *topupHandleApi) FindMonthlyTopupStatusFailed(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up status for failed transactions"
 // @Router /api/topups/yearly-failed [get]
-func (h *topupHandleApi) FindYearlyTopupStatusFailed(c echo.Context) error {
+func (h *TopupHandleApi) FindYearlyTopupStatusFailed(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -382,7 +382,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusFailed(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up status for successful transactions"
 // @Router /api/topups/monthly-success [get]
-func (h *topupHandleApi) FindMonthlyTopupStatusSuccessByCardNumber(c echo.Context) error {
+func (h *TopupHandleApi) FindMonthlyTopupStatusSuccessByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 	cardNumber := c.QueryParam("card_number")
@@ -429,7 +429,7 @@ func (h *topupHandleApi) FindMonthlyTopupStatusSuccessByCardNumber(c echo.Contex
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up status for successful transactions"
 // @Router /api/topups/yearly-success [get]
-func (h *topupHandleApi) FindYearlyTopupStatusSuccessByCardNumber(c echo.Context) error {
+func (h *TopupHandleApi) FindYearlyTopupStatusSuccessByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	cardNumber := c.QueryParam("card_number")
 
@@ -470,7 +470,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusSuccessByCardNumber(c echo.Context
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up status for failed transactions"
 // @Router /api/topups/monthly-failed [get]
-func (h *topupHandleApi) FindMonthlyTopupStatusFailedByCardNumber(c echo.Context) error {
+func (h *TopupHandleApi) FindMonthlyTopupStatusFailedByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 	cardNumber := c.QueryParam("card_number")
@@ -517,7 +517,7 @@ func (h *topupHandleApi) FindMonthlyTopupStatusFailedByCardNumber(c echo.Context
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up status for failed transactions"
 // @Router /api/topups/yearly-failed [get]
-func (h *topupHandleApi) FindYearlyTopupStatusFailedByCardNumber(c echo.Context) error {
+func (h *TopupHandleApi) FindYearlyTopupStatusFailedByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	cardNumber := c.QueryParam("card_number")
 
@@ -556,7 +556,7 @@ func (h *topupHandleApi) FindYearlyTopupStatusFailedByCardNumber(c echo.Context)
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up methods"
 // @Router /api/topups/monthly-methods [get]
-func (h *topupHandleApi) FindMonthlyTopupMethods(c echo.Context) error {
+func (h *TopupHandleApi) FindMonthlyTopupMethods(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
@@ -591,7 +591,7 @@ func (h *topupHandleApi) FindMonthlyTopupMethods(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up methods"
 // @Router /api/topups/yearly-methods [get]
-func (h *topupHandleApi) FindYearlyTopupMethods(c echo.Context) error {
+func (h *TopupHandleApi) FindYearlyTopupMethods(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
@@ -626,7 +626,7 @@ func (h *topupHandleApi) FindYearlyTopupMethods(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up amounts"
 // @Router /api/topup/monthly-amounts [get]
-func (h *topupHandleApi) FindMonthlyTopupAmounts(c echo.Context) error {
+func (h *TopupHandleApi) FindMonthlyTopupAmounts(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
@@ -661,7 +661,7 @@ func (h *topupHandleApi) FindMonthlyTopupAmounts(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up amounts"
 // @Router /api/topups/yearly-amounts [get]
-func (h *topupHandleApi) FindYearlyTopupAmounts(c echo.Context) error {
+func (h *TopupHandleApi) FindYearlyTopupAmounts(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
@@ -705,7 +705,7 @@ func (h *topupHandleApi) FindYearlyTopupAmounts(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up methods by card number"
 // @Router /api/topups/monthly-methods-by-card [get]
-func (h *topupHandleApi) FindMonthlyTopupMethodsByCardNumber(c echo.Context) error {
+func (h *TopupHandleApi) FindMonthlyTopupMethodsByCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
@@ -743,7 +743,7 @@ func (h *topupHandleApi) FindMonthlyTopupMethodsByCardNumber(c echo.Context) err
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up methods by card number"
 // @Router /api/topups/yearly-methods-by-card [get]
-func (h *topupHandleApi) FindYearlyTopupMethodsByCardNumber(c echo.Context) error {
+func (h *TopupHandleApi) FindYearlyTopupMethodsByCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
@@ -781,7 +781,7 @@ func (h *topupHandleApi) FindYearlyTopupMethodsByCardNumber(c echo.Context) erro
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly top-up amounts by card number"
 // @Router /api/topups/monthly-amounts-by-card [get]
-func (h *topupHandleApi) FindMonthlyTopupAmountsByCardNumber(c echo.Context) error {
+func (h *TopupHandleApi) FindMonthlyTopupAmountsByCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
@@ -825,7 +825,7 @@ func (h *topupHandleApi) FindMonthlyTopupAmountsByCardNumber(c echo.Context) err
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly top-up amounts by card number"
 // @Router /api/topups/yearly-amounts-by-card [get]
-func (h *topupHandleApi) FindYearlyTopupAmountsByCardNumber(c echo.Context) error {
+func (h *TopupHandleApi) FindYearlyTopupAmountsByCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
@@ -862,7 +862,7 @@ func (h *topupHandleApi) FindYearlyTopupAmountsByCardNumber(c echo.Context) erro
 // @Success 200 {object} response.ApiResponsesTopup "Active topup data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve topup data"
 // @Router /api/topups/active [get]
-func (h *topupHandleApi) FindByActive(c echo.Context) error {
+func (h *TopupHandleApi) FindByActive(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -908,7 +908,7 @@ func (h *topupHandleApi) FindByActive(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsesTopup "List of trashed topup data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve topup data"
 // @Router /api/topups/trashed [get]
-func (h *topupHandleApi) FindByTrashed(c echo.Context) error {
+func (h *TopupHandleApi) FindByTrashed(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -953,7 +953,7 @@ func (h *topupHandleApi) FindByTrashed(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: "
 // @Failure 500 {object} response.ErrorResponse "Failed to create topup: "
 // @Router /api/topups/create [post]
-func (h *topupHandleApi) Create(c echo.Context) error {
+func (h *TopupHandleApi) Create(c echo.Context) error {
 	var body requests.CreateTopupRequest
 
 	if err := c.Bind(&body); err != nil {
@@ -999,7 +999,7 @@ func (h *topupHandleApi) Create(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid input data"
 // @Failure 500 {object} response.ErrorResponse "Failed to update topup: "
 // @Router /api/topups/update/{id} [post]
-func (h *topupHandleApi) Update(c echo.Context) error {
+func (h *TopupHandleApi) Update(c echo.Context) error {
 	idint, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
@@ -1053,7 +1053,7 @@ func (h *topupHandleApi) Update(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to trash topup:"
 // @Router /api/topups/trash/{id} [post]
-func (h *topupHandleApi) TrashTopup(c echo.Context) error {
+func (h *TopupHandleApi) TrashTopup(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1090,7 +1090,7 @@ func (h *topupHandleApi) TrashTopup(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore topup:"
 // @Router /api/topups/restore/{id} [post]
-func (h *topupHandleApi) RestoreTopup(c echo.Context) error {
+func (h *TopupHandleApi) RestoreTopup(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1129,7 +1129,7 @@ func (h *topupHandleApi) RestoreTopup(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete topup:"
 // @Router /api/topups/permanent/{id} [delete]
-func (h *topupHandleApi) DeleteTopupPermanent(c echo.Context) error {
+func (h *TopupHandleApi) DeleteTopupPermanent(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1166,7 +1166,7 @@ func (h *topupHandleApi) DeleteTopupPermanent(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseTopupAll "Successfully restored all topup records"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore all topup records"
 // @Router /api/topups/restore/all [post]
-func (h *topupHandleApi) RestoreAllTopup(c echo.Context) error {
+func (h *TopupHandleApi) RestoreAllTopup(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.client.RestoreAllTopup(ctx, &emptypb.Empty{})
@@ -1192,7 +1192,7 @@ func (h *topupHandleApi) RestoreAllTopup(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseTopupAll "Successfully deleted all topup records permanently"
 // @Failure 500 {object} response.ErrorResponse "Failed to permanently delete all topup records"
 // @Router /api/topups/permanent/all [post]
-func (h *topupHandleApi) DeleteAllTopupPermanent(c echo.Context) error {
+func (h *TopupHandleApi) DeleteAllTopupPermanent(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.client.DeleteAllTopupPermanent(ctx, &emptypb.Empty{})

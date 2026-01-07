@@ -1,861 +1,398 @@
 package test
 
 import (
-	"MamangRust/paymentgatewaygrpc/internal/domain/record"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	mock_responsemapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/mocks"
-	mock_repository "MamangRust/paymentgatewaygrpc/internal/repository/mocks"
-	"MamangRust/paymentgatewaygrpc/internal/service"
-	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
 	"errors"
 	"testing"
-	"time"
 
-	"github.com/stretchr/testify/assert"
+	"MamangRust/paymentgatewaygrpc/internal/domain/record"
+	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
+	"MamangRust/paymentgatewaygrpc/internal/domain/response"
+	mock_responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/mocks"
+	mock_repository "MamangRust/paymentgatewaygrpc/internal/repository/mocks"
+	"MamangRust/paymentgatewaygrpc/internal/service"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/transfer_errors"
+	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
+
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 )
 
-func TestFindAllTransfers_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapping := mock_responsemapper.NewMockTransferResponseMapper(ctrl)
-
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		mockMapping,
-	)
-
-	page := 1
-	pageSize := 10
-	search := "test"
-	totalRecords := 2
-
-	transfers := []*record.TransferRecord{
-		{
-			ID:             1,
-			TransferFrom:   "user1",
-			TransferTo:     "user2",
-			TransferAmount: 1000,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-		{
-			ID:             2,
-			TransferFrom:   "user1",
-			TransferTo:     "user3",
-			TransferAmount: 500,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-	}
-	expectedResponses := []*response.TransferResponse{
-		{
-			ID:             1,
-			TransferFrom:   "user1",
-			TransferTo:     "user2",
-			TransferAmount: 1000,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-		{
-			ID:             2,
-			TransferFrom:   "user1",
-			TransferTo:     "user3",
-			TransferAmount: 500,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-	}
-
-	mockTransferRepo.EXPECT().
-		FindAll(search, page, pageSize).
-		Return(transfers, totalRecords, nil)
-
-	mockMapping.EXPECT().
-		ToTransfersResponse(transfers).
-		Return(expectedResponses)
-
-	result, totalPages, errResp := transferService.FindAll(page, pageSize, search)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponses, result)
-	assert.Equal(t, totalPages, totalRecords)
+type TransferServiceSuite struct {
+	suite.Suite
+	mockTransferRepo *mock_repository.MockTransferRepository
+	mockCardRepo     *mock_repository.MockCardRepository
+	mockUserRepo     *mock_repository.MockUserRepository
+	mockSaldoRepo    *mock_repository.MockSaldoRepository
+	mockLogger       *mock_logger.MockLoggerInterface
+	mockMapper       *mock_responseservice.MockTransferResponseMapper
+	mockCtrl         *gomock.Controller
 }
 
-func TestFindAllTransfers_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		nil,
-	)
-
-	page := 1
-	pageSize := 10
-	search := "test"
-
-	mockTransferRepo.EXPECT().
-		FindAll(search, page, pageSize).
-		Return(nil, 0, errors.New("database error"))
-
-	mockLogger.EXPECT().
-		Error("failed to fetch transfers", gomock.Any())
-
-	result, totalPages, errResp := transferService.FindAll(page, pageSize, search)
-
-	assert.Nil(t, result)
-	assert.Equal(t, 0, totalPages)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to fetch transfers", errResp.Message)
+func (suite *TransferServiceSuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.mockCardRepo = mock_repository.NewMockCardRepository(suite.mockCtrl)
+	suite.mockUserRepo = mock_repository.NewMockUserRepository(suite.mockCtrl)
+	suite.mockSaldoRepo = mock_repository.NewMockSaldoRepository(suite.mockCtrl)
+	suite.mockTransferRepo = mock_repository.NewMockTransferRepository(suite.mockCtrl)
+	suite.mockLogger = mock_logger.NewMockLoggerInterface(suite.mockCtrl)
+	suite.mockMapper = mock_responseservice.NewMockTransferResponseMapper(suite.mockCtrl)
 }
 
-func TestFindByIdTransfer_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapping := mock_responsemapper.NewMockTransferResponseMapper(ctrl)
-
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		mockMapping,
-	)
-
-	transferId := 1
-	transferRecord := &record.TransferRecord{
-		ID:             1,
-		TransferFrom:   "user1",
-		TransferTo:     "user2",
-		TransferAmount: 1000,
-		TransferTime:   time.Now().Format(time.RFC3339),
-		CreatedAt:      time.Now().Format(time.RFC3339),
-		UpdatedAt:      time.Now().Format(time.RFC3339),
-	}
-
-	expectedResponse := &response.TransferResponse{
-		ID:             1,
-		TransferFrom:   "user1",
-		TransferTo:     "user2",
-		TransferAmount: 1000,
-		TransferTime:   time.Now().Format(time.RFC3339),
-		CreatedAt:      time.Now().Format(time.RFC3339),
-		UpdatedAt:      time.Now().Format(time.RFC3339),
-	}
-
-	mockTransferRepo.EXPECT().
-		FindById(transferId).
-		Return(transferRecord, nil)
-
-	mockMapping.EXPECT().
-		ToTransferResponse(transferRecord).
-		Return(expectedResponse)
-
-	result, errResp := transferService.FindById(transferId)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
+func (suite *TransferServiceSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
-func TestFindByIdTransfer_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransferServiceSuite) TestFindAll_Success() {
+	req := &requests.FindAllTranfers{Search: "success", Page: 1, PageSize: 10}
+	total := 1
+	mockTransfers := []*record.TransferRecord{{ID: 1, TransferNo: "TF001"}}
+	expectedResponse := []*response.TransferResponse{{ID: 1, TransferNo: "TF001"}}
 
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.mockLogger.EXPECT().Debug("Fetching transfer", gomock.Any())
+	suite.mockTransferRepo.EXPECT().FindAll(req).Return(mockTransfers, &total, nil)
+	suite.mockMapper.EXPECT().ToTransfersResponse(mockTransfers).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched transfer", gomock.Any())
 
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		nil,
-	)
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
 
-	transferId := 1
+	result, totalRes, err := svc.FindAll(req)
 
-	mockTransferRepo.EXPECT().
-		FindById(transferId).
-		Return(nil, errors.New("record not found"))
-
-	mockLogger.EXPECT().
-		Error("failed to find transfer by ID", gomock.Any())
-
-	result, errResp := transferService.FindById(transferId)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Transfer not found", errResp.Message)
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+	suite.Equal(1, *totalRes)
 }
 
-func TestFindByActiveTransfers_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransferServiceSuite) TestFindAll_Failure() {
+	req := &requests.FindAllTranfers{Search: "success", Page: 1, PageSize: 10}
+	dbError := errors.New("database error")
 
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapping := mock_responsemapper.NewMockTransferResponseMapper(ctrl)
+	suite.mockLogger.EXPECT().Debug("Fetching transfer", gomock.Any())
+	suite.mockTransferRepo.EXPECT().FindAll(req).Return(nil, nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to fetch transfer", gomock.Any())
 
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		mockMapping,
-	)
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindAll(req)
 
-	transfers := []*record.TransferRecord{
-		{
-			ID:             1,
-			TransferFrom:   "user1",
-			TransferTo:     "user2",
-			TransferAmount: 1000,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-		{
-			ID:             2,
-			TransferFrom:   "user1",
-			TransferTo:     "user3",
-			TransferAmount: 500,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-	}
-	expectedResponses := []*response.TransferResponseDeleteAt{
-		{
-			ID:             1,
-			TransferFrom:   "user1",
-			TransferTo:     "user2",
-			TransferAmount: 1000,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-		{
-			ID:             2,
-			TransferFrom:   "user1",
-			TransferTo:     "user3",
-			TransferAmount: 500,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-	}
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 2
-
-	mockTransferRepo.EXPECT().
-		FindByActive(search, page, pageSize).
-		Return(transfers, expected, nil)
-
-	mockMapping.EXPECT().
-		ToTransfersResponseDeleteAt(transfers).
-		Return(expectedResponses)
-
-	mockLogger.EXPECT().
-		Debug("Successfully fetched active transaction records", zap.Int("record_count", len(transfers)))
-
-	result, totalRecord, errResp := transferService.FindByActive(pageSize, page, search)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, expectedResponses, result)
+	suite.Nil(result)
+	suite.Nil(totalRes)
+	suite.Equal(transfer_errors.ErrFailedFindAllTransfers, err)
 }
 
-func TestFindByActiveTransfers_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		nil,
-	)
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 0
-
-	mockTransferRepo.EXPECT().
-		FindByActive(search, page, pageSize).
-		Return(nil, expected, errors.New("no active records found"))
-
-	mockLogger.EXPECT().
-		Error("Failed to fetch active transaction records", gomock.Any())
-
-	result, totalRecord, errResp := transferService.FindByActive(pageSize, page, search)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "No active transaction records found", errResp.Message)
-}
-
-func TestFindByTrashedTransfers_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapping := mock_responsemapper.NewMockTransferResponseMapper(ctrl)
-
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		mockMapping,
-	)
-
-	transfers := []*record.TransferRecord{
-		{
-			ID:             1,
-			TransferFrom:   "user1",
-			TransferTo:     "user2",
-			TransferAmount: 1000,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-		{
-			ID:             2,
-			TransferFrom:   "user1",
-			TransferTo:     "user3",
-			TransferAmount: 500,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-	}
-	expectedResponses := []*response.TransferResponseDeleteAt{
-		{
-			ID:             1,
-			TransferFrom:   "user1",
-			TransferTo:     "user2",
-			TransferAmount: 1000,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-		{
-			ID:             2,
-			TransferFrom:   "user1",
-			TransferTo:     "user3",
-			TransferAmount: 500,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-	}
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 2
-
-	mockLogger.EXPECT().
-		Info("Fetching trashed transaction records")
-
-	mockTransferRepo.EXPECT().
-		FindByTrashed(search, page, pageSize).
-		Return(transfers, expected, nil)
-
-	mockMapping.EXPECT().
-		ToTransfersResponseDeleteAt(transfers).
-		Return(expectedResponses)
-
-	mockLogger.EXPECT().
-		Debug("Successfully fetched trashed transaction records", zap.Int("record_count", len(transfers)))
-
-	result, totalRecord, errResp := transferService.FindByTrashed(pageSize, page, search)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, expectedResponses, result)
-}
-
-func TestFindByTrashedTransfers_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		nil,
-	)
-
-	page := 1
-	pageSize := 1
-	search := "test"
-	expected := 0
-
-	mockLogger.EXPECT().
-		Info("Fetching trashed transaction records")
-
-	mockTransferRepo.EXPECT().
-		FindByTrashed(search, page, pageSize).
-		Return(nil, expected, errors.New("no trashed records found"))
-
-	mockLogger.EXPECT().
-		Error("Failed to fetch trashed transaction records", gomock.Any())
-
-	result, totalRecord, errResp := transferService.FindByTrashed(pageSize, page, search)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "No trashed transaction records found", errResp.Message)
-}
-
-func TestFindTransferByTransferFrom_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapping := mock_responsemapper.NewMockTransferResponseMapper(ctrl)
-
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		mockMapping,
-	)
-
-	transferFrom := "user1"
-
-	transfers := []*record.TransferRecord{
-		{
-			ID:             1,
-			TransferFrom:   "user1",
-			TransferTo:     "user2",
-			TransferAmount: 1000,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-		{
-			ID:             2,
-			TransferFrom:   "user1",
-			TransferTo:     "user3",
-			TransferAmount: 500,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-	}
-
-	expectedResponses := []*response.TransferResponse{
-		{
-			ID:             1,
-			TransferFrom:   "user1",
-			TransferTo:     "user2",
-			TransferAmount: 1000,
-			TransferTime:   transfers[0].TransferTime,
-			CreatedAt:      transfers[0].CreatedAt,
-			UpdatedAt:      transfers[0].UpdatedAt,
-		},
-		{
-			ID:             2,
-			TransferFrom:   "user1",
-			TransferTo:     "user3",
-			TransferAmount: 500,
-			TransferTime:   transfers[1].TransferTime,
-			CreatedAt:      transfers[1].CreatedAt,
-			UpdatedAt:      transfers[1].UpdatedAt,
-		},
-	}
-
-	mockTransferRepo.EXPECT().
-		FindTransferByTransferFrom(transferFrom).
-		Return(transfers, nil)
-
-	mockMapping.EXPECT().
-		ToTransfersResponse(transfers).
-		Return(expectedResponses)
-
-	result, errResp := transferService.FindTransferByTransferFrom(transferFrom)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponses, result)
-}
-
-func TestFindTransferByTransferFrom_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		nil,
-	)
-
-	transferFrom := "user1"
-
-	mockTransferRepo.EXPECT().
-		FindTransferByTransferFrom(transferFrom).
-		Return(nil, errors.New("failed to fetch transfers"))
-
-	mockLogger.EXPECT().
-		Error("Failed to fetch transfers by transfer_from", gomock.Any())
-
-	result, errResp := transferService.FindTransferByTransferFrom(transferFrom)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to fetch transfers by transfer_from", errResp.Message)
-}
-
-func TestFindTransferByTransferTo_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapping := mock_responsemapper.NewMockTransferResponseMapper(ctrl)
-
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		mockMapping,
-	)
-
-	transferTo := "user2"
-
-	transfers := []*record.TransferRecord{
-		{
-			ID:             1,
-			TransferFrom:   "user1",
-			TransferTo:     "user2",
-			TransferAmount: 1000,
-			TransferTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-		},
-	}
-
-	expectedResponses := []*response.TransferResponse{
-		{
-			ID:             1,
-			TransferFrom:   "user1",
-			TransferTo:     "user2",
-			TransferAmount: 1000,
-			TransferTime:   transfers[0].TransferTime,
-			CreatedAt:      transfers[0].CreatedAt,
-			UpdatedAt:      transfers[0].UpdatedAt,
-		},
-	}
-
-	mockTransferRepo.EXPECT().
-		FindTransferByTransferTo(transferTo).
-		Return(transfers, nil)
-
-	mockMapping.EXPECT().
-		ToTransfersResponse(transfers).
-		Return(expectedResponses)
-
-	result, errResp := transferService.FindTransferByTransferTo(transferTo)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponses, result)
-}
-
-func TestFindTransferByTransferTo_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		nil,
-	)
-
-	transferTo := "user2"
-
-	mockTransferRepo.EXPECT().
-		FindTransferByTransferTo(transferTo).
-		Return(nil, errors.New("failed to fetch transfers"))
-
-	mockLogger.EXPECT().
-		Error("Failed to fetch transfers by transfer_to", gomock.Any())
-
-	result, errResp := transferService.FindTransferByTransferTo(transferTo)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to fetch transfers by transfer_to", errResp.Message)
-}
-
-func TestTrashedTransfer_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapping := mock_responsemapper.NewMockTransferResponseMapper(ctrl)
-
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		mockMapping,
-	)
-
+func (suite *TransferServiceSuite) TestFindById_Success() {
 	transferID := 1
-	transferRecord := &record.TransferRecord{
-		ID:             transferID,
-		TransferFrom:   "user1",
-		TransferTo:     "user2",
-		TransferAmount: 1000,
-		TransferTime:   time.Now().Format(time.RFC3339),
-	}
+	mockTransfer := &record.TransferRecord{ID: transferID, TransferNo: "TF001"}
+	expectedResponse := &response.TransferResponse{ID: transferID, TransferNo: "TF001"}
 
-	expectedResponse := &response.TransferResponse{
-		ID:             transferID,
-		TransferFrom:   "user1",
-		TransferTo:     "user2",
-		TransferAmount: 1000,
-		TransferTime:   transferRecord.TransferTime,
-	}
+	suite.mockLogger.EXPECT().Debug("Fetching transfer by ID", zap.Int("transfer_id", transferID))
+	suite.mockTransferRepo.EXPECT().FindById(transferID).Return(mockTransfer, nil)
+	suite.mockMapper.EXPECT().ToTransferResponse(mockTransfer).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched transfer", zap.Int("transfer_id", transferID))
 
-	mockTransferRepo.EXPECT().
-		TrashedTransfer(transferID).
-		Return(transferRecord, nil)
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindById(transferID)
 
-	mockMapping.EXPECT().
-		ToTransferResponse(transferRecord).
-		Return(expectedResponse)
-
-	result, errResp := transferService.TrashedTransfer(transferID)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
 }
 
-func TestTrashedTransfer_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransferServiceSuite) TestFindById_NotFound() {
+	transferID := 99
+	repoError := errors.New("transfer not found")
 
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.mockLogger.EXPECT().Debug("Fetching transfer by ID", zap.Int("transfer_id", transferID))
+	suite.mockTransferRepo.EXPECT().FindById(transferID).Return(nil, repoError)
+	suite.mockLogger.EXPECT().Error("failed to find transfer by ID", gomock.Any())
 
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		nil,
-	)
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindById(transferID)
 
+	suite.Nil(result)
+	suite.Equal(transfer_errors.ErrTransferNotFound, err)
+}
+
+func (suite *TransferServiceSuite) TestFindByActive_Success() {
+	req := &requests.FindAllTranfers{Search: "active", Page: 1, PageSize: 10}
+	total := 1
+	mockTransfers := []*record.TransferRecord{{ID: 1, TransferNo: "TF001", DeletedAt: nil}}
+	expectedResponse := []*response.TransferResponseDeleteAt{{ID: 1, TransferNo: "TF001", DeletedAt: nil}}
+
+	suite.mockLogger.EXPECT().Debug("Fetching active transfer", gomock.Any())
+	suite.mockTransferRepo.EXPECT().FindByActive(req).Return(mockTransfers, &total, nil)
+	suite.mockMapper.EXPECT().ToTransfersResponseDeleteAt(mockTransfers).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched active transfer", gomock.Any())
+
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByActive(req)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+	suite.Equal(1, *totalRes)
+}
+
+func (suite *TransferServiceSuite) TestFindByActive_Failure() {
+	req := &requests.FindAllTranfers{Search: "active", Page: 1, PageSize: 10}
+	dbError := errors.New("database error")
+
+	suite.mockLogger.EXPECT().Debug("Fetching active transfer", gomock.Any())
+	suite.mockTransferRepo.EXPECT().FindByActive(req).Return(nil, nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to fetch active transfer", gomock.Any())
+
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByActive(req)
+
+	suite.Nil(result)
+	suite.Nil(totalRes)
+	suite.Equal(transfer_errors.ErrFailedFindActiveTransfers, err)
+}
+
+func (suite *TransferServiceSuite) TestFindByTrashed_Success() {
+	req := &requests.FindAllTranfers{Page: 1, PageSize: 10}
+	total := 1
+	trashedTime := "2024-01-01T00:00:00Z"
+	mockTransfers := []*record.TransferRecord{{ID: 2, TransferNo: "TF002", DeletedAt: &trashedTime}}
+	expectedResponse := []*response.TransferResponseDeleteAt{{ID: 2, TransferNo: "TF002", DeletedAt: &trashedTime}}
+
+	suite.mockLogger.EXPECT().Debug("Fetching trashed transfer", gomock.Any())
+	suite.mockTransferRepo.EXPECT().FindByTrashed(req).Return(mockTransfers, &total, nil)
+	suite.mockMapper.EXPECT().ToTransfersResponseDeleteAt(mockTransfers).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched trashed transfer", gomock.Any())
+
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByTrashed(req)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+	suite.Equal(1, *totalRes)
+}
+
+func (suite *TransferServiceSuite) TestFindByTrashed_Failure() {
+	req := &requests.FindAllTranfers{Page: 1, PageSize: 10}
+	dbError := errors.New("database error")
+
+	suite.mockLogger.EXPECT().Debug("Fetching trashed transfer", gomock.Any())
+	suite.mockTransferRepo.EXPECT().FindByTrashed(req).Return(nil, nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to fetch trashed transfer", gomock.Any())
+
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByTrashed(req)
+
+	suite.Nil(result)
+	suite.Nil(totalRes)
+	suite.Equal(transfer_errors.ErrFailedFindTrashedTransfers, err)
+}
+
+func (suite *TransferServiceSuite) TestFindTransferByTransferFrom_Success() {
+	transferFrom := "1111-xxxx-xxxx-1111"
+	mockTransfers := []*record.TransferRecord{{ID: 1, TransferFrom: transferFrom}}
+	expectedResponse := []*response.TransferResponse{{ID: 1, TransferFrom: transferFrom}}
+
+	suite.mockLogger.EXPECT().Debug("Starting fetch transfer by transfer_from", gomock.Any())
+	suite.mockTransferRepo.EXPECT().FindTransferByTransferFrom(transferFrom).Return(mockTransfers, nil)
+
+	suite.mockMapper.EXPECT().ToTransfersResponse(mockTransfers).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched transfer record by transfer_from", gomock.Any())
+
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindTransferByTransferFrom(transferFrom)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+}
+
+func (suite *TransferServiceSuite) TestFindTransferByTransferFrom_Failure() {
+	transferFrom := "not-found-xxxx"
+	dbError := errors.New("database error")
+
+	suite.mockLogger.EXPECT().Debug("Starting fetch transfer by transfer_from", gomock.Any())
+	suite.mockTransferRepo.EXPECT().FindTransferByTransferFrom(transferFrom).Return(nil, dbError)
+
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	suite.mockLogger.EXPECT().Error("Failed to fetch transfers by transfer_from", gomock.Any())
+
+	result, err := svc.FindTransferByTransferFrom(transferFrom)
+
+	suite.Nil(result)
+	suite.Equal(transfer_errors.ErrTransferNotFound, err)
+}
+
+func (suite *TransferServiceSuite) TestFindTransferByTransferTo_Success() {
+	transferTo := "2222-xxxx-xxxx-2222"
+	mockTransfers := []*record.TransferRecord{{ID: 2, TransferTo: transferTo}}
+	expectedResponse := []*response.TransferResponse{{ID: 2, TransferTo: transferTo}}
+
+	suite.mockLogger.EXPECT().Debug("Starting fetch transfer by transfer_to", gomock.Any())
+	suite.mockTransferRepo.EXPECT().FindTransferByTransferTo(transferTo).Return(mockTransfers, nil)
+	suite.mockMapper.EXPECT().ToTransfersResponse(mockTransfers).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched transfer record by transfer_to", gomock.Any())
+
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindTransferByTransferTo(transferTo)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+}
+
+func (suite *TransferServiceSuite) TestFindTransferByTransferTo_Failure() {
+	transferTo := "not-found-xxxx"
+	dbError := errors.New("database error")
+
+	suite.mockLogger.EXPECT().Debug("Starting fetch transfer by transfer_to", gomock.Any())
+	suite.mockTransferRepo.EXPECT().FindTransferByTransferTo(transferTo).Return(nil, dbError)
+
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	suite.mockLogger.EXPECT().Error("Failed to fetch transfers by transfer_to", gomock.Any())
+	result, err := svc.FindTransferByTransferTo(transferTo)
+
+	suite.Nil(result)
+	suite.Equal(transfer_errors.ErrTransferNotFound, err)
+}
+
+func (suite *TransferServiceSuite) TestTrashedTransfer_Success() {
+	transferID := 1
+	trashedTransfer := &record.TransferRecord{ID: transferID}
+	expectedResponse := &response.TransferResponseDeleteAt{ID: transferID}
+
+	suite.mockLogger.EXPECT().Debug("Starting trashed transfer process", zap.Int("transfer_id", transferID))
+	suite.mockTransferRepo.EXPECT().TrashedTransfer(transferID).Return(trashedTransfer, nil)
+	suite.mockMapper.EXPECT().ToTransferResponseDeleteAt(trashedTransfer).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("successfully trashed transfer", zap.Int("transfer_id", transferID))
+
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.TrashedTransfer(transferID)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+}
+
+func (suite *TransferServiceSuite) TestTrashedTransfer_Failure() {
+	transferID := 1
+	dbError := errors.New("failed to trash")
+
+	suite.mockLogger.EXPECT().Debug("Starting trashed transfer process", zap.Int("transfer_id", transferID))
+	suite.mockLogger.EXPECT().Error("Failed to trash transfer", gomock.Any())
+	suite.mockTransferRepo.EXPECT().TrashedTransfer(transferID).Return(nil, dbError)
+
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.TrashedTransfer(transferID)
+
+	suite.Nil(result)
+	suite.Equal(transfer_errors.ErrFailedTrashedTransfer, err)
+}
+
+func (suite *TransferServiceSuite) TestRestoreTransfer_Success() {
+	transferID := 1
+	restoredTransfer := &record.TransferRecord{ID: transferID, DeletedAt: nil}
+	expectedResponse := &response.TransferResponseDeleteAt{ID: transferID, DeletedAt: nil}
+
+	suite.mockLogger.EXPECT().Debug("Starting restore transfer process", zap.Int("transfer_id", transferID))
+	suite.mockTransferRepo.EXPECT().RestoreTransfer(transferID).Return(restoredTransfer, nil)
+	suite.mockMapper.EXPECT().ToTransferResponseDeleteAt(restoredTransfer).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("successfully restore transfer", zap.Int("transfer_id", transferID))
+
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreTransfer(transferID)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+}
+
+func (suite *TransferServiceSuite) TestRestoreTransfer_Failure() {
+	transferID := 1
+	dbError := errors.New("failed to restore")
+
+	suite.mockLogger.EXPECT().Debug("Starting restore transfer process", zap.Int("transfer_id", transferID))
+	suite.mockLogger.EXPECT().Error("Failed to restore transfer", gomock.Any())
+	suite.mockTransferRepo.EXPECT().RestoreTransfer(transferID).Return(nil, dbError)
+
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreTransfer(transferID)
+
+	suite.Nil(result)
+	suite.Equal(transfer_errors.ErrFailedRestoreTransfer, err)
+}
+
+func (suite *TransferServiceSuite) TestDeleteTransferPermanent_Success() {
 	transferID := 1
 
-	mockTransferRepo.EXPECT().
-		TrashedTransfer(transferID).
-		Return(nil, errors.New("failed to trash transfer"))
+	suite.mockLogger.EXPECT().Debug("Starting delete transfer permanent process", zap.Int("transfer_id", transferID))
+	suite.mockTransferRepo.EXPECT().DeleteTransferPermanent(transferID).Return(true, nil)
+	suite.mockLogger.EXPECT().Debug("successfully delete permanent transfer", zap.Int("transfer_id", transferID))
 
-	mockLogger.EXPECT().
-		Error("Failed to trash transfer", gomock.Any())
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteTransferPermanent(transferID)
 
-	result, errResp := transferService.TrashedTransfer(transferID)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to trash transfer", errResp.Message)
+	suite.Nil(err)
+	suite.True(result)
 }
 
-func TestRestoreTransfer_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapping := mock_responsemapper.NewMockTransferResponseMapper(ctrl)
-
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		mockMapping,
-	)
-
+func (suite *TransferServiceSuite) TestDeleteTransferPermanent_Failure() {
 	transferID := 1
-	transferRecord := &record.TransferRecord{
-		ID:             transferID,
-		TransferFrom:   "user1",
-		TransferTo:     "user2",
-		TransferAmount: 1000,
-		TransferTime:   time.Now().Format(time.RFC3339),
-	}
+	dbError := errors.New("failed to delete permanently")
 
-	expectedResponse := &response.TransferResponse{
-		ID:             transferID,
-		TransferFrom:   "user1",
-		TransferTo:     "user2",
-		TransferAmount: 1000,
-		TransferTime:   transferRecord.TransferTime,
-	}
+	suite.mockLogger.EXPECT().Debug("Starting delete transfer permanent process", zap.Int("transfer_id", transferID))
+	suite.mockLogger.EXPECT().Error("Failed to permanently delete transfer", gomock.Any())
+	suite.mockTransferRepo.EXPECT().DeleteTransferPermanent(transferID).Return(false, dbError)
 
-	mockTransferRepo.EXPECT().
-		RestoreTransfer(transferID).
-		Return(transferRecord, nil)
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteTransferPermanent(transferID)
 
-	mockMapping.EXPECT().
-		ToTransferResponse(transferRecord).
-		Return(expectedResponse)
-
-	result, errResp := transferService.RestoreTransfer(transferID)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
+	suite.False(result)
+	suite.Equal(transfer_errors.ErrFailedDeleteTransferPermanent, err)
 }
 
-func TestRestoreTransfer_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransferServiceSuite) TestRestoreAllTransfer_Success() {
+	suite.mockLogger.EXPECT().Debug("Restoring all transfers")
+	suite.mockTransferRepo.EXPECT().RestoreAllTransfer().Return(true, nil)
+	suite.mockLogger.EXPECT().Debug("Successfully restored all transfers")
 
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreAllTransfer()
 
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		nil,
-	)
-
-	transferID := 1
-
-	mockTransferRepo.EXPECT().
-		RestoreTransfer(transferID).
-		Return(nil, errors.New("failed to restore transfer"))
-
-	mockLogger.EXPECT().
-		Error("Failed to restore transfer", gomock.Any())
-
-	result, errResp := transferService.RestoreTransfer(transferID)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to restore transfer", errResp.Message)
+	suite.Nil(err)
+	suite.True(result)
 }
 
-func TestDeleteTransferPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransferServiceSuite) TestRestoreAllTransfer_Failure() {
+	dbError := errors.New("failed to restore all")
 
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.mockLogger.EXPECT().Debug("Restoring all transfers")
+	suite.mockLogger.EXPECT().Error("Failed to restore all transfers", gomock.Any())
+	suite.mockTransferRepo.EXPECT().RestoreAllTransfer().Return(false, dbError)
 
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		nil,
-	)
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreAllTransfer()
 
-	transferID := 1
-
-	mockTransferRepo.EXPECT().
-		DeleteTransferPermanent(transferID).
-		Return(nil)
-
-	result, errResp := transferService.DeleteTransferPermanent(transferID)
-
-	assert.Nil(t, errResp)
-	assert.Nil(t, result)
+	suite.False(result)
+	suite.Equal(transfer_errors.ErrFailedRestoreAllTransfers, err)
 }
 
-func TestDeleteTransferPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransferServiceSuite) TestDeleteAllTransferPermanent_Success() {
+	suite.mockLogger.EXPECT().Debug("Permanently deleting all transfers")
+	suite.mockTransferRepo.EXPECT().DeleteAllTransferPermanent().Return(true, nil)
+	suite.mockLogger.EXPECT().Debug("Successfully deleted all transfers permanently")
 
-	mockTransferRepo := mock_repository.NewMockTransferRepository(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteAllTransferPermanent()
 
-	transferService := service.NewTransferService(
-		nil, nil,
-		mockTransferRepo,
-		nil,
-		mockLogger,
-		nil,
-	)
+	suite.Nil(err)
+	suite.True(result)
+}
 
-	transferID := 1
+func (suite *TransferServiceSuite) TestDeleteAllTransferPermanent_Failure() {
+	dbError := errors.New("failed to delete all permanently")
 
-	mockTransferRepo.EXPECT().
-		DeleteTransferPermanent(transferID).
-		Return(errors.New("failed to delete transfer"))
+	suite.mockLogger.EXPECT().Debug("Permanently deleting all transfers")
+	suite.mockLogger.EXPECT().Error("Failed to permanently delete all transfers", gomock.Any())
+	suite.mockTransferRepo.EXPECT().DeleteAllTransferPermanent().Return(false, dbError)
 
-	mockLogger.EXPECT().
-		Error("Failed to permanently delete transfer", gomock.Any())
+	svc := service.NewTransferService(suite.mockUserRepo, suite.mockCardRepo, suite.mockTransferRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteAllTransferPermanent()
 
-	result, errResp := transferService.DeleteTransferPermanent(transferID)
+	suite.False(result)
+	suite.Equal(transfer_errors.ErrFailedDeleteAllTransfersPermanent, err)
+}
 
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to permanently delete transfer", errResp.Message)
+func TestTransferServiceSuite(t *testing.T) {
+	suite.Run(t, new(TransferServiceSuite))
 }

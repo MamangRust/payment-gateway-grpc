@@ -86,6 +86,14 @@ func (m *transactionProtoMapper) ToProtoResponseTransaction(status string, messa
 	}
 }
 
+func (m *transactionProtoMapper) ToProtoResponseTransactionDeleteAt(status string, message string, pbResponse *response.TransactionResponseDeleteAt) *pb.ApiResponseTransactionDeleteAt {
+	return &pb.ApiResponseTransactionDeleteAt{
+		Status:  status,
+		Message: message,
+		Data:    m.mapResponseTransactionDeleteAt(pbResponse),
+	}
+}
+
 func (m *transactionProtoMapper) ToProtoResponseTransactions(status string, message string, pbResponse []*response.TransactionResponse) *pb.ApiResponseTransactions {
 	return &pb.ApiResponseTransactions{
 		Status:  status,

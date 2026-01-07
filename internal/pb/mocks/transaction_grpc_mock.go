@@ -564,14 +564,14 @@ func (mr *MockTransactionServiceClientMockRecorder) RestoreAllTransaction(ctx, i
 }
 
 // RestoreTransaction mocks base method.
-func (m *MockTransactionServiceClient) RestoreTransaction(ctx context.Context, in *pb.FindByIdTransactionRequest, opts ...grpc.CallOption) (*pb.ApiResponseTransaction, error) {
+func (m *MockTransactionServiceClient) RestoreTransaction(ctx context.Context, in *pb.FindByIdTransactionRequest, opts ...grpc.CallOption) (*pb.ApiResponseTransactionDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "RestoreTransaction", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseTransaction)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -584,14 +584,14 @@ func (mr *MockTransactionServiceClientMockRecorder) RestoreTransaction(ctx, in a
 }
 
 // TrashedTransaction mocks base method.
-func (m *MockTransactionServiceClient) TrashedTransaction(ctx context.Context, in *pb.FindByIdTransactionRequest, opts ...grpc.CallOption) (*pb.ApiResponseTransaction, error) {
+func (m *MockTransactionServiceClient) TrashedTransaction(ctx context.Context, in *pb.FindByIdTransactionRequest, opts ...grpc.CallOption) (*pb.ApiResponseTransactionDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "TrashedTransaction", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseTransaction)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1038,10 +1038,10 @@ func (mr *MockTransactionServiceServerMockRecorder) RestoreAllTransaction(arg0, 
 }
 
 // RestoreTransaction mocks base method.
-func (m *MockTransactionServiceServer) RestoreTransaction(arg0 context.Context, arg1 *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransaction, error) {
+func (m *MockTransactionServiceServer) RestoreTransaction(arg0 context.Context, arg1 *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransactionDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RestoreTransaction", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseTransaction)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1053,10 +1053,10 @@ func (mr *MockTransactionServiceServerMockRecorder) RestoreTransaction(arg0, arg
 }
 
 // TrashedTransaction mocks base method.
-func (m *MockTransactionServiceServer) TrashedTransaction(arg0 context.Context, arg1 *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransaction, error) {
+func (m *MockTransactionServiceServer) TrashedTransaction(arg0 context.Context, arg1 *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransactionDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TrashedTransaction", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseTransaction)
+	ret0, _ := ret[0].(*pb.ApiResponseTransactionDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

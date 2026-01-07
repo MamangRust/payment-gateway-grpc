@@ -551,7 +551,7 @@ func (w *withdrawHandleGrpc) UpdateWithdraw(ctx context.Context, req *pb.UpdateW
 	return so, nil
 }
 
-func (w *withdrawHandleGrpc) TrashedWithdraw(ctx context.Context, req *pb.FindByIdWithdrawRequest) (*pb.ApiResponseWithdraw, error) {
+func (w *withdrawHandleGrpc) TrashedWithdraw(ctx context.Context, req *pb.FindByIdWithdrawRequest) (*pb.ApiResponseWithdrawDeleteAt, error) {
 	id := int(req.GetWithdrawId())
 
 	if id == 0 {
@@ -564,12 +564,12 @@ func (w *withdrawHandleGrpc) TrashedWithdraw(ctx context.Context, req *pb.FindBy
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := w.mapping.ToProtoResponseWithdraw("success", "Successfully trashed withdraw", withdraw)
+	so := w.mapping.ToProtoResponseWithdrawDeleteAt("success", "Successfully trashed withdraw", withdraw)
 
 	return so, nil
 }
 
-func (w *withdrawHandleGrpc) RestoreWithdraw(ctx context.Context, req *pb.FindByIdWithdrawRequest) (*pb.ApiResponseWithdraw, error) {
+func (w *withdrawHandleGrpc) RestoreWithdraw(ctx context.Context, req *pb.FindByIdWithdrawRequest) (*pb.ApiResponseWithdrawDeleteAt, error) {
 	id := int(req.GetWithdrawId())
 
 	if id == 0 {
@@ -582,7 +582,7 @@ func (w *withdrawHandleGrpc) RestoreWithdraw(ctx context.Context, req *pb.FindBy
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := w.mapping.ToProtoResponseWithdraw("success", "Successfully restored withdraw", withdraw)
+	so := w.mapping.ToProtoResponseWithdrawDeleteAt("success", "Successfully restored withdraw", withdraw)
 
 	return so, nil
 }

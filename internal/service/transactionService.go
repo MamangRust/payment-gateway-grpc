@@ -532,7 +532,7 @@ func (s *transactionService) FindByTrashed(req *requests.FindAllTransactions) ([
 
 func (s *transactionService) FindTransactionByMerchantId(merchant_id int) ([]*response.TransactionResponse, *response.ErrorResponse) {
 	s.logger.Debug("Starting FindTransactionByMerchantId process",
-		zap.Int("merchantID", merchant_id),
+		zap.Int("merchant_id", merchant_id),
 	)
 
 	res, err := s.transactionRepository.FindTransactionByMerchantId(merchant_id)
@@ -824,7 +824,7 @@ func (s *transactionService) Update(apiKey string, request *requests.UpdateTrans
 	return so, nil
 }
 
-func (s *transactionService) TrashedTransaction(transaction_id int) (*response.TransactionResponse, *response.ErrorResponse) {
+func (s *transactionService) TrashedTransaction(transaction_id int) (*response.TransactionResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Starting TrashedTransaction process",
 		zap.Int("transaction_id", transaction_id),
 	)
@@ -839,14 +839,14 @@ func (s *transactionService) TrashedTransaction(transaction_id int) (*response.T
 		return nil, transaction_errors.ErrFailedTrashedTransaction
 	}
 
-	so := s.mapping.ToTransactionResponse(res)
+	so := s.mapping.ToTransactionResponseDeleteAt(res)
 
 	s.logger.Debug("Successfully trashed transaction", zap.Int("transaction_id", transaction_id))
 
 	return so, nil
 }
 
-func (s *transactionService) RestoreTransaction(transaction_id int) (*response.TransactionResponse, *response.ErrorResponse) {
+func (s *transactionService) RestoreTransaction(transaction_id int) (*response.TransactionResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Starting RestoreTransaction process",
 		zap.Int("transaction_id", transaction_id),
 	)
@@ -861,7 +861,7 @@ func (s *transactionService) RestoreTransaction(transaction_id int) (*response.T
 		return nil, transaction_errors.ErrFailedRestoreTransaction
 	}
 
-	so := s.mapping.ToTransactionResponse(res)
+	so := s.mapping.ToTransactionResponseDeleteAt(res)
 
 	s.logger.Debug("Successfully restored transaction", zap.Int("transaction_id", transaction_id))
 

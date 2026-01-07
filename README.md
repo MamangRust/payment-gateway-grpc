@@ -1,11 +1,5 @@
 # Proyek Payment Gateway gRPC
 
-### **Selamat Datang di Proyek Payment Gateway!**
-Sistem ini menyimulasikan gateway pembayaran yang menangani operasi seperti transaksi kartu, top-up, penarikan, dan transfer. Proyek ini dibangun dengan Go dan menggunakan gRPC untuk komunikasi antar layanan.
-
---- 
-## ✨ Tentang Proyek
-
 Proyek ini merupakan **implementasi sistem pembayaran sederhana** yang dirancang untuk meniru alur kerja layanan keuangan digital pada umumnya. Sistem ini dibangun dengan pendekatan modular, sehingga setiap layanan dapat berdiri sendiri namun tetap saling terhubung melalui basis data dan API yang konsisten.
 
 ### Layanan Utama

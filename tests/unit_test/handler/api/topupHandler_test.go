@@ -1,1339 +1,635 @@
 package test
 
 import (
-	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	"MamangRust/paymentgatewaygrpc/internal/handler/api"
-	"MamangRust/paymentgatewaygrpc/internal/pb"
-	mock_pb "MamangRust/paymentgatewaygrpc/internal/pb/mocks"
-	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
+	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
+	"MamangRust/paymentgatewaygrpc/internal/domain/response"
+	"MamangRust/paymentgatewaygrpc/internal/handler/api"
+	mock_apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api/mocks"
+	"MamangRust/paymentgatewaygrpc/internal/pb"
+	mock_pb "MamangRust/paymentgatewaygrpc/internal/pb/mocks"
+	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
+
 	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func TestFindAllTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+type TopupHandlerTestSuite struct {
+	suite.Suite
+	Ctrl               *gomock.Controller
+	MockMerchantClient *mock_pb.MockMerchantServiceClient
+	MockTopupClient    *mock_pb.MockTopupServiceClient
+	MockLogger         *mock_logger.MockLoggerInterface
+	MockMapper         *mock_apimapper.MockTopupResponseMapper
+	E                  *echo.Echo
+	Handler            *api.TopupHandleApi
+}
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+func (suite *TopupHandlerTestSuite) SetupTest() {
+	suite.Ctrl = gomock.NewController(suite.T())
+	suite.MockTopupClient = mock_pb.NewMockTopupServiceClient(suite.Ctrl)
+	suite.MockMerchantClient = mock_pb.NewMockMerchantServiceClient(suite.Ctrl)
+	suite.MockLogger = mock_logger.NewMockLoggerInterface(suite.Ctrl)
+	suite.MockMapper = mock_apimapper.NewMockTopupResponseMapper(suite.Ctrl)
+	suite.E = echo.New()
+	suite.Handler = api.NewHandlerTopup(suite.MockTopupClient, suite.E, suite.MockLogger, suite.MockMapper)
+}
 
-	expectedResponse := &pb.ApiResponsePaginationTopup{
+func (suite *TopupHandlerTestSuite) TearDownTest() {
+	suite.Ctrl.Finish()
+}
+
+func (suite *TopupHandlerTestSuite) TestFindAllTopup_Success() {
+	grpcResponse := &pb.ApiResponsePaginationTopup{
 		Status:  "success",
-		Message: "Topup data retrieved successfully",
+		Message: "Topups retrieved successfully",
 		Data: []*pb.TopupResponse{
-			{
-				Id:          1,
-				CardNumber:  "1234567890",
-				TopupAmount: 10000,
-			},
-			{
-				Id:          2,
-				CardNumber:  "0987654321",
-				TopupAmount: 20000,
-			},
+			{Id: 1, TopupNo: "TP123", CardNumber: "1234", TopupAmount: 100000},
+			{Id: 2, TopupNo: "TP124", CardNumber: "5678", TopupAmount: 200000},
 		},
-		Pagination: &pb.PaginationMeta{
-			CurrentPage: 1,
-			PageSize:    2,
-			TotalPages:  1,
-		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 2, TotalPages: 1},
+	}
+	expectedApiResponse := &response.ApiResponsePaginationTopup{
+		Status:     grpcResponse.Status,
+		Message:    grpcResponse.Message,
+		Data:       []*response.TopupResponse{{ID: 1, TopupNo: "TP123", CardNumber: "1234", TopupAmount: 100000}, {ID: 2, TopupNo: "TP124", CardNumber: "5678", TopupAmount: 200000}},
+		Pagination: &response.PaginationMeta{CurrentPage: 1, PageSize: 2, TotalPages: 1},
 	}
 
-	mockTopupClient.EXPECT().
-		FindAllTopup(
-			gomock.Any(),
-			&pb.FindAllTopupRequest{
-				Page:     1,
-				PageSize: 10,
-				Search:   "",
-			},
-		).
-		Return(expectedResponse, nil)
+	suite.MockTopupClient.EXPECT().FindAllTopup(gomock.Any(), &pb.FindAllTopupRequest{Page: 1, PageSize: 10, Search: "test"}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationTopup(grpcResponse).Return(expectedApiResponse)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/topup/findall?page=1&page_size=10", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/topups?page=1&page_size=10&search=test", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
+	err := suite.Handler.FindAll(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err := handler.FindAll(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsePaginationTopup
+	var resp response.ApiResponsePaginationTopup
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Topup data retrieved successfully", resp.Message)
-	assert.Len(t, resp.Data, 2)
+	suite.NoError(err)
+	suite.Equal("success", resp.Status)
+	suite.Len(resp.Data, 2)
 }
 
-func TestFindAllTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupHandlerTestSuite) TestFindAllTopup_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTopupClient.EXPECT().FindAllTopup(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve topup data", zap.Error(grpcError)).Times(1)
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockTopupClient.EXPECT().
-		FindAllTopup(
-			gomock.Any(),
-			&pb.FindAllTopupRequest{
-				Page:     1,
-				PageSize: 10,
-				Search:   "",
-			},
-		).
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve topup data",
-		})
-
-	mockLogger.EXPECT().Debug("Failed to retrieve topup data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/topup/findall?page=1&page_size=10", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/topups", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.FindAll(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to retrieve topup data")
+	err := suite.Handler.FindAll(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestFindAllTopup_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	expectedResponse := &pb.ApiResponsePaginationTopup{
-		Status:     "success",
-		Message:    "No topup data found",
-		Data:       []*pb.TopupResponse{},
-		Pagination: &pb.PaginationMeta{},
-	}
-
-	mockTopupClient.EXPECT().
-		FindAllTopup(
-			gomock.Any(),
-			&pb.FindAllTopupRequest{
-				Page:     1,
-				PageSize: 10,
-				Search:   "",
-			},
-		).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/topup/findall?page=1&page_size=10", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.FindAll(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsePaginationTopup
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "No topup data found", resp.Message)
-	assert.Empty(t, resp.Data)
-}
-
-func TestFindByIdTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	expectedResponse := &pb.ApiResponseTopup{
+func (suite *TopupHandlerTestSuite) TestFindAllTopupByCardNumber_Success() {
+	cardNumber := "1234567890123456"
+	grpcResponse := &pb.ApiResponsePaginationTopup{
 		Status:  "success",
-		Message: "Topup data retrieved successfully",
-		Data: &pb.TopupResponse{
-			Id:          1,
-			CardNumber:  "1234567890",
-			TopupAmount: 10000,
+		Message: "Topups for card retrieved successfully",
+		Data: []*pb.TopupResponse{
+			{Id: 1, TopupNo: "TP123", CardNumber: cardNumber, TopupAmount: 100000},
 		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 1, TotalPages: 1},
+	}
+	expectedApiResponse := &response.ApiResponsePaginationTopup{
+		Status:     grpcResponse.Status,
+		Message:    grpcResponse.Message,
+		Data:       []*response.TopupResponse{{ID: 1, TopupNo: "TP123", CardNumber: cardNumber, TopupAmount: 100000}},
+		Pagination: &response.PaginationMeta{CurrentPage: 1, PageSize: 1, TotalPages: 1},
 	}
 
-	mockTopupClient.EXPECT().
-		FindByIdTopup(
-			gomock.Any(),
-			&pb.FindByIdTopupRequest{
-				TopupId: 1,
-			},
-		).
-		Return(expectedResponse, nil)
+	suite.MockTopupClient.EXPECT().FindAllTopupByCardNumber(gomock.Any(), &pb.FindAllTopupByCardNumberRequest{CardNumber: cardNumber, Page: 1, PageSize: 10, Search: ""}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationTopup(grpcResponse).Return(expectedApiResponse)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/topup/findbyid/1", nil)
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/topups/card-number/%s?page=1&page_size=10", cardNumber), nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("card_number")
+	c.SetParamValues(cardNumber)
+
+	err := suite.Handler.FindAllByCardNumber(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponsePaginationTopup
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
+}
+
+func (suite *TopupHandlerTestSuite) TestFindAllTopupByCardNumber_Failure() {
+	cardNumber := "1234567890123456"
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTopupClient.EXPECT().FindAllTopupByCardNumber(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve topup data", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/topups/card-number/%s", cardNumber), nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("card_number")
+	c.SetParamValues(cardNumber)
+
+	err := suite.Handler.FindAllByCardNumber(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *TopupHandlerTestSuite) TestFindByIdTopup_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseTopup{Status: "success", Data: &pb.TopupResponse{Id: int32(id), TopupNo: "TP123", CardNumber: "1234", TopupAmount: 100000}}
+	expectedApiResponse := &response.ApiResponseTopup{Status: "success", Data: &response.TopupResponse{ID: id, TopupNo: "TP123", CardNumber: "1234", TopupAmount: 100000}}
+
+	suite.MockTopupClient.EXPECT().FindByIdTopup(gomock.Any(), &pb.FindByIdTopupRequest{TopupId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTopup(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/topups/1", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
+	err := suite.Handler.FindById(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err := handler.FindById(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTopup
+	var resp response.ApiResponseTopup
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Topup data retrieved successfully", resp.Message)
-	assert.Equal(t, int32(1), resp.Data.Id)
-	assert.Equal(t, "1234567890", resp.Data.CardNumber)
-	assert.Equal(t, int32(10000), resp.Data.TopupAmount)
+	suite.NoError(err)
+	suite.Equal(int(id), resp.Data.ID)
 }
 
-func TestFindByIdTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockTopupClient.EXPECT().
-		FindByIdTopup(
-			gomock.Any(),
-			&pb.FindByIdTopupRequest{
-				TopupId: 1,
-			},
-		).
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve topup data",
-		})
-
-	mockLogger.EXPECT().Debug("Failed to retrieve topup data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/topup/findbyid/1", nil)
+func (suite *TopupHandlerTestSuite) TestFindByIdTopup_InvalidID() {
+	req := httptest.NewRequest(http.MethodGet, "/api/topups/abc", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("1")
-
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.FindById(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to retrieve topup data")
-}
-
-func TestFindByIdTopup_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/topup/findbyid/abc", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("abc")
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
+	err := suite.Handler.FindById(c)
 
-	err := handler.FindById(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Bad Request: Invalid ID", resp.Message)
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
 }
 
-func TestFindByCardNumberTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupHandlerTestSuite) TestFindByActiveTopup_Success() {
+	grpcResponse := &pb.ApiResponsePaginationTopupDeleteAt{Status: "success", Data: []*pb.TopupResponseDeleteAt{{Id: 1, TopupNo: "TP123"}}}
+	expectedApiResponse := &response.ApiResponsePaginationTopupDeleteAt{Status: "success", Data: []*response.TopupResponseDeleteAt{{ID: 1, TopupNo: "TP123"}}}
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockTopupClient.EXPECT().FindByActive(gomock.Any(), &pb.FindAllTopupRequest{Page: 1, PageSize: 10, Search: ""}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationTopupDeleteAt(grpcResponse).Return(expectedApiResponse)
 
-	expectedResponse := &pb.ApiResponseTopup{
-		Status:  "success",
-		Message: "Topup data retrieved successfully",
+	req := httptest.NewRequest(http.MethodGet, "/api/topups/active", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.FindByActive(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponsePaginationTopupDeleteAt
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
+}
+
+func (suite *TopupHandlerTestSuite) TestFindByActiveTopup_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTopupClient.EXPECT().FindByActive(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve topup data", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/topups/active", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.FindByActive(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *TopupHandlerTestSuite) TestFindByTrashedTopup_Success() {
+	grpcResponse := &pb.ApiResponsePaginationTopupDeleteAt{Status: "success", Data: []*pb.TopupResponseDeleteAt{{Id: 2, TopupNo: "TP999"}}}
+	expectedApiResponse := &response.ApiResponsePaginationTopupDeleteAt{Status: "success", Data: []*response.TopupResponseDeleteAt{{ID: 2, TopupNo: "TP999"}}}
+
+	suite.MockTopupClient.EXPECT().FindByTrashed(gomock.Any(), &pb.FindAllTopupRequest{Page: 1, PageSize: 10, Search: ""}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationTopupDeleteAt(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/topups/trashed", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.FindByTrashed(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponsePaginationTopupDeleteAt
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
+}
+
+func (suite *TopupHandlerTestSuite) TestFindByTrashedTopup_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTopupClient.EXPECT().FindByTrashed(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve topup data", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/topups/trashed", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.FindByTrashed(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *TopupHandlerTestSuite) TestCreateTopup_Success() {
+	apiKey := "test-api-key"
+
+	requestBody := requests.CreateTopupRequest{
+		CardNumber:  "1234567890123456",
+		TopupAmount: 150000,
+		TopupMethod: "alfamart",
+	}
+
+	grpcRequest := &pb.CreateTopupRequest{
+		CardNumber:  requestBody.CardNumber,
+		TopupAmount: int32(requestBody.TopupAmount),
+		TopupMethod: requestBody.TopupMethod,
+	}
+
+	grpcResponse := &pb.ApiResponseTopup{
+		Status: "success",
 		Data: &pb.TopupResponse{
-			Id:          1,
-			CardNumber:  "1234567890",
-			TopupAmount: 10000,
+			Id:          3,
+			TopupNo:     "TP125",
+			CardNumber:  requestBody.CardNumber,
+			TopupAmount: int32(requestBody.TopupAmount),
 		},
 	}
 
-	mockTopupClient.EXPECT().
-		FindByCardNumberTopup(
-			gomock.Any(),
-			&pb.FindByCardNumberTopupRequest{
-				CardNumber: "1234567890",
-			},
-		).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/topup/findbycardnumber/1234567890", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("card_number")
-	c.SetParamValues("1234567890")
-
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.FindByCardNumber(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTopup
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Topup data retrieved successfully", resp.Message)
-	assert.Equal(t, int32(1), resp.Data.Id)
-	assert.Equal(t, "1234567890", resp.Data.CardNumber)
-	assert.Equal(t, int32(10000), resp.Data.TopupAmount)
-}
-
-func TestFindByCardNumberTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockTopupClient.EXPECT().
-		FindByCardNumberTopup(
-			gomock.Any(),
-			&pb.FindByCardNumberTopupRequest{
-				CardNumber: "1234567890",
-			},
-		).
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve topup data",
-		})
-
-	mockLogger.EXPECT().Debug("Failed to retrieve topup data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/topup/findbycardnumber/1234567890", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("card_number")
-	c.SetParamValues("1234567890")
-
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.FindByCardNumber(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to retrieve topup data")
-}
-
-func TestFindByActiveTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	expectedResponse := &pb.ApiResponsePaginationTopupDeleteAt{
-		Status:  "success",
-		Message: "Topup data retrieved successfully",
-		Data: []*pb.TopupResponseDeleteAt{
-			{
-				Id:          1,
-				CardNumber:  "1234567890",
-				TopupAmount: 10000,
-			},
+	expectedApiResponse := &response.ApiResponseTopup{
+		Status: "success",
+		Data: &response.TopupResponse{
+			ID:          3,
+			TopupNo:     "TP125",
+			CardNumber:  requestBody.CardNumber,
+			TopupAmount: requestBody.TopupAmount,
 		},
 	}
 
-	request := &pb.FindAllTopupRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
+	suite.MockTopupClient.EXPECT().CreateTopup(gomock.Any(), grpcRequest).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTopup(grpcResponse).Return(expectedApiResponse)
 
-	mockTopupClient.EXPECT().
-		FindByActive(
-			gomock.Any(),
-			request,
-		).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/topup/findbyactive", nil)
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/topups/create", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
+	c.Set("apiKey", apiKey)
 
-	err := handler.FindByActive(c)
+	err := suite.Handler.Create(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsePaginationTopupDeleteAt
+	var resp response.ApiResponseTopup
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Topup data retrieved successfully", resp.Message)
-	assert.Len(t, resp.Data, 1)
+	suite.NoError(err)
+	suite.Equal("TP125", resp.Data.TopupNo)
 }
 
-func TestFindByActiveTopup_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupHandlerTestSuite) TestCreateTopup_Failure() {
+	apiKey := "test-api-key"
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	request := &pb.FindAllTopupRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
+	requestBody := requests.CreateTopupRequest{
+		CardNumber:  "1234567890123456",
+		TopupAmount: 150000,
+		TopupMethod: "alfamart",
 	}
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTopupClient.EXPECT().CreateTopup(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to create topup", zap.Error(grpcError)).Times(1)
 
-	expectedResponse := &pb.ApiResponsePaginationTopupDeleteAt{
-		Status:  "success",
-		Message: "No active topup data found",
-		Data:    []*pb.TopupResponseDeleteAt{},
-	}
-
-	mockTopupClient.EXPECT().
-		FindByActive(
-			gomock.Any(),
-			request,
-		).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/topup/findbyactive", nil)
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/topups/create", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
+	c.Set("apiKey", apiKey)
 
-	err := handler.FindByActive(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsesTopup
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "No active topup data found", resp.Message)
-	assert.Len(t, resp.Data, 0)
+	err := suite.Handler.Create(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestFindByActiveTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupHandlerTestSuite) TestCreateTopup_ValidationError() {
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	request := &pb.FindAllTopupRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockTopupClient.EXPECT().
-		FindByActive(
-			gomock.Any(),
-			request,
-		).
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve topup data",
-		})
-
-	mockLogger.EXPECT().Debug("Failed to retrieve topup data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/topup/findbyactive", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.FindByActive(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to retrieve topup data")
-}
-
-func TestFindByTrashedTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	request := &pb.FindAllTopupRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	expectedResponse := &pb.ApiResponsePaginationTopupDeleteAt{
-		Status:  "success",
-		Message: "Topup data retrieved successfully",
-		Data: []*pb.TopupResponseDeleteAt{
-			{
-				Id:          1,
-				CardNumber:  "1234567890",
-				TopupAmount: 10000,
-			},
-		},
-	}
-
-	mockTopupClient.EXPECT().
-		FindByTrashed(
-			gomock.Any(),
-			request,
-		).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/topup/findbytrashed", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.FindByTrashed(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsesTopup
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Topup data retrieved successfully", resp.Message)
-	assert.Len(t, resp.Data, 1)
-}
-
-func TestFindByTrashedTopup_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	expectedResponse := &pb.ApiResponsePaginationTopupDeleteAt{
-		Status:  "success",
-		Message: "No trashed topup data found",
-		Data:    []*pb.TopupResponseDeleteAt{},
-	}
-
-	request := &pb.FindAllTopupRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockTopupClient.EXPECT().
-		FindByTrashed(
-			gomock.Any(),
-			request,
-		).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/topup/findbytrashed", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.FindByTrashed(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsesTopup
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "No trashed topup data found", resp.Message)
-	assert.Len(t, resp.Data, 0)
-}
-
-func TestFindByTrashedTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	request := &pb.FindAllTopupRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockTopupClient.EXPECT().
-		FindByTrashed(
-			gomock.Any(),
-			request,
-		).
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve topup data",
-		})
-
-	mockLogger.EXPECT().Debug("Failed to retrieve topup data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/topup/findbytrashed", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.FindByTrashed(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to retrieve topup data")
-}
-
-func TestCreateTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	expectedResponse := &pb.ApiResponseTopup{
-		Status:  "success",
-		Message: "Topup created successfully",
-		Data: &pb.TopupResponse{
-			Id:          1,
-			CardNumber:  "1234567890",
-			TopupAmount: 500000,
-		},
-	}
-
-	req := &requests.CreateTopupRequest{
-		CardNumber:  "1234567890",
-		TopupNo:     "TOPUP123",
-		TopupAmount: 500000,
-		TopupMethod: "mandiri",
-	}
-
-	mockTopupClient.EXPECT().
-		CreateTopup(
-			gomock.Any(),
-			&pb.CreateTopupRequest{
-				CardNumber:  req.CardNumber,
-				TopupNo:     req.TopupNo,
-				TopupAmount: int32(req.TopupAmount),
-				TopupMethod: req.TopupMethod,
-			},
-		).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	bodyJson, err := json.Marshal(req)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
-	httpReq := httptest.NewRequest(http.MethodPost, "/api/topup/create", bytes.NewReader(bodyJson))
-	httpReq.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
-
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err = handler.Create(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTopup
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Topup created successfully", resp.Message)
-	assert.Equal(t, "1234567890", resp.Data.CardNumber)
-	assert.Equal(t, int32(500000), resp.Data.TopupAmount)
-}
-
-func TestCreateTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	req := &requests.CreateTopupRequest{
-		CardNumber:  "1234567890",
-		TopupNo:     "TOPUP123",
-		TopupAmount: 500000,
-		TopupMethod: "mandiri",
-	}
-
-	mockTopupClient.EXPECT().
-		CreateTopup(
-			gomock.Any(),
-			&pb.CreateTopupRequest{
-				CardNumber:  req.CardNumber,
-				TopupNo:     req.TopupNo,
-				TopupAmount: int32(req.TopupAmount),
-				TopupMethod: req.TopupMethod,
-			},
-		).
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to create topup",
-		})
-
-	mockLogger.EXPECT().Debug("Failed to create topup", gomock.Any()).Times(1)
-
-	e := echo.New()
-	bodyJson, err := json.Marshal(req)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
-	httpReq := httptest.NewRequest(http.MethodPost, "/api/topup/create", bytes.NewReader(bodyJson))
-	httpReq.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
-
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err = handler.Create(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to create topup")
-}
-
-func TestCreateTopup_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	req := &requests.CreateTopupRequest{
+	invalidRequestBody := requests.CreateTopupRequest{
 		CardNumber:  "",
-		TopupNo:     "",
-		TopupAmount: 0,
-		TopupMethod: "",
+		TopupAmount: 40000,
 	}
 
-	mockTopupClient.EXPECT().CreateTopup(gomock.Any(), gomock.Any()).Times(0)
-	mockLogger.EXPECT().Debug("Validation Error", gomock.Any()).Times(1)
-
-	e := echo.New()
-	bodyJson, err := json.Marshal(req)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
-	httpReq := httptest.NewRequest(http.MethodPost, "/api/topup/create", bytes.NewReader(bodyJson))
-	httpReq.Header.Set("Content-Type", "application/json")
+	bodyBytes, _ := json.Marshal(invalidRequestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/topups/create", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
+	suite.MockLogger.EXPECT().
+		Debug("Validation Error", gomock.Any()).
+		Times(1)
 
-	err = handler.Create(c)
+	err := suite.Handler.Create(c)
 
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Validation Error")
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
 }
 
-func TestUpdateTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupHandlerTestSuite) TestUpdateTopup_Success() {
+	id := 1
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	requestBody := requests.UpdateTopupRequest{
+		TopupID:     &id,
+		CardNumber:  "1234567890123456",
+		TopupAmount: 200000,
+		TopupMethod: "alfamart",
+	}
 
-	expectedResponse := &pb.ApiResponseTopup{
-		Status:  "success",
-		Message: "Topup updated successfully",
+	grpcRequest := &pb.UpdateTopupRequest{
+		TopupId:     int32(id),
+		CardNumber:  requestBody.CardNumber,
+		TopupAmount: int32(requestBody.TopupAmount),
+		TopupMethod: requestBody.TopupMethod,
+	}
+
+	grpcResponse := &pb.ApiResponseTopup{
+		Status: "success",
 		Data: &pb.TopupResponse{
-			Id:          1,
-			CardNumber:  "1234567890",
-			TopupAmount: 600000,
+			Id:          int32(id),
+			TopupAmount: int32(requestBody.TopupAmount),
 		},
 	}
-	req := &requests.UpdateTopupRequest{
-		TopupID:     1,
-		CardNumber:  "1234567890",
-		TopupAmount: 600000,
-		TopupMethod: "mandiri",
+	expectedApiResponse := &response.ApiResponseTopup{
+		Status: "success",
+		Data: &response.TopupResponse{
+			ID:          id,
+			TopupAmount: requestBody.TopupAmount,
+		},
 	}
 
-	mockTopupClient.EXPECT().
-		UpdateTopup(
-			gomock.Any(),
-			&pb.UpdateTopupRequest{
-				TopupId:     int32(req.TopupID),
-				CardNumber:  req.CardNumber,
-				TopupAmount: int32(req.TopupAmount),
-				TopupMethod: req.TopupMethod,
-			},
-		).
-		Return(expectedResponse, nil)
+	suite.MockTopupClient.EXPECT().UpdateTopup(gomock.Any(), grpcRequest).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTopup(grpcResponse).Return(expectedApiResponse)
 
-	e := echo.New()
-	bodyJson, _ := json.Marshal(req)
-	httpReq := httptest.NewRequest(http.MethodPost, "/api/topup/update/1", bytes.NewReader(bodyJson))
-	httpReq.Header.Set("Content-Type", "application/json")
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/topups/update/%d", id), bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
-	c.SetParamValues("1")
+	c.SetParamValues(strconv.Itoa(id))
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
+	err := suite.Handler.Update(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err := handler.Update(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTopup
+	var resp response.ApiResponseTopup
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Topup updated successfully", resp.Message)
-	assert.Equal(t, "1234567890", resp.Data.CardNumber)
+	suite.NoError(err)
+	suite.Equal(int(200000), resp.Data.TopupAmount)
 }
 
-func TestUpdateTopup_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupHandlerTestSuite) TestUpdateTopup_InvalidID() {
+	req := httptest.NewRequest(http.MethodPost, "/api/topups/update/abc", nil)
+	suite.MockLogger.EXPECT().
+		Debug("Bad Request", gomock.Any()).
+		Times(1)
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	invalidID := "abc"
-
-	req := &requests.UpdateTopupRequest{
-		TopupID:     1,
-		CardNumber:  "1234567890",
-		TopupAmount: 600000,
-		TopupMethod: "mandiri",
-	}
-
-	mockLogger.EXPECT().Debug("Bad Request", gomock.Any()).Times(1)
-
-	e := echo.New()
-	bodyJson, _ := json.Marshal(req)
-	httpReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/topup/update/%s", invalidID), bytes.NewReader(bodyJson))
-	httpReq.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
-	c.SetParamValues(invalidID)
+	c.SetParamValues("abc")
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.Update(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Bad Request: Invalid ID")
+	err := suite.Handler.Update(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
 }
 
-func TestUpdateTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupHandlerTestSuite) TestUpdateTopup_ValidationError() {
+	id := 1
+	apiKey := "test-api-key"
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	req := &requests.UpdateTopupRequest{
-		TopupID:     1,
-		CardNumber:  "1234567890",
-		TopupAmount: 600000,
-		TopupMethod: "mandiri",
-	}
-
-	mockTopupClient.EXPECT().
-		UpdateTopup(
-			gomock.Any(),
-			&pb.UpdateTopupRequest{
-				TopupId:     int32(req.TopupID),
-				CardNumber:  req.CardNumber,
-				TopupAmount: int32(req.TopupAmount),
-				TopupMethod: req.TopupMethod,
-			},
-		).
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to update topup",
-		})
-
-	mockLogger.EXPECT().Debug("Failed to update topup", gomock.Any()).Times(1)
-
-	e := echo.New()
-	bodyJson, _ := json.Marshal(req)
-	httpReq := httptest.NewRequest(http.MethodPut, "/api/topup/update/1", bytes.NewReader(bodyJson))
-	httpReq.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("1")
-
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.Update(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to update topup")
-}
-
-func TestUpdateTopup_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	req := &requests.UpdateTopupRequest{
-		TopupID:     0,
+	invalidRequestBody := requests.UpdateTopupRequest{
 		CardNumber:  "",
-		TopupAmount: 0,
-		TopupMethod: "",
+		TopupAmount: 40000,
 	}
 
-	mockLogger.EXPECT().Debug("Bad Request", gomock.Any()).Times(1)
-
-	e := echo.New()
-	bodyJson, _ := json.Marshal(req)
-	httpReq := httptest.NewRequest(http.MethodPut, "/api/topup/update", bytes.NewReader(bodyJson))
-	httpReq.Header.Set("Content-Type", "application/json")
+	bodyBytes, _ := json.Marshal(invalidRequestBody)
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/topups/update/%d", id), bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues(strconv.Itoa(id))
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
+	c.Set("apiKey", apiKey)
 
-	err := handler.Update(c)
+	suite.MockLogger.EXPECT().
+		Debug("Validation Error", gomock.Any()).
+		Times(1)
 
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	err := suite.Handler.Update(c)
 
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Bad Request")
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
 }
 
-func TestTrashTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupHandlerTestSuite) TestTrashTopup_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseTopupDeleteAt{Status: "success", Data: &pb.TopupResponseDeleteAt{Id: int32(id)}}
+	expectedApiResponse := &response.ApiResponseTopupDeleteAt{Status: "success", Data: &response.TopupResponseDeleteAt{ID: id}}
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockTopupClient.EXPECT().TrashedTopup(gomock.Any(), &pb.FindByIdTopupRequest{TopupId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTopupDeleteAt(grpcResponse).Return(expectedApiResponse)
 
-	expectedResponse := &pb.ApiResponseTopup{
-		Status:  "success",
-		Message: "Topup trashed successfully",
-	}
-
-	mockTopupClient.EXPECT().
-		TrashedTopup(
-			gomock.Any(),
-			&pb.FindByIdTopupRequest{TopupId: 1},
-		).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPatch, "/api/topup/1/trash", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/topups/trashed/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.TrashTopup(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTopup
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Topup trashed successfully", resp.Message)
+	err := suite.Handler.TrashTopup(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 }
 
-func TestTrashTopup_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupHandlerTestSuite) TestTrashTopup_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTopupClient.EXPECT().TrashedTopup(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to trashed topup", zap.Error(grpcError)).Times(1)
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPatch, "/api/topup/trash/ab", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/topups/trashed/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("ab")
-
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.TrashTopup(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Bad Request: Invalid ID", resp.Message)
-}
-
-func TestTrashTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockTopupClient.EXPECT().
-		TrashedTopup(
-			gomock.Any(),
-			&pb.FindByIdTopupRequest{TopupId: 1},
-		).
-		Return(nil, fmt.Errorf("internal server error"))
-
-	mockLogger.EXPECT().Debug("Failed to trashed topup", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPatch, "/api/topup/1/trash", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.TrashTopup(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to trashed topup")
+	err := suite.Handler.TrashTopup(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestRestoreTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupHandlerTestSuite) TestRestoreTopup_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseTopupDeleteAt{Status: "success", Data: &pb.TopupResponseDeleteAt{Id: int32(id)}}
+	expectedApiResponse := &response.ApiResponseTopupDeleteAt{Status: "success", Data: &response.TopupResponseDeleteAt{ID: id}}
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockTopupClient.EXPECT().RestoreTopup(gomock.Any(), &pb.FindByIdTopupRequest{TopupId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTopupDeleteAt(grpcResponse).Return(expectedApiResponse)
 
-	expectedResponse := &pb.ApiResponseTopup{
-		Status:  "success",
-		Message: "Topup restored successfully",
-		Data: &pb.TopupResponse{
-			Id:          1,
-			CardNumber:  "1234567890",
-			TopupAmount: 500000,
-		},
-	}
-
-	mockTopupClient.EXPECT().
-		RestoreTopup(
-			gomock.Any(),
-			&pb.FindByIdTopupRequest{TopupId: 1},
-		).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPatch, "/api/topup/1/restore", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/topups/restore/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.RestoreTopup(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTopup
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Topup restored successfully", resp.Message)
-	assert.Equal(t, int32(1), resp.Data.Id)
-	assert.Equal(t, "1234567890", resp.Data.CardNumber)
-	assert.Equal(t, int32(500000), resp.Data.TopupAmount)
+	err := suite.Handler.RestoreTopup(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 }
 
-func TestRestoreTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupHandlerTestSuite) TestRestoreTopup_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTopupClient.EXPECT().RestoreTopup(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to restore topup", zap.Error(grpcError)).Times(1)
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockTopupClient.EXPECT().
-		RestoreTopup(
-			gomock.Any(),
-			&pb.FindByIdTopupRequest{TopupId: 1},
-		).
-		Return(nil, fmt.Errorf("internal server error"))
-
-	mockLogger.EXPECT().Debug("Failed to restore topup", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPatch, "/api/topup/1/restore", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/topups/restore/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.RestoreTopup(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to restore topup")
+	err := suite.Handler.RestoreTopup(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestRestoreTopup_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupHandlerTestSuite) TestDeleteTopupPermanent_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseTopupDelete{Status: "success"}
+	expectedApiResponse := &response.ApiResponseTopupDelete{Status: "success"}
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockTopupClient.EXPECT().DeleteTopupPermanent(gomock.Any(), &pb.FindByIdTopupRequest{TopupId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTopupDelete(grpcResponse).Return(expectedApiResponse)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPatch, "/api/topup/invalid/restore", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/api/topups/permanent/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("invalid")
-
-	mockLogger.EXPECT().Debug("Bad Request: Invalid ID", gomock.Any()).Times(1)
-
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.RestoreTopup(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Bad Request: Invalid ID", resp.Message)
-}
-
-func TestDeleteTopupPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	expectedResponse := &pb.ApiResponseTopupDelete{
-		Status:  "success",
-		Message: "Topup deleted permanently",
-	}
-
-	mockTopupClient.EXPECT().
-		DeleteTopupPermanent(
-			gomock.Any(),
-			&pb.FindByIdTopupRequest{TopupId: 1},
-		).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/topup/1/permanent", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.DeleteTopupPermanent(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTopup
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Topup deleted permanently", resp.Message)
+	err := suite.Handler.DeleteTopupPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 }
 
-func TestDeleteTopupPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupHandlerTestSuite) TestDeleteTopupPermanent_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTopupClient.EXPECT().DeleteTopupPermanent(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to delete topup", zap.Error(grpcError)).Times(1)
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockTopupClient.EXPECT().
-		DeleteTopupPermanent(
-			gomock.Any(),
-			&pb.FindByIdTopupRequest{TopupId: 1},
-		).
-		Return(nil, fmt.Errorf("internal server error"))
-
-	mockLogger.EXPECT().Debug("Failed to delete topup", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/topup/permanent/invalid", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/api/topups/permanent/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
-
-	err := handler.DeleteTopupPermanent(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to delete topup")
+	err := suite.Handler.DeleteTopupPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestDeleteTopupPermanent_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupHandlerTestSuite) TestRestoreAllTopup_Success() {
+	grpcResponse := &pb.ApiResponseTopupAll{Status: "success"}
+	expectedApiResponse := &response.ApiResponseTopupAll{Status: "success"}
 
-	mockTopupClient := mock_pb.NewMockTopupServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockLogger.EXPECT().Debug("Successfully restored all topup").Times(1)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/topup/invalid/permanent", nil)
+	suite.MockTopupClient.EXPECT().RestoreAllTopup(gomock.Any(), &emptypb.Empty{}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTopupAll(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/topups/restore/all", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("invalid")
+	c := suite.E.NewContext(req, rec)
 
-	mockLogger.EXPECT().Debug("Bad Request: Invalid ID", gomock.Any()).Times(1)
+	err := suite.Handler.RestoreAllTopup(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+}
 
-	handler := api.NewHandlerTopup(mockTopupClient, e, mockLogger)
+func (suite *TopupHandlerTestSuite) TestRestoreAllTopup_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTopupClient.EXPECT().RestoreAllTopup(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Error("Failed to restore all topup", zap.Error(grpcError)).Times(1)
 
-	err := handler.DeleteTopupPermanent(c)
+	req := httptest.NewRequest(http.MethodPost, "/api/topups/restore/all", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
 
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	err := suite.Handler.RestoreAllTopup(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
 
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Bad Request: Invalid ID", resp.Message)
+func (suite *TopupHandlerTestSuite) TestDeleteAllTopupPermanent_Success() {
+	grpcResponse := &pb.ApiResponseTopupAll{Status: "success"}
+	expectedApiResponse := &response.ApiResponseTopupAll{Status: "success"}
+
+	suite.MockLogger.EXPECT().Debug("Successfully deleted all topup permanently").Times(1)
+
+	suite.MockTopupClient.EXPECT().DeleteAllTopupPermanent(gomock.Any(), &emptypb.Empty{}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTopupAll(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/topups/trashed/all", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.DeleteAllTopupPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+}
+
+func (suite *TopupHandlerTestSuite) TestDeleteAllTopupPermanent_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTopupClient.EXPECT().DeleteAllTopupPermanent(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Error("Failed to permanently delete all topup", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/topups/trashed/all", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.DeleteAllTopupPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func TestTopupHandlerSuite(t *testing.T) {
+	suite.Run(t, new(TopupHandlerTestSuite))
 }

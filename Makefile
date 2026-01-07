@@ -23,6 +23,11 @@ run-server:
 	go run cmd/server/main.go
 
 gen:
+	mockgen -source=pkg/database/schema/db.go -destination=pkg/database/schema/mocks/mock_db.go -package=mock_db
+
+	mockgen -source=internal/mapper/record/interfaces.go -destination=internal/mapper/record/mocks/mock_recordmapper.go -package=mock_recordmapper
+
+	
 	mockgen -source=internal/service/interfaces.go -destination=internal/service/mocks/mock.go
 	mockgen -source=internal/repository/interfaces.go -destination=internal/repository/mocks/mock.go
 

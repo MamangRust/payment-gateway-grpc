@@ -9,900 +9,399 @@ import (
 	mock_service "MamangRust/paymentgatewaygrpc/internal/service/mocks"
 	"context"
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func TestFindAllMerchants_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+type MerchantHandleGrpcTestSuite struct {
+	suite.Suite
+	Ctrl                *gomock.Controller
+	MockMerchantService *mock_service.MockMerchantService
+	MockProtoMapper     *mock_protomapper.MockMerchantProtoMapper
+	Handler             gapi.MerchantHandleGrpc
+}
 
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
+func (suite *MerchantHandleGrpcTestSuite) SetupTest() {
+	suite.Ctrl = gomock.NewController(suite.T())
+	suite.MockMerchantService = mock_service.NewMockMerchantService(suite.Ctrl)
+	suite.MockProtoMapper = mock_protomapper.NewMockMerchantProtoMapper(suite.Ctrl)
+	suite.Handler = gapi.NewMerchantHandleGrpc(suite.MockMerchantService, suite.MockProtoMapper)
+}
 
-	search := ""
-	pageSize := 1
-	page := 1
+func (suite *MerchantHandleGrpcTestSuite) TearDownTest() {
+	suite.Ctrl.Finish()
+}
 
+func (suite *MerchantHandleGrpcTestSuite) TestFindAllMerchant_Success() {
 	req := &pb.FindAllMerchantRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
+		Page:     1,
+		PageSize: 10,
+		Search:   "test",
 	}
 
 	mockMerchants := []*response.MerchantResponse{
-		{
-			ID:   1,
-			Name: "Merchant A",
-		},
-		{
-			ID:   2,
-			Name: "Merchant B",
-		},
+		{ID: 1, Name: "Merchant 1", UserID: 1, ApiKey: "API123", Status: "active"},
+		{ID: 2, Name: "Merchant 2", UserID: 2, ApiKey: "API456", Status: "active"},
 	}
-
 	mockProtoMerchants := []*pb.MerchantResponse{
-		{
-			Id:   1,
-			Name: "Merchant A",
-		},
-		{
-			Id:   2,
-			Name: "Merchant B",
-		},
+		{Id: 1, Name: "Merchant 1", UserId: 1, ApiKey: "API123", Status: "active"},
+		{Id: 2, Name: "Merchant 2", UserId: 2, ApiKey: "API456", Status: "active"},
 	}
 
-	mockMerchantService.EXPECT().
-		FindAll(pageSize, page, search).
-		Return(mockMerchants, 2, nil).
-		Times(1)
+	totalRecords := 2
+	suite.MockMerchantService.EXPECT().
+		FindAll(gomock.Eq(&requests.FindAllMerchants{Page: 1, PageSize: 10, Search: "test"})).
+		Return(mockMerchants, &totalRecords, nil)
 
-	mockProtoMapper.EXPECT().
-		ToResponsesMerchant(mockMerchants).
-		Return(mockProtoMerchants).
-		Times(1)
+	suite.MockProtoMapper.EXPECT().
+		ToProtoResponsePaginationMerchant(gomock.Any(), "success", "Successfully fetched merchant record", mockMerchants).
+		Return(&pb.ApiResponsePaginationMerchant{
+			Status:  "success",
+			Message: "Successfully fetched merchant record",
+			Data:    mockProtoMerchants,
+			Pagination: &pb.PaginationMeta{
+				CurrentPage:  1,
+				PageSize:     10,
+				TotalPages:   1,
+				TotalRecords: 2,
+			},
+		})
 
-	response, err := merchantHandler.FindAllMerchant(context.Background(), req)
+	res, err := suite.Handler.FindAllMerchant(context.Background(), req)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, response)
-	assert.Equal(t, "success", response.GetStatus())
-	assert.Equal(t, "Successfully fetched merchant record", response.GetMessage())
-	assert.NotNil(t, response.GetData())
-	assert.Equal(t, int32(1), response.GetPagination().GetCurrentPage())
-	assert.Equal(t, int32(1), response.GetPagination().GetPageSize())
-	assert.Equal(t, int32(2), response.GetPagination().GetTotalRecords())
-	assert.Equal(t, int32(2), response.GetPagination().GetTotalPages())
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("Successfully fetched merchant record", res.GetMessage())
+	suite.Equal(int32(2), res.GetPagination().GetTotalRecords())
+	suite.Equal(2, len(res.GetData()))
 }
 
-func TestFindAllMerchants_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantHandleGrpcTestSuite) TestFindAllMerchant_Failure() {
+	req := &pb.FindAllMerchantRequest{Page: 1, PageSize: 10, Search: "test"}
+	serviceError := &response.ErrorResponse{Status: "error", Message: "Failed to fetch merchants"}
 
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, nil)
+	totalRecords := 0
+	suite.MockMerchantService.EXPECT().FindAll(gomock.Any()).Return(nil, &totalRecords, serviceError)
 
-	req := &pb.FindAllMerchantRequest{
-		Page:     1,
-		PageSize: 10,
-		Search:   "electronics",
-	}
+	res, _ := suite.Handler.FindAllMerchant(context.Background(), req)
 
-	mockMerchantService.EXPECT().
-		FindAll(1, 10, "electronics").
-		Return(nil, 0, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch card records",
-		}).
-		Times(1)
+	suite.Nil(res)
+}
 
-	response, err := merchantHandler.FindAllMerchant(context.Background(), req)
+func (suite *MerchantHandleGrpcTestSuite) TestFindByIdMerchant_Success() {
+	req := &pb.FindByIdMerchantRequest{MerchantId: 1}
+	mockMerchant := &response.MerchantResponse{ID: 1, Name: "Merchant 1", UserID: 1, ApiKey: "API123", Status: "active"}
+	mockProtoMerchant := &pb.MerchantResponse{Id: 1, Name: "Merchant 1", UserId: 1, ApiKey: "API123", Status: "active"}
 
-	assert.Nil(t, response)
-	assert.Error(t, err)
+	suite.MockMerchantService.EXPECT().FindById(1).Return(mockMerchant, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseMerchant("success", "Successfully fetched merchant record", mockMerchant).Return(&pb.ApiResponseMerchant{
+		Status:  "success",
+		Message: "Successfully fetched merchant record",
+		Data:    mockProtoMerchant,
+	})
 
+	res, err := suite.Handler.FindByIdMerchant(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("Merchant 1", res.GetData().GetName())
+}
+
+func (suite *MerchantHandleGrpcTestSuite) TestFindByIdMerchant_InvalidId() {
+	req := &pb.FindByIdMerchantRequest{MerchantId: 0}
+
+	res, err := suite.Handler.FindByIdMerchant(context.Background(), req)
+
+	suite.Nil(res)
+	suite.Error(err)
 	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.Internal, statusErr.Code())
-	assert.Contains(t, statusErr.Message(), "Failed to fetch card records")
+	suite.True(ok)
+	suite.Equal(codes.InvalidArgument, statusErr.Code())
+	suite.Contains(statusErr.Message(), "Failed to fetch merchant by ID")
 }
 
-func TestFindAllMerchants_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.FindAllMerchantRequest{
-		Page:     1,
-		PageSize: 10,
-		Search:   "nonexistent",
-	}
-
-	mockMerchants := []*response.MerchantResponse{}
-	mockProtoMerchants := []*pb.MerchantResponse{}
-
-	mockMerchantService.EXPECT().
-		FindAll(1, 10, "nonexistent").
-		Return(mockMerchants, 0, nil).
-		Times(1)
-
-	mockProtoMapper.EXPECT().
-		ToResponsesMerchant(mockMerchants).
-		Return(mockProtoMerchants).
-		Times(1)
-
-	response, err := merchantHandler.FindAllMerchant(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, response)
-	assert.Equal(t, "success", response.GetStatus())
-	assert.Equal(t, "Successfully fetched merchant record", response.GetMessage())
-	assert.Empty(t, response.GetData())
-	assert.Equal(t, int32(1), response.GetPagination().GetCurrentPage())
-	assert.Equal(t, int32(10), response.GetPagination().GetPageSize())
-	assert.Equal(t, int32(0), response.GetPagination().GetTotalRecords())
-	assert.Equal(t, int32(0), response.GetPagination().GetTotalPages())
-}
-
-func TestFindByIdMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.FindByIdMerchantRequest{
-		MerchantId: 1,
-	}
-
-	mockMerchant := &response.MerchantResponse{
-		ID:     1,
-		Name:   "Merchant One",
-		ApiKey: "api-key-123",
-	}
-
-	mockProtoMerchant := &pb.MerchantResponse{
-		Id:     1,
-		Name:   "Merchant One",
-		ApiKey: "api-key-123",
-	}
-
-	mockMerchantService.EXPECT().
-		FindById(1).
-		Return(mockMerchant, nil).
-		Times(1)
-
-	mockProtoMapper.EXPECT().
-		ToResponseMerchant(mockMerchant).
-		Return(mockProtoMerchant).
-		Times(1)
-
-	response, err := merchantHandler.FindByIdMerchant(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, response)
-	assert.Equal(t, "success", response.Status)
-	assert.Equal(t, "Successfully fetched merchant record", response.Message)
-	assert.Equal(t, mockProtoMerchant, response.Data)
-}
-
-func TestFindByIdMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.FindByIdMerchantRequest{
-		MerchantId: 999,
-	}
-
-	mockMerchantService.EXPECT().
-		FindById(999).
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Merchant not found: ",
-		}).
-		Times(1)
-
-	response, err := merchantHandler.FindByIdMerchant(context.Background(), req)
-
-	assert.Nil(t, response)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Merchant not found: ")
-}
-
-func TestFindByIdMerchant_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.FindByIdMerchantRequest{
-		MerchantId: 0,
-	}
-
-	response, err := merchantHandler.FindByIdMerchant(context.Background(), req)
-
-	assert.Nil(t, response)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, err.Error(), "Invalid merchant ID")
-}
-
-func TestFindByApiKey_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.FindByApiKeyRequest{
-		ApiKey: "api-key-123",
-	}
-
-	mockMerchant := &response.MerchantResponse{
-		ID:     1,
-		Name:   "Merchant One",
-		ApiKey: "api-key-123",
-	}
-
-	mockProtoMerchant := &pb.MerchantResponse{
-		Id:     1,
-		Name:   "Merchant One",
-		ApiKey: "api-key-123",
-	}
-
-	mockMerchantService.EXPECT().
-		FindByApiKey("api-key-123").
-		Return(mockMerchant, nil).
-		Times(1)
-
-	mockProtoMapper.EXPECT().
-		ToResponseMerchant(mockMerchant).
-		Return(mockProtoMerchant).
-		Times(1)
-
-	response, err := merchantHandler.FindByApiKey(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, response)
-	assert.Equal(t, "success", response.Status)
-	assert.Equal(t, "Successfully fetched merchant record", response.Message)
-	assert.Equal(t, mockProtoMerchant, response.Data)
-}
-
-func TestFindByApiKey_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.FindByApiKeyRequest{
-		ApiKey: "invalid-api-key",
-	}
-
-	mockMerchantService.EXPECT().
-		FindByApiKey("invalid-api-key").
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Merchant not found: ",
-		}).
-		Times(1)
-
-	response, err := merchantHandler.FindByApiKey(context.Background(), req)
-
-	assert.Nil(t, response)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Merchant not found: ")
-}
-
-func TestFindByMerchantUserId_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.FindByMerchantUserIdRequest{
-		UserId: 1,
-	}
-
+func (suite *MerchantHandleGrpcTestSuite) TestFindByUserIdMerchant_Success() {
+	req := &pb.FindByMerchantUserIdRequest{UserId: 1}
 	mockMerchants := []*response.MerchantResponse{
 		{
 			ID:     1,
-			Name:   "Merchant One",
-			ApiKey: "api-key-123",
-		},
-		{
-			ID:     2,
-			Name:   "Merchant Two",
-			ApiKey: "api-key-456",
+			Name:   "Merchant 1",
+			UserID: 1,
+			ApiKey: "API123",
+			Status: "active",
 		},
 	}
 
 	mockProtoMerchants := []*pb.MerchantResponse{
 		{
 			Id:     1,
-			Name:   "Merchant One",
-			ApiKey: "api-key-123",
-		},
-		{
-			Id:     2,
-			Name:   "Merchant Two",
-			ApiKey: "api-key-456",
+			Name:   "Merchant 1",
+			UserId: 1,
+			ApiKey: "API123",
+			Status: "active",
 		},
 	}
 
-	mockMerchantService.EXPECT().
-		FindByMerchantUserId(1).
-		Return(mockMerchants, nil).
-		Times(1)
+	suite.MockMerchantService.EXPECT().FindByMerchantUserId(1).Return(mockMerchants, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseMerchants("success", "Successfully fetched merchant record", mockMerchants).Return(&pb.ApiResponsesMerchant{
+		Status:  "success",
+		Message: "Successfully fetched merchant record",
+		Data:    mockProtoMerchants,
+	})
 
-	mockProtoMapper.EXPECT().
-		ToResponsesMerchant(mockMerchants).
-		Return(mockProtoMerchants).
-		Times(1)
+	res, err := suite.Handler.FindByMerchantUserId(context.Background(), req)
 
-	response, err := merchantHandler.FindByMerchantUserId(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, response)
-	assert.Equal(t, "success", response.Status)
-	assert.Equal(t, "Successfully fetched merchant record", response.Message)
-	assert.Equal(t, mockProtoMerchants, response.Data)
-
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
 }
 
-func TestFindByMerchantUserId_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantHandleGrpcTestSuite) TestFindByApiKeyMerchant_Success() {
+	req := &pb.FindByApiKeyRequest{ApiKey: "API123"}
+	mockMerchant := &response.MerchantResponse{ID: 1, Name: "Merchant 1", UserID: 1, ApiKey: "API123", Status: "active"}
+	mockProtoMerchant := &pb.MerchantResponse{Id: 1, Name: "Merchant 1", UserId: 1, ApiKey: "API123", Status: "active"}
 
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
+	suite.MockMerchantService.EXPECT().FindByApiKey("API123").Return(mockMerchant, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseMerchant("success", "Successfully fetched merchant record", mockMerchant).Return(&pb.ApiResponseMerchant{
+		Status:  "success",
+		Message: "Successfully fetched merchant record",
+		Data:    mockProtoMerchant,
+	})
 
-	req := &pb.FindByMerchantUserIdRequest{
+	res, err := suite.Handler.FindByApiKey(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("Merchant 1", res.GetData().GetName())
+}
+
+func (suite *MerchantHandleGrpcTestSuite) TestFindByActiveMerchant_Success() {
+	req := &pb.FindAllMerchantRequest{Page: 1, PageSize: 10, Search: ""}
+	activeMerchants := []*response.MerchantResponseDeleteAt{
+		{ID: 1, Name: "Merchant 1", UserID: 1, ApiKey: "API123", Status: "active"},
+	}
+	totalRecords := 1
+	suite.MockMerchantService.EXPECT().FindByActive(gomock.Any()).Return(activeMerchants, &totalRecords, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponsePaginationMerchantDeleteAt(gomock.Any(), "success", "Successfully fetched merchant record", activeMerchants).Return(&pb.ApiResponsePaginationMerchantDeleteAt{
+		Status:  "success",
+		Message: "Successfully fetched merchant record",
+		Data: []*pb.MerchantResponseDeleteAt{
+			{Id: 1, Name: "Merchant 1", UserId: 1, ApiKey: "API123", Status: "active"},
+		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 10, TotalPages: 1, TotalRecords: 1},
+	})
+
+	res, err := suite.Handler.FindByActive(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Len(res.GetData(), 1)
+}
+
+func (suite *MerchantHandleGrpcTestSuite) TestFindByTrashedMerchant_Success() {
+	req := &pb.FindAllMerchantRequest{Page: 1, PageSize: 10, Search: ""}
+	trashedMerchants := []*response.MerchantResponseDeleteAt{
+		{ID: 1, Name: "Merchant 1", UserID: 1, ApiKey: "API123", Status: "active"},
+	}
+	totalRecords := 1
+	suite.MockMerchantService.EXPECT().FindByTrashed(gomock.Any()).Return(trashedMerchants, &totalRecords, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponsePaginationMerchantDeleteAt(gomock.Any(), "success", "Successfully fetched merchant record", trashedMerchants).Return(&pb.ApiResponsePaginationMerchantDeleteAt{
+		Status:  "success",
+		Message: "Successfully fetched merchant record",
+		Data: []*pb.MerchantResponseDeleteAt{
+			{Id: 1, Name: "Merchant 1", UserId: 1, ApiKey: "API123", Status: "active"},
+		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 10, TotalPages: 1, TotalRecords: 1},
+	})
+
+	res, err := suite.Handler.FindByTrashed(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Len(res.GetData(), 1)
+}
+
+func (suite *MerchantHandleGrpcTestSuite) TestCreateMerchant_Success() {
+	req := &pb.CreateMerchantRequest{
+		Name:   "New Merchant",
 		UserId: 1,
 	}
 
-	mockMerchantService.EXPECT().
-		FindByMerchantUserId(1).
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Merchant not found: ",
-		}).
-		Times(1)
+	mockMerchant := &response.MerchantResponse{
+		ID:        1,
+		Name:      "New Merchant",
+		UserID:    1,
+		ApiKey:    "API123",
+		Status:    "active",
+		CreatedAt: time.Now().Format(time.RFC3339),
+	}
 
-	response, err := merchantHandler.FindByMerchantUserId(context.Background(), req)
+	mockProtoMerchant := &pb.MerchantResponse{
+		Id:     1,
+		Name:   "New Merchant",
+		UserId: 1,
+		ApiKey: "API123",
+		Status: "active",
+	}
 
-	assert.Nil(t, response)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Merchant not found: ")
+	suite.MockMerchantService.EXPECT().CreateMerchant(gomock.Any()).Return(mockMerchant, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseMerchant("success", "Successfully created merchant", mockMerchant).Return(&pb.ApiResponseMerchant{
+		Status:  "success",
+		Message: "Successfully created merchant",
+		Data:    mockProtoMerchant,
+	})
+
+	res, err := suite.Handler.CreateMerchant(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("New Merchant", res.GetData().GetName())
 }
 
-func TestFindByMerchantUserId_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.FindByMerchantUserIdRequest{
+func (suite *MerchantHandleGrpcTestSuite) TestCreateMerchant_ValidationError() {
+	req := &pb.CreateMerchantRequest{
+		Name:   "",
 		UserId: 0,
 	}
 
-	mockMerchantService.EXPECT().
-		FindByMerchantUserId(0).
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Merchant not found: ",
-		}).
-		Times(1)
+	res, err := suite.Handler.CreateMerchant(context.Background(), req)
 
-	response, err := merchantHandler.FindByMerchantUserId(context.Background(), req)
-
-	assert.Nil(t, response)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Merchant not found: ")
+	suite.Nil(res)
+	suite.Error(err)
+	statusErr, ok := status.FromError(err)
+	suite.True(ok)
+	suite.Equal(codes.InvalidArgument, statusErr.Code())
+	suite.Contains(statusErr.Message(), "Invalid input for create merchant")
 }
 
-func TestFindByActiveMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	mockMerchants := []*response.MerchantResponseDeleteAt{
-		{
-			ID:     1,
-			Name:   "Merchant One",
-			ApiKey: "api-key-123",
-		},
-		{
-			ID:     2,
-			Name:   "Merchant Two",
-			ApiKey: "api-key-456",
-		},
-	}
-
-	mockProtoMerchants := []*pb.MerchantResponseDeleteAt{
-		{
-			Id:     1,
-			Name:   "Merchant One",
-			ApiKey: "api-key-123",
-		},
-		{
-			Id:     2,
-			Name:   "Merchant Two",
-			ApiKey: "api-key-456",
-		},
-	}
-
-	search := ""
-	pageSize := 1
-	page := 1
-	expected := 2
-
-	req := &pb.FindAllMerchantRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockMerchantService.EXPECT().
-		FindByActive(pageSize, page, search).
-		Return(mockMerchants, expected, nil).
-		Times(1)
-
-	mockProtoMapper.EXPECT().
-		ToResponsesMerchantDeleteAt(mockMerchants).
-		Return(mockProtoMerchants).
-		Times(1)
-
-	res, err := merchantHandler.FindByActive(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.Status)
-	assert.Equal(t, "Successfully fetched merchant record", res.Message)
-	assert.Equal(t, mockProtoMerchants, res.Data)
-
-}
-
-func TestFindByActiveMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	search := ""
-	pageSize := 1
-	page := 1
-	expected := 0
-
-	req := &pb.FindAllMerchantRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockMerchantService.EXPECT().
-		FindByActive(pageSize, page, search).
-		Return(nil, expected, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Merchant not found: ",
-		}).
-		Times(1)
-
-	res, err := merchantHandler.FindByActive(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Merchant not found: ")
-}
-
-func TestCreateMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.CreateMerchantRequest{
-		Name:   "Merchant One",
-		UserId: 1,
-	}
-
-	mockRequest := &requests.CreateMerchantRequest{
-		Name:   "Merchant One",
-		UserID: 1,
+func (suite *MerchantHandleGrpcTestSuite) TestUpdateMerchant_Success() {
+	merchantId := 1
+	req := &pb.UpdateMerchantRequest{
+		MerchantId: int32(merchantId),
+		Name:       "Updated Merchant",
+		UserId:     1,
+		Status:     "active",
 	}
 
 	mockMerchant := &response.MerchantResponse{
 		ID:     1,
-		Name:   "Merchant One",
-		ApiKey: "api-key-123",
-	}
-
-	mockProtoMerchant := &pb.MerchantResponse{
-		Id:     1,
-		Name:   "Merchant One",
-		ApiKey: "api-key-123",
-	}
-
-	mockMerchantService.EXPECT().
-		CreateMerchant(mockRequest).
-		Return(mockMerchant, nil).
-		Times(1)
-
-	mockProtoMapper.EXPECT().
-		ToResponseMerchant(mockMerchant).
-		Return(mockProtoMerchant).
-		Times(1)
-
-	res, err := merchantHandler.CreateMerchant(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.Status)
-	assert.Equal(t, "Successfully created merchant", res.Message)
-	assert.Equal(t, mockProtoMerchant, res.Data)
-}
-
-func TestCreateMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.CreateMerchantRequest{
-		Name:   "Merchant One",
-		UserId: 1,
-	}
-
-	mockRequest := &requests.CreateMerchantRequest{
-		Name:   "Merchant One",
+		Name:   "Updated Merchant",
 		UserID: 1,
+		Status: "active",
 	}
 
-	mockMerchantService.EXPECT().
-		CreateMerchant(mockRequest).
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to create merchant: ",
-		}).
-		Times(1)
+	mockProtoMerchant := &pb.MerchantResponse{Id: 1, Name: "Updated Merchant", Status: "active"}
 
-	res, err := merchantHandler.CreateMerchant(context.Background(), req)
+	suite.MockMerchantService.EXPECT().UpdateMerchant(gomock.Any()).Return(mockMerchant, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseMerchant("success", "Successfully updated merchant", mockMerchant).Return(&pb.ApiResponseMerchant{
+		Status:  "success",
+		Message: "Successfully updated merchant",
+		Data:    mockProtoMerchant,
+	})
 
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Failed to create merchant: ")
+	res, err := suite.Handler.UpdateMerchant(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("Updated Merchant", res.GetData().GetName())
 }
 
-func TestCreateMerchant_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.CreateMerchantRequest{
-		Name:   "",
-		UserId: 1,
-	}
-
-	res, err := merchantHandler.CreateMerchant(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-}
-
-func TestUpdateMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	mockRequest := &requests.UpdateMerchantRequest{
-		MerchantID: 1,
-		Name:       "Merchant One",
-		UserID:     1,
-		Status:     "active",
-	}
-
-	req := &pb.UpdateMerchantRequest{
-		MerchantId: 1,
-		Name:       "Merchant One",
-		UserId:     1,
-		Status:     "active",
-	}
-
-	mockResponse := &response.MerchantResponse{
-		ID:     1,
-		Name:   "Merchant One",
-		ApiKey: "api-key-123",
-	}
-
-	mockMerchantService.EXPECT().UpdateMerchant(mockRequest).Return(mockResponse, nil)
-
-	mockProtoMapper.EXPECT().ToResponseMerchant(mockResponse).Return(
-		&pb.MerchantResponse{
-			Id:     1,
-			Name:   "Merchant One",
-			ApiKey: "api-key-123",
-		},
-	)
-
-	res, err := merchantHandler.UpdateMerchant(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully updated merchant", res.GetMessage())
-
-}
-
-func TestUpdateMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.UpdateMerchantRequest{
-		MerchantId: 1,
-		Name:       "Merchant One",
-		UserId:     1,
-		Status:     "active",
-	}
-	mockError := &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to update merchant",
-	}
-
-	mockRequest := &requests.UpdateMerchantRequest{
-		MerchantID: 1,
-		Name:       "Merchant One",
-		UserID:     1,
-		Status:     "active",
-	}
-
-	mockMerchantService.EXPECT().UpdateMerchant(mockRequest).Return(nil, mockError)
-
-	res, err := merchantHandler.UpdateMerchant(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Failed to update merchant")
-}
-
-func TestUpdateMerchant_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.UpdateMerchantRequest{
-		MerchantId: 1,
-		Name:       "",
-		UserId:     1,
-		Status:     "active",
-	}
-
-	res, err := merchantHandler.UpdateMerchant(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-}
-
-func TestTrashedMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
+func (suite *MerchantHandleGrpcTestSuite) TestTrashedMerchant_Success() {
 	req := &pb.FindByIdMerchantRequest{MerchantId: 1}
-	mockMerchant := &response.MerchantResponse{
-		ID:     1,
-		Name:   "Test Merchant",
-		ApiKey: "api-key-123",
-	}
+	mockMerchant := &response.MerchantResponseDeleteAt{ID: 1, Name: "Merchant 1"}
 
-	mockMerchantService.EXPECT().TrashedMerchant(1).Return(mockMerchant, nil).Times(1)
-	mockProtoMapper.EXPECT().ToResponseMerchant(mockMerchant).Return(&pb.MerchantResponse{
-		Id:   1,
-		Name: "Test Merchant",
-	}).Times(1)
+	suite.MockMerchantService.EXPECT().TrashedMerchant(1).Return(mockMerchant, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseMerchantDeleteAt("success", "Successfully trashed merchant", mockMerchant).Return(&pb.ApiResponseMerchantDeleteAt{
+		Status:  "success",
+		Message: "Successfully trashed merchant",
+		Data:    &pb.MerchantResponseDeleteAt{Id: 1, Name: "Merchant 1"},
+	})
 
-	res, err := merchantHandler.TrashedMerchant(context.Background(), req)
+	res, err := suite.Handler.TrashedMerchant(context.Background(), req)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.Status)
-	assert.Equal(t, "Successfully trashed merchant", res.Message)
-	assert.Equal(t, int32(1), res.Data.Id)
-	assert.Equal(t, "Test Merchant", res.Data.Name)
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
 }
 
-func TestTrashedMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantHandleGrpcTestSuite) TestRestoreMerchant_Success() {
+	req := &pb.FindByIdMerchantRequest{MerchantId: 1}
+	mockMerchant := &response.MerchantResponseDeleteAt{ID: 1, Name: "Merchant 1"}
 
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
+	suite.MockMerchantService.EXPECT().RestoreMerchant(1).Return(mockMerchant, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseMerchantDeleteAt("success", "Successfully restored merchant", mockMerchant).Return(&pb.ApiResponseMerchantDeleteAt{
+		Status:  "success",
+		Message: "Successfully restored merchant",
+		Data:    &pb.MerchantResponseDeleteAt{Id: 1, Name: "Merchant 1"},
+	})
 
+	res, err := suite.Handler.RestoreMerchant(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+}
+
+func (suite *MerchantHandleGrpcTestSuite) TestDeleteMerchantPermanent_Success() {
 	req := &pb.FindByIdMerchantRequest{MerchantId: 1}
 
-	mockMerchantService.EXPECT().TrashedMerchant(1).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Merchant not found",
-	}).Times(1)
-
-	res, err := merchantHandler.TrashedMerchant(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Merchant not found")
-}
-
-func TestTrashedMerchant_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.FindByIdMerchantRequest{MerchantId: 0}
-
-	res, err := merchantHandler.TrashedMerchant(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, err.Error(), "merchant id is required")
-}
-
-func TestRestoreMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.FindByIdMerchantRequest{MerchantId: 1}
-	mockMerchant := &response.MerchantResponse{ID: 1, Name: "Test Merchant"}
-
-	mockMerchantService.EXPECT().RestoreMerchant(1).Return(mockMerchant, nil).Times(1)
-	mockProtoMapper.EXPECT().ToResponseMerchant(mockMerchant).Return(&pb.MerchantResponse{
-		Id:   1,
-		Name: "Test Merchant",
-	}).Times(1)
-
-	res, err := merchantHandler.RestoreMerchant(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.Status)
-	assert.Equal(t, "Successfully restored merchant", res.Message)
-	assert.Equal(t, int32(1), res.Data.Id)
-	assert.Equal(t, "Test Merchant", res.Data.Name)
-}
-
-func TestRestoreMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.FindByIdMerchantRequest{MerchantId: 1}
-
-	mockMerchantService.EXPECT().RestoreMerchant(1).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Merchant not found",
-	}).Times(1)
-
-	res, err := merchantHandler.RestoreMerchant(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Merchant not found")
-}
-
-func TestDeleteMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
-
-	req := &pb.FindByIdMerchantRequest{MerchantId: 1}
-
-	mockResponse := &pb.ApiResponseMerchatDelete{
+	suite.MockMerchantService.EXPECT().DeleteMerchantPermanent(1).Return(true, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseMerchantDelete("success", "Successfully deleted merchant").Return(&pb.ApiResponseMerchantDelete{
 		Status:  "success",
 		Message: "Successfully deleted merchant",
-	}
+	})
 
-	mockMerchantService.EXPECT().DeleteMerchantPermanent(1).Return(mockResponse, nil).Times(1)
+	res, err := suite.Handler.DeleteMerchantPermanent(context.Background(), req)
 
-	res, err := merchantHandler.DeleteMerchant(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully deleted merchant", res.Message)
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
 }
 
-func TestDeleteMerchant_Failure_NotFound(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantHandleGrpcTestSuite) TestRestoreAllMerchant_Success() {
+	req := &emptypb.Empty{}
 
-	mockMerchantService := mock_service.NewMockMerchantService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockMerchantProtoMapper(ctrl)
-	merchantHandler := gapi.NewMerchantHandleGrpc(mockMerchantService, mockProtoMapper)
+	suite.MockMerchantService.EXPECT().RestoreAllMerchant().Return(true, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseMerchantAll("success", "Successfully restore all merchant").Return(&pb.ApiResponseMerchantAll{
+		Status:  "success",
+		Message: "Successfully restore all merchant",
+	})
 
-	req := &pb.FindByIdMerchantRequest{MerchantId: 1}
+	res, err := suite.Handler.RestoreAllMerchant(context.Background(), req)
 
-	mockMerchantService.EXPECT().DeleteMerchantPermanent(1).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Merchant not found",
-	}).Times(1)
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+}
 
-	res, err := merchantHandler.DeleteMerchant(context.Background(), req)
+func (suite *MerchantHandleGrpcTestSuite) TestDeleteAllMerchantPermanent_Success() {
+	req := &emptypb.Empty{}
 
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Merchant not found")
+	suite.MockMerchantService.EXPECT().DeleteAllMerchantPermanent().Return(true, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseMerchantAll("success", "Successfully delete all merchant").Return(&pb.ApiResponseMerchantAll{
+		Status:  "success",
+		Message: "Successfully delete all merchant",
+	})
+
+	res, err := suite.Handler.DeleteAllMerchantPermanent(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+}
+
+func TestMerchantHandleGrpcSuite(t *testing.T) {
+	suite.Run(t, new(MerchantHandleGrpcTestSuite))
 }

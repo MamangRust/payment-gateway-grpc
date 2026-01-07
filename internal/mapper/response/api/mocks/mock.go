@@ -191,6 +191,20 @@ func (mr *MockRoleResponseMapperMockRecorder) ToApiResponseRoleDelete(pbResponse
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseRoleDelete", reflect.TypeOf((*MockRoleResponseMapper)(nil).ToApiResponseRoleDelete), pbResponse)
 }
 
+// ToApiResponseRoleDeleteAt mocks base method.
+func (m *MockRoleResponseMapper) ToApiResponseRoleDeleteAt(pbResponse *pb.ApiResponseRoleDeleteAt) *response.ApiResponseRoleDeleteAt {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToApiResponseRoleDeleteAt", pbResponse)
+	ret0, _ := ret[0].(*response.ApiResponseRoleDeleteAt)
+	return ret0
+}
+
+// ToApiResponseRoleDeleteAt indicates an expected call of ToApiResponseRoleDeleteAt.
+func (mr *MockRoleResponseMapperMockRecorder) ToApiResponseRoleDeleteAt(pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseRoleDeleteAt", reflect.TypeOf((*MockRoleResponseMapper)(nil).ToApiResponseRoleDeleteAt), pbResponse)
+}
+
 // ToApiResponsesRole mocks base method.
 func (m *MockRoleResponseMapper) ToApiResponsesRole(pbResponse *pb.ApiResponsesRole) *response.ApiResponsesRole {
 	m.ctrl.T.Helper()
@@ -257,11 +271,25 @@ func (mr *MockCardResponseMapperMockRecorder) ToApiResponseCardAll(card any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseCardAll", reflect.TypeOf((*MockCardResponseMapper)(nil).ToApiResponseCardAll), card)
 }
 
+// ToApiResponseCardDelete mocks base method.
+func (m *MockCardResponseMapper) ToApiResponseCardDelete(card *pb.ApiResponseCardDelete) *response.ApiResponseCardDelete {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToApiResponseCardDelete", card)
+	ret0, _ := ret[0].(*response.ApiResponseCardDelete)
+	return ret0
+}
+
+// ToApiResponseCardDelete indicates an expected call of ToApiResponseCardDelete.
+func (mr *MockCardResponseMapperMockRecorder) ToApiResponseCardDelete(card any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseCardDelete", reflect.TypeOf((*MockCardResponseMapper)(nil).ToApiResponseCardDelete), card)
+}
+
 // ToApiResponseCardDeleteAt mocks base method.
-func (m *MockCardResponseMapper) ToApiResponseCardDeleteAt(card *pb.ApiResponseCardDelete) *response.ApiResponseCardDelete {
+func (m *MockCardResponseMapper) ToApiResponseCardDeleteAt(card *pb.ApiResponseCardDeleteAt) *response.ApiResponseCardDeleteAt {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ToApiResponseCardDeleteAt", card)
-	ret0, _ := ret[0].(*response.ApiResponseCardDelete)
+	ret0, _ := ret[0].(*response.ApiResponseCardDeleteAt)
 	return ret0
 }
 
@@ -435,11 +463,25 @@ func (mr *MockMerchantResponseMapperMockRecorder) ToApiResponseMerchantAll(card 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseMerchantAll", reflect.TypeOf((*MockMerchantResponseMapper)(nil).ToApiResponseMerchantAll), card)
 }
 
+// ToApiResponseMerchantDelete mocks base method.
+func (m *MockMerchantResponseMapper) ToApiResponseMerchantDelete(card *pb.ApiResponseMerchantDelete) *response.ApiResponseMerchantDelete {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToApiResponseMerchantDelete", card)
+	ret0, _ := ret[0].(*response.ApiResponseMerchantDelete)
+	return ret0
+}
+
+// ToApiResponseMerchantDelete indicates an expected call of ToApiResponseMerchantDelete.
+func (mr *MockMerchantResponseMapperMockRecorder) ToApiResponseMerchantDelete(card any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseMerchantDelete", reflect.TypeOf((*MockMerchantResponseMapper)(nil).ToApiResponseMerchantDelete), card)
+}
+
 // ToApiResponseMerchantDeleteAt mocks base method.
-func (m *MockMerchantResponseMapper) ToApiResponseMerchantDeleteAt(card *pb.ApiResponseMerchantDelete) *response.ApiResponseMerchantDelete {
+func (m *MockMerchantResponseMapper) ToApiResponseMerchantDeleteAt(card *pb.ApiResponseMerchantDeleteAt) *response.ApiResponseMerchantDeleteAt {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ToApiResponseMerchantDeleteAt", card)
-	ret0, _ := ret[0].(*response.ApiResponseMerchantDelete)
+	ret0, _ := ret[0].(*response.ApiResponseMerchantDeleteAt)
 	return ret0
 }
 
@@ -711,6 +753,20 @@ func (mr *MockSaldoResponseMapperMockRecorder) ToApiResponseSaldoDelete(pbRespon
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseSaldoDelete", reflect.TypeOf((*MockSaldoResponseMapper)(nil).ToApiResponseSaldoDelete), pbResponse)
 }
 
+// ToApiResponseSaldoDeleteAt mocks base method.
+func (m *MockSaldoResponseMapper) ToApiResponseSaldoDeleteAt(pbResponse *pb.ApiResponseSaldoDeleteAt) *response.ApiResponseSaldoDeleteAt {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToApiResponseSaldoDeleteAt", pbResponse)
+	ret0, _ := ret[0].(*response.ApiResponseSaldoDeleteAt)
+	return ret0
+}
+
+// ToApiResponseSaldoDeleteAt indicates an expected call of ToApiResponseSaldoDeleteAt.
+func (mr *MockSaldoResponseMapperMockRecorder) ToApiResponseSaldoDeleteAt(pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseSaldoDeleteAt", reflect.TypeOf((*MockSaldoResponseMapper)(nil).ToApiResponseSaldoDeleteAt), pbResponse)
+}
+
 // ToApiResponseYearSaldoBalances mocks base method.
 func (m *MockSaldoResponseMapper) ToApiResponseYearSaldoBalances(pbResponse *pb.ApiResponseYearSaldoBalances) *response.ApiResponseYearSaldoBalances {
 	m.ctrl.T.Helper()
@@ -845,6 +901,20 @@ func (m *MockTopupResponseMapper) ToApiResponseTopupDelete(s *pb.ApiResponseTopu
 func (mr *MockTopupResponseMapperMockRecorder) ToApiResponseTopupDelete(s any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseTopupDelete", reflect.TypeOf((*MockTopupResponseMapper)(nil).ToApiResponseTopupDelete), s)
+}
+
+// ToApiResponseTopupDeleteAt mocks base method.
+func (m *MockTopupResponseMapper) ToApiResponseTopupDeleteAt(s *pb.ApiResponseTopupDeleteAt) *response.ApiResponseTopupDeleteAt {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToApiResponseTopupDeleteAt", s)
+	ret0, _ := ret[0].(*response.ApiResponseTopupDeleteAt)
+	return ret0
+}
+
+// ToApiResponseTopupDeleteAt indicates an expected call of ToApiResponseTopupDeleteAt.
+func (mr *MockTopupResponseMapperMockRecorder) ToApiResponseTopupDeleteAt(s any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseTopupDeleteAt", reflect.TypeOf((*MockTopupResponseMapper)(nil).ToApiResponseTopupDeleteAt), s)
 }
 
 // ToApiResponseTopupMonthAmount mocks base method.
@@ -1051,6 +1121,20 @@ func (m *MockTransactionResponseMapper) ToApiResponseTransactionDelete(pbRespons
 func (mr *MockTransactionResponseMapperMockRecorder) ToApiResponseTransactionDelete(pbResponse any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseTransactionDelete", reflect.TypeOf((*MockTransactionResponseMapper)(nil).ToApiResponseTransactionDelete), pbResponse)
+}
+
+// ToApiResponseTransactionDeleteAt mocks base method.
+func (m *MockTransactionResponseMapper) ToApiResponseTransactionDeleteAt(pbResponse *pb.ApiResponseTransactionDeleteAt) *response.ApiResponseTransactionDeleteAt {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToApiResponseTransactionDeleteAt", pbResponse)
+	ret0, _ := ret[0].(*response.ApiResponseTransactionDeleteAt)
+	return ret0
+}
+
+// ToApiResponseTransactionDeleteAt indicates an expected call of ToApiResponseTransactionDeleteAt.
+func (mr *MockTransactionResponseMapperMockRecorder) ToApiResponseTransactionDeleteAt(pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseTransactionDeleteAt", reflect.TypeOf((*MockTransactionResponseMapper)(nil).ToApiResponseTransactionDeleteAt), pbResponse)
 }
 
 // ToApiResponseTransactionMonthAmount mocks base method.
@@ -1271,6 +1355,20 @@ func (m *MockTransferResponseMapper) ToApiResponseTransferDelete(pbResponse *pb.
 func (mr *MockTransferResponseMapperMockRecorder) ToApiResponseTransferDelete(pbResponse any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseTransferDelete", reflect.TypeOf((*MockTransferResponseMapper)(nil).ToApiResponseTransferDelete), pbResponse)
+}
+
+// ToApiResponseTransferDeleteAt mocks base method.
+func (m *MockTransferResponseMapper) ToApiResponseTransferDeleteAt(pbResponse *pb.ApiResponseTransferDeleteAt) *response.ApiResponseTransferDeleteAt {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToApiResponseTransferDeleteAt", pbResponse)
+	ret0, _ := ret[0].(*response.ApiResponseTransferDeleteAt)
+	return ret0
+}
+
+// ToApiResponseTransferDeleteAt indicates an expected call of ToApiResponseTransferDeleteAt.
+func (mr *MockTransferResponseMapperMockRecorder) ToApiResponseTransferDeleteAt(pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseTransferDeleteAt", reflect.TypeOf((*MockTransferResponseMapper)(nil).ToApiResponseTransferDeleteAt), pbResponse)
 }
 
 // ToApiResponseTransferMonthAmount mocks base method.
@@ -1585,6 +1683,20 @@ func (m *MockWithdrawResponseMapper) ToApiResponseWithdrawDelete(pbResponse *pb.
 func (mr *MockWithdrawResponseMapperMockRecorder) ToApiResponseWithdrawDelete(pbResponse any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseWithdrawDelete", reflect.TypeOf((*MockWithdrawResponseMapper)(nil).ToApiResponseWithdrawDelete), pbResponse)
+}
+
+// ToApiResponseWithdrawDeleteAt mocks base method.
+func (m *MockWithdrawResponseMapper) ToApiResponseWithdrawDeleteAt(pbResponse *pb.ApiResponseWithdrawDeleteAt) *response.ApiResponseWithdrawDeleteAt {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToApiResponseWithdrawDeleteAt", pbResponse)
+	ret0, _ := ret[0].(*response.ApiResponseWithdrawDeleteAt)
+	return ret0
+}
+
+// ToApiResponseWithdrawDeleteAt indicates an expected call of ToApiResponseWithdrawDeleteAt.
+func (mr *MockWithdrawResponseMapperMockRecorder) ToApiResponseWithdrawDeleteAt(pbResponse any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToApiResponseWithdrawDeleteAt", reflect.TypeOf((*MockWithdrawResponseMapper)(nil).ToApiResponseWithdrawDeleteAt), pbResponse)
 }
 
 // ToApiResponseWithdrawMonthAmount mocks base method.

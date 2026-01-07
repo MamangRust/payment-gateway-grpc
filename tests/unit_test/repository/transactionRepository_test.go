@@ -4,757 +4,273 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/record"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	mocks "MamangRust/paymentgatewaygrpc/internal/repository/mocks"
-	"MamangRust/paymentgatewaygrpc/tests/utils"
-	"fmt"
+	"errors"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func TestFindAllTransactions_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	transactions := []*record.TransactionRecord{
-		{
-			ID:              1,
-			CardNumber:      "1234",
-			Amount:          500000,
-			PaymentMethod:   "Credit Card",
-			MerchantID:      10,
-			TransactionTime: "2024-12-25T10:00:00Z",
-			CreatedAt:       "2024-12-25T10:00:00Z",
-			UpdatedAt:       "2024-12-25T11:00:00Z",
-			DeletedAt:       nil,
-		},
-		{
-			ID:              2,
-			CardNumber:      "5678",
-			Amount:          300000,
-			PaymentMethod:   "Bank Transfer",
-			MerchantID:      12,
-			TransactionTime: "2024-12-25T12:00:00Z",
-			CreatedAt:       "2024-12-25T12:00:00Z",
-			UpdatedAt:       "2024-12-25T13:00:00Z",
-			DeletedAt:       nil,
-		},
-	}
-
-	mockRepo.EXPECT().FindAllTransactions("", 1, 10).Return(transactions, 2, nil)
-
-	results, total, err := mockRepo.FindAllTransactions("", 1, 10)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, results)
-	assert.Equal(t, 2, total)
-	assert.Equal(t, transactions, results)
+type TransactionRepositorySuite struct {
+	suite.Suite
+	mockCtrl *gomock.Controller
+	mockRepo *mocks.MockTransactionRepository
 }
 
-func TestFindAllTransactions_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	mockRepo.EXPECT().FindAllTransactions("", 1, 10).Return(nil, 0, fmt.Errorf("database error"))
-
-	results, total, err := mockRepo.FindAllTransactions("", 1, 10)
-
-	assert.Error(t, err)
-	assert.Nil(t, results)
-	assert.Equal(t, 0, total)
-	assert.EqualError(t, err, "database error")
+func (suite *TransactionRepositorySuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.mockRepo = mocks.NewMockTransactionRepository(suite.mockCtrl)
 }
 
-func TestFindAllTransactions_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	mockRepo.EXPECT().FindAllTransactions("", 1, 10).Return([]*record.TransactionRecord{}, 0, nil)
-
-	results, total, err := mockRepo.FindAllTransactions("", 1, 10)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, results)
-	assert.Equal(t, 0, total)
-	assert.Empty(t, results)
+func (suite *TransactionRepositorySuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
-func TestFindByIdTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionRepositorySuite) TestFindAllTransactions_Success() {
+	req := &requests.FindAllTransactions{Search: "success", Page: 1, PageSize: 10}
+	transactions := []*record.TransactionRecord{{ID: 1, TransactionNo: "TX001"}}
+	total := 1
 
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
+	suite.mockRepo.EXPECT().FindAllTransactions(req).Return(transactions, &total, nil)
 
-	expectedTransaction := &record.TransactionRecord{
-		ID:              1,
-		CardNumber:      "1234",
-		Amount:          500000,
-		PaymentMethod:   "Credit Card",
-		MerchantID:      10,
-		TransactionTime: "2024-12-25T10:00:00Z",
-		CreatedAt:       "2024-12-25T10:00:00Z",
-		UpdatedAt:       "2024-12-25T11:00:00Z",
-		DeletedAt:       nil,
-	}
+	result, totalRes, err := suite.mockRepo.FindAllTransactions(req)
 
-	mockRepo.EXPECT().FindById(1).Return(expectedTransaction, nil)
-
-	result, err := mockRepo.FindById(1)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTransaction, result)
+	suite.NoError(err)
+	suite.Equal(transactions, result)
+	suite.Equal(1, *totalRes)
 }
 
-func TestFindByIdTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionRepositorySuite) TestFindByIdTransaction_Success() {
+	transactionID := 1
+	transaction := &record.TransactionRecord{ID: transactionID, TransactionNo: "TX001"}
 
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
+	suite.mockRepo.EXPECT().FindById(transactionID).Return(transaction, nil)
 
-	mockRepo.EXPECT().FindById(1).Return(nil, fmt.Errorf("transaction not found"))
+	result, err := suite.mockRepo.FindById(transactionID)
 
-	result, err := mockRepo.FindById(1)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "transaction not found")
+	suite.NoError(err)
+	suite.Equal(transaction, result)
 }
 
-func TestFindByActiveTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionRepositorySuite) TestFindByIdTransaction_NotFound() {
+	transactionID := 99
+	expectedErr := errors.New("transaction not found")
 
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
+	suite.mockRepo.EXPECT().FindById(transactionID).Return(nil, expectedErr)
 
-	expectedTransactions := []*record.TransactionRecord{
-		{
-			ID:              1,
-			CardNumber:      "1234",
-			Amount:          500000,
-			PaymentMethod:   "Credit Card",
-			MerchantID:      10,
-			TransactionTime: "2024-12-25T10:00:00Z",
-			CreatedAt:       "2024-12-25T10:00:00Z",
-			UpdatedAt:       "2024-12-25T11:00:00Z",
-			DeletedAt:       nil,
-		},
-		{
-			ID:              2,
-			CardNumber:      "5678",
-			Amount:          300000,
-			PaymentMethod:   "Bank Transfer",
-			MerchantID:      15,
-			TransactionTime: "2024-12-25T12:00:00Z",
-			CreatedAt:       "2024-12-25T12:00:00Z",
-			UpdatedAt:       "2024-12-25T13:00:00Z",
-			DeletedAt:       nil,
-		},
-	}
+	result, err := suite.mockRepo.FindById(transactionID)
 
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 2
-
-	mockRepo.EXPECT().FindByActive(search, page, pageSize).Return(expectedTransactions, 2, nil)
-
-	result, totalRecord, err := mockRepo.FindByActive(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTransactions, result)
+	suite.Error(err)
+	suite.Nil(result)
+	suite.Equal(expectedErr, err)
 }
 
-func TestFindByActiveTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionRepositorySuite) TestFindAllTransactionByCardNumber_Success() {
+	req := &requests.FindAllTransactionCardNumber{CardNumber: "1111-xxxx", Page: 1, PageSize: 10}
+	transactions := []*record.TransactionRecord{{ID: 2, CardNumber: "1111-xxxx"}}
+	total := 1
 
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
+	suite.mockRepo.EXPECT().FindAllTransactionByCardNumber(req).Return(transactions, &total, nil)
 
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 0
+	result, totalRes, err := suite.mockRepo.FindAllTransactionByCardNumber(req)
 
-	mockRepo.EXPECT().FindByActive(search, page, pageSize).Return(nil, 0, fmt.Errorf("database error"))
-
-	result, totalRecord, err := mockRepo.FindByActive(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "database error")
+	suite.NoError(err)
+	suite.Equal(transactions, result)
+	suite.Equal(1, *totalRes)
 }
 
-func TestFindByActiveTransaction_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionRepositorySuite) TestFindTransactionByMerchantId_Success() {
+	merchantID := 5
+	transactions := []*record.TransactionRecord{{ID: 3, MerchantID: 5}}
 
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
+	suite.mockRepo.EXPECT().FindTransactionByMerchantId(merchantID).Return(transactions, nil)
 
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 0
+	result, err := suite.mockRepo.FindTransactionByMerchantId(merchantID)
 
-	mockRepo.EXPECT().FindByActive(search, page, pageSize).Return([]*record.TransactionRecord{}, 0, nil)
-
-	result, totalRecord, err := mockRepo.FindByActive(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Empty(t, result)
+	suite.NoError(err)
+	suite.Equal(transactions, result)
 }
 
-func TestFindByTrashedTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	expectedTransactions := []*record.TransactionRecord{
-		{
-			ID:              3,
-			CardNumber:      "1111",
-			Amount:          200000,
-			PaymentMethod:   "Cash",
-			MerchantID:      5,
-			TransactionTime: "2024-12-24T10:00:00Z",
-			CreatedAt:       "2024-12-24T10:00:00Z",
-			UpdatedAt:       "2024-12-24T11:00:00Z",
-			DeletedAt:       utils.PtrString("2024-12-24T12:00:00Z"),
-		},
-	}
-
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 1
-
-	mockRepo.EXPECT().FindByTrashed(search, page, pageSize).Return(expectedTransactions, 1, nil)
-
-	result, totalRecord, err := mockRepo.FindByTrashed(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTransactions, result)
-}
-
-func TestFindByTrashedTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 0
-
-	mockRepo.EXPECT().FindByTrashed(search, page, pageSize).Return(nil, 0, fmt.Errorf("database error"))
-
-	result, totalRecord, err := mockRepo.FindByTrashed(search, page, pageSize)
-
-	assert.Error(t, err)
-	assert.Equal(t, expected, totalRecord)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "database error")
-}
-
-func TestFindByTrashedTransaction_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 0
-
-	mockRepo.EXPECT().FindByTrashed(search, page, pageSize).Return([]*record.TransactionRecord{}, 0, nil)
-
-	result, totalRecord, err := mockRepo.FindByTrashed(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Empty(t, result)
-}
-
-func TestFindByCardNumberTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	cardNumber := "1234"
-	expectedTransactions := []*record.TransactionRecord{
-		{
-			ID:              1,
-			CardNumber:      "1234",
-			Amount:          500000,
-			PaymentMethod:   "Credit Card",
-			MerchantID:      10,
-			TransactionTime: "2024-12-25T10:00:00Z",
-			CreatedAt:       "2024-12-25T10:00:00Z",
-			UpdatedAt:       "2024-12-25T11:00:00Z",
-			DeletedAt:       nil,
-		},
-	}
-
-	mockRepo.EXPECT().FindByCardNumber(cardNumber).Return(expectedTransactions, nil)
-
-	result, err := mockRepo.FindByCardNumber(cardNumber)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTransactions, result)
-}
-
-func TestFindByCardNumberTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	cardNumber := "1234"
-	mockRepo.EXPECT().FindByCardNumber(cardNumber).Return(nil, fmt.Errorf("database error"))
-
-	result, err := mockRepo.FindByCardNumber(cardNumber)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "database error")
-}
-
-func TestFindByCardNumber_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	cardNumber := "1234"
-	mockRepo.EXPECT().FindByCardNumber(cardNumber).Return([]*record.TransactionRecord{}, nil)
-
-	result, err := mockRepo.FindByCardNumber(cardNumber)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Empty(t, result)
-}
-
-func TestFindTransactionByMerchantId_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	merchantID := 10
-	expectedTransactions := []*record.TransactionRecord{
-		{
-			ID:              2,
-			CardNumber:      "5678",
-			Amount:          300000,
-			PaymentMethod:   "Bank Transfer",
-			MerchantID:      10,
-			TransactionTime: "2024-12-25T12:00:00Z",
-			CreatedAt:       "2024-12-25T12:00:00Z",
-			UpdatedAt:       "2024-12-25T13:00:00Z",
-			DeletedAt:       nil,
-		},
-	}
-
-	mockRepo.EXPECT().FindTransactionByMerchantId(merchantID).Return(expectedTransactions, nil)
-
-	result, err := mockRepo.FindTransactionByMerchantId(merchantID)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTransactions, result)
-}
-
-func TestFindTransactionByMerchantId_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	merchantID := 10
-	mockRepo.EXPECT().FindTransactionByMerchantId(merchantID).Return(nil, fmt.Errorf("database error"))
-
-	result, err := mockRepo.FindTransactionByMerchantId(merchantID)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "database error")
-}
-
-func TestFindTransactionByMerchantId_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	merchantID := 10
-	mockRepo.EXPECT().FindTransactionByMerchantId(merchantID).Return([]*record.TransactionRecord{}, nil)
-
-	result, err := mockRepo.FindTransactionByMerchantId(merchantID)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Empty(t, result)
-}
-
-func TestCountTransactionsByDate_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	date := "2024-12-25"
-	expectedCount := 5
-
-	mockRepo.EXPECT().CountTransactionsByDate(date).Return(expectedCount, nil)
-
-	count, err := mockRepo.CountTransactionsByDate(date)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expectedCount, count)
-}
-
-func TestCountTransactionsByDate_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	date := "2024-12-25"
-	mockRepo.EXPECT().CountTransactionsByDate(date).Return(0, fmt.Errorf("database error"))
-
-	count, err := mockRepo.CountTransactionsByDate(date)
-
-	assert.Error(t, err)
-	assert.Equal(t, 0, count)
-	assert.EqualError(t, err, "database error")
-}
-
-func TestCountAllTransactions_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	expectedCount := int64(100)
-	expectedCountPtr := &expectedCount
-
-	mockRepo.EXPECT().CountAllTransactions().Return(expectedCountPtr, nil)
-
-	count, err := mockRepo.CountAllTransactions()
-
-	assert.NoError(t, err)
-	assert.Equal(t, expectedCountPtr, count)
-}
-
-func TestCountAllTransactions_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	expectedError := fmt.Errorf("database error")
-	mockRepo.EXPECT().CountAllTransactions().Return(nil, expectedError)
-
-	count, err := mockRepo.CountAllTransactions()
-
-	assert.Error(t, err)
-	assert.Nil(t, count)
-	assert.EqualError(t, err, "database error")
-}
-
-func TestCreateTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	now := time.Now()
-	request := requests.CreateTransactionRequest{
-		CardNumber:      "1234",
+func (suite *TransactionRepositorySuite) TestCreateTransaction_Success() {
+	merchantID := 1
+	req := &requests.CreateTransactionRequest{
+		CardNumber:      "2222-xxxx",
 		Amount:          100000,
-		PaymentMethod:   "Credit Card",
-		MerchantID:      utils.PtrInt(1),
-		TransactionTime: now,
-	}
-
-	expectedTransaction := &record.TransactionRecord{
-		ID:              1,
-		CardNumber:      "1234",
-		Amount:          100000,
-		PaymentMethod:   "Credit Card",
-		MerchantID:      1,
-		TransactionTime: now.Format(time.RFC3339),
-		CreatedAt:       now.Format(time.RFC3339),
-		UpdatedAt:       now.Format(time.RFC3339),
-		DeletedAt:       nil,
-	}
-
-	mockRepo.EXPECT().CreateTransaction(&request).Return(expectedTransaction, nil)
-
-	result, err := mockRepo.CreateTransaction(&request)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTransaction, result)
-}
-
-func TestCreateTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
-	now := time.Now()
-	request := requests.CreateTransactionRequest{
-		CardNumber:      "1234",
-		Amount:          100000,
-		PaymentMethod:   "Credit Card",
-		MerchantID:      utils.PtrInt(1),
-		TransactionTime: now,
-	}
-
-	mockRepo.EXPECT().CreateTransaction(&request).Return(nil, fmt.Errorf("failed to create transaction"))
-
-	result, err := mockRepo.CreateTransaction(&request)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "failed to create transaction")
-}
-
-func TestCreateTransaction_ValidationError(t *testing.T) {
-	request := requests.CreateTransactionRequest{
-		CardNumber:      "",
-		Amount:          0,
-		PaymentMethod:   "",
-		MerchantID:      nil,
+		PaymentMethod:   "credit_card",
+		MerchantID:      &merchantID,
 		TransactionTime: time.Now(),
 	}
+	createdTransaction := &record.TransactionRecord{ID: 10, CardNumber: "2222-xxxx", TransactionNo: "TX010"}
 
-	err := request.Validate()
+	suite.mockRepo.EXPECT().CreateTransaction(req).Return(createdTransaction, nil)
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "payment method not found")
-	assert.NotContains(t, err.Error(), "Field validation for 'CardNumber' failed on the 'required' tag")
-	assert.NotContains(t, err.Error(), "Field validation for 'Amount' failed on the 'required' tag")
-	assert.NotContains(t, err.Error(), "Field validation for 'PaymentMethod' failed on the 'required' tag")
-	assert.NotContains(t, err.Error(), "Field validation for 'MerchantID' failed on the 'required' tag")
-	assert.NotContains(t, err.Error(), "Field validation for 'TransactionTime' failed on the 'required' tag")
+	result, err := suite.mockRepo.CreateTransaction(req)
+
+	suite.NoError(err)
+	suite.Equal(createdTransaction, result)
 }
 
-func TestUpdateTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionRepositorySuite) TestUpdateTransactionStatus_Success() {
+	req := &requests.UpdateTransactionStatus{TransactionID: 1, Status: "failed"}
+	updatedTransaction := &record.TransactionRecord{ID: 10, CardNumber: "2222-xxxx", TransactionNo: "TX010"}
 
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
+	suite.mockRepo.EXPECT().UpdateTransactionStatus(req).Return(updatedTransaction, nil)
 
-	now := time.Now()
-	request := requests.UpdateTransactionRequest{
-		TransactionID:   1,
-		CardNumber:      "1234",
-		Amount:          150000,
-		PaymentMethod:   "Credit Card",
-		MerchantID:      utils.PtrInt(1),
-		TransactionTime: now,
-	}
+	result, err := suite.mockRepo.UpdateTransactionStatus(req)
 
-	updatedTransaction := &record.TransactionRecord{
-		ID:              1,
-		CardNumber:      "1234",
-		Amount:          150000,
-		PaymentMethod:   "Credit Card",
-		MerchantID:      1,
-		TransactionTime: now.Format(time.RFC3339),
-		CreatedAt:       "2024-12-24T10:00:00Z",
-		UpdatedAt:       time.Now().Format(time.RFC3339),
-		DeletedAt:       nil,
-	}
+	suite.NoError(err)
 
-	mockRepo.EXPECT().UpdateTransaction(&request).Return(updatedTransaction, nil)
-
-	result, err := mockRepo.UpdateTransaction(&request)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, updatedTransaction, result)
+	suite.Equal(updatedTransaction, result)
 }
 
-func TestUpdateTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionRepositorySuite) TestTrashedTransaction_Success() {
+	transactionID := 1
+	trashedTime := "2024-01-01T00:00:00Z"
+	trashedTransaction := &record.TransactionRecord{ID: transactionID, DeletedAt: &trashedTime}
 
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
+	suite.mockRepo.EXPECT().TrashedTransaction(transactionID).Return(trashedTransaction, nil)
 
-	now := time.Now()
-	request := requests.UpdateTransactionRequest{
-		TransactionID:   1,
-		CardNumber:      "1234",
-		Amount:          150000,
-		PaymentMethod:   "Credit Card",
-		MerchantID:      utils.PtrInt(1),
-		TransactionTime: now,
-	}
+	result, err := suite.mockRepo.TrashedTransaction(transactionID)
 
-	mockRepo.EXPECT().UpdateTransaction(&request).Return(nil, fmt.Errorf("failed to update transaction"))
-
-	result, err := mockRepo.UpdateTransaction(&request)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "failed to update transaction")
+	suite.NoError(err)
+	suite.NotNil(result.DeletedAt)
+	suite.Equal(trashedTransaction, result)
 }
 
-func TestUpdateTransaction_ValidationError(t *testing.T) {
-	request := requests.UpdateTransactionRequest{
-		TransactionID:   0,
-		CardNumber:      "",
-		Amount:          0,
-		PaymentMethod:   "",
-		MerchantID:      nil,
-		TransactionTime: time.Time{},
-	}
-
-	err := request.Validate()
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "payment method not found")
-	assert.NotContains(t, err.Error(), "Field validation for 'TransactionID' failed on the 'required' tag")
-	assert.NotContains(t, err.Error(), "Field validation for 'CardNumber' failed on the 'required' tag")
-	assert.NotContains(t, err.Error(), "Field validation for 'Amount' failed on the 'required' tag")
-	assert.NotContains(t, err.Error(), "Field validation for 'PaymentMethod' failed on the 'required' tag")
-	assert.NotContains(t, err.Error(), "Field validation for 'MerchantID' failed on the 'required' tag")
-	assert.NotContains(t, err.Error(), "Field validation for 'TransactionTime' failed on the 'required' tag")
-}
-
-func TestTrashedTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-
+func (suite *TransactionRepositorySuite) TestDeleteTransactionPermanent_Success() {
 	transactionID := 1
 
-	now := time.Now().Format(time.RFC3339)
+	suite.mockRepo.EXPECT().DeleteTransactionPermanent(transactionID).Return(true, nil)
 
-	transaction := &record.TransactionRecord{
-		ID:              transactionID,
-		CardNumber:      "1234",
-		Amount:          50000,
-		PaymentMethod:   "credit",
-		MerchantID:      123,
-		TransactionTime: now,
-		DeletedAt:       &now,
+	result, err := suite.mockRepo.DeleteTransactionPermanent(transactionID)
+
+	suite.NoError(err)
+	suite.True(result)
+}
+
+func (suite *TransactionRepositorySuite) TestRestoreAllTransaction_Success() {
+	suite.mockRepo.EXPECT().RestoreAllTransaction().Return(true, nil)
+
+	result, err := suite.mockRepo.RestoreAllTransaction()
+
+	suite.NoError(err)
+	suite.True(result)
+}
+
+func (suite *TransactionRepositorySuite) TestGetMonthTransactionStatusSuccess_Success() {
+	req := &requests.MonthStatusTransaction{Year: 2024, Month: 1}
+	monthlySuccess := []*record.TransactionRecordMonthStatusSuccess{
+		{Year: "2024", Month: "01", TotalSuccess: 100, TotalAmount: 10000000},
 	}
 
-	mockRepo.EXPECT().TrashedTransaction(transactionID).Return(transaction, nil)
+	suite.mockRepo.EXPECT().GetMonthTransactionStatusSuccess(req).Return(monthlySuccess, nil)
 
-	result, err := mockRepo.TrashedTransaction(transactionID)
+	result, err := suite.mockRepo.GetMonthTransactionStatusSuccess(req)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, transaction.ID, result.ID)
-	assert.NotNil(t, result.DeletedAt)
+	suite.NoError(err)
+	suite.Equal(monthlySuccess, result)
 }
 
-func TestTrashedTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-	transactionID := 999
-
-	mockRepo.EXPECT().TrashedTransaction(transactionID).Return(nil, fmt.Errorf("transaction not found"))
-
-	result, err := mockRepo.TrashedTransaction(transactionID)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-}
-
-func TestRestoreTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-	transactionID := 1
-	transaction := &record.TransactionRecord{
-		ID:              transactionID,
-		CardNumber:      "1234",
-		Amount:          50000,
-		PaymentMethod:   "credit",
-		MerchantID:      123,
-		TransactionTime: time.Now().Format(time.RFC3339),
-		DeletedAt:       nil,
+func (suite *TransactionRepositorySuite) TestGetYearlyTransactionStatusFailed_Success() {
+	year := 2023
+	yearlyFailed := []*record.TransactionRecordYearStatusFailed{
+		{Year: "2023", TotalFailed: 5, TotalAmount: 250000},
 	}
 
-	mockRepo.EXPECT().RestoreTransaction(transactionID).Return(transaction, nil)
+	suite.mockRepo.EXPECT().GetYearlyTransactionStatusFailed(year).Return(yearlyFailed, nil)
 
-	result, err := mockRepo.RestoreTransaction(transactionID)
+	result, err := suite.mockRepo.GetYearlyTransactionStatusFailed(year)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Nil(t, result.DeletedAt)
+	suite.NoError(err)
+	suite.Equal(yearlyFailed, result)
 }
 
-func TestRestoreTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
+func (suite *TransactionRepositorySuite) TestGetMonthTransactionStatusSuccessByCardNumber_Success() {
+	req := &requests.MonthStatusTransactionCardNumber{CardNumber: "1111-xxxx", Year: 2024, Month: 1}
+	monthlySuccess := []*record.TransactionRecordMonthStatusSuccess{
+		{Year: "2024", Month: "01", TotalSuccess: 10, TotalAmount: 1000000},
+	}
 
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-	transactionID := 999
+	suite.mockRepo.EXPECT().GetMonthTransactionStatusSuccessByCardNumber(req).Return(monthlySuccess, nil)
 
-	mockRepo.EXPECT().RestoreTransaction(transactionID).Return(nil, fmt.Errorf("transaction not found"))
+	result, err := suite.mockRepo.GetMonthTransactionStatusSuccessByCardNumber(req)
 
-	result, err := mockRepo.RestoreTransaction(transactionID)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
+	suite.NoError(err)
+	suite.Equal(monthlySuccess, result)
 }
 
-func TestDeleteTransactionPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
+func (suite *TransactionRepositorySuite) TestGetYearlyTransactionStatusFailedByCardNumber_Success() {
+	req := &requests.YearStatusTransactionCardNumber{CardNumber: "2222-xxxx", Year: 2023}
+	yearlyFailed := []*record.TransactionRecordYearStatusFailed{
+		{Year: "2023", TotalFailed: 1, TotalAmount: 50000},
+	}
 
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
+	suite.mockRepo.EXPECT().GetYearlyTransactionStatusFailedByCardNumber(req).Return(yearlyFailed, nil)
 
-	transactionID := 1
+	result, err := suite.mockRepo.GetYearlyTransactionStatusFailedByCardNumber(req)
 
-	mockRepo.EXPECT().DeleteTransactionPermanent(transactionID).Return(
-		nil,
-	)
-
-	err := mockRepo.DeleteTransactionPermanent(transactionID)
-
-	assert.NoError(t, err)
+	suite.NoError(err)
+	suite.Equal(yearlyFailed, result)
 }
 
-func TestDeleteTransactionPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
+func (suite *TransactionRepositorySuite) TestGetMonthlyPaymentMethods_Success() {
+	year := 2024
+	monthlyMethods := []*record.TransactionMonthMethod{
+		{Month: "2024-01", PaymentMethod: "credit_card", TotalTransactions: 50, TotalAmount: 5000000},
+		{Month: "2024-01", PaymentMethod: "debit_card", TotalTransactions: 50, TotalAmount: 5000000},
+	}
 
-	mockRepo := mocks.NewMockTransactionRepository(ctrl)
-	transactionID := 999
+	suite.mockRepo.EXPECT().GetMonthlyPaymentMethods(year).Return(monthlyMethods, nil)
 
-	mockRepo.EXPECT().DeleteTransactionPermanent(transactionID).Return(fmt.Errorf("transaction not found"))
+	result, err := suite.mockRepo.GetMonthlyPaymentMethods(year)
 
-	err := mockRepo.DeleteTransactionPermanent(transactionID)
-	assert.NotNil(t, err)
-	assert.Equal(t, "transaction not found", err.Error())
+	suite.NoError(err)
+	suite.Equal(monthlyMethods, result)
+}
+
+func (suite *TransactionRepositorySuite) TestGetYearlyAmounts_Success() {
+	year := 2023
+	yearlyAmounts := []*record.TransactionYearlyAmount{
+		{Year: "2023", TotalAmount: 120000000},
+	}
+
+	suite.mockRepo.EXPECT().GetYearlyAmounts(year).Return(yearlyAmounts, nil)
+
+	result, err := suite.mockRepo.GetYearlyAmounts(year)
+
+	suite.NoError(err)
+	suite.Equal(yearlyAmounts, result)
+}
+
+func (suite *TransactionRepositorySuite) TestGetMonthlyPaymentMethodsByCardNumber_Success() {
+	req := &requests.MonthYearPaymentMethod{CardNumber: "1111-xxxx", Year: 2024}
+	monthlyMethods := []*record.TransactionMonthMethod{
+		{Month: "2024-01", PaymentMethod: "credit_card", TotalTransactions: 5, TotalAmount: 500000},
+	}
+
+	suite.mockRepo.EXPECT().GetMonthlyPaymentMethodsByCardNumber(req).Return(monthlyMethods, nil)
+
+	result, err := suite.mockRepo.GetMonthlyPaymentMethodsByCardNumber(req)
+
+	suite.NoError(err)
+	suite.Equal(monthlyMethods, result)
+}
+
+func (suite *TransactionRepositorySuite) TestGetYearlyAmountsByCardNumber_Success() {
+	req := &requests.MonthYearPaymentMethod{CardNumber: "1111-xxxx", Year: 2023}
+	yearlyAmounts := []*record.TransactionYearlyAmount{
+		{Year: "2023", TotalAmount: 12000000},
+	}
+
+	suite.mockRepo.EXPECT().GetYearlyAmountsByCardNumber(req).Return(yearlyAmounts, nil)
+
+	result, err := suite.mockRepo.GetYearlyAmountsByCardNumber(req)
+
+	suite.NoError(err)
+	suite.Equal(yearlyAmounts, result)
+}
+
+func TestTransactionRepositorySuite(t *testing.T) {
+	suite.Run(t, new(TransactionRepositorySuite))
 }

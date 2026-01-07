@@ -1,6 +1,13 @@
 package test
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
 	"MamangRust/paymentgatewaygrpc/internal/handler/api"
@@ -8,288 +15,394 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/pb"
 	mock_pb "MamangRust/paymentgatewaygrpc/internal/pb/mocks"
 	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
-	"bytes"
-	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 
 	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 )
 
-func TestHandleHello(t *testing.T) {
-	ctrl := gomock.NewController(t)
-
-	defer ctrl.Finish()
-
-	mockClient := mock_pb.NewMockAuthServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapper := mock_apimapper.NewMockAuthResponseMapper(ctrl)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/auth/hello", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerAuth(mockClient, e, mockLogger, mockMapper)
-
-	err := handler.HandleHello(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "Hello", rec.Body.String())
+type AuthHandlerTestSuite struct {
+	suite.Suite
+	Ctrl           *gomock.Controller
+	MockAuthClient *mock_pb.MockAuthServiceClient
+	MockLogger     *mock_logger.MockLoggerInterface
+	MockMapper     *mock_apimapper.MockAuthResponseMapper
+	E              *echo.Echo
+	Handler        *api.AuthHandleApi
 }
 
-func TestHandleRegister_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *AuthHandlerTestSuite) SetupTest() {
+	suite.Ctrl = gomock.NewController(suite.T())
+	suite.MockAuthClient = mock_pb.NewMockAuthServiceClient(suite.Ctrl)
+	suite.MockLogger = mock_logger.NewMockLoggerInterface(suite.Ctrl)
+	suite.MockMapper = mock_apimapper.NewMockAuthResponseMapper(suite.Ctrl)
+	suite.E = echo.New()
+	suite.Handler = api.NewHandlerAuth(suite.MockAuthClient, suite.E, suite.MockLogger, suite.MockMapper)
+}
 
-	mockClient := mock_pb.NewMockAuthServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapper := mock_apimapper.NewMockAuthResponseMapper(ctrl)
+func (suite *AuthHandlerTestSuite) TearDownTest() {
+	suite.Ctrl.Finish()
+}
 
-	requestBody := requests.CreateUserRequest{
+func (suite *AuthHandlerTestSuite) TestRegister_Success() {
+	requestBody := requests.RegisterRequest{
 		FirstName:       "John",
 		LastName:        "Doe",
-		Email:           "john@example.com",
+		Email:           "john.doe@example.com",
 		Password:        "password123",
 		ConfirmPassword: "password123",
 	}
 
-	expectedRequest := &pb.RegisterRequest{
-		Firstname:       "John",
-		Lastname:        "Doe",
-		Email:           "john@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
+	grpcRequest := &pb.RegisterRequest{
+		Firstname:       requestBody.FirstName,
+		Lastname:        requestBody.LastName,
+		Email:           requestBody.Email,
+		Password:        requestBody.Password,
+		ConfirmPassword: requestBody.ConfirmPassword,
 	}
 
-	expectedResponse := &pb.ApiResponseRegister{
+	grpcResponse := &pb.ApiResponseRegister{
 		Status:  "success",
 		Message: "User registered successfully",
-	}
-
-	mockClient.EXPECT().
-		RegisterUser(context.Background(), expectedRequest).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	body, _ := json.Marshal(requestBody)
-	req := httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewBuffer(body))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerAuth(mockClient, e, mockLogger, mockMapper)
-	err := handler.Register(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var response pb.ApiResponseRegister
-	err = json.Unmarshal(rec.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, expectedResponse.Status, response.Status)
-	assert.Equal(t, expectedResponse.Message, response.Message)
-}
-
-func TestHandleRegister_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockClient := mock_pb.NewMockAuthServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapper := mock_apimapper.NewMockAuthResponseMapper(ctrl)
-
-	requestBody := requests.CreateUserRequest{
-		FirstName:       "John",
-		LastName:        "Doe",
-		Email:           "john@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
-	}
-
-	expectedRequest := &pb.RegisterRequest{
-		Firstname:       "John",
-		Lastname:        "Doe",
-		Email:           "john@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
-	}
-
-	expectedResponse := &pb.ApiResponseRegister{
-		Status:  "error",
-		Message: "User registration failed",
-	}
-
-	mockClient.EXPECT().
-		RegisterUser(context.Background(), expectedRequest).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	body, _ := json.Marshal(requestBody)
-	req := httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewBuffer(body))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerAuth(mockClient, e, mockLogger, mockMapper)
-	err := handler.Register(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var response pb.ApiResponseRegister
-	err = json.Unmarshal(rec.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, expectedResponse.Status, response.Status)
-	assert.Equal(t, expectedResponse.Message, response.Message)
-}
-
-func TestHandleRegister_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockClient := mock_pb.NewMockAuthServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapper := mock_apimapper.NewMockAuthResponseMapper(ctrl)
-
-	mockLogger.EXPECT().Debug(
-		"Validation Error",
-		gomock.AssignableToTypeOf(zap.Field{}),
-	).Times(1)
-
-	requestBody := `{}`
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewBuffer([]byte(requestBody)))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerAuth(mockClient, e, mockLogger, mockMapper)
-
-	err := handler.Register(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Validation Error")
-}
-
-func TestHandleLogin_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockClient := mock_pb.NewMockAuthServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapper := mock_apimapper.NewMockAuthResponseMapper(ctrl)
-
-	mockResponse := &pb.ApiResponseLogin{
-		Status:  "success",
-		Message: "Login successful",
-		Data: &pb.TokenResponse{
-			AccessToken:  "mockToken123",
-			RefreshToken: "mockRefreshToken123",
+		Data: &pb.UserResponse{
+			Id:        1,
+			Firstname: requestBody.FirstName,
+			Lastname:  requestBody.LastName,
+			Email:     requestBody.Email,
 		},
 	}
-	mockClient.EXPECT().LoginUser(context.Background(), gomock.Any()).Return(mockResponse, nil)
 
-	requestBody := `{"email":"test@example.com","password":"password123"}`
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewBuffer([]byte(requestBody)))
+	expectedApiResponse := &response.ApiResponseRegister{
+		Status:  "success",
+		Message: "User registered successfully",
+		Data: &response.UserResponse{
+			ID:        1,
+			FirstName: requestBody.FirstName,
+			LastName:  requestBody.LastName,
+			Email:     requestBody.Email,
+		},
+	}
+
+	suite.MockAuthClient.EXPECT().RegisterUser(gomock.Any(), grpcRequest).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToResponseRegister(grpcResponse).Return(expectedApiResponse)
+
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewReader(bodyBytes))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerAuth(mockClient, e, mockLogger, mockMapper)
+	err := suite.Handler.Register(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err := handler.Login(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var response pb.ApiResponseLogin
-
-	err = json.Unmarshal(rec.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", response.Status)
-	assert.Equal(t, "Login successful", response.Message)
-
-	assert.NotNil(t, response.Data)
-	assert.Equal(t, "mockToken123", response.Data.AccessToken)
-	assert.Equal(t, "mockRefreshToken123", response.Data.RefreshToken)
+	var resp response.ApiResponseRegister
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Equal("success", resp.Status)
+	suite.Equal(1, resp.Data.ID)
 }
 
-func TestHandleLogin_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *AuthHandlerTestSuite) TestRegister_Failure() {
+	requestBody := requests.RegisterRequest{
+		FirstName:       "John",
+		LastName:        "Doe",
+		Email:           "john.doe@example.com",
+		Password:        "password123",
+		ConfirmPassword: "password123",
+	}
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockAuthClient.EXPECT().RegisterUser(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Error("Registration failed", zap.Error(grpcError)).Times(1)
 
-	mockClient := mock_pb.NewMockAuthServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapper := mock_apimapper.NewMockAuthResponseMapper(ctrl)
-
-	mockClient.EXPECT().LoginUser(gomock.Any(), gomock.Any()).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Internal Server Error: ",
-	})
-	mockLogger.EXPECT().Debug("Failed to login user", gomock.Any()).Times(1)
-
-	requestBody := `{"email":"test@example.com","password":"password123"}`
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewBuffer([]byte(requestBody)))
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewReader(bodyBytes))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerAuth(mockClient, e, mockLogger, mockMapper)
-
-	err := handler.Login(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var response response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", response.Status)
-	assert.Equal(t, "Internal Server Error: ", response.Message)
+	err := suite.Handler.Register(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
 }
 
-func TestHandleLogin_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *AuthHandlerTestSuite) TestRegister_ValidationError() {
+	invalidRequestBody := requests.RegisterRequest{
+		FirstName:       "John",
+		LastName:        "Doe",
+		Email:           "invalid-email",
+		Password:        "password123",
+		ConfirmPassword: "password123",
+	}
 
-	mockClient := mock_pb.NewMockAuthServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMapper := mock_apimapper.NewMockAuthResponseMapper(ctrl)
-
-	mockLogger.EXPECT().Debug(gomock.Eq("Validation Error"), gomock.Any()).Times(1)
-
-	requestBody := `{}`
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewBuffer([]byte(requestBody)))
+	bodyBytes, _ := json.Marshal(invalidRequestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewReader(bodyBytes))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerAuth(mockClient, e, mockLogger, mockMapper)
+	suite.MockLogger.EXPECT().
+		Debug("Validation failed", gomock.Any()).
+		Times(1)
 
-	err := handler.Login(c)
+	err := suite.Handler.Register(c)
 
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
+}
 
-	var response response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", response.Status)
-	assert.Contains(t, response.Message, "Validation Error")
+func (suite *AuthHandlerTestSuite) TestLogin_Success() {
+	requestBody := requests.AuthRequest{
+		Email:    "john.doe@example.com",
+		Password: "password123",
+	}
+
+	grpcRequest := &pb.LoginRequest{
+		Email:    requestBody.Email,
+		Password: requestBody.Password,
+	}
+
+	grpcResponse := &pb.ApiResponseLogin{
+		Status: "success",
+		Data: &pb.TokenResponse{
+			AccessToken:  "access-token-123",
+			RefreshToken: "refresh-token-456",
+		},
+	}
+
+	expectedApiResponse := &response.ApiResponseLogin{
+		Status: "success",
+		Data: &response.TokenResponse{
+			AccessToken:  "access-token-123",
+			RefreshToken: "refresh-token-456",
+		},
+	}
+
+	suite.MockAuthClient.EXPECT().LoginUser(gomock.Any(), grpcRequest).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToResponseLogin(grpcResponse).Return(expectedApiResponse)
+
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.Login(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponseLogin
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Equal("success", resp.Status)
+	suite.Equal("access-token-123", resp.Data.AccessToken)
+}
+
+func (suite *AuthHandlerTestSuite) TestLogin_Failure() {
+	requestBody := requests.AuthRequest{
+		Email:    "john.doe@example.com",
+		Password: "password123",
+	}
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockAuthClient.EXPECT().LoginUser(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Error("Login failed", zap.Error(grpcError)).Times(1)
+
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.Login(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusUnauthorized, rec.Code)
+}
+
+func (suite *AuthHandlerTestSuite) TestLogin_ValidationError() {
+	invalidRequestBody := requests.AuthRequest{
+		Email:    "invalid-email",
+		Password: "password123",
+	}
+
+	bodyBytes, _ := json.Marshal(invalidRequestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	suite.MockLogger.EXPECT().
+		Debug("Validation failed", gomock.Any()).
+		Times(1)
+
+	err := suite.Handler.Login(c)
+
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
+}
+
+func (suite *AuthHandlerTestSuite) TestRefreshToken_Success() {
+	refreshToken := "refresh-token-456"
+
+	grpcRequest := &pb.RefreshTokenRequest{
+		RefreshToken: refreshToken,
+	}
+
+	grpcResponse := &pb.ApiResponseRefreshToken{
+		Status: "success",
+		Data: &pb.TokenResponse{
+			AccessToken:  "new-access-token-789",
+			RefreshToken: refreshToken,
+		},
+	}
+
+	expectedApiResponse := &response.ApiResponseRefreshToken{
+		Status: "success",
+		Data: &response.TokenResponse{
+			AccessToken:  "new-access-token-789",
+			RefreshToken: refreshToken,
+		},
+	}
+
+	suite.MockAuthClient.EXPECT().RefreshToken(gomock.Any(), grpcRequest).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToResponseRefreshToken(grpcResponse).Return(expectedApiResponse)
+
+	requestBody := map[string]string{
+		"refresh_token": refreshToken,
+	}
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/refresh-token", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.RefreshToken(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponseRefreshToken
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Equal("success", resp.Status)
+	suite.Equal("new-access-token-789", resp.Data.AccessToken)
+}
+
+func (suite *AuthHandlerTestSuite) TestRefreshToken_Failure() {
+	refreshToken := "refresh-token-456"
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockAuthClient.EXPECT().RefreshToken(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Error("Token refresh failed", zap.Error(grpcError)).Times(1)
+
+	requestBody := map[string]string{
+		"refresh_token": refreshToken,
+	}
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/refresh-token", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.RefreshToken(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
+}
+
+func (suite *AuthHandlerTestSuite) TestRefreshToken_ValidationError() {
+	requestBody := map[string]string{}
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/refresh-token", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	suite.MockLogger.EXPECT().
+		Debug("Validation failed", gomock.Any()).
+		Times(1)
+
+	err := suite.Handler.RefreshToken(c)
+
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
+}
+
+func (suite *AuthHandlerTestSuite) TestGetMe_Success() {
+	userID := 1
+	token := "access-token-123"
+
+	grpcRequest := &pb.GetMeRequest{
+		AccessToken: token,
+	}
+
+	grpcResponse := &pb.ApiResponseGetMe{
+		Status: "success",
+		Data: &pb.UserResponse{
+			Id:        int32(userID),
+			Firstname: "John",
+			Lastname:  "Doe",
+			Email:     "john.doe@example.com",
+		},
+	}
+
+	expectedApiResponse := &response.ApiResponseGetMe{
+		Status: "success",
+		Data: &response.UserResponse{
+			ID:        userID,
+			FirstName: "John",
+			LastName:  "Doe",
+			Email:     "john.doe@example.com",
+		},
+	}
+
+	suite.MockAuthClient.EXPECT().GetMe(gomock.Any(), grpcRequest).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToResponseGetMe(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/auth/me", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.GetMe(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponseGetMe
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Equal("success", resp.Status)
+	suite.Equal(userID, resp.Data.ID)
+}
+
+func (suite *AuthHandlerTestSuite) TestGetMe_Failure() {
+	token := "access-token-123"
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockAuthClient.EXPECT().GetMe(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Error("Failed to get user information", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/auth/me", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.GetMe(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusUnauthorized, rec.Code)
+}
+
+func (suite *AuthHandlerTestSuite) TestGetMe_MissingToken() {
+	req := httptest.NewRequest(http.MethodGet, "/api/auth/me", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	suite.MockLogger.EXPECT().
+		Debug("Authorization header is missing or invalid format", gomock.Any()).
+		Times(1)
+
+	err := suite.Handler.GetMe(c)
+
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func TestAuthHandlerSuite(t *testing.T) {
+	suite.Run(t, new(AuthHandlerTestSuite))
 }

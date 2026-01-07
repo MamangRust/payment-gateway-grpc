@@ -7,8 +7,8 @@
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "john.doe@example.com",
-    "password": "securepassword"
+    "email": "helloworldss@gmail.com",
+    "password": "Denada451"
   }'
 ```
 
@@ -496,12 +496,12 @@ curl -X GET "http://0.0.0.0:5000/api/saldo/card_number/1234567890" \
 
 ### Create
 ```sh
-curl -X POST "http://0.0.0.0:5000/api/saldo/create" \
--H "Authorization: Bearer <YOUR_BEARER_TOKEN>" \
+curl -X POST "http://localhost:5000/api/saldo/create" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3OSIsImF1ZCI6WyJhY2Nlc3MiXSwiZXhwIjoxNzYwODM1MTU2fQ.Ny7zUFJgSw55jKad_hRAOEmelCRbSlTEBns1LfTSTkg" \
 -H "Content-Type: application/json" \
 -d '{
-  "card_number": "1234567890",
-  "total_balance": 5000
+  "card_number": "4554280556944275",
+  "total_balance": 10000000
 }'
 ```
 
@@ -780,12 +780,12 @@ curl -X GET "http://0.0.0.0:5000/api/topup/card_number/123456789" \
 ### Create
 ```sh
 curl -X POST "http://0.0.0.0:5000/api/topup/create" \
--H "Authorization: Bearer <YOUR_BEARER_TOKEN>" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3OSIsImF1ZCI6WyJhY2Nlc3MiXSwiZXhwIjoxNzYwODM0NjEyfQ.yM7OqrBhGB0trw8aFl2jy5bBgLV_6n38MCJMGzZc3hQ" \
 -H "Content-Type: application/json" \
 -d '{
-  "card_number": "123456789",
+  "card_number": "4554280556944275",
   "topup_no": "TOPUP001",
-  "topup_amount": 50000,
+  "topup_amount": 1000000000,
   "topup_method": "Bank Transfer"
 }'
 ```

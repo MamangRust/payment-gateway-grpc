@@ -606,7 +606,7 @@ func (s *transferHandleGrpc) UpdateTransfer(ctx context.Context, request *pb.Upd
 	return so, nil
 }
 
-func (s *transferHandleGrpc) TrashedTransfer(ctx context.Context, request *pb.FindByIdTransferRequest) (*pb.ApiResponseTransfer, error) {
+func (s *transferHandleGrpc) TrashedTransfer(ctx context.Context, request *pb.FindByIdTransferRequest) (*pb.ApiResponseTransferDeleteAt, error) {
 	id := int(request.GetTransferId())
 
 	if id == 0 {
@@ -619,12 +619,12 @@ func (s *transferHandleGrpc) TrashedTransfer(ctx context.Context, request *pb.Fi
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseTransfer("success", "Successfully trashed transfer", res)
+	so := s.mapping.ToProtoResponseTransferDeleteAt("success", "Successfully trashed transfer", res)
 
 	return so, nil
 }
 
-func (s *transferHandleGrpc) RestoreTransfer(ctx context.Context, request *pb.FindByIdTransferRequest) (*pb.ApiResponseTransfer, error) {
+func (s *transferHandleGrpc) RestoreTransfer(ctx context.Context, request *pb.FindByIdTransferRequest) (*pb.ApiResponseTransferDeleteAt, error) {
 	id := int(request.GetTransferId())
 
 	if id == 0 {
@@ -637,7 +637,7 @@ func (s *transferHandleGrpc) RestoreTransfer(ctx context.Context, request *pb.Fi
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseTransfer("success", "Successfully restored transfer", res)
+	so := s.mapping.ToProtoResponseTransferDeleteAt("success", "Successfully restored transfer", res)
 
 	return so, nil
 }
@@ -655,7 +655,7 @@ func (s *transferHandleGrpc) DeleteTransferPermanent(ctx context.Context, reques
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseTransferDelete("success", "Successfully restored transfer")
+	so := s.mapping.ToProtoResponseTransferDelete("success", "Successfully deleted transfer permanently")
 
 	return so, nil
 }
@@ -667,7 +667,7 @@ func (s *transferHandleGrpc) RestoreAllTransfer(ctx context.Context, _ *emptypb.
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseTransferAll("success", "Successfully restored transfer")
+	so := s.mapping.ToProtoResponseTransferAll("success", "Successfully restored all transfers")
 
 	return so, nil
 }
@@ -679,7 +679,7 @@ func (s *transferHandleGrpc) DeleteAllTransferPermanent(ctx context.Context, _ *
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseTransferAll("success", "delete transfer permanent")
+	so := s.mapping.ToProtoResponseTransferAll("success", "Successfully deleted all transfers permanently")
 
 	return so, nil
 }

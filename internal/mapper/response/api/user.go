@@ -103,7 +103,7 @@ func (u *userResponseMapper) ToApiResponsePaginationUserDeleteAt(pbResponse *pb.
 		Status:     pbResponse.Status,
 		Message:    pbResponse.Message,
 		Data:       u.ToResponsesUserDeleteAt(pbResponse.Data),
-		Pagination: *mapPaginationMeta(pbResponse.Pagination),
+		Pagination: mapPaginationMeta(pbResponse.Pagination),
 	}
 }
 
@@ -112,6 +112,6 @@ func (u *userResponseMapper) ToApiResponsePaginationUser(pbResponse *pb.ApiRespo
 		Status:     pbResponse.Status,
 		Message:    pbResponse.Message,
 		Data:       u.ToResponsesUser(pbResponse.Data),
-		Pagination: *mapPaginationMeta(pbResponse.Pagination),
+		Pagination: mapPaginationMeta(pbResponse.Pagination),
 	}
 }

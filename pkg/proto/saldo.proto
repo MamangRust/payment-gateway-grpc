@@ -91,6 +91,12 @@ message ApiResponseSaldo {
     SaldoResponse data = 3;
 }
 
+message ApiResponseSaldoDeleteAt {
+    string status = 1;
+    string message = 2;
+    SaldoResponseDeleteAt data = 3;
+}
+
 message ApiResponsesSaldo{
     string status = 1;
     string message = 2;
@@ -160,8 +166,8 @@ service SaldoService{
    rpc FindByTrashed(FindAllSaldoRequest) returns (ApiResponsePaginationSaldoDeleteAt) {}
    rpc CreateSaldo(CreateSaldoRequest) returns (ApiResponseSaldo) {}
    rpc UpdateSaldo(UpdateSaldoRequest) returns (ApiResponseSaldo) {}
-   rpc TrashedSaldo(FindByIdSaldoRequest) returns (ApiResponseSaldo) {}
-   rpc RestoreSaldo(FindByIdSaldoRequest) returns (ApiResponseSaldo) {}
+   rpc TrashedSaldo(FindByIdSaldoRequest) returns (ApiResponseSaldoDeleteAt) {}
+   rpc RestoreSaldo(FindByIdSaldoRequest) returns (ApiResponseSaldoDeleteAt) {}
    rpc DeleteSaldoPermanent(FindByIdSaldoRequest) returns (ApiResponseSaldoDelete) {}
 
    rpc RestoreAllSaldo(google.protobuf.Empty) returns (ApiResponseSaldoAll){}

@@ -524,14 +524,14 @@ func (mr *MockTransferServiceClientMockRecorder) RestoreAllTransfer(ctx, in any,
 }
 
 // RestoreTransfer mocks base method.
-func (m *MockTransferServiceClient) RestoreTransfer(ctx context.Context, in *pb.FindByIdTransferRequest, opts ...grpc.CallOption) (*pb.ApiResponseTransfer, error) {
+func (m *MockTransferServiceClient) RestoreTransfer(ctx context.Context, in *pb.FindByIdTransferRequest, opts ...grpc.CallOption) (*pb.ApiResponseTransferDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "RestoreTransfer", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseTransfer)
+	ret0, _ := ret[0].(*pb.ApiResponseTransferDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -544,14 +544,14 @@ func (mr *MockTransferServiceClientMockRecorder) RestoreTransfer(ctx, in any, op
 }
 
 // TrashedTransfer mocks base method.
-func (m *MockTransferServiceClient) TrashedTransfer(ctx context.Context, in *pb.FindByIdTransferRequest, opts ...grpc.CallOption) (*pb.ApiResponseTransfer, error) {
+func (m *MockTransferServiceClient) TrashedTransfer(ctx context.Context, in *pb.FindByIdTransferRequest, opts ...grpc.CallOption) (*pb.ApiResponseTransferDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "TrashedTransfer", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseTransfer)
+	ret0, _ := ret[0].(*pb.ApiResponseTransferDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -968,10 +968,10 @@ func (mr *MockTransferServiceServerMockRecorder) RestoreAllTransfer(arg0, arg1 a
 }
 
 // RestoreTransfer mocks base method.
-func (m *MockTransferServiceServer) RestoreTransfer(arg0 context.Context, arg1 *pb.FindByIdTransferRequest) (*pb.ApiResponseTransfer, error) {
+func (m *MockTransferServiceServer) RestoreTransfer(arg0 context.Context, arg1 *pb.FindByIdTransferRequest) (*pb.ApiResponseTransferDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RestoreTransfer", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseTransfer)
+	ret0, _ := ret[0].(*pb.ApiResponseTransferDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -983,10 +983,10 @@ func (mr *MockTransferServiceServerMockRecorder) RestoreTransfer(arg0, arg1 any)
 }
 
 // TrashedTransfer mocks base method.
-func (m *MockTransferServiceServer) TrashedTransfer(arg0 context.Context, arg1 *pb.FindByIdTransferRequest) (*pb.ApiResponseTransfer, error) {
+func (m *MockTransferServiceServer) TrashedTransfer(arg0 context.Context, arg1 *pb.FindByIdTransferRequest) (*pb.ApiResponseTransferDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TrashedTransfer", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseTransfer)
+	ret0, _ := ret[0].(*pb.ApiResponseTransferDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -58,7 +58,7 @@ func (t *transactionHandleGrpc) FindAllTransaction(ctx context.Context, request 
 		TotalPages:   int32(totalPages),
 		TotalRecords: int32(*totalRecords),
 	}
-	so := t.mapping.ToProtoResponsePaginationTransaction(paginationMeta, "", "", transactions)
+	so := t.mapping.ToProtoResponsePaginationTransaction(paginationMeta, "success", "Successfully fetched transaction records", transactions)
 
 	return so, nil
 }
@@ -96,7 +96,7 @@ func (t *transactionHandleGrpc) FindAllTransactionByCardNumber(ctx context.Conte
 		TotalPages:   int32(totalPages),
 		TotalRecords: int32(*totalRecords),
 	}
-	so := t.mapping.ToProtoResponsePaginationTransaction(paginationMeta, "", "", transactions)
+	so := t.mapping.ToProtoResponsePaginationTransaction(paginationMeta, "success", "Successfully fetched transaction records", transactions)
 
 	return so, nil
 }
@@ -621,7 +621,7 @@ func (t *transactionHandleGrpc) CreateTransaction(ctx context.Context, request *
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, transaction_errors.ErrGrpcFailedCreateTransaction
+		return nil, transaction_errors.ErrGrpcValidateCreateTransactionRequest
 	}
 
 	res, err := t.transactionService.Create(request.ApiKey, &req)
@@ -653,6 +653,10 @@ func (t *transactionHandleGrpc) UpdateTransaction(ctx context.Context, request *
 		TransactionTime: transactionTime,
 	}
 
+	if err := req.Validate(); err != nil {
+		return nil, transaction_errors.ErrGrpcValidateUpdateTransactionRequest
+	}
+
 	res, err := t.transactionService.Update(request.ApiKey, &req)
 	if err != nil {
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
@@ -663,7 +667,7 @@ func (t *transactionHandleGrpc) UpdateTransaction(ctx context.Context, request *
 	return so, nil
 }
 
-func (t *transactionHandleGrpc) TrashedTransaction(ctx context.Context, request *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransaction, error) {
+func (t *transactionHandleGrpc) TrashedTransaction(ctx context.Context, request *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransactionDeleteAt, error) {
 	id := int(request.GetTransactionId())
 
 	if id == 0 {
@@ -676,12 +680,12 @@ func (t *transactionHandleGrpc) TrashedTransaction(ctx context.Context, request 
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := t.mapping.ToProtoResponseTransaction("success", "Successfully trashed transaction", res)
+	so := t.mapping.ToProtoResponseTransactionDeleteAt("success", "Successfully trashed transaction", res)
 
 	return so, nil
 }
 
-func (t *transactionHandleGrpc) RestoreTransaction(ctx context.Context, request *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransaction, error) {
+func (t *transactionHandleGrpc) RestoreTransaction(ctx context.Context, request *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransactionDeleteAt, error) {
 	id := int(request.GetTransactionId())
 
 	if id == 0 {
@@ -694,7 +698,7 @@ func (t *transactionHandleGrpc) RestoreTransaction(ctx context.Context, request 
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := t.mapping.ToProtoResponseTransaction("success", "Successfully restored transaction", res)
+	so := t.mapping.ToProtoResponseTransactionDeleteAt("success", "Successfully restored transaction", res)
 
 	return so, nil
 }
@@ -730,7 +734,7 @@ func (t *transactionHandleGrpc) RestoreAllTransaction(ctx context.Context, _ *em
 	return so, nil
 }
 
-func (t *transactionHandleGrpc) DeleteAllMerchantPermanent(ctx context.Context, _ *emptypb.Empty) (*pb.ApiResponseTransactionAll, error) {
+func (t *transactionHandleGrpc) DeleteAllTransactionPermanent(ctx context.Context, _ *emptypb.Empty) (*pb.ApiResponseTransactionAll, error) {
 	_, err := t.transactionService.DeleteAllTransactionPermanent()
 
 	if err != nil {

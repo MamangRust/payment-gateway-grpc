@@ -231,7 +231,7 @@ func (s *roleService) UpdateRole(request *requests.UpdateRoleRequest) (*response
 	return so, nil
 }
 
-func (s *roleService) TrashedRole(id int) (*response.RoleResponse, *response.ErrorResponse) {
+func (s *roleService) TrashedRole(id int) (*response.RoleResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Starting TrashedRole process",
 		zap.Int("roleID", id),
 	)
@@ -246,7 +246,7 @@ func (s *roleService) TrashedRole(id int) (*response.RoleResponse, *response.Err
 		return nil, role_errors.ErrFailedTrashedRole
 	}
 
-	so := s.mapping.ToRoleResponse(role)
+	so := s.mapping.ToRoleResponseDeleteAt(role)
 
 	s.logger.Debug("TrashedRole process completed",
 		zap.Int("roleID", id),
@@ -255,7 +255,7 @@ func (s *roleService) TrashedRole(id int) (*response.RoleResponse, *response.Err
 	return so, nil
 }
 
-func (s *roleService) RestoreRole(id int) (*response.RoleResponse, *response.ErrorResponse) {
+func (s *roleService) RestoreRole(id int) (*response.RoleResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Starting RestoreRole process",
 		zap.Int("roleID", id),
 	)
@@ -270,7 +270,7 @@ func (s *roleService) RestoreRole(id int) (*response.RoleResponse, *response.Err
 		return nil, role_errors.ErrFailedRestoreRole
 	}
 
-	so := s.mapping.ToRoleResponse(role)
+	so := s.mapping.ToRoleResponseDeleteAt(role)
 
 	s.logger.Debug("RestoreRole process completed",
 		zap.Int("roleID", id),

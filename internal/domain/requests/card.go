@@ -26,6 +26,14 @@ type CreateCardRequest struct {
 	CVV          string    `json:"cvv" validate:"required"`
 	CardProvider string    `json:"card_provider" validate:"required"`
 }
+type UpdateCardRequest struct {
+	CardID       int       `json:"card_id" validate:"required,min=1"`
+	UserID       int       `json:"user_id" validate:"required,min=1"`
+	CardType     string    `json:"card_type" validate:"required"`
+	ExpireDate   time.Time `json:"expire_date" validate:"required"`
+	CVV          string    `json:"cvv" validate:"required"`
+	CardProvider string    `json:"card_provider" validate:"required"`
+}
 
 func (r *CreateCardRequest) Validate() error {
 	validate := validator.New()
@@ -45,15 +53,6 @@ func (r *CreateCardRequest) Validate() error {
 	}
 
 	return nil
-}
-
-type UpdateCardRequest struct {
-	CardID       int       `json:"card_id" validate:"required,min=1"`
-	UserID       int       `json:"user_id" validate:"required,min=1"`
-	CardType     string    `json:"card_type" validate:"required"`
-	ExpireDate   time.Time `json:"expire_date" validate:"required"`
-	CVV          string    `json:"cvv" validate:"required"`
-	CardProvider string    `json:"card_provider" validate:"required"`
 }
 
 func (r *UpdateCardRequest) Validate() error {

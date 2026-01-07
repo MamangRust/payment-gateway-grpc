@@ -105,6 +105,12 @@ type ApiResponseWithdraw struct {
 	Data    *WithdrawResponse `json:"data"`
 }
 
+type ApiResponseWithdrawDeleteAt struct {
+	Status  string                    `json:"status"`
+	Message string                    `json:"message"`
+	Data    *WithdrawResponseDeleteAt `json:"data"`
+}
+
 type ApiResponseWithdrawDelete struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
@@ -119,12 +125,12 @@ type ApiResponsePaginationWithdraw struct {
 	Status     string              `json:"status"`
 	Message    string              `json:"message"`
 	Data       []*WithdrawResponse `json:"data"`
-	Pagination PaginationMeta      `json:"pagination"`
+	Pagination *PaginationMeta     `json:"pagination"`
 }
 
 type ApiResponsePaginationWithdrawDeleteAt struct {
 	Status     string                      `json:"status"`
 	Message    string                      `json:"message"`
 	Data       []*WithdrawResponseDeleteAt `json:"data"`
-	Pagination PaginationMeta              `json:"pagination"`
+	Pagination *PaginationMeta             `json:"pagination"`
 }

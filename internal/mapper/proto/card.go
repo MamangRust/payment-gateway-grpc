@@ -21,6 +21,14 @@ func (s *cardProtoMapper) ToProtoResponseCard(status string, message string, car
 	}
 }
 
+func (s *cardProtoMapper) ToProtoResponseCardDeleteAt(status string, message string, card *response.CardResponseDeleteAt) *pb.ApiResponseCardDeleteAt {
+	return &pb.ApiResponseCardDeleteAt{
+		Status:  status,
+		Message: message,
+		Data:    s.mapCardResponseDeleteAt(card),
+	}
+}
+
 func (s *cardProtoMapper) ToProtoResponsePaginationCard(pagination *pb.PaginationMeta, status string, message string, cards []*response.CardResponse) *pb.ApiResponsePaginationCard {
 	return &pb.ApiResponsePaginationCard{
 		Status:     status,
@@ -30,7 +38,7 @@ func (s *cardProtoMapper) ToProtoResponsePaginationCard(pagination *pb.Paginatio
 	}
 }
 
-func (s *cardProtoMapper) ToProtoResponseCardDeleteAt(status string, message string) *pb.ApiResponseCardDelete {
+func (s *cardProtoMapper) ToProtoResponseCardDelete(status string, message string) *pb.ApiResponseCardDelete {
 	return &pb.ApiResponseCardDelete{
 		Status:  status,
 		Message: message,

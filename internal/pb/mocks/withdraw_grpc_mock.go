@@ -484,14 +484,14 @@ func (mr *MockWithdrawServiceClientMockRecorder) RestoreAllWithdraw(ctx, in any,
 }
 
 // RestoreWithdraw mocks base method.
-func (m *MockWithdrawServiceClient) RestoreWithdraw(ctx context.Context, in *pb.FindByIdWithdrawRequest, opts ...grpc.CallOption) (*pb.ApiResponseWithdraw, error) {
+func (m *MockWithdrawServiceClient) RestoreWithdraw(ctx context.Context, in *pb.FindByIdWithdrawRequest, opts ...grpc.CallOption) (*pb.ApiResponseWithdrawDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "RestoreWithdraw", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseWithdraw)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -504,14 +504,14 @@ func (mr *MockWithdrawServiceClientMockRecorder) RestoreWithdraw(ctx, in any, op
 }
 
 // TrashedWithdraw mocks base method.
-func (m *MockWithdrawServiceClient) TrashedWithdraw(ctx context.Context, in *pb.FindByIdWithdrawRequest, opts ...grpc.CallOption) (*pb.ApiResponseWithdraw, error) {
+func (m *MockWithdrawServiceClient) TrashedWithdraw(ctx context.Context, in *pb.FindByIdWithdrawRequest, opts ...grpc.CallOption) (*pb.ApiResponseWithdrawDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "TrashedWithdraw", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseWithdraw)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -898,10 +898,10 @@ func (mr *MockWithdrawServiceServerMockRecorder) RestoreAllWithdraw(arg0, arg1 a
 }
 
 // RestoreWithdraw mocks base method.
-func (m *MockWithdrawServiceServer) RestoreWithdraw(arg0 context.Context, arg1 *pb.FindByIdWithdrawRequest) (*pb.ApiResponseWithdraw, error) {
+func (m *MockWithdrawServiceServer) RestoreWithdraw(arg0 context.Context, arg1 *pb.FindByIdWithdrawRequest) (*pb.ApiResponseWithdrawDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RestoreWithdraw", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseWithdraw)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -913,10 +913,10 @@ func (mr *MockWithdrawServiceServerMockRecorder) RestoreWithdraw(arg0, arg1 any)
 }
 
 // TrashedWithdraw mocks base method.
-func (m *MockWithdrawServiceServer) TrashedWithdraw(arg0 context.Context, arg1 *pb.FindByIdWithdrawRequest) (*pb.ApiResponseWithdraw, error) {
+func (m *MockWithdrawServiceServer) TrashedWithdraw(arg0 context.Context, arg1 *pb.FindByIdWithdrawRequest) (*pb.ApiResponseWithdrawDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TrashedWithdraw", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseWithdraw)
+	ret0, _ := ret[0].(*pb.ApiResponseWithdrawDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

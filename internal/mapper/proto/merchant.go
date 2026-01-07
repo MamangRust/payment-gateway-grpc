@@ -95,6 +95,14 @@ func (m *merchantProtoMapper) ToProtoResponseMerchant(status string, message str
 		Message: message,
 		Data:    m.mapMerchantResponse(res),
 	}
+}
+
+func (m *merchantProtoMapper) ToProtoResponseMerchantDeleteAt(status string, message string, res *response.MerchantResponseDeleteAt) *pb.ApiResponseMerchantDeleteAt {
+	return &pb.ApiResponseMerchantDeleteAt{
+		Status:  status,
+		Message: message,
+		Data:    m.mapMerchantResponseDeleteAt(res),
+	}
 
 }
 

@@ -1,1142 +1,364 @@
 package test
 
 import (
+	"errors"
+	"testing"
+
 	"MamangRust/paymentgatewaygrpc/internal/domain/record"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	mock_responsemapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/mocks"
-	mock_repository "MamangRust/paymentgatewaygrpc/internal/repository/mocks"
+	mock_responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/mocks"
+	mocks "MamangRust/paymentgatewaygrpc/internal/repository/mocks"
 	"MamangRust/paymentgatewaygrpc/internal/service"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/topup_errors"
 	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
-	"errors"
-	"testing"
-	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 )
 
-func TestFindAllTopups_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
-
-	page := 1
-	pageSize := 10
-	search := "test"
-	totalRecords := 3
-
-	topups := []*record.TopupRecord{
-		{
-			ID:          1,
-			CardNumber:  "1234",
-			TopupNo:     "TOPUP-001",
-			TopupAmount: 50000,
-			TopupMethod: "bank_transfer",
-			TopupTime:   "2024-12-25T09:00:00Z",
-			CreatedAt:   "2024-12-25T09:00:00Z",
-			UpdatedAt:   "2024-12-25T09:30:00Z",
-			DeletedAt:   nil,
-		},
-		{
-			ID:          2,
-			CardNumber:  "5678",
-			TopupNo:     "TOPUP-002",
-			TopupAmount: 75000,
-			TopupMethod: "credit_card",
-			TopupTime:   "2024-12-25T10:00:00Z",
-			CreatedAt:   "2024-12-25T10:00:00Z",
-			UpdatedAt:   "2024-12-25T10:30:00Z",
-			DeletedAt:   nil,
-		},
-	}
-
-	expectedResponses := []*response.TopupResponse{
-		{
-			ID:          1,
-			CardNumber:  "1234",
-			TopupNo:     "TOPUP-001",
-			TopupAmount: 50000,
-			TopupMethod: "bank_transfer",
-			TopupTime:   "2024-12-25T09:00:00Z",
-			CreatedAt:   "2024-12-25T09:00:00Z",
-			UpdatedAt:   "2024-12-25T09:30:00Z",
-		},
-		{
-			ID:          2,
-			CardNumber:  "5678",
-			TopupNo:     "TOPUP-002",
-			TopupAmount: 75000,
-			TopupMethod: "credit_card",
-			TopupTime:   "2024-12-25T10:00:00Z",
-			CreatedAt:   "2024-12-25T10:00:00Z",
-			UpdatedAt:   "2024-12-25T10:30:00Z",
-		},
-	}
-
-	mock_topup_repo.EXPECT().FindAllTopups(search, page, pageSize).Return(topups, totalRecords, nil).Times(1)
-	mock_mapping.EXPECT().ToTopupResponses(topups).Return(expectedResponses).Times(1)
-
-	results, totalPages, errResp := topupService.FindAll(page, pageSize, search)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponses, results)
-	assert.Equal(t, 3, totalPages) // Total pages = ceil(25 / 10) = 3
+type TopupServiceSuite struct {
+	suite.Suite
+	mockTopupRepo *mocks.MockTopupRepository
+	mockCardRepo  *mocks.MockCardRepository
+	mockSaldoRepo *mocks.MockSaldoRepository
+	mockLogger    *mock_logger.MockLoggerInterface
+	mockMapper    *mock_responseservice.MockTopupResponseMapper
+	mockCtrl      *gomock.Controller
 }
 
-func TestFindAllTopups_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
-
-	page := 1
-	pageSize := 10
-	search := "test"
-
-	mock_topup_repo.EXPECT().FindAllTopups(search, page, pageSize).Return(nil, 0, errors.New("database error")).Times(1)
-	mock_logger.EXPECT().Error("failed to fetch topups", zap.Error(errors.New("database error"))).Times(1)
-
-	results, totalPages, errResp := topupService.FindAll(page, pageSize, search)
-
-	assert.Nil(t, results)
-	assert.Equal(t, 0, totalPages)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to fetch topups", errResp.Message)
+func (suite *TopupServiceSuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.mockTopupRepo = mocks.NewMockTopupRepository(suite.mockCtrl)
+	suite.mockCardRepo = mocks.NewMockCardRepository(suite.mockCtrl)
+	suite.mockSaldoRepo = mocks.NewMockSaldoRepository(suite.mockCtrl)
+	suite.mockLogger = mock_logger.NewMockLoggerInterface(suite.mockCtrl)
+	suite.mockMapper = mock_responseservice.NewMockTopupResponseMapper(suite.mockCtrl)
 }
 
-func TestFindAllTopups_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
-
-	page := 1
-	pageSize := 10
-	search := "no-records"
-	totalRecords := 0
-
-	mock_topup_repo.EXPECT().FindAllTopups(search, page, pageSize).Return(nil, totalRecords, nil).Times(1)
-	mock_mapping.EXPECT().ToTopupResponses([]*record.TopupRecord(nil)).Return([]*response.TopupResponse(nil)).Times(1)
-
-	results, totalPages, errResp := topupService.FindAll(page, pageSize, search)
-
-	assert.Nil(t, errResp)
-	assert.Empty(t, results)
-	assert.Equal(t, 0, totalPages)
+func (suite *TopupServiceSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
-func TestFindByIdTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupServiceSuite) TestFindAll_Success() {
+	req := &requests.FindAllTopups{Search: "success", Page: 1, PageSize: 10}
+	total := 1
+	mockTopups := []*record.TopupRecord{{ID: 1, TopupNo: "TP001"}}
+	expectedResponse := []*response.TopupResponse{{ID: 1, TopupNo: "TP001"}}
 
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
+	suite.mockLogger.EXPECT().Debug("Fetching topup", gomock.Any())
+	suite.mockTopupRepo.EXPECT().FindAllTopups(req).Return(mockTopups, &total, nil)
+	suite.mockMapper.EXPECT().ToTopupResponses(mockTopups).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched topup", gomock.Any())
 
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindAll(req)
 
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+	suite.Equal(1, *totalRes)
+}
 
+func (suite *TopupServiceSuite) TestFindAll_Failure() {
+	req := &requests.FindAllTopups{Search: "success", Page: 1, PageSize: 10}
+	dbError := errors.New("database error")
+
+	suite.mockLogger.EXPECT().Debug("Fetching topup", gomock.Any())
+	suite.mockTopupRepo.EXPECT().FindAllTopups(req).Return(nil, nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to fetch topup", gomock.Any())
+
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindAll(req)
+
+	suite.Nil(result)
+	suite.Nil(totalRes)
+	suite.Equal(topup_errors.ErrFailedFindAllTopups, err)
+}
+
+func (suite *TopupServiceSuite) TestFindAllByCardNumber_Success() {
+	req := &requests.FindAllTopupsByCardNumber{CardNumber: "1111-xxxx", Page: 1, PageSize: 10}
+	total := 1
+	mockTopups := []*record.TopupRecord{{ID: 2, CardNumber: "1111-xxxx"}}
+	expectedResponse := []*response.TopupResponse{{ID: 2, CardNumber: "1111-xxxx"}}
+
+	suite.mockLogger.EXPECT().Debug("Fetching topup by card number", gomock.Any())
+	suite.mockTopupRepo.EXPECT().FindAllTopupByCardNumber(req).Return(mockTopups, &total, nil)
+	suite.mockMapper.EXPECT().ToTopupResponses(mockTopups).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched topup", gomock.Any())
+
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindAllByCardNumber(req)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+	suite.Equal(1, *totalRes)
+}
+
+func (suite *TopupServiceSuite) TestFindAllByCardNumber_Failure() {
+	req := &requests.FindAllTopupsByCardNumber{CardNumber: "1111-xxxx", Page: 1, PageSize: 10}
+	dbError := errors.New("database error")
+
+	suite.mockLogger.EXPECT().Debug("Fetching topup by card number", gomock.Any())
+	suite.mockTopupRepo.EXPECT().FindAllTopupByCardNumber(req).Return(nil, nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to fetch topup by card number", gomock.Any())
+
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindAllByCardNumber(req)
+
+	suite.Nil(result)
+	suite.Nil(totalRes)
+	suite.Equal(topup_errors.ErrFailedFindAllTopupsByCardNumber, err)
+}
+
+func (suite *TopupServiceSuite) TestFindById_Success() {
 	topupID := 1
-	topupRecord := &record.TopupRecord{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupNo:     "TOPUP-001",
-		TopupAmount: 50000,
-		TopupMethod: "bank_transfer",
-		TopupTime:   "2024-12-25T09:00:00Z",
-		CreatedAt:   "2024-12-25T09:00:00Z",
-		UpdatedAt:   "2024-12-25T09:30:00Z",
-		DeletedAt:   nil,
-	}
+	mockTopup := &record.TopupRecord{ID: topupID, TopupNo: "TP001"}
+	expectedResponse := &response.TopupResponse{ID: topupID, TopupNo: "TP001"}
 
-	expectedResponse := &response.TopupResponse{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupNo:     "TOPUP-001",
-		TopupAmount: 50000,
-		TopupMethod: "bank_transfer",
-		TopupTime:   "2024-12-25T09:00:00Z",
-		CreatedAt:   "2024-12-25T09:00:00Z",
-		UpdatedAt:   "2024-12-25T09:30:00Z",
-	}
+	suite.mockLogger.EXPECT().Debug("Fetching topup by ID", zap.Int("topup_id", topupID))
+	suite.mockTopupRepo.EXPECT().FindById(topupID).Return(mockTopup, nil)
+	suite.mockMapper.EXPECT().ToTopupResponse(mockTopup).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched topup", zap.Int("topup_id", topupID))
 
-	mock_topup_repo.EXPECT().FindById(topupID).Return(topupRecord, nil).Times(1)
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindById(topupID)
 
-	mock_mapping.EXPECT().ToTopupResponse(topupRecord).Return(expectedResponse).Times(1)
-
-	result, errResp := topupService.FindById(topupID)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
 }
 
-func TestFindByIdTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupServiceSuite) TestFindById_NotFound() {
+	topupID := 99
+	repoError := errors.New("topup not found")
 
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
+	suite.mockLogger.EXPECT().Debug("Fetching topup by ID", zap.Int("topup_id", topupID))
+	suite.mockTopupRepo.EXPECT().FindById(topupID).Return(nil, repoError)
+	suite.mockLogger.EXPECT().Error("failed to find topup by id", gomock.Any())
 
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindById(topupID)
 
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
+	suite.Nil(result)
+	suite.Equal(topup_errors.ErrTopupNotFoundRes, err)
+}
 
+func (suite *TopupServiceSuite) TestFindByActive_Success() {
+	req := &requests.FindAllTopups{Search: "active", Page: 1, PageSize: 10}
+	total := 1
+	mockTopups := []*record.TopupRecord{{ID: 1, TopupNo: "TP001", DeletedAt: nil}}
+	expectedResponse := []*response.TopupResponseDeleteAt{{ID: 1, TopupNo: "TP001", DeletedAt: nil}}
+
+	suite.mockLogger.EXPECT().Debug("Fetching active topup", gomock.Any())
+	suite.mockTopupRepo.EXPECT().FindByActive(req).Return(mockTopups, &total, nil)
+	suite.mockMapper.EXPECT().ToTopupResponsesDeleteAt(mockTopups).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched active topup", gomock.Any())
+
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByActive(req)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+	suite.Equal(1, *totalRes)
+}
+
+func (suite *TopupServiceSuite) TestFindByActive_Failure() {
+	req := &requests.FindAllTopups{Search: "active", Page: 1, PageSize: 10}
+	dbError := errors.New("database error")
+
+	suite.mockLogger.EXPECT().Debug("Fetching active topup", gomock.Any())
+	suite.mockTopupRepo.EXPECT().FindByActive(req).Return(nil, nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to fetch active topup", gomock.Any())
+
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByActive(req)
+
+	suite.Nil(result)
+	suite.Nil(totalRes)
+	suite.Equal(topup_errors.ErrFailedFindActiveTopups, err)
+}
+
+func (suite *TopupServiceSuite) TestFindByTrashed_Success() {
+	req := &requests.FindAllTopups{Page: 1, PageSize: 10}
+	total := 1
+	trashedTime := "2024-01-01T00:00:00Z"
+	mockTopups := []*record.TopupRecord{{ID: 2, TopupNo: "TP002", DeletedAt: &trashedTime}}
+	expectedResponse := []*response.TopupResponseDeleteAt{{ID: 2, TopupNo: "TP002", DeletedAt: &trashedTime}}
+
+	suite.mockLogger.EXPECT().Debug("Fetching trashed topup", gomock.Any())
+	suite.mockTopupRepo.EXPECT().FindByTrashed(req).Return(mockTopups, &total, nil)
+	suite.mockMapper.EXPECT().ToTopupResponsesDeleteAt(mockTopups).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched trashed topup", gomock.Any())
+
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByTrashed(req)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+	suite.Equal(1, *totalRes)
+}
+
+func (suite *TopupServiceSuite) TestFindByTrashed_Failure() {
+	req := &requests.FindAllTopups{Page: 1, PageSize: 10}
+	dbError := errors.New("database error")
+
+	suite.mockLogger.EXPECT().Debug("Fetching trashed topup", gomock.Any())
+	suite.mockTopupRepo.EXPECT().FindByTrashed(req).Return(nil, nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to fetch trashed topup", gomock.Any())
+
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByTrashed(req)
+
+	suite.Nil(result)
+	suite.Nil(totalRes)
+	suite.Equal(topup_errors.ErrFailedFindTrashedTopups, err)
+}
+
+func (suite *TopupServiceSuite) TestTrashedTopup_Success() {
 	topupID := 1
-	expectedError := errors.New("Topup not found")
+	trashedTopup := &record.TopupRecord{ID: topupID}
+	expectedResponse := &response.TopupResponseDeleteAt{ID: topupID}
 
-	mock_topup_repo.EXPECT().FindById(topupID).Return(nil, expectedError).Times(1)
+	suite.mockLogger.EXPECT().Debug("Starting TrashedTopup process", zap.Int("topup_id", topupID))
+	suite.mockTopupRepo.EXPECT().TrashedTopup(topupID).Return(trashedTopup, nil)
+	suite.mockMapper.EXPECT().ToTopupResponseDeleteAt(trashedTopup).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("TrashedTopup process completed", zap.Int("topup_id", topupID))
 
-	mock_logger.EXPECT().Error("failed to find topup by id", zap.Error(expectedError)).Times(1)
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.TrashedTopup(topupID)
 
-	result, errResp := topupService.FindById(topupID)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Topup record not found", errResp.Message)
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
 }
 
-func TestFindByCardNumberTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
-
-	cardNumber := "1234"
-
-	topups := []*record.TopupRecord{
-		{
-			ID:          1,
-			CardNumber:  "1234",
-			TopupNo:     "TOPUP-001",
-			TopupAmount: 50000,
-			TopupMethod: "bank_transfer",
-			TopupTime:   "2024-12-25T09:00:00Z",
-			CreatedAt:   "2024-12-25T09:00:00Z",
-			UpdatedAt:   "2024-12-25T09:30:00Z",
-			DeletedAt:   nil,
-		},
-		{
-			ID:          2,
-			CardNumber:  "5678",
-			TopupNo:     "TOPUP-002",
-			TopupAmount: 75000,
-			TopupMethod: "credit_card",
-			TopupTime:   "2024-12-25T10:00:00Z",
-			CreatedAt:   "2024-12-25T10:00:00Z",
-			UpdatedAt:   "2024-12-25T10:30:00Z",
-			DeletedAt:   nil,
-		},
-	}
-
-	expectedResponse := []*response.TopupResponse{
-		{
-			ID:          1,
-			CardNumber:  "1234",
-			TopupNo:     "TOPUP-001",
-			TopupAmount: 50000,
-			TopupMethod: "bank_transfer",
-			TopupTime:   "2024-12-25T09:00:00Z",
-			CreatedAt:   "2024-12-25T09:00:00Z",
-			UpdatedAt:   "2024-12-25T09:30:00Z",
-		},
-		{
-			ID:          2,
-			CardNumber:  "5678",
-			TopupNo:     "TOPUP-002",
-			TopupAmount: 75000,
-			TopupMethod: "credit_card",
-			TopupTime:   "2024-12-25T10:00:00Z",
-			CreatedAt:   "2024-12-25T10:00:00Z",
-			UpdatedAt:   "2024-12-25T10:30:00Z",
-		},
-	}
-
-	mock_logger.EXPECT().Debug("Finding top-up by card number", zap.String("card_number", cardNumber))
-
-	mock_topup_repo.EXPECT().FindByCardNumber(cardNumber).Return(topups, nil).Times(1)
-
-	mock_mapping.EXPECT().ToTopupResponses(topups).Return(expectedResponse).Times(1)
-
-	mock_logger.EXPECT().Debug("Successfully found top-up by card number", zap.String("card_number", cardNumber))
-
-	result, errResp := topupService.FindByCardNumber(cardNumber)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
-}
-
-func TestFindByCardNumberTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
-
-	cardNumber := "1234"
-	expectedError := errors.New("Topup record not found")
-
-	mock_logger.EXPECT().Debug("Finding top-up by card number", zap.String("card_number", cardNumber))
-
-	mock_topup_repo.EXPECT().FindByCardNumber(cardNumber).Return(nil, expectedError).Times(1)
-
-	mock_logger.EXPECT().Error("Failed to find top-up by card number", zap.Error(expectedError), zap.String("card_number", cardNumber)).Times(1)
-
-	result, errResp := topupService.FindByCardNumber(cardNumber)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to find top-up by card number", errResp.Message)
-}
-
-func TestFindByActiveTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
-
-	topups := []*record.TopupRecord{
-		{
-			ID:          1,
-			CardNumber:  "1234",
-			TopupNo:     "TOPUP-001",
-			TopupAmount: 50000,
-			TopupMethod: "bank_transfer",
-			TopupTime:   "2024-12-25T09:00:00Z",
-			CreatedAt:   "2024-12-25T09:00:00Z",
-			UpdatedAt:   "2024-12-25T09:30:00Z",
-			DeletedAt:   nil,
-		},
-		{
-			ID:          2,
-			CardNumber:  "5678",
-			TopupNo:     "TOPUP-002",
-			TopupAmount: 75000,
-			TopupMethod: "credit_card",
-			TopupTime:   "2024-12-25T10:00:00Z",
-			CreatedAt:   "2024-12-25T10:00:00Z",
-			UpdatedAt:   "2024-12-25T10:30:00Z",
-			DeletedAt:   nil,
-		},
-	}
-
-	expectedResponse := []*response.TopupResponseDeleteAt{
-		{
-			ID:          1,
-			CardNumber:  "1234",
-			TopupNo:     "TOPUP-001",
-			TopupAmount: 50000,
-			TopupMethod: "bank_transfer",
-			TopupTime:   "2024-12-25T09:00:00Z",
-			CreatedAt:   "2024-12-25T09:00:00Z",
-			UpdatedAt:   "2024-12-25T09:30:00Z",
-		},
-		{
-			ID:          2,
-			CardNumber:  "5678",
-			TopupNo:     "TOPUP-002",
-			TopupAmount: 75000,
-			TopupMethod: "credit_card",
-			TopupTime:   "2024-12-25T10:00:00Z",
-			CreatedAt:   "2024-12-25T10:00:00Z",
-			UpdatedAt:   "2024-12-25T10:30:00Z",
-		},
-	}
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 2
-
-	mock_logger.EXPECT().Info("Finding active top-up records").Times(1)
-
-	mock_topup_repo.EXPECT().FindByActive(search, page, pageSize).Return(topups, expected, nil).Times(1)
-
-	mock_mapping.EXPECT().ToTopupResponsesDeleteAt(topups).Return(expectedResponse).Times(1)
-
-	mock_logger.EXPECT().Debug("Successfully found active top-up records", zap.Int("count", len(
-		expectedResponse,
-	)))
-
-	result, totalRecord, errResp := topupService.FindByActive(pageSize, page, search)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, expectedResponse, result)
-}
-
-func TestFindByActiveTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 0
-
-	expectedError := errors.New("Failed to fetch active top-up records")
-
-	mock_logger.EXPECT().Info("Finding active top-up records").Times(1)
-
-	mock_topup_repo.EXPECT().FindByActive(search, page, pageSize).Return(nil, expected, expectedError).Times(1)
-
-	mock_logger.EXPECT().Error("Failed to find active top-up records", zap.Error(expectedError)).Times(1)
-
-	result, totalRecord, errResp := topupService.FindByActive(pageSize, page, search)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to find active top-up records", errResp.Message)
-}
-
-func TestFindByTrashedTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
-
-	topups := []*record.TopupRecord{
-		{
-			ID:          1,
-			CardNumber:  "1234",
-			TopupNo:     "TOPUP-001",
-			TopupAmount: 50000,
-			TopupMethod: "bank_transfer",
-			TopupTime:   "2024-12-25T09:00:00Z",
-			CreatedAt:   "2024-12-25T09:00:00Z",
-			UpdatedAt:   "2024-12-25T09:30:00Z",
-			DeletedAt:   nil,
-		},
-		{
-			ID:          2,
-			CardNumber:  "5678",
-			TopupNo:     "TOPUP-002",
-			TopupAmount: 75000,
-			TopupMethod: "credit_card",
-			TopupTime:   "2024-12-25T10:00:00Z",
-			CreatedAt:   "2024-12-25T10:00:00Z",
-			UpdatedAt:   "2024-12-25T10:30:00Z",
-			DeletedAt:   nil,
-		},
-	}
-
-	expectedResponse := []*response.TopupResponseDeleteAt{
-		{
-			ID:          1,
-			CardNumber:  "1234",
-			TopupNo:     "TOPUP-001",
-			TopupAmount: 50000,
-			TopupMethod: "bank_transfer",
-			TopupTime:   "2024-12-25T09:00:00Z",
-			CreatedAt:   "2024-12-25T09:00:00Z",
-			UpdatedAt:   "2024-12-25T09:30:00Z",
-		},
-		{
-			ID:          2,
-			CardNumber:  "5678",
-			TopupNo:     "TOPUP-002",
-			TopupAmount: 75000,
-			TopupMethod: "credit_card",
-			TopupTime:   "2024-12-25T10:00:00Z",
-			CreatedAt:   "2024-12-25T10:00:00Z",
-			UpdatedAt:   "2024-12-25T10:30:00Z",
-		},
-	}
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 2
-
-	mock_logger.EXPECT().Info("Finding trashed top-up records").Times(1)
-
-	mock_topup_repo.EXPECT().FindByTrashed(search, page, pageSize).Return(topups, expected, nil).Times(1)
-
-	mock_mapping.EXPECT().ToTopupResponsesDeleteAt(topups).Return(expectedResponse).Times(1)
-
-	mock_logger.EXPECT().Debug("Successfully found trashed top-up records", zap.Int("count", len(topups))).Times(1)
-
-	result, totalRecord, errResp := topupService.FindByTrashed(pageSize, page, search)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, expectedResponse, result)
-}
-
-func TestFindByTrashedTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 0
-
-	expectedError := errors.New("Failed to fetch trashed top-up records")
-
-	mock_logger.EXPECT().Info("Finding trashed top-up records").Times(1)
-
-	mock_topup_repo.EXPECT().FindByTrashed(search, page, pageSize).Return(nil, expected, expectedError).Times(1)
-
-	mock_logger.EXPECT().Error("Failed to find trashed top-up records", zap.Error(expectedError)).Times(1)
-
-	result, totalRecord, errResp := topupService.FindByTrashed(pageSize, page, search)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to find trashed top-up records", errResp.Message)
-}
-
-func TestCreateTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
-
-	request := &requests.CreateTopupRequest{
-		CardNumber:  "1234",
-		TopupAmount: 50000,
-		TopupMethod: "bank_transfer",
-	}
-
-	card := &record.CardRecord{
-		ID:           1,
-		UserID:       1,
-		CardNumber:   "1234",
-		ExpireDate:   "2024-12-31",
-		CardType:     "credit",
-		CVV:          "123",
-		CardProvider: "Visa",
-	}
-	mock_card_repo.EXPECT().FindCardByCardNumber(request.CardNumber).Return(card, nil).Times(1)
-
-	topup := &record.TopupRecord{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupNo:     "TOPUP-001",
-		TopupAmount: 50000,
-		TopupMethod: "bank_transfer",
-		TopupTime:   "2024-12-25T09:00:00Z",
-	}
-	mock_topup_repo.EXPECT().CreateTopup(request).Return(topup, nil).Times(1)
-
-	saldo := &record.SaldoRecord{
-		CardNumber:   "1234",
-		TotalBalance: 100000,
-	}
-	mock_saldo_repo.EXPECT().FindByCardNumber(request.CardNumber).Return(saldo, nil).Times(1)
-
-	mock_saldo_repo.EXPECT().UpdateSaldoBalance(&requests.UpdateSaldoBalance{
-		CardNumber:   request.CardNumber,
-		TotalBalance: saldo.TotalBalance + request.TopupAmount,
-	}).Return(nil, nil).Times(1)
-
-	expireDate, _ := time.Parse("2006-01-02", card.ExpireDate)
-	mock_card_repo.EXPECT().UpdateCard(&requests.UpdateCardRequest{
-		CardID:       card.ID,
-		UserID:       card.UserID,
-		CardType:     card.CardType,
-		ExpireDate:   expireDate,
-		CVV:          card.CVV,
-		CardProvider: card.CardProvider,
-	}).Return(nil, nil).Times(1)
-
-	expectedResponse := &response.TopupResponse{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupNo:     "TOPUP-001",
-		TopupAmount: 50000,
-		TopupMethod: "bank_transfer",
-		TopupTime:   "2024-12-25T09:00:00Z",
-		CreatedAt:   "2024-12-25T09:00:00Z",
-		UpdatedAt:   "2024-12-25T09:30:00Z",
-	}
-	mock_mapping.EXPECT().ToTopupResponse(topup).Return(expectedResponse).Times(1)
-
-	result, errResp := topupService.CreateTopup(request)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
-}
-
-func TestCreateTopup_Failure_CardNotFound(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
-
-	request := &requests.CreateTopupRequest{
-		CardNumber:  "1234",
-		TopupAmount: 50000,
-		TopupMethod: "bank_transfer",
-	}
-
-	mock_logger.EXPECT().Error("failed to find card by number", zap.Error(errors.New("card not found")))
-
-	mock_card_repo.EXPECT().FindCardByCardNumber(request.CardNumber).Return(nil, errors.New("card not found")).Times(1)
-
-	result, errResp := topupService.CreateTopup(request)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Card not found", errResp.Message)
-}
-
-func TestCreateTopup_Failure_TopupCreationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
-
-	request := &requests.CreateTopupRequest{
-		CardNumber:  "1234",
-		TopupAmount: 50000,
-		TopupMethod: "bank_transfer",
-	}
-
-	card := &record.CardRecord{
-		ID:           1,
-		UserID:       1,
-		CardNumber:   "1234",
-		ExpireDate:   "2024-12-31",
-		CardType:     "credit",
-		CVV:          "123",
-		CardProvider: "Visa",
-	}
-
-	mock_logger.EXPECT().Error("failed to create topup", zap.Error(errors.New("failed to create topup")))
-	mock_card_repo.EXPECT().FindCardByCardNumber(request.CardNumber).Return(card, nil).Times(1)
-
-	mock_topup_repo.EXPECT().CreateTopup(request).Return(nil, errors.New("failed to create topup")).Times(1)
-
-	result, errResp := topupService.CreateTopup(request)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to create topup record", errResp.Message)
-}
-
-func TestCreateTopup_Failure_SaldoUpdateError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(
-		mock_card_repo,
-		mock_topup_repo,
-		mock_saldo_repo,
-		mock_logger, mock_mapping)
-
-	request := &requests.CreateTopupRequest{
-		CardNumber:  "1234",
-		TopupAmount: 50000,
-		TopupMethod: "bank_transfer",
-	}
-
-	card := &record.CardRecord{
-		ID:           1,
-		UserID:       1,
-		CardNumber:   "1234",
-		ExpireDate:   "2024-12-31",
-		CardType:     "credit",
-		CVV:          "123",
-		CardProvider: "Visa",
-	}
-	mock_card_repo.EXPECT().FindCardByCardNumber(request.CardNumber).Return(card, nil).Times(1)
-
-	topup := &record.TopupRecord{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupNo:     "TOPUP-001",
-		TopupAmount: 50000,
-		TopupMethod: "bank_transfer",
-		TopupTime:   "2024-12-25T09:00:00Z",
-	}
-
-	mock_topup_repo.EXPECT().CreateTopup(request).Return(topup, nil).Times(1)
-
-	saldo := &record.SaldoRecord{
-		CardNumber:   "1234",
-		TotalBalance: 100000,
-	}
-	mock_saldo_repo.EXPECT().FindByCardNumber(request.CardNumber).Return(saldo, nil).Times(1)
-
-	mock_logger.EXPECT().
-		Error("failed to update saldo balance", zap.Error(errors.New("failed to update saldo"))).
-		Times(1)
-
-	mock_saldo_repo.EXPECT().UpdateSaldoBalance(&requests.UpdateSaldoBalance{
-		CardNumber:   request.CardNumber,
-		TotalBalance: saldo.TotalBalance + request.TopupAmount,
-	}).Return(nil, errors.New("failed to update saldo")).Times(1)
-
-	result, errResp := topupService.CreateTopup(request)
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to update saldo balance", errResp.Message)
-}
-
-func TestUpdateTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(mock_card_repo, mock_topup_repo, mock_saldo_repo, mock_logger, mock_mapping)
-
-	request := &requests.UpdateTopupRequest{
-		TopupID:     1,
-		CardNumber:  "1234",
-		TopupAmount: 150000,
-	}
-
-	card := &record.CardRecord{
-		ID:           1,
-		UserID:       1,
-		CardNumber:   "1234",
-		ExpireDate:   "2024-12-31",
-		CardType:     "credit",
-		CVV:          "123",
-		CardProvider: "Visa",
-	}
-	mock_card_repo.EXPECT().FindCardByCardNumber(request.CardNumber).Return(card, nil).Times(1)
-
-	existingTopup := &record.TopupRecord{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupAmount: 100000,
-	}
-	mock_topup_repo.EXPECT().FindById(request.TopupID).Return(existingTopup, nil).Times(1)
-
-	mock_topup_repo.EXPECT().UpdateTopup(request).Return(existingTopup, nil).Times(1)
-
-	currentSaldo := &record.SaldoRecord{
-		CardNumber:   "1234",
-		TotalBalance: 200000,
-	}
-	mock_saldo_repo.EXPECT().FindByCardNumber(request.CardNumber).Return(currentSaldo, nil).Times(1)
-
-	mock_saldo_repo.EXPECT().UpdateSaldoBalance(&requests.UpdateSaldoBalance{
-		CardNumber:   "1234",
-		TotalBalance: 250000,
-	}).Return(nil, nil).Times(1)
-
-	updatedTopup := &record.TopupRecord{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupAmount: 150000,
-	}
-	mock_topup_repo.EXPECT().FindById(request.TopupID).Return(updatedTopup, nil).Times(1)
-
-	expectedResponse := &response.TopupResponse{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupAmount: 150000,
-	}
-	mock_mapping.EXPECT().ToTopupResponse(updatedTopup).Return(expectedResponse).Times(1)
-
-	result, errResp := topupService.UpdateTopup(request)
-
-	assert.NotNil(t, result)
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
-}
-
-func TestUpdateTopup_Failure_TopupNotFound(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	topupService := service.NewTopupService(mock_card_repo, mock_topup_repo, nil, mock_logger, nil)
-
-	request := &requests.UpdateTopupRequest{
-		TopupID:     1,
-		CardNumber:  "1234",
-		TopupAmount: 150000,
-	}
-
-	mock_card_repo.EXPECT().FindCardByCardNumber(request.CardNumber).Return(&record.CardRecord{}, nil).Times(1)
-	mock_topup_repo.EXPECT().FindById(request.TopupID).Return(nil, errors.New("topup not found")).Times(1)
-	mock_logger.EXPECT().Error("Failed to find topup by ID", zap.Error(errors.New("topup not found"))).Times(1)
-
-	result, errResp := topupService.UpdateTopup(request)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Topup not found", errResp.Message)
-}
-
-func TestUpdateTopup_Failure_SaldoUpdateError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_card_repo := mock_repository.NewMockCardRepository(ctrl)
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_saldo_repo := mock_repository.NewMockSaldoRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	topupService := service.NewTopupService(mock_card_repo, mock_topup_repo, mock_saldo_repo, mock_logger, nil)
-
-	request := &requests.UpdateTopupRequest{
-		TopupID:     1,
-		CardNumber:  "1234",
-		TopupAmount: 150000,
-	}
-
-	mock_card_repo.EXPECT().FindCardByCardNumber(request.CardNumber).Return(&record.CardRecord{}, nil).Times(1)
-
-	existingTopup := &record.TopupRecord{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupAmount: 100000,
-	}
-	mock_topup_repo.EXPECT().FindById(request.TopupID).Return(existingTopup, nil).Times(1)
-
-	mock_topup_repo.EXPECT().UpdateTopup(request).Return(existingTopup, nil).Times(1)
-
-	currentSaldo := &record.SaldoRecord{
-		CardNumber:   "1234",
-		TotalBalance: 200000,
-	}
-	mock_saldo_repo.EXPECT().FindByCardNumber(request.CardNumber).Return(currentSaldo, nil).Times(1)
-
-	mock_saldo_repo.EXPECT().UpdateSaldoBalance(&requests.UpdateSaldoBalance{
-		CardNumber:   "1234",
-		TotalBalance: 250000,
-	}).Return(nil, errors.New("failed to update saldo")).Times(1)
-
-	mock_logger.EXPECT().Error("Failed to update saldo balance", zap.Error(errors.New("failed to update saldo"))).Times(1)
-
-	mock_topup_repo.EXPECT().UpdateTopupAmount(&requests.UpdateTopupAmount{
-		TopupID:     1,
-		TopupAmount: 100000,
-	}).Return(nil, nil).Times(1)
-
-	result, errResp := topupService.UpdateTopup(request)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to update saldo balance: failed to update saldo", errResp.Message)
-}
-
-func TestTrashedTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(nil, mock_topup_repo, nil, mock_logger, mock_mapping)
-
+func (suite *TopupServiceSuite) TestTrashedTopup_Failure() {
 	topupID := 1
-	topupRecord := &record.TopupRecord{
-		ID:          topupID,
-		CardNumber:  "1234",
-		TopupAmount: 100000,
-		TopupNo:     "TOPUP-001",
-	}
+	dbError := errors.New("failed to trash")
 
-	mock_topup_repo.EXPECT().TrashedTopup(topupID).Return(topupRecord, nil).Times(1)
+	suite.mockLogger.EXPECT().Debug("Starting TrashedTopup process", zap.Int("topup_id", topupID))
+	suite.mockLogger.EXPECT().Error("Failed to move topup to trash", gomock.Any())
+	suite.mockTopupRepo.EXPECT().TrashedTopup(topupID).Return(nil, dbError)
 
-	expectedResponse := &response.TopupResponse{
-		ID:          topupID,
-		CardNumber:  "1234",
-		TopupAmount: 100000,
-	}
-	mock_mapping.EXPECT().ToTopupResponse(topupRecord).Return(expectedResponse).Times(1)
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.TrashedTopup(topupID)
 
-	result, errResp := topupService.TrashedTopup(topupID)
-
-	assert.NotNil(t, result)
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
+	suite.Nil(result)
+	suite.Equal(topup_errors.ErrFailedTrashTopup, err)
 }
 
-func TestTrashedTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	topupService := service.NewTopupService(nil, mock_topup_repo, nil, mock_logger, nil)
-
+func (suite *TopupServiceSuite) TestRestoreTopup_Success() {
 	topupID := 1
-	mock_topup_repo.EXPECT().TrashedTopup(topupID).Return(nil, errors.New("failed to trash topup")).Times(1)
-	mock_logger.EXPECT().Error("Failed to trash topup", zap.Error(errors.New("failed to trash topup"))).Times(1)
+	restoredTopup := &record.TopupRecord{ID: topupID, DeletedAt: nil}
+	expectedResponse := &response.TopupResponseDeleteAt{ID: topupID, DeletedAt: nil}
 
-	result, errResp := topupService.TrashedTopup(topupID)
+	suite.mockLogger.EXPECT().Debug("Starting RestoreTopup process", zap.Int("topup_id", topupID))
+	suite.mockTopupRepo.EXPECT().RestoreTopup(topupID).Return(restoredTopup, nil)
+	suite.mockMapper.EXPECT().ToTopupResponseDeleteAt(restoredTopup).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("RestoreTopup process completed", zap.Int("topup_id", topupID))
 
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to trash topup: failed to trash topup", errResp.Message)
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreTopup(topupID)
+
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
 }
 
-func TestRestoreTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockTopupResponseMapper(ctrl)
-
-	topupService := service.NewTopupService(nil, mock_topup_repo, nil, mock_logger, mock_mapping)
-
+func (suite *TopupServiceSuite) TestRestoreTopup_Failure() {
 	topupID := 1
-	topupRecord := &record.TopupRecord{
-		ID:          topupID,
-		CardNumber:  "1234",
-		TopupAmount: 100000,
-		TopupNo:     "TOPUP-001",
-	}
+	dbError := errors.New("failed to restore")
 
-	mock_topup_repo.EXPECT().RestoreTopup(topupID).Return(topupRecord, nil).Times(1)
+	suite.mockLogger.EXPECT().Debug("Starting RestoreTopup process", zap.Int("topup_id", topupID))
+	suite.mockLogger.EXPECT().Error("Failed to restore topup from trash", gomock.Any())
+	suite.mockTopupRepo.EXPECT().RestoreTopup(topupID).Return(nil, dbError)
 
-	expectedResponse := &response.TopupResponse{
-		ID:          topupID,
-		CardNumber:  "1234",
-		TopupAmount: 100000,
-	}
-	mock_mapping.EXPECT().ToTopupResponse(topupRecord).Return(expectedResponse).Times(1)
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreTopup(topupID)
 
-	result, errResp := topupService.RestoreTopup(topupID)
-
-	assert.NotNil(t, result)
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
+	suite.Nil(result)
+	suite.Equal(topup_errors.ErrFailedRestoreTopup, err)
 }
 
-func TestRestoreTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	topupService := service.NewTopupService(nil, mock_topup_repo, nil, mock_logger, nil)
-
+func (suite *TopupServiceSuite) TestDeleteTopupPermanent_Success() {
 	topupID := 1
-	mock_topup_repo.EXPECT().RestoreTopup(topupID).Return(nil, errors.New("failed to restore topup")).Times(1)
-	mock_logger.EXPECT().Error("Failed to restore topup", zap.Error(errors.New("failed to restore topup"))).Times(1)
 
-	result, errResp := topupService.RestoreTopup(topupID)
+	suite.mockLogger.EXPECT().Debug("Starting DeleteTopupPermanent process", zap.Int("topup_id", topupID))
+	suite.mockTopupRepo.EXPECT().DeleteTopupPermanent(topupID).Return(true, nil)
+	suite.mockLogger.EXPECT().Debug("DeleteTopupPermanent process completed", zap.Int("topup_id", topupID))
 
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to restore topup: failed to restore topup", errResp.Message)
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteTopupPermanent(topupID)
+
+	suite.Nil(err)
+	suite.True(result)
 }
 
-func TestDeleteTopupPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	topupService := service.NewTopupService(nil, mock_topup_repo, nil, mock_logger, nil)
-
+func (suite *TopupServiceSuite) TestDeleteTopupPermanent_Failure() {
 	topupID := 1
-	mock_topup_repo.EXPECT().DeleteTopupPermanent(topupID).Return(nil).Times(1)
+	dbError := errors.New("failed to delete permanently")
 
-	result, errResp := topupService.DeleteTopupPermanent(topupID)
+	suite.mockLogger.EXPECT().Debug("Starting DeleteTopupPermanent process", zap.Int("topup_id", topupID))
+	suite.mockLogger.EXPECT().Error("Failed to delete topup permanently", gomock.Any())
+	suite.mockTopupRepo.EXPECT().DeleteTopupPermanent(topupID).Return(false, dbError)
 
-	assert.Nil(t, result)
-	assert.Nil(t, errResp)
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteTopupPermanent(topupID)
+
+	suite.False(result)
+	suite.Equal(topup_errors.ErrFailedDeleteTopup, err)
 }
 
-func TestDeleteTopupPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TopupServiceSuite) TestRestoreAllTopup_Success() {
+	suite.mockLogger.EXPECT().Debug("Restoring all topups")
+	suite.mockTopupRepo.EXPECT().RestoreAllTopup().Return(true, nil)
+	suite.mockLogger.EXPECT().Debug("Successfully restored all topups")
 
-	mock_topup_repo := mock_repository.NewMockTopupRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreAllTopup()
 
-	topupService := service.NewTopupService(nil, mock_topup_repo, nil, mock_logger, nil)
+	suite.Nil(err)
+	suite.True(result)
+}
 
-	topupID := 1
-	mock_topup_repo.EXPECT().DeleteTopupPermanent(topupID).Return(errors.New("failed to delete topup permanently")).Times(1)
-	mock_logger.EXPECT().Error("Failed to delete topup permanently", zap.Error(errors.New("failed to delete topup permanently"))).Times(1)
+func (suite *TopupServiceSuite) TestRestoreAllTopup_Failure() {
+	dbError := errors.New("failed to restore all")
 
-	result, errResp := topupService.DeleteTopupPermanent(topupID)
+	suite.mockLogger.EXPECT().Debug("Restoring all topups")
+	suite.mockLogger.EXPECT().Error("Failed to restore all topups", gomock.Any())
+	suite.mockTopupRepo.EXPECT().RestoreAllTopup().Return(false, dbError)
 
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to delete topup permanently: failed to delete topup permanently", errResp.Message)
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreAllTopup()
+
+	suite.False(result)
+	suite.Equal(topup_errors.ErrFailedRestoreAllTopups, err)
+}
+
+func (suite *TopupServiceSuite) TestDeleteAllTopupPermanent_Success() {
+	suite.mockLogger.EXPECT().Debug("Permanently deleting all topups")
+	suite.mockTopupRepo.EXPECT().DeleteAllTopupPermanent().Return(true, nil)
+	suite.mockLogger.EXPECT().Debug("Successfully deleted all topups permanently")
+
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteAllTopupPermanent()
+
+	suite.Nil(err)
+	suite.True(result)
+}
+
+func (suite *TopupServiceSuite) TestDeleteAllTopupPermanent_Failure() {
+	dbError := errors.New("failed to delete all permanently")
+
+	suite.mockLogger.EXPECT().Debug("Permanently deleting all topups")
+	suite.mockLogger.EXPECT().Error("Failed to permanently delete all topups", gomock.Any())
+	suite.mockTopupRepo.EXPECT().DeleteAllTopupPermanent().Return(false, dbError)
+
+	svc := service.NewTopupService(suite.mockCardRepo, suite.mockTopupRepo, suite.mockSaldoRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteAllTopupPermanent()
+
+	suite.False(result)
+	suite.Equal(topup_errors.ErrFailedDeleteAllTopups, err)
+}
+
+func TestTopupServiceSuite(t *testing.T) {
+	suite.Run(t, new(TopupServiceSuite))
 }

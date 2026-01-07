@@ -306,7 +306,7 @@ func (s *saldoHandleGrpc) UpdateSaldo(ctx context.Context, req *pb.UpdateSaldoRe
 	return so, nil
 }
 
-func (s *saldoHandleGrpc) TrashedSaldo(ctx context.Context, req *pb.FindByIdSaldoRequest) (*pb.ApiResponseSaldo, error) {
+func (s *saldoHandleGrpc) TrashedSaldo(ctx context.Context, req *pb.FindByIdSaldoRequest) (*pb.ApiResponseSaldoDeleteAt, error) {
 	id := int(req.GetSaldoId())
 
 	if id == 0 {
@@ -319,12 +319,12 @@ func (s *saldoHandleGrpc) TrashedSaldo(ctx context.Context, req *pb.FindByIdSald
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseSaldo("success", "Successfully trashed saldo record", saldo)
+	so := s.mapping.ToProtoResponseSaldoDeleteAt("success", "Successfully trashed saldo record", saldo)
 
 	return so, nil
 }
 
-func (s *saldoHandleGrpc) RestoreSaldo(ctx context.Context, req *pb.FindByIdSaldoRequest) (*pb.ApiResponseSaldo, error) {
+func (s *saldoHandleGrpc) RestoreSaldo(ctx context.Context, req *pb.FindByIdSaldoRequest) (*pb.ApiResponseSaldoDeleteAt, error) {
 	id := int(req.GetSaldoId())
 
 	if id == 0 {
@@ -337,7 +337,7 @@ func (s *saldoHandleGrpc) RestoreSaldo(ctx context.Context, req *pb.FindByIdSald
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseSaldo("success", "Successfully restored saldo record", saldo)
+	so := s.mapping.ToProtoResponseSaldoDeleteAt("success", "Successfully restored saldo record", saldo)
 
 	return so, nil
 }

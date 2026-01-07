@@ -13,11 +13,6 @@ type FindAllSaldos struct {
 	PageSize int    `json:"page_size" validate:"min=1,max=100"`
 }
 
-type MonthTotalSaldoBalance struct {
-	Year  int `json:"year" validate:"required"`
-	Month int `json:"month" validate:"required"`
-}
-
 type CreateSaldoRequest struct {
 	CardNumber   string `json:"card_number" validate:"required"`
 	TotalBalance int    `json:"total_balance" validate:"required"`
@@ -39,6 +34,11 @@ type UpdateSaldoWithdraw struct {
 	TotalBalance   int        `json:"total_balance" validate:"required,min=50000"`
 	WithdrawAmount *int       `json:"withdraw_amount" validate:"omitempty,gte=0"`
 	WithdrawTime   *time.Time `json:"withdraw_time" validate:"omitempty"`
+}
+
+type MonthTotalSaldoBalance struct {
+	Year  int `json:"year" validate:"required"`
+	Month int `json:"month" validate:"required"`
 }
 
 func (r *CreateSaldoRequest) Validate() error {

@@ -764,14 +764,14 @@ func (mr *MockCardServiceClientMockRecorder) RestoreAllCard(ctx, in any, opts ..
 }
 
 // RestoreCard mocks base method.
-func (m *MockCardServiceClient) RestoreCard(ctx context.Context, in *pb.FindByIdCardRequest, opts ...grpc.CallOption) (*pb.ApiResponseCard, error) {
+func (m *MockCardServiceClient) RestoreCard(ctx context.Context, in *pb.FindByIdCardRequest, opts ...grpc.CallOption) (*pb.ApiResponseCardDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "RestoreCard", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseCard)
+	ret0, _ := ret[0].(*pb.ApiResponseCardDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -784,14 +784,14 @@ func (mr *MockCardServiceClientMockRecorder) RestoreCard(ctx, in any, opts ...an
 }
 
 // TrashedCard mocks base method.
-func (m *MockCardServiceClient) TrashedCard(ctx context.Context, in *pb.FindByIdCardRequest, opts ...grpc.CallOption) (*pb.ApiResponseCard, error) {
+func (m *MockCardServiceClient) TrashedCard(ctx context.Context, in *pb.FindByIdCardRequest, opts ...grpc.CallOption) (*pb.ApiResponseCardDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "TrashedCard", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseCard)
+	ret0, _ := ret[0].(*pb.ApiResponseCardDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1388,10 +1388,10 @@ func (mr *MockCardServiceServerMockRecorder) RestoreAllCard(arg0, arg1 any) *gom
 }
 
 // RestoreCard mocks base method.
-func (m *MockCardServiceServer) RestoreCard(arg0 context.Context, arg1 *pb.FindByIdCardRequest) (*pb.ApiResponseCard, error) {
+func (m *MockCardServiceServer) RestoreCard(arg0 context.Context, arg1 *pb.FindByIdCardRequest) (*pb.ApiResponseCardDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RestoreCard", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseCard)
+	ret0, _ := ret[0].(*pb.ApiResponseCardDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1403,10 +1403,10 @@ func (mr *MockCardServiceServerMockRecorder) RestoreCard(arg0, arg1 any) *gomock
 }
 
 // TrashedCard mocks base method.
-func (m *MockCardServiceServer) TrashedCard(arg0 context.Context, arg1 *pb.FindByIdCardRequest) (*pb.ApiResponseCard, error) {
+func (m *MockCardServiceServer) TrashedCard(arg0 context.Context, arg1 *pb.FindByIdCardRequest) (*pb.ApiResponseCardDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TrashedCard", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseCard)
+	ret0, _ := ret[0].(*pb.ApiResponseCardDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

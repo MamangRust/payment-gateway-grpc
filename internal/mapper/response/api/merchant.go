@@ -15,7 +15,7 @@ func (m *merchantResponse) ToApiResponseMerchant(merchants *pb.ApiResponseMercha
 	return &response.ApiResponseMerchant{
 		Status:  merchants.Status,
 		Message: merchants.Message,
-		Data:    *m.mapMerchantResponse(merchants.Data),
+		Data:    m.mapMerchantResponse(merchants.Data),
 	}
 }
 
@@ -103,15 +103,23 @@ func (m *merchantResponse) ToApiResponseYearlyTotalAmounts(ms *pb.ApiResponseMer
 	}
 }
 
-func (s *merchantResponse) ToApiResponseMerchantDeleteAt(card *pb.ApiResponseMerchantDelete) *response.ApiResponseMerchantDelete {
-	return &response.ApiResponseMerchantDelete{
+func (s *merchantResponse) ToApiResponseMerchantDeleteAt(card *pb.ApiResponseMerchantDeleteAt) *response.ApiResponseMerchantDeleteAt {
+	return &response.ApiResponseMerchantDeleteAt{
 		Status:  card.Status,
 		Message: card.Message,
+		Data:    s.mapMerchantResponseDeleteAt(card.Data),
 	}
 }
 
 func (s *merchantResponse) ToApiResponseMerchantAll(card *pb.ApiResponseMerchantAll) *response.ApiResponseMerchantAll {
 	return &response.ApiResponseMerchantAll{
+		Status:  card.Status,
+		Message: card.Message,
+	}
+}
+
+func (s *merchantResponse) ToApiResponseMerchantDelete(card *pb.ApiResponseMerchantDelete) *response.ApiResponseMerchantDelete {
+	return &response.ApiResponseMerchantDelete{
 		Status:  card.Status,
 		Message: card.Message,
 	}

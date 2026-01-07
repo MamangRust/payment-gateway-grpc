@@ -664,14 +664,14 @@ func (mr *MockMerchantServiceClientMockRecorder) RestoreAllMerchant(ctx, in any,
 }
 
 // RestoreMerchant mocks base method.
-func (m *MockMerchantServiceClient) RestoreMerchant(ctx context.Context, in *pb.FindByIdMerchantRequest, opts ...grpc.CallOption) (*pb.ApiResponseMerchant, error) {
+func (m *MockMerchantServiceClient) RestoreMerchant(ctx context.Context, in *pb.FindByIdMerchantRequest, opts ...grpc.CallOption) (*pb.ApiResponseMerchantDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "RestoreMerchant", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseMerchant)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -684,14 +684,14 @@ func (mr *MockMerchantServiceClientMockRecorder) RestoreMerchant(ctx, in any, op
 }
 
 // TrashedMerchant mocks base method.
-func (m *MockMerchantServiceClient) TrashedMerchant(ctx context.Context, in *pb.FindByIdMerchantRequest, opts ...grpc.CallOption) (*pb.ApiResponseMerchant, error) {
+func (m *MockMerchantServiceClient) TrashedMerchant(ctx context.Context, in *pb.FindByIdMerchantRequest, opts ...grpc.CallOption) (*pb.ApiResponseMerchantDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "TrashedMerchant", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseMerchant)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1213,10 +1213,10 @@ func (mr *MockMerchantServiceServerMockRecorder) RestoreAllMerchant(arg0, arg1 a
 }
 
 // RestoreMerchant mocks base method.
-func (m *MockMerchantServiceServer) RestoreMerchant(arg0 context.Context, arg1 *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchant, error) {
+func (m *MockMerchantServiceServer) RestoreMerchant(arg0 context.Context, arg1 *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchantDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RestoreMerchant", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseMerchant)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1228,10 +1228,10 @@ func (mr *MockMerchantServiceServerMockRecorder) RestoreMerchant(arg0, arg1 any)
 }
 
 // TrashedMerchant mocks base method.
-func (m *MockMerchantServiceServer) TrashedMerchant(arg0 context.Context, arg1 *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchant, error) {
+func (m *MockMerchantServiceServer) TrashedMerchant(arg0 context.Context, arg1 *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchantDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TrashedMerchant", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseMerchant)
+	ret0, _ := ret[0].(*pb.ApiResponseMerchantDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

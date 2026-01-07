@@ -14,14 +14,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type transferHandleApi struct {
+type TransferHandleApi struct {
 	client  pb.TransferServiceClient
 	logger  logger.LoggerInterface
 	mapping apimapper.TransferResponseMapper
 }
 
-func NewHandlerTransfer(client pb.TransferServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.TransferResponseMapper) *transferHandleApi {
-	transferHandler := &transferHandleApi{
+func NewHandlerTransfer(client pb.TransferServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.TransferResponseMapper) *TransferHandleApi {
+	transferHandler := &TransferHandleApi{
 		client:  client,
 		logger:  logger,
 		mapping: mapping,
@@ -78,7 +78,7 @@ func NewHandlerTransfer(client pb.TransferServiceClient, router *echo.Echo, logg
 // @Success 200 {object} response.ApiResponsePaginationTransfer "List of transfer records"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transfer data"
 // @Router /api/transfer [get]
-func (h *transferHandleApi) FindAll(c echo.Context) error {
+func (h *TransferHandleApi) FindAll(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -123,7 +123,7 @@ func (h *transferHandleApi) FindAll(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transfer data"
 // @Router /api/transfer/{id} [get]
-func (h *transferHandleApi) FindById(c echo.Context) error {
+func (h *TransferHandleApi) FindById(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -165,7 +165,7 @@ func (h *transferHandleApi) FindById(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transfer status for successful transactions"
 // @Router /api/transfers/monthly-success [get]
-func (h *transferHandleApi) FindMonthlyTransferStatusSuccess(c echo.Context) error {
+func (h *TransferHandleApi) FindMonthlyTransferStatusSuccess(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 
@@ -209,7 +209,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusSuccess(c echo.Context) err
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transfer status for successful transactions"
 // @Router /api/transfers/yearly-success [get]
-func (h *transferHandleApi) FindYearlyTransferStatusSuccess(c echo.Context) error {
+func (h *TransferHandleApi) FindYearlyTransferStatusSuccess(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -247,7 +247,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusSuccess(c echo.Context) erro
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transfer status for failed transactions"
 // @Router /api/transfers/monthly-failed [get]
-func (h *transferHandleApi) FindMonthlyTransferStatusFailed(c echo.Context) error {
+func (h *TransferHandleApi) FindMonthlyTransferStatusFailed(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 
@@ -291,7 +291,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusFailed(c echo.Context) erro
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transfer status for failed transactions"
 // @Router /api/transfers/yearly-failed [get]
-func (h *transferHandleApi) FindYearlyTransferStatusFailed(c echo.Context) error {
+func (h *TransferHandleApi) FindYearlyTransferStatusFailed(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -329,7 +329,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusFailed(c echo.Context) error
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transfer status for successful transactions"
 // @Router /api/transfers/monthly-success-by-card [get]
-func (h *transferHandleApi) FindMonthlyTransferStatusSuccessByCardNumber(c echo.Context) error {
+func (h *TransferHandleApi) FindMonthlyTransferStatusSuccessByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 	cardNumber := c.QueryParam("card_number")
@@ -376,7 +376,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusSuccessByCardNumber(c echo.
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transfer status for successful transactions"
 // @Router /api/transfers/yearly-success-by-card [get]
-func (h *transferHandleApi) FindYearlyTransferStatusSuccessByCardNumber(c echo.Context) error {
+func (h *TransferHandleApi) FindYearlyTransferStatusSuccessByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	cardNumber := c.QueryParam("card_number")
 
@@ -417,7 +417,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusSuccessByCardNumber(c echo.C
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transfer status for failed transactions"
 // @Router /api/transfers/monthly-failed-by-card [get]
-func (h *transferHandleApi) FindMonthlyTransferStatusFailedByCardNumber(c echo.Context) error {
+func (h *TransferHandleApi) FindMonthlyTransferStatusFailedByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 	cardNumber := c.QueryParam("card_number")
@@ -464,7 +464,7 @@ func (h *transferHandleApi) FindMonthlyTransferStatusFailedByCardNumber(c echo.C
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transfer status for failed transactions"
 // @Router /api/transfers/yearly-failed-by-card [get]
-func (h *transferHandleApi) FindYearlyTransferStatusFailedByCardNumber(c echo.Context) error {
+func (h *TransferHandleApi) FindYearlyTransferStatusFailedByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	cardNumber := c.QueryParam("card_number")
 
@@ -507,7 +507,7 @@ func (h *transferHandleApi) FindYearlyTransferStatusFailedByCardNumber(c echo.Co
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transfer amounts"
 // @Router /api/transfers/monthly-amounts [get]
-func (h *transferHandleApi) FindMonthlyTransferAmounts(c echo.Context) error {
+func (h *TransferHandleApi) FindMonthlyTransferAmounts(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
@@ -542,7 +542,7 @@ func (h *transferHandleApi) FindMonthlyTransferAmounts(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transfer amounts"
 // @Router /api/transfers/yearly-amounts [get]
-func (h *transferHandleApi) FindYearlyTransferAmounts(c echo.Context) error {
+func (h *TransferHandleApi) FindYearlyTransferAmounts(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
@@ -578,7 +578,7 @@ func (h *transferHandleApi) FindYearlyTransferAmounts(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transfer amounts by sender card number"
 // @Router /api/transfers/monthly-amounts-by-sender-card [get]
-func (h *transferHandleApi) FindMonthlyTransferAmountsBySenderCardNumber(c echo.Context) error {
+func (h *TransferHandleApi) FindMonthlyTransferAmountsBySenderCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
@@ -621,7 +621,7 @@ func (h *transferHandleApi) FindMonthlyTransferAmountsBySenderCardNumber(c echo.
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transfer amounts by receiver card number"
 // @Router /api/transfers/monthly-amounts-by-receiver-card [get]
-func (h *transferHandleApi) FindMonthlyTransferAmountsByReceiverCardNumber(c echo.Context) error {
+func (h *TransferHandleApi) FindMonthlyTransferAmountsByReceiverCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
@@ -665,7 +665,7 @@ func (h *transferHandleApi) FindMonthlyTransferAmountsByReceiverCardNumber(c ech
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transfer amounts by sender card number"
 // @Router /api/transfers/yearly-amounts-by-sender-card [get]
-func (h *transferHandleApi) FindYearlyTransferAmountsBySenderCardNumber(c echo.Context) error {
+func (h *TransferHandleApi) FindYearlyTransferAmountsBySenderCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
@@ -704,7 +704,7 @@ func (h *transferHandleApi) FindYearlyTransferAmountsBySenderCardNumber(c echo.C
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transfer amounts by receiver card number"
 // @Router /api/transfers/yearly-amounts-by-receiver-card [get]
-func (h *transferHandleApi) FindYearlyTransferAmountsByReceiverCardNumber(c echo.Context) error {
+func (h *TransferHandleApi) FindYearlyTransferAmountsByReceiverCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 
@@ -742,7 +742,7 @@ func (h *transferHandleApi) FindYearlyTransferAmountsByReceiverCardNumber(c echo
 // @Success 200 {object} response.ApiResponseTransfers "Transfer data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transfer data"
 // @Router /api/transfer/transfer_from/{transfer_from} [get]
-func (h *transferHandleApi) FindByTransferByTransferFrom(c echo.Context) error {
+func (h *TransferHandleApi) FindByTransferByTransferFrom(c echo.Context) error {
 	transfer_from := c.Param("transfer_from")
 
 	if transfer_from == "" {
@@ -776,7 +776,7 @@ func (h *transferHandleApi) FindByTransferByTransferFrom(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseTransfers "Transfer data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transfer data"
 // @Router /api/transfer/transfer_to/{transfer_to} [get]
-func (h *transferHandleApi) FindByTransferByTransferTo(c echo.Context) error {
+func (h *TransferHandleApi) FindByTransferByTransferTo(c echo.Context) error {
 	transfer_to := c.Param("transfer_to")
 	ctx := c.Request().Context()
 
@@ -812,7 +812,7 @@ func (h *transferHandleApi) FindByTransferByTransferTo(c echo.Context) error {
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transfer data"
 // @Router /api/transfer/active [get]
 
-func (h *transferHandleApi) FindByActiveTransfer(c echo.Context) error {
+func (h *TransferHandleApi) FindByActiveTransfer(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -858,7 +858,7 @@ func (h *transferHandleApi) FindByActiveTransfer(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseTransfers "List of trashed transfer records"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transfer data"
 // @Router /api/transfer/trashed [get]
-func (h *transferHandleApi) FindByTrashedTransfer(c echo.Context) error {
+func (h *TransferHandleApi) FindByTrashedTransfer(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -903,7 +903,7 @@ func (h *transferHandleApi) FindByTrashedTransfer(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Validation Error"
 // @Failure 500 {object} response.ErrorResponse "Failed to create transfer"
 // @Router /api/transfer/create [post]
-func (h *transferHandleApi) CreateTransfer(c echo.Context) error {
+func (h *TransferHandleApi) CreateTransfer(c echo.Context) error {
 	var body requests.CreateTransferRequest
 
 	if err := c.Bind(&body); err != nil {
@@ -949,7 +949,7 @@ func (h *transferHandleApi) CreateTransfer(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Validation Error"
 // @Failure 500 {object} response.ErrorResponse "Failed to update transfer"
 // @Router /api/transfer/update/{id} [post]
-func (h *transferHandleApi) UpdateTransfer(c echo.Context) error {
+func (h *TransferHandleApi) UpdateTransfer(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1004,7 +1004,7 @@ func (h *transferHandleApi) UpdateTransfer(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to trashed transfer"
 // @Router /api/transfer/trash/{id} [post]
-func (h *transferHandleApi) TrashTransfer(c echo.Context) error {
+func (h *TransferHandleApi) TrashTransfer(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1027,7 +1027,7 @@ func (h *transferHandleApi) TrashTransfer(c echo.Context) error {
 		return transfer_errors.ErrApiFailedTrashedTransfer(c)
 	}
 
-	so := h.mapping.ToApiResponseTransfer(res)
+	so := h.mapping.ToApiResponseTransferDeleteAt(res)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -1043,7 +1043,7 @@ func (h *transferHandleApi) TrashTransfer(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore transfer:"
 // @Router /api/transfer/restore/{id} [post]
-func (h *transferHandleApi) RestoreTransfer(c echo.Context) error {
+func (h *TransferHandleApi) RestoreTransfer(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1066,7 +1066,7 @@ func (h *transferHandleApi) RestoreTransfer(c echo.Context) error {
 		return transfer_errors.ErrApiFailedRestoreTransfer(c)
 	}
 
-	so := h.mapping.ToApiResponseTransfer(res)
+	so := h.mapping.ToApiResponseTransferDeleteAt(res)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -1082,7 +1082,7 @@ func (h *transferHandleApi) RestoreTransfer(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete transfer:"
 // @Router /api/transfer/permanent/{id} [delete]
-func (h *transferHandleApi) DeleteTransferPermanent(c echo.Context) error {
+func (h *TransferHandleApi) DeleteTransferPermanent(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1118,7 +1118,7 @@ func (h *transferHandleApi) DeleteTransferPermanent(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore transfer:"
 // @Router /api/transfer/restore/all [post]
-func (h *transferHandleApi) RestoreAllTransfer(c echo.Context) error {
+func (h *TransferHandleApi) RestoreAllTransfer(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.client.RestoreAllTransfer(ctx, &emptypb.Empty{})
@@ -1146,7 +1146,7 @@ func (h *transferHandleApi) RestoreAllTransfer(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete transfer:"
 // @Router /api/transfer/permanent/all [post]
-func (h *transferHandleApi) DeleteAllTransferPermanent(c echo.Context) error {
+func (h *TransferHandleApi) DeleteAllTransferPermanent(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.client.DeleteAllTransferPermanent(ctx, &emptypb.Empty{})

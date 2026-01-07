@@ -304,14 +304,14 @@ func (mr *MockSaldoServiceClientMockRecorder) RestoreAllSaldo(ctx, in any, opts 
 }
 
 // RestoreSaldo mocks base method.
-func (m *MockSaldoServiceClient) RestoreSaldo(ctx context.Context, in *pb.FindByIdSaldoRequest, opts ...grpc.CallOption) (*pb.ApiResponseSaldo, error) {
+func (m *MockSaldoServiceClient) RestoreSaldo(ctx context.Context, in *pb.FindByIdSaldoRequest, opts ...grpc.CallOption) (*pb.ApiResponseSaldoDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "RestoreSaldo", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseSaldo)
+	ret0, _ := ret[0].(*pb.ApiResponseSaldoDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -324,14 +324,14 @@ func (mr *MockSaldoServiceClientMockRecorder) RestoreSaldo(ctx, in any, opts ...
 }
 
 // TrashedSaldo mocks base method.
-func (m *MockSaldoServiceClient) TrashedSaldo(ctx context.Context, in *pb.FindByIdSaldoRequest, opts ...grpc.CallOption) (*pb.ApiResponseSaldo, error) {
+func (m *MockSaldoServiceClient) TrashedSaldo(ctx context.Context, in *pb.FindByIdSaldoRequest, opts ...grpc.CallOption) (*pb.ApiResponseSaldoDeleteAt, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "TrashedSaldo", varargs...)
-	ret0, _ := ret[0].(*pb.ApiResponseSaldo)
+	ret0, _ := ret[0].(*pb.ApiResponseSaldoDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -583,10 +583,10 @@ func (mr *MockSaldoServiceServerMockRecorder) RestoreAllSaldo(arg0, arg1 any) *g
 }
 
 // RestoreSaldo mocks base method.
-func (m *MockSaldoServiceServer) RestoreSaldo(arg0 context.Context, arg1 *pb.FindByIdSaldoRequest) (*pb.ApiResponseSaldo, error) {
+func (m *MockSaldoServiceServer) RestoreSaldo(arg0 context.Context, arg1 *pb.FindByIdSaldoRequest) (*pb.ApiResponseSaldoDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RestoreSaldo", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseSaldo)
+	ret0, _ := ret[0].(*pb.ApiResponseSaldoDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -598,10 +598,10 @@ func (mr *MockSaldoServiceServerMockRecorder) RestoreSaldo(arg0, arg1 any) *gomo
 }
 
 // TrashedSaldo mocks base method.
-func (m *MockSaldoServiceServer) TrashedSaldo(arg0 context.Context, arg1 *pb.FindByIdSaldoRequest) (*pb.ApiResponseSaldo, error) {
+func (m *MockSaldoServiceServer) TrashedSaldo(arg0 context.Context, arg1 *pb.FindByIdSaldoRequest) (*pb.ApiResponseSaldoDeleteAt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TrashedSaldo", arg0, arg1)
-	ret0, _ := ret[0].(*pb.ApiResponseSaldo)
+	ret0, _ := ret[0].(*pb.ApiResponseSaldoDeleteAt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -1,855 +1,388 @@
 package test
 
 import (
+	"errors"
+	"testing"
+
 	"MamangRust/paymentgatewaygrpc/internal/domain/record"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	mock_responsemapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/mocks"
-	mock_repository "MamangRust/paymentgatewaygrpc/internal/repository/mocks"
+	mock_responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/mocks"
+	mocks "MamangRust/paymentgatewaygrpc/internal/repository/mocks"
 	"MamangRust/paymentgatewaygrpc/internal/service"
+	"MamangRust/paymentgatewaygrpc/pkg/errors/merchant_errors"
 	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
-	"errors"
-	"fmt"
-	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 )
 
-func TestFindAllMerchants_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
-
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
-
-	merchants := []*record.MerchantRecord{
-		{
-			ID:   1,
-			Name: "Merchant One",
-		},
-		{
-			ID:   2,
-			Name: "Merchant Two",
-		},
-	}
-
-	expectedResponses := []*response.MerchantResponse{
-		{
-			ID:   1,
-			Name: "Merchant One",
-		},
-		{
-			ID:   2,
-			Name: "Merchant Two",
-		},
-	}
-
-	page := 1
-	pageSize := 10
-	search := ""
-	totalRecords := 2
-
-	mock_merchant_repo.EXPECT().FindAllMerchants(search, page, pageSize).Return(merchants, totalRecords, nil).Times(1)
-	mock_mapping.EXPECT().ToMerchantsResponse(merchants).Return(expectedResponses).Times(1)
-
-	result, total, errResp := merchantService.FindAll(page, pageSize, search)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponses, result)
-	assert.Equal(t, totalRecords, total)
+type MerchantServiceSuite struct {
+	suite.Suite
+	mockMerchantRepo *mocks.MockMerchantRepository
+	mockLogger       *mock_logger.MockLoggerInterface
+	mockMapper       *mock_responseservice.MockMerchantResponseMapper
+	mockCtrl         *gomock.Controller
 }
 
-func TestFindAllMerchants_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, nil)
-
-	page := 1
-	pageSize := 10
-	search := ""
-
-	mock_merchant_repo.EXPECT().FindAllMerchants(search, page, pageSize).Return(nil, 0, fmt.Errorf("fetch merchant error")).Times(1)
-	mock_logger.EXPECT().Error("Failed to fetch merchant records", gomock.Any()).Times(1)
-
-	result, total, errResp := merchantService.FindAll(page, pageSize, search)
-
-	assert.Nil(t, result)
-	assert.Equal(t, 0, total)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to fetch merchant records", errResp.Message)
+func (suite *MerchantServiceSuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.mockMerchantRepo = mocks.NewMockMerchantRepository(suite.mockCtrl)
+	suite.mockLogger = mock_logger.NewMockLoggerInterface(suite.mockCtrl)
+	suite.mockMapper = mock_responseservice.NewMockMerchantResponseMapper(suite.mockCtrl)
 }
 
-func TestFindByIdMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
-
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
-
-	merchant := &record.MerchantRecord{
-		ID:   1,
-		Name: "Merchant One",
-	}
-
-	expectedResponse := &response.MerchantResponse{
-		ID:   1,
-		Name: "Merchant One",
-	}
-
-	mock_logger.EXPECT().Debug("Finding merchant by ID", zap.Int("merchant_id", 1)).Times(1)
-	mock_merchant_repo.EXPECT().FindById(1).Return(merchant, nil).Times(1)
-	mock_mapping.EXPECT().ToMerchantResponse(merchant).Return(expectedResponse).Times(1)
-	mock_logger.EXPECT().Debug("Successfully found merchant by ID", zap.Int("merchant_id", 1)).Times(1)
-
-	result, errResp := merchantService.FindById(1)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
+func (suite *MerchantServiceSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
-func TestFindByIdMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestFindAll_Success() {
+	req := &requests.FindAllMerchants{Search: "store", Page: 1, PageSize: 10}
+	total := 1
+	mockMerchants := []*record.MerchantRecord{{ID: 1, Name: "Test Store"}}
+	expectedResponse := []*response.MerchantResponse{{ID: 1, Name: "Test Store"}}
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.mockLogger.EXPECT().Debug("Fetching all merchant records", gomock.Any())
+	suite.mockMerchantRepo.EXPECT().FindAllMerchants(req).Return(mockMerchants, &total, nil)
+	suite.mockMapper.EXPECT().ToMerchantsResponse(mockMerchants).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully all merchant records", gomock.Any())
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, nil)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindAll(req)
 
-	mock_logger.EXPECT().Debug("Finding merchant by ID", zap.Int("merchant_id", 1)).Times(1)
-	mock_merchant_repo.EXPECT().FindById(1).Return(nil, fmt.Errorf("fetch merchant error")).Times(1)
-
-	mock_logger.EXPECT().Error("Failed to find merchant by ID", gomock.Any(), zap.Int("merchant_id", 1)).Times(1)
-
-	result, errResp := merchantService.FindById(1)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Merchant not found", errResp.Message)
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+	suite.Equal(1, *totalRes)
 }
 
-func TestFindByActiveMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestFindAll_Failure() {
+	req := &requests.FindAllMerchants{Search: "store", Page: 1, PageSize: 10}
+	dbError := errors.New("database error")
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
+	suite.mockLogger.EXPECT().Debug("Fetching all merchant records", gomock.Any())
+	suite.mockMerchantRepo.EXPECT().FindAllMerchants(req).Return(nil, nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to fetch merchants", gomock.Any())
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindAll(req)
 
-	merchants := []*record.MerchantRecord{
-		{
-			ID:   1,
-			Name: "Active Merchant One",
-		},
-		{
-			ID:   2,
-			Name: "Active Merchant Two",
-		},
-	}
-
-	expectedResponses := []*response.MerchantResponseDeleteAt{
-		{
-			ID:   1,
-			Name: "Active Merchant One",
-		},
-		{
-			ID:   2,
-			Name: "Active Merchant Two",
-		},
-	}
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 2
-
-	mock_logger.EXPECT().Info("Fetching active merchants")
-	mock_merchant_repo.EXPECT().FindByActive(search, page, pageSize).Return(merchants, expected, nil).Times(1)
-	mock_mapping.EXPECT().ToMerchantsResponseDeleteAt(merchants).Return(expectedResponses).Times(1)
-
-	mock_logger.EXPECT().Info("Successfully fetched active merchants")
-
-	result, totalRecord, errResp := merchantService.FindByActive(pageSize, page, search)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponses, result)
-	assert.Equal(t, expected, totalRecord)
+	suite.Nil(result)
+	suite.Nil(totalRes)
+	suite.Equal(merchant_errors.ErrFailedFindAllMerchants, err)
 }
 
-func TestFindByActiveMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestFindById_Success() {
+	merchantID := 1
+	mockMerchant := &record.MerchantRecord{ID: merchantID, Name: "Test Store"}
+	expectedResponse := &response.MerchantResponse{ID: merchantID, Name: "Test Store"}
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.mockLogger.EXPECT().Debug("Finding merchant by ID", zap.Int("merchant_id", merchantID))
+	suite.mockMerchantRepo.EXPECT().FindById(merchantID).Return(mockMerchant, nil)
+	suite.mockMapper.EXPECT().ToMerchantResponse(mockMerchant).Return(expectedResponse)
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, nil)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindById(merchantID)
 
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 0
-
-	mock_logger.EXPECT().Info("Fetching active merchants")
-	mock_logger.EXPECT().Error("Failed to fetch active merchants", zap.Error(fmt.Errorf("no active merchants"))).Times(1)
-	mock_merchant_repo.EXPECT().FindByActive(
-		search, page, pageSize,
-	).Return(nil, expected, fmt.Errorf("no active merchants")).Times(1)
-
-	result, totalRecord, errResp := merchantService.FindByActive(pageSize, page, search)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, "Failed to fetch active merchants", errResp.Message)
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
 }
 
-func TestFindByTrashedMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
+func (suite *MerchantServiceSuite) TestFindById_NotFound() {
+	merchantID := 99
+	repoError := errors.New("merchant not found")
 
-	defer ctrl.Finish()
+	suite.mockLogger.EXPECT().Debug("Finding merchant by ID", zap.Int("merchant_id", merchantID))
+	suite.mockMerchantRepo.EXPECT().FindById(merchantID).Return(nil, repoError)
+	suite.mockLogger.EXPECT().Error("Failed to retrieve merchant details", gomock.Any())
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindById(merchantID)
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
-
-	merchants := []*record.MerchantRecord{
-		{
-			ID:   1,
-			Name: "Trashed Merchant One",
-		},
-		{
-			ID:   2,
-			Name: "Trashed Merchant Two",
-		},
-	}
-
-	expectedResponses := []*response.MerchantResponseDeleteAt{
-		{
-			ID:   1,
-			Name: "Trashed Merchant One",
-		},
-		{
-			ID:   2,
-			Name: "Trashed Merchant Two",
-		},
-	}
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 2
-
-	mock_logger.EXPECT().Info("Fetching trashed merchants")
-	mock_merchant_repo.EXPECT().FindByTrashed(search, page, pageSize).Return(merchants, expected, nil).Times(1)
-	mock_mapping.EXPECT().ToMerchantsResponseDeleteAt(merchants).Return(expectedResponses).Times(1)
-
-	mock_logger.EXPECT().Info("Successfully fetched trashed merchants")
-
-	result, totalRecord, errResp := merchantService.FindByTrashed(pageSize, page, search)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponses, result)
-	assert.Equal(t, expected, totalRecord)
+	suite.Nil(result)
+	suite.Equal(merchant_errors.ErrMerchantNotFoundRes, err)
 }
 
-func TestFindByTrashedMerchant_Failed(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestFindByActive_Success() {
+	req := &requests.FindAllMerchants{Search: "active", Page: 1, PageSize: 10}
+	total := 1
+	mockMerchants := []*record.MerchantRecord{{ID: 1, Name: "Active Store", DeletedAt: nil}}
+	expectedResponse := []*response.MerchantResponseDeleteAt{{ID: 1, Name: "Active Store", DeletedAt: nil}}
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
+	suite.mockLogger.EXPECT().Debug("Fetching all merchant active", gomock.Any())
+	suite.mockMerchantRepo.EXPECT().FindByActive(req).Return(mockMerchants, &total, nil)
+	suite.mockMapper.EXPECT().ToMerchantsResponseDeleteAt(mockMerchants).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched active merchants", gomock.Any())
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByActive(req)
 
-	mock_logger.EXPECT().Info("Fetching trashed merchants")
-
-	page := 1
-	pageSize := 1
-	search := ""
-	expected := 0
-
-	mock_logger.EXPECT().Error("Failed to fetch trashed merchants", zap.Error(fmt.Errorf("failed merchant")))
-
-	mock_merchant_repo.EXPECT().FindByTrashed(search, page, pageSize).Return(nil, expected, fmt.Errorf("failed merchant")).Times(1)
-
-	result, totalRecord, errResp := merchantService.FindByTrashed(pageSize, page, search)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to fetch trashed merchants", errResp.Message)
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+	suite.Equal(1, *totalRes)
 }
 
-func TestFindByApiKeyMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
+func (suite *MerchantServiceSuite) TestFindByActive_Failure() {
+	req := &requests.FindAllMerchants{Search: "active", Page: 1, PageSize: 10}
+	dbError := errors.New("database error")
 
-	api_key := "apikey1"
-	merchants := &record.MerchantRecord{
-		ID:        1,
-		Name:      "Merchant 1",
-		ApiKey:    api_key,
-		UserID:    101,
-		Status:    "active",
-		CreatedAt: "2024-01-01T10:00:00Z",
-		UpdatedAt: "2024-01-01T10:00:00Z",
-	}
+	suite.mockLogger.EXPECT().Debug("Fetching all merchant active", gomock.Any())
+	suite.mockMerchantRepo.EXPECT().FindByActive(req).Return(nil, nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to retrieve active cashiers", gomock.Any())
 
-	expectedResponse := &response.MerchantResponse{
-		ID:        1,
-		Name:      "Merchant 1",
-		ApiKey:    api_key,
-		Status:    "active",
-		CreatedAt: "2024-01-01T10:00:00Z",
-		UpdatedAt: "2024-01-01T10:00:00Z",
-	}
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByActive(req)
 
-	mock_logger.EXPECT().Debug("Finding merchant by API key", zap.String("api_key", api_key)).Times(1)
-	mock_merchant_repo.EXPECT().FindByApiKey(api_key).Return(merchants, nil).Times(1)
-	mock_mapping.EXPECT().ToMerchantResponse(merchants).Return(expectedResponse).Times(1)
-	mock_logger.EXPECT().Debug("Successfully found merchant by API key", zap.String("api_key", api_key)).Times(1)
-
-	result, errResp := merchantService.FindByApiKey(api_key)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
+	suite.Nil(result)
+	suite.Nil(totalRes)
+	suite.Equal(merchant_errors.ErrFailedFindActiveMerchants, err)
 }
 
-func TestFindByApiKeyMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestFindByTrashed_Success() {
+	req := &requests.FindAllMerchants{Page: 1, PageSize: 10}
+	total := 1
+	trashedTime := "2024-01-01T00:00:00Z"
+	mockMerchants := []*record.MerchantRecord{{ID: 2, Name: "Deleted Store", DeletedAt: &trashedTime}}
+	expectedResponse := []*response.MerchantResponseDeleteAt{{ID: 2, Name: "Deleted Store", DeletedAt: &trashedTime}}
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
+	suite.mockLogger.EXPECT().Debug("Fetching fetched trashed merchants", gomock.Any())
+	suite.mockMerchantRepo.EXPECT().FindByTrashed(req).Return(mockMerchants, &total, nil)
+	suite.mockMapper.EXPECT().ToMerchantsResponseDeleteAt(mockMerchants).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully fetched trashed merchants", gomock.Any())
 
-	api_key := "apikey1"
-	mock_logger.EXPECT().Debug("Finding merchant by API key", zap.String("api_key", api_key)).Times(1)
-	mock_merchant_repo.EXPECT().FindByApiKey(api_key).Return(nil, fmt.Errorf("failed merchant")).Times(1)
-	mock_logger.EXPECT().Error("Failed to find merchant by API key", zap.Error(fmt.Errorf("failed merchant"))).Times(1)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByTrashed(req)
 
-	result, errResp := merchantService.FindByApiKey(api_key)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Merchant not found by API key", errResp.Message)
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
+	suite.Equal(1, *totalRes)
 }
 
-func TestFindByMerchantUserId_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestFindByTrashed_Failure() {
+	req := &requests.FindAllMerchants{Page: 1, PageSize: 10}
+	dbError := errors.New("database error")
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
+	suite.mockLogger.EXPECT().Debug("Fetching fetched trashed merchants", gomock.Any())
+	suite.mockMerchantRepo.EXPECT().FindByTrashed(req).Return(nil, nil, dbError)
+	suite.mockLogger.EXPECT().Error("Failed to fetch trashed merchants", gomock.Any())
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, totalRes, err := svc.FindByTrashed(req)
 
-	user_id := 101
-	merchants := []*record.MerchantRecord{
-		{
-			ID:        1,
-			Name:      "Merchant 1",
-			ApiKey:    "apikey1",
-			UserID:    user_id,
-			Status:    "active",
-			CreatedAt: "2024-01-01T10:00:00Z",
-			UpdatedAt: "2024-01-01T10:00:00Z",
-		},
-		{
-			ID:        2,
-			Name:      "Merchant 2",
-			ApiKey:    "apikey2",
-			UserID:    user_id,
-			Status:    "inactive",
-			CreatedAt: "2024-01-02T10:00:00Z",
-			UpdatedAt: "2024-01-02T10:00:00Z",
-		},
-	}
-
-	expectedResponses := []*response.MerchantResponse{
-		{
-			ID:        1,
-			Name:      "Merchant 1",
-			ApiKey:    "apikey1",
-			Status:    "active",
-			CreatedAt: "2024-01-01T10:00:00Z",
-			UpdatedAt: "2024-01-01T10:00:00Z",
-		},
-		{
-			ID:        2,
-			Name:      "Merchant 2",
-			ApiKey:    "apikey2",
-			Status:    "inactive",
-			CreatedAt: "2024-01-02T10:00:00Z",
-			UpdatedAt: "2024-01-02T10:00:00Z",
-		},
-	}
-
-	mock_logger.EXPECT().Debug("Finding merchant by user ID", zap.Int("user_id", user_id)).Times(1)
-	mock_merchant_repo.EXPECT().FindByMerchantUserId(user_id).Return(merchants, nil).Times(1)
-	mock_mapping.EXPECT().ToMerchantsResponse(merchants).Return(expectedResponses).Times(1)
-	mock_logger.EXPECT().Debug("Successfully found merchant by user ID", zap.Int("user_id", user_id)).Times(1)
-
-	result, errResp := merchantService.FindByMerchantUserId(user_id)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponses, result)
+	suite.Nil(result)
+	suite.Nil(totalRes)
+	suite.Equal(merchant_errors.ErrFailedFindTrashedMerchants, err)
 }
 
-func TestFindByMerchantUserId_Failed(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestFindByApiKey_Success() {
+	apiKey := "secret-api-key-123"
+	mockMerchant := &record.MerchantRecord{ID: 1, ApiKey: apiKey}
+	expectedResponse := &response.MerchantResponse{ID: 1, ApiKey: apiKey}
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
+	suite.mockLogger.EXPECT().Debug("Finding merchant by API key", zap.String("api_key", apiKey))
+	suite.mockMerchantRepo.EXPECT().FindByApiKey(apiKey).Return(mockMerchant, nil)
+	suite.mockMapper.EXPECT().ToMerchantResponse(mockMerchant).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully found merchant by API key", zap.String("api_key", apiKey))
 
-	user_id := 101
-	mock_logger.EXPECT().Debug("Finding merchant by user ID", zap.Int("user_id", user_id)).Times(1)
-	mock_merchant_repo.EXPECT().FindByMerchantUserId(user_id).Return(nil, fmt.Errorf("failed merchant")).Times(1)
-	mock_logger.EXPECT().Error("Failed to find merchant by user ID", zap.Error(fmt.Errorf("failed merchant"))).Times(1)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindByApiKey(apiKey)
 
-	result, errResp := merchantService.FindByMerchantUserId(user_id)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Merchant not found by user ID", errResp.Message)
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
 }
 
-func TestCreateMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestFindByApiKey_NotFound() {
+	apiKey := "notfound-key"
+	repoError := errors.New("merchant not found")
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
+	suite.mockLogger.EXPECT().Debug("Finding merchant by API key", zap.String("api_key", apiKey))
+	suite.mockMerchantRepo.EXPECT().FindByApiKey(apiKey).Return(nil, repoError)
+	suite.mockLogger.EXPECT().Error("Failed to retrieve merchant by api_key", gomock.Any())
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindByApiKey(apiKey)
 
-	userId := 1
-
-	request := requests.CreateMerchantRequest{
-		Name:   "Merchant 1",
-		UserID: userId,
-	}
-
-	merchantRecord := &record.MerchantRecord{
-		ID:        1,
-		Name:      "Merchant 1",
-		ApiKey:    "apikey1",
-		UserID:    userId,
-		Status:    "active",
-		CreatedAt: "2024-01-01T10:00:00Z",
-		UpdatedAt: "2024-01-01T10:00:00Z",
-	}
-
-	expectedResponse := &response.MerchantResponse{
-		ID:        1,
-		Name:      "Merchant 1",
-		ApiKey:    "apikey1",
-		Status:    "active",
-		CreatedAt: "2024-01-01T10:00:00Z",
-		UpdatedAt: "2024-01-01T10:00:00Z",
-	}
-
-	mock_logger.EXPECT().Debug("Creating new merchant", zap.String("merchant_name", request.Name)).Times(1)
-
-	mock_merchant_repo.EXPECT().
-		CreateMerchant(gomock.Eq(&request)).
-		Return(merchantRecord, nil).
-		Times(1)
-
-	mock_mapping.EXPECT().
-		ToMerchantResponse(gomock.Eq(merchantRecord)).
-		Return(expectedResponse).
-		Times(1)
-
-	mock_logger.EXPECT().Debug("Successfully created merchant", zap.Int("merchant_id", merchantRecord.ID)).Times(1)
-
-	result, errResp := merchantService.CreateMerchant(&request)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
+	suite.Nil(result)
+	suite.Equal(merchant_errors.ErrMerchantNotFoundRes, err)
 }
 
-func TestCreateMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestFindByMerchantUserId_Success() {
+	userID := 123
+	mockMerchants := []*record.MerchantRecord{{ID: 1, UserID: userID}}
+	expectedResponse := []*response.MerchantResponse{{ID: 1, UserID: userID}}
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
+	suite.mockLogger.EXPECT().Debug("Finding merchant by user ID", zap.Int("user_id", userID))
+	suite.mockMerchantRepo.EXPECT().FindByMerchantUserId(userID).Return(mockMerchants, nil)
+	suite.mockMapper.EXPECT().ToMerchantsResponse(mockMerchants).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully found merchant by user ID", zap.Int("user_id", userID))
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindByMerchantUserId(userID)
 
-	request := requests.CreateMerchantRequest{
-		Name:   "Merchant 1",
-		UserID: 1,
-	}
-
-	merchantRecord := &record.MerchantRecord{
-		ID:        1,
-		Name:      "Merchant 1",
-		ApiKey:    "apikey1",
-		UserID:    1,
-		Status:    "active",
-		CreatedAt: "2024-01-01T10:00:00Z",
-		UpdatedAt: "2024-01-01T10:00:00Z",
-	}
-
-	mock_logger.EXPECT().Debug("Creating new merchant", zap.String("merchant_name", request.Name)).Times(1)
-
-	mock_merchant_repo.EXPECT().
-		CreateMerchant(gomock.Eq(&request)).
-		Return(merchantRecord, fmt.Errorf("failed to create merchant")).
-		Times(1)
-
-	mock_logger.EXPECT().Error("Failed to create merchant", zap.Error(fmt.Errorf("failed to create merchant"))).Times(1)
-
-	result, errResp := merchantService.CreateMerchant(&request)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to create merchant", errResp.Message)
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
 }
 
-func TestUpdateMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestFindByMerchantUserId_Failure() {
+	userID := 999
+	repoError := errors.New("merchant not found")
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
+	suite.mockLogger.EXPECT().Debug("Finding merchant by user ID", zap.Int("user_id", userID))
+	suite.mockMerchantRepo.EXPECT().FindByMerchantUserId(userID).Return(nil, repoError)
+	suite.mockLogger.EXPECT().Error("Failed to retrieve merchant by user_id", gomock.Any())
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.FindByMerchantUserId(userID)
 
-	requests := requests.UpdateMerchantRequest{
-		MerchantID: 1,
-		Name:       "Merchant 1",
-		UserID:     1,
-		Status:     "active",
-	}
-
-	merchantRecord := &record.MerchantRecord{
-		ID:        1,
-		Name:      "Merchant 1",
-		ApiKey:    "apikey1",
-		UserID:    1,
-		Status:    "active",
-		CreatedAt: "2024-01-01T10:00:00Z",
-		UpdatedAt: "2024-01-01T10:00:00Z",
-	}
-
-	expectedResponse := &response.MerchantResponse{
-		ID:     1,
-		Name:   "Merchant 1",
-		ApiKey: "apikey1",
-		Status: "active",
-	}
-
-	mock_logger.EXPECT().Debug("Updating merchant", zap.Int("merchant_id", merchantRecord.ID)).Times(1)
-
-	mock_merchant_repo.EXPECT().FindById(merchantRecord.ID).Return(merchantRecord, nil).Times(1)
-
-	mock_merchant_repo.EXPECT().
-		UpdateMerchant(&requests).
-		Return(merchantRecord, nil).
-		Times(1)
-
-	mock_mapping.EXPECT().
-		ToMerchantResponse(gomock.Eq(merchantRecord)).
-		Return(expectedResponse).
-		Times(1)
-
-	mock_logger.EXPECT().Debug("Successfully updated merchant", zap.Int("merchant_id", merchantRecord.ID)).Times(1)
-
-	result, errResp := merchantService.UpdateMerchant(&requests)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
+	suite.Nil(result)
+	suite.Equal(merchant_errors.ErrMerchantNotFoundRes, err)
 }
 
-func TestUpdateMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestTrashedMerchant_Success() {
+	merchantID := 1
+	trashedMerchant := &record.MerchantRecord{ID: merchantID}
+	expectedResponse := &response.MerchantResponseDeleteAt{ID: merchantID}
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
+	suite.mockLogger.EXPECT().Debug("Trashing merchant", zap.Int("merchant_id", merchantID))
+	suite.mockMerchantRepo.EXPECT().TrashedMerchant(merchantID).Return(trashedMerchant, nil)
+	suite.mockMapper.EXPECT().ToMerchantResponseDeleteAt(trashedMerchant).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully trashed merchant", zap.Int("merchant_id", merchantID))
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.TrashedMerchant(merchantID)
 
-	requests := requests.UpdateMerchantRequest{
-		MerchantID: 1,
-		Name:       "Merchant 1",
-		UserID:     1,
-		Status:     "active",
-	}
-
-	mock_logger.EXPECT().Debug("Updating merchant", zap.Int("merchant_id", requests.MerchantID)).Times(1)
-
-	mock_merchant_repo.EXPECT().FindById(requests.MerchantID).Return(nil, fmt.Errorf("merchant not found")).Times(1)
-
-	mock_logger.EXPECT().Error("Merchant not found for update", zap.Error(fmt.Errorf("merchant not found"))).Times(1)
-
-	result, errResp := merchantService.UpdateMerchant(&requests)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Merchant not found", errResp.Message)
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
 }
 
-func TestTrashedMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestTrashedMerchant_Failure() {
+	merchantID := 1
+	dbError := errors.New("failed to trash")
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
+	suite.mockLogger.EXPECT().Debug("Trashing merchant", zap.Int("merchant_id", merchantID))
+	suite.mockLogger.EXPECT().Error("Failed to trash merchant", gomock.Any())
+	suite.mockMerchantRepo.EXPECT().TrashedMerchant(merchantID).Return(nil, dbError)
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.TrashedMerchant(merchantID)
 
-	merchantId := 1
-
-	merchantRecord := &record.MerchantRecord{
-		ID:        1,
-		Name:      "Merchant 1",
-		ApiKey:    "apikey1",
-		UserID:    1,
-		Status:    "active",
-		CreatedAt: "2024-01-01T10:00:00Z",
-		UpdatedAt: "2024-01-01T10:00:00Z",
-	}
-
-	expectedResponse := &response.MerchantResponse{
-		ID:     1,
-		Name:   "Merchant 1",
-		ApiKey: "apikey1",
-		Status: "active",
-	}
-
-	mock_logger.EXPECT().Debug("Trashing merchant", zap.Int("merchant_id", merchantRecord.ID)).Times(1)
-
-	mock_merchant_repo.EXPECT().TrashedMerchant(merchantId).Return(merchantRecord, nil).Times(1)
-
-	mock_mapping.EXPECT().
-		ToMerchantResponse(gomock.Eq(merchantRecord)).
-		Return(expectedResponse).
-		Times(1)
-
-	mock_logger.EXPECT().Debug("Successfully trashed merchant", zap.Int("merchant_id", merchantId)).Times(1)
-
-	result, errResp := merchantService.TrashedMerchant(merchantId)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
+	suite.Nil(result)
+	suite.Equal(merchant_errors.ErrFailedTrashMerchant, err)
 }
 
-func TestTrashedMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestRestoreMerchant_Success() {
+	merchantID := 1
+	restoredMerchant := &record.MerchantRecord{ID: merchantID, DeletedAt: nil}
+	expectedResponse := &response.MerchantResponseDeleteAt{ID: merchantID, DeletedAt: nil}
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
+	suite.mockLogger.EXPECT().Debug("Restoring merchant", zap.Int("merchant_id", merchantID))
+	suite.mockMerchantRepo.EXPECT().RestoreMerchant(merchantID).Return(restoredMerchant, nil)
+	suite.mockMapper.EXPECT().ToMerchantResponseDeleteAt(restoredMerchant).Return(expectedResponse)
+	suite.mockLogger.EXPECT().Debug("Successfully restored merchant", zap.Int("merchant_id", merchantID))
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreMerchant(merchantID)
 
-	merchantId := 1
-	expectedError := errors.New("Failed to trash merchant")
-
-	mock_logger.EXPECT().Debug("Trashing merchant", zap.Int("merchant_id", merchantId)).Times(1)
-
-	mock_logger.EXPECT().
-		Error(
-			"Failed to trash merchant",
-			gomock.AssignableToTypeOf(zap.Error(expectedError)),
-			zap.Int("merchant_id", merchantId),
-		).Times(1)
-
-	mock_merchant_repo.EXPECT().TrashedMerchant(merchantId).Return(nil, fmt.Errorf("merchant not found")).Times(1)
-
-	result, errResp := merchantService.TrashedMerchant(merchantId)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to trash merchant", errResp.Message)
+	suite.Nil(err)
+	suite.Equal(expectedResponse, result)
 }
 
-func TestRestoreMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestRestoreMerchant_Failure() {
+	merchantID := 1
+	dbError := errors.New("failed to restore")
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
+	suite.mockLogger.EXPECT().Debug("Restoring merchant", zap.Int("merchant_id", merchantID))
+	suite.mockLogger.EXPECT().Error("Failed to restore merchant", gomock.Any())
+	suite.mockMerchantRepo.EXPECT().RestoreMerchant(merchantID).Return(nil, dbError)
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreMerchant(merchantID)
 
-	merchantId := 1
-
-	merchantRecord := &record.MerchantRecord{
-		ID:        1,
-		Name:      "Merchant 1",
-		ApiKey:    "apikey1",
-		UserID:    1,
-		Status:    "restored",
-		CreatedAt: "2024-01-01T10:00:00Z",
-		UpdatedAt: "2024-01-02T10:00:00Z",
-	}
-
-	expectedResponse := &response.MerchantResponse{
-		ID:     1,
-		Name:   "Merchant 1",
-		ApiKey: "apikey1",
-		Status: "restored",
-	}
-
-	mock_logger.EXPECT().Debug("Restoring merchant", zap.Int("merchant_id", merchantId)).Times(1)
-
-	mock_merchant_repo.EXPECT().
-		RestoreMerchant(merchantId).
-		Return(merchantRecord, nil).
-		Times(1)
-
-	mock_mapping.EXPECT().
-		ToMerchantResponse(gomock.Eq(merchantRecord)).
-		Return(expectedResponse).
-		Times(1)
-
-	mock_logger.EXPECT().Debug("Successfully restored merchant", zap.Int("merchant_id", merchantId)).Times(1)
-
-	result, errResp := merchantService.RestoreMerchant(merchantId)
-
-	assert.Nil(t, errResp)
-	assert.Equal(t, expectedResponse, result)
+	suite.Nil(result)
+	suite.Equal(merchant_errors.ErrFailedRestoreMerchant, err)
 }
 
-func TestRestoreMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestDeleteMerchantPermanent_Success() {
+	merchantID := 1
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
-	mock_mapping := mock_responsemapper.NewMockMerchantResponseMapper(ctrl)
+	suite.mockLogger.EXPECT().Debug("Deleting merchant permanently", zap.Int("merchant_id", merchantID))
+	suite.mockMerchantRepo.EXPECT().DeleteMerchantPermanent(merchantID).Return(true, nil)
+	suite.mockLogger.EXPECT().Debug("Successfully deleted merchant permanently", zap.Int("merchant_id", merchantID))
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, mock_mapping)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteMerchantPermanent(merchantID)
 
-	merchantId := 1
-	expectedError := errors.New("Failed to restore merchant")
-
-	mock_logger.EXPECT().Debug("Restoring merchant", zap.Int("merchant_id", merchantId)).Times(1)
-
-	mock_logger.EXPECT().
-		Error(
-			"Failed to restore merchant",
-			gomock.AssignableToTypeOf(zap.Error(expectedError)),
-			zap.Int("merchant_id", merchantId),
-		).Times(1)
-
-	mock_merchant_repo.EXPECT().
-		RestoreMerchant(merchantId).
-		Return(nil, fmt.Errorf("merchant not found")).
-		Times(1)
-
-	result, errResp := merchantService.RestoreMerchant(merchantId)
-
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to restore merchant", errResp.Message)
+	suite.Nil(err)
+	suite.True(result)
 }
 
-func TestDeleteMerchantPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestDeleteMerchantPermanent_Failure() {
+	merchantID := 1
+	dbError := errors.New("failed to delete permanently")
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.mockLogger.EXPECT().Debug("Deleting merchant permanently", zap.Int("merchant_id", merchantID))
+	suite.mockLogger.EXPECT().Error("Failed to delete merchant permanently", gomock.Any())
+	suite.mockMerchantRepo.EXPECT().DeleteMerchantPermanent(merchantID).Return(false, dbError)
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, nil)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteMerchantPermanent(merchantID)
 
-	merchantId := 1
-
-	mock_logger.EXPECT().Debug("Deleting merchant permanently", zap.Int("merchant_id", merchantId)).Times(1)
-
-	mock_merchant_repo.EXPECT().
-		DeleteMerchantPermanent(merchantId).
-		Return(nil).
-		Times(1)
-
-	mock_logger.EXPECT().Debug("Successfully deleted merchant permanently", zap.Int("merchant_id", merchantId)).Times(1)
-
-	result, errResp := merchantService.DeleteMerchantPermanent(merchantId)
-
-	assert.Nil(t, result)
-	assert.Nil(t, errResp)
+	suite.False(result)
+	suite.Equal(merchant_errors.ErrFailedDeleteMerchant, err)
 }
 
-func TestDeleteMerchantPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantServiceSuite) TestRestoreAllMerchant_Success() {
+	suite.mockLogger.EXPECT().Debug("Restoring all merchants")
+	suite.mockMerchantRepo.EXPECT().RestoreAllMerchant().Return(true, nil)
+	suite.mockLogger.EXPECT().Debug("Successfully restored all merchants")
 
-	mock_merchant_repo := mock_repository.NewMockMerchantRepository(ctrl)
-	mock_logger := mock_logger.NewMockLoggerInterface(ctrl)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreAllMerchant()
 
-	merchantService := service.NewMerchantService(mock_merchant_repo, mock_logger, nil)
+	suite.Nil(err)
+	suite.True(result)
+}
 
-	merchantId := 1
-	expectedError := errors.New("Failed to delete merchant permanently")
+func (suite *MerchantServiceSuite) TestRestoreAllMerchant_Failure() {
+	dbError := errors.New("failed to restore all")
 
-	mock_logger.EXPECT().Debug("Deleting merchant permanently", zap.Int("merchant_id", merchantId)).Times(1)
+	suite.mockLogger.EXPECT().Debug("Restoring all merchants")
+	suite.mockLogger.EXPECT().Error("Failed to restore all merchants", gomock.Any())
+	suite.mockMerchantRepo.EXPECT().RestoreAllMerchant().Return(false, dbError)
 
-	mock_merchant_repo.EXPECT().
-		DeleteMerchantPermanent(merchantId).
-		Return(fmt.Errorf("merchant not found")).
-		Times(1)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.RestoreAllMerchant()
 
-	mock_logger.EXPECT().
-		Error(
-			"Failed to delete merchant permanently",
-			gomock.AssignableToTypeOf(zap.Error(expectedError)),
-			zap.Int("merchant_id", merchantId),
-		).Times(1)
+	suite.False(result)
+	suite.Equal(merchant_errors.ErrFailedRestoreAllMerchants, err)
+}
 
-	result, errResp := merchantService.DeleteMerchantPermanent(merchantId)
+func (suite *MerchantServiceSuite) TestDeleteAllMerchantPermanent_Success() {
+	suite.mockLogger.EXPECT().Debug("Permanently deleting all merchants")
+	suite.mockMerchantRepo.EXPECT().DeleteAllMerchantPermanent().Return(true, nil)
+	suite.mockLogger.EXPECT().Debug("Successfully deleted all merchants permanently")
 
-	assert.Nil(t, result)
-	assert.NotNil(t, errResp)
-	assert.Equal(t, "error", errResp.Status)
-	assert.Equal(t, "Failed to delete merchant permanently", errResp.Message)
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteAllMerchantPermanent()
+
+	suite.Nil(err)
+	suite.True(result)
+}
+
+func (suite *MerchantServiceSuite) TestDeleteAllMerchantPermanent_Failure() {
+	dbError := errors.New("failed to delete all permanently")
+
+	suite.mockLogger.EXPECT().Debug("Permanently deleting all merchants")
+	suite.mockLogger.EXPECT().Error("Failed to permanently delete all merchants", gomock.Any())
+	suite.mockMerchantRepo.EXPECT().DeleteAllMerchantPermanent().Return(false, dbError)
+
+	svc := service.NewMerchantService(suite.mockMerchantRepo, suite.mockLogger, suite.mockMapper)
+	result, err := svc.DeleteAllMerchantPermanent()
+
+	suite.False(result)
+	suite.Equal(merchant_errors.ErrFailedDeleteAllMerchants, err)
+}
+
+func TestMerchantServiceSuite(t *testing.T) {
+	suite.Run(t, new(MerchantServiceSuite))
 }

@@ -45,8 +45,6 @@ func (s *saldoService) FindAll(req *requests.FindAllSaldos) ([]*response.SaldoRe
 		pageSize = 10
 	}
 
-	s.logger.Debug("Fetching all saldo records", zap.Int("page", page), zap.Int("pageSize", pageSize), zap.String("search", search))
-
 	res, totalRecords, err := s.saldoRepository.FindAllSaldos(req)
 
 	if err != nil {
@@ -317,7 +315,7 @@ func (s *saldoService) UpdateSaldo(request *requests.UpdateSaldoRequest) (*respo
 	return so, nil
 }
 
-func (s *saldoService) TrashSaldo(saldo_id int) (*response.SaldoResponse, *response.ErrorResponse) {
+func (s *saldoService) TrashSaldo(saldo_id int) (*response.SaldoResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Trashing saldo record", zap.Int("saldo_id", saldo_id))
 
 	res, err := s.saldoRepository.TrashedSaldo(saldo_id)
@@ -329,14 +327,14 @@ func (s *saldoService) TrashSaldo(saldo_id int) (*response.SaldoResponse, *respo
 
 		return nil, saldo_errors.ErrFailedTrashSaldo
 	}
-	so := s.mapping.ToSaldoResponse(res)
+	so := s.mapping.ToSaldoResponseDeleteAt(res)
 
 	s.logger.Debug("Successfully trashed saldo", zap.Int("saldo_id", saldo_id))
 
 	return so, nil
 }
 
-func (s *saldoService) RestoreSaldo(saldo_id int) (*response.SaldoResponse, *response.ErrorResponse) {
+func (s *saldoService) RestoreSaldo(saldo_id int) (*response.SaldoResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Restoring saldo record from trash", zap.Int("saldo_id", saldo_id))
 
 	res, err := s.saldoRepository.RestoreSaldo(saldo_id)
@@ -349,7 +347,7 @@ func (s *saldoService) RestoreSaldo(saldo_id int) (*response.SaldoResponse, *res
 		return nil, saldo_errors.ErrFailedRestoreSaldo
 	}
 
-	so := s.mapping.ToSaldoResponse(res)
+	so := s.mapping.ToSaldoResponseDeleteAt(res)
 
 	s.logger.Debug("Successfully restored saldo", zap.Int("saldo_id", saldo_id))
 

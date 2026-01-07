@@ -16,14 +16,14 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type transactionHandler struct {
+type TransactionHandleApi struct {
 	transaction pb.TransactionServiceClient
 	logger      logger.LoggerInterface
 	mapping     apimapper.TransactionResponseMapper
 }
 
-func NewHandlerTransaction(transaction pb.TransactionServiceClient, merchant pb.MerchantServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.TransactionResponseMapper) *transactionHandler {
-	transactionHandler := transactionHandler{
+func NewHandlerTransaction(transaction pb.TransactionServiceClient, merchant pb.MerchantServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.TransactionResponseMapper) *TransactionHandleApi {
+	TransactionHandleApi := TransactionHandleApi{
 		transaction: transaction,
 		logger:      logger,
 		mapping:     mapping,
@@ -31,45 +31,45 @@ func NewHandlerTransaction(transaction pb.TransactionServiceClient, merchant pb.
 
 	routerTransaction := router.Group("/api/transactions")
 
-	routerTransaction.GET("", transactionHandler.FindAll)
-	routerTransaction.GET("/card-number/:card_number", transactionHandler.FindAllTransactionByCardNumber)
+	routerTransaction.GET("", TransactionHandleApi.FindAll)
+	routerTransaction.GET("/card-number/:card_number", TransactionHandleApi.FindAllTransactionByCardNumber)
 
-	routerTransaction.GET("/:id", transactionHandler.FindById)
+	routerTransaction.GET("/:id", TransactionHandleApi.FindById)
 
-	routerTransaction.GET("/monthly-success", transactionHandler.FindMonthlyTransactionStatusSuccess)
-	routerTransaction.GET("/yearly-success", transactionHandler.FindYearlyTransactionStatusSuccess)
-	routerTransaction.GET("/monthly-failed", transactionHandler.FindMonthlyTransactionStatusFailed)
-	routerTransaction.GET("/yearly-failed", transactionHandler.FindYearlyTransactionStatusFailed)
+	routerTransaction.GET("/monthly-success", TransactionHandleApi.FindMonthlyTransactionStatusSuccess)
+	routerTransaction.GET("/yearly-success", TransactionHandleApi.FindYearlyTransactionStatusSuccess)
+	routerTransaction.GET("/monthly-failed", TransactionHandleApi.FindMonthlyTransactionStatusFailed)
+	routerTransaction.GET("/yearly-failed", TransactionHandleApi.FindYearlyTransactionStatusFailed)
 
-	routerTransaction.GET("/monthly-success-by-card", transactionHandler.FindMonthlyTransactionStatusSuccessByCardNumber)
-	routerTransaction.GET("/yearly-success-by-card", transactionHandler.FindYearlyTransactionStatusSuccessByCardNumber)
-	routerTransaction.GET("/monthly-failed-by-card", transactionHandler.FindMonthlyTransactionStatusFailedByCardNumber)
-	routerTransaction.GET("/yearly-failed-by-card", transactionHandler.FindYearlyTransactionStatusFailedByCardNumber)
+	routerTransaction.GET("/monthly-success-by-card", TransactionHandleApi.FindMonthlyTransactionStatusSuccessByCardNumber)
+	routerTransaction.GET("/yearly-success-by-card", TransactionHandleApi.FindYearlyTransactionStatusSuccessByCardNumber)
+	routerTransaction.GET("/monthly-failed-by-card", TransactionHandleApi.FindMonthlyTransactionStatusFailedByCardNumber)
+	routerTransaction.GET("/yearly-failed-by-card", TransactionHandleApi.FindYearlyTransactionStatusFailedByCardNumber)
 
-	routerTransaction.GET("/monthly-methods", transactionHandler.FindMonthlyPaymentMethods)
-	routerTransaction.GET("/yearly-methods", transactionHandler.FindYearlyPaymentMethods)
-	routerTransaction.GET("/monthly-amounts", transactionHandler.FindMonthlyAmounts)
-	routerTransaction.GET("/yearly-amounts", transactionHandler.FindYearlyAmounts)
+	routerTransaction.GET("/monthly-methods", TransactionHandleApi.FindMonthlyPaymentMethods)
+	routerTransaction.GET("/yearly-methods", TransactionHandleApi.FindYearlyPaymentMethods)
+	routerTransaction.GET("/monthly-amounts", TransactionHandleApi.FindMonthlyAmounts)
+	routerTransaction.GET("/yearly-amounts", TransactionHandleApi.FindYearlyAmounts)
 
-	routerTransaction.GET("/monthly-methods-by-card", transactionHandler.FindMonthlyPaymentMethodsByCardNumber)
-	routerTransaction.GET("/yearly-methods-by-card", transactionHandler.FindYearlyPaymentMethodsByCardNumber)
-	routerTransaction.GET("/monthly-amounts-by-card", transactionHandler.FindMonthlyAmountsByCardNumber)
-	routerTransaction.GET("/yearly-amounts-by-card", transactionHandler.FindYearlyAmountsByCardNumber)
+	routerTransaction.GET("/monthly-methods-by-card", TransactionHandleApi.FindMonthlyPaymentMethodsByCardNumber)
+	routerTransaction.GET("/yearly-methods-by-card", TransactionHandleApi.FindYearlyPaymentMethodsByCardNumber)
+	routerTransaction.GET("/monthly-amounts-by-card", TransactionHandleApi.FindMonthlyAmountsByCardNumber)
+	routerTransaction.GET("/yearly-amounts-by-card", TransactionHandleApi.FindYearlyAmountsByCardNumber)
 
-	routerTransaction.GET("/merchant/:merchant_id", transactionHandler.FindByTransactionMerchantId)
-	routerTransaction.GET("/active", transactionHandler.FindByActiveTransaction)
-	routerTransaction.GET("/trashed", transactionHandler.FindByTrashedTransaction)
-	routerTransaction.POST("/create", middlewares.ApiKeyMiddleware(merchant)(transactionHandler.Create))
-	routerTransaction.POST("/update/:id", middlewares.ApiKeyMiddleware(merchant)(transactionHandler.Update))
+	routerTransaction.GET("/merchant/:merchant_id", TransactionHandleApi.FindByTransactionMerchantId)
+	routerTransaction.GET("/active", TransactionHandleApi.FindByActiveTransaction)
+	routerTransaction.GET("/trashed", TransactionHandleApi.FindByTrashedTransaction)
+	routerTransaction.POST("/create", middlewares.ApiKeyMiddleware(merchant)(TransactionHandleApi.Create))
+	routerTransaction.POST("/update/:id", middlewares.ApiKeyMiddleware(merchant)(TransactionHandleApi.Update))
 
-	routerTransaction.POST("/restore/:id", transactionHandler.RestoreTransaction)
-	routerTransaction.POST("/trashed/:id", transactionHandler.TrashedTransaction)
-	routerTransaction.DELETE("/permanent/:id", transactionHandler.DeletePermanent)
+	routerTransaction.POST("/restore/:id", TransactionHandleApi.RestoreTransaction)
+	routerTransaction.POST("/trashed/:id", TransactionHandleApi.TrashedTransaction)
+	routerTransaction.DELETE("/permanent/:id", TransactionHandleApi.DeletePermanent)
 
-	routerTransaction.POST("/restore/all", transactionHandler.RestoreAllTransaction)
-	routerTransaction.POST("/permanent/all", transactionHandler.DeleteAllTransactionPermanent)
+	routerTransaction.POST("/restore/all", TransactionHandleApi.RestoreAllTransaction)
+	routerTransaction.POST("/permanent/all", TransactionHandleApi.DeleteAllTransactionPermanent)
 
-	return &transactionHandler
+	return &TransactionHandleApi
 }
 
 // @Summary Find all
@@ -84,7 +84,7 @@ func NewHandlerTransaction(transaction pb.TransactionServiceClient, merchant pb.
 // @Success 200 {object} response.ApiResponsePaginationTransaction "List of transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/transactions [get]
-func (h *transactionHandler) FindAll(c echo.Context) error {
+func (h *TransactionHandleApi) FindAll(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -131,7 +131,7 @@ func (h *transactionHandler) FindAll(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsePaginationTransaction "List of transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/transactions/card-number/{card_number} [get]
-func (h *transactionHandler) FindAllTransactionByCardNumber(c echo.Context) error {
+func (h *TransactionHandleApi) FindAllTransactionByCardNumber(c echo.Context) error {
 	cardNumber := c.Param("card_number")
 	if cardNumber == "" {
 		return transaction_errors.ErrApiInvalidTransactionCardNumber(c)
@@ -182,7 +182,7 @@ func (h *transactionHandler) FindAllTransactionByCardNumber(c echo.Context) erro
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/transactions/{id} [get]
-func (h *transactionHandler) FindById(c echo.Context) error {
+func (h *TransactionHandleApi) FindById(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -223,7 +223,7 @@ func (h *transactionHandler) FindById(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction status for successful transactions"
 // @Router /api/transactions/monthly-success [get]
-func (h *transactionHandler) FindMonthlyTransactionStatusSuccess(c echo.Context) error {
+func (h *TransactionHandleApi) FindMonthlyTransactionStatusSuccess(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 
@@ -267,7 +267,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusSuccess(c echo.Context)
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction status for successful transactions"
 // @Router /api/transactions/yearly-success [get]
-func (h *transactionHandler) FindYearlyTransactionStatusSuccess(c echo.Context) error {
+func (h *TransactionHandleApi) FindYearlyTransactionStatusSuccess(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -305,7 +305,7 @@ func (h *transactionHandler) FindYearlyTransactionStatusSuccess(c echo.Context) 
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction status for failed transactions"
 // @Router /api/transactions/monthly-failed [get]
-func (h *transactionHandler) FindMonthlyTransactionStatusFailed(c echo.Context) error {
+func (h *TransactionHandleApi) FindMonthlyTransactionStatusFailed(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 
@@ -349,7 +349,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusFailed(c echo.Context) 
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction status for failed transactions"
 // @Router /api/transactions/yearly-failed [get]
-func (h *transactionHandler) FindYearlyTransactionStatusFailed(c echo.Context) error {
+func (h *TransactionHandleApi) FindYearlyTransactionStatusFailed(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -388,7 +388,7 @@ func (h *transactionHandler) FindYearlyTransactionStatusFailed(c echo.Context) e
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction status for successful transactions"
 // @Router /api/transactions/monthly-success-by-card [get]
-func (h *transactionHandler) FindMonthlyTransactionStatusSuccessByCardNumber(c echo.Context) error {
+func (h *TransactionHandleApi) FindMonthlyTransactionStatusSuccessByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 	cardNumber := c.QueryParam("card_number")
@@ -435,7 +435,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusSuccessByCardNumber(c e
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction status for successful transactions"
 // @Router /api/transactions/yearly-success-by-card [get]
-func (h *transactionHandler) FindYearlyTransactionStatusSuccessByCardNumber(c echo.Context) error {
+func (h *TransactionHandleApi) FindYearlyTransactionStatusSuccessByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	cardNumber := c.QueryParam("cardNumber")
 
@@ -476,7 +476,7 @@ func (h *transactionHandler) FindYearlyTransactionStatusSuccessByCardNumber(c ec
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction status for failed transactions"
 // @Router /api/transactions/monthly-failed-by-card [get]
-func (h *transactionHandler) FindMonthlyTransactionStatusFailedByCardNumber(c echo.Context) error {
+func (h *TransactionHandleApi) FindMonthlyTransactionStatusFailedByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 	cardNumber := c.QueryParam("cardNumber")
@@ -527,7 +527,7 @@ func (h *transactionHandler) FindMonthlyTransactionStatusFailedByCardNumber(c ec
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction status for failed transactions"
 // @Router /api/transactions/yearly-failed-by-card [get]
-func (h *transactionHandler) FindYearlyTransactionStatusFailedByCardNumber(c echo.Context) error {
+func (h *TransactionHandleApi) FindYearlyTransactionStatusFailedByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	card_number := c.QueryParam("card_number")
 
@@ -566,7 +566,7 @@ func (h *transactionHandler) FindYearlyTransactionStatusFailedByCardNumber(c ech
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly payment methods"
 // @Router /api/transactions/monthly-payment-methods [get]
-func (h *transactionHandler) FindMonthlyPaymentMethods(c echo.Context) error {
+func (h *TransactionHandleApi) FindMonthlyPaymentMethods(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
@@ -601,7 +601,7 @@ func (h *transactionHandler) FindMonthlyPaymentMethods(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly payment methods"
 // @Router /api/transactions/yearly-payment-methods [get]
-func (h *transactionHandler) FindYearlyPaymentMethods(c echo.Context) error {
+func (h *TransactionHandleApi) FindYearlyPaymentMethods(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
@@ -636,7 +636,7 @@ func (h *transactionHandler) FindYearlyPaymentMethods(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
 // @Router /api/transactions/monthly-amounts [get]
-func (h *transactionHandler) FindMonthlyAmounts(c echo.Context) error {
+func (h *TransactionHandleApi) FindMonthlyAmounts(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
@@ -671,7 +671,7 @@ func (h *transactionHandler) FindMonthlyAmounts(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
 // @Router /api/transactions/yearly-amounts [get]
-func (h *transactionHandler) FindYearlyAmounts(c echo.Context) error {
+func (h *TransactionHandleApi) FindYearlyAmounts(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil {
@@ -707,7 +707,7 @@ func (h *transactionHandler) FindYearlyAmounts(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly payment methods by card number"
 // @Router /api/transactions/monthly-payment-methods-by-card [get]
-func (h *transactionHandler) FindMonthlyPaymentMethodsByCardNumber(c echo.Context) error {
+func (h *TransactionHandleApi) FindMonthlyPaymentMethodsByCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 
@@ -746,7 +746,7 @@ func (h *transactionHandler) FindMonthlyPaymentMethodsByCardNumber(c echo.Contex
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly payment methods by card number"
 // @Router /api/transactions/yearly-payment-methods-by-card [get]
-func (h *transactionHandler) FindYearlyPaymentMethodsByCardNumber(c echo.Context) error {
+func (h *TransactionHandleApi) FindYearlyPaymentMethodsByCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
@@ -784,7 +784,7 @@ func (h *transactionHandler) FindYearlyPaymentMethodsByCardNumber(c echo.Context
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts by card number"
 // @Router /api/transactions/monthly-amounts-by-card [get]
-func (h *transactionHandler) FindMonthlyAmountsByCardNumber(c echo.Context) error {
+func (h *TransactionHandleApi) FindMonthlyAmountsByCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 
 	yearStr := c.QueryParam("year")
@@ -823,7 +823,7 @@ func (h *transactionHandler) FindMonthlyAmountsByCardNumber(c echo.Context) erro
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts by card number"
 // @Router /api/transactions/yearly-amounts-by-card [get]
-func (h *transactionHandler) FindYearlyAmountsByCardNumber(c echo.Context) error {
+func (h *TransactionHandleApi) FindYearlyAmountsByCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 
 	yearStr := c.QueryParam("year")
@@ -860,8 +860,8 @@ func (h *transactionHandler) FindYearlyAmountsByCardNumber(c echo.Context) error
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/transactions/merchant/{merchant_id} [get]
-func (h *transactionHandler) FindByTransactionMerchantId(c echo.Context) error {
-	merchantId := c.QueryParam("merchant_id")
+func (h *TransactionHandleApi) FindByTransactionMerchantId(c echo.Context) error {
+	merchantId := c.Param("merchant_id")
 
 	merchantIdInt, err := strconv.Atoi(merchantId)
 
@@ -900,7 +900,7 @@ func (h *transactionHandler) FindByTransactionMerchantId(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseTransactions "List of active transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/transactions/active [get]
-func (h *transactionHandler) FindByActiveTransaction(c echo.Context) error {
+func (h *TransactionHandleApi) FindByActiveTransaction(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -946,7 +946,7 @@ func (h *transactionHandler) FindByActiveTransaction(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseTransactions "List of trashed transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/transactions/trashed [get]
-func (h *transactionHandler) FindByTrashedTransaction(c echo.Context) error {
+func (h *TransactionHandleApi) FindByTrashedTransaction(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -991,7 +991,7 @@ func (h *transactionHandler) FindByTrashedTransaction(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to create transaction"
 // @Router /api/transactions/create [post]
-func (h *transactionHandler) Create(c echo.Context) error {
+func (h *TransactionHandleApi) Create(c echo.Context) error {
 	var body requests.CreateTransactionRequest
 
 	apiKey := c.Get("apiKey").(string)
@@ -1045,7 +1045,7 @@ func (h *transactionHandler) Create(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to update transaction"
 // @Router /api/transactions/update [post]
-func (h *transactionHandler) Update(c echo.Context) error {
+func (h *TransactionHandleApi) Update(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
@@ -1107,7 +1107,7 @@ func (h *transactionHandler) Update(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to trashed transaction"
 // @Router /api/transactions/trashed/{id} [post]
-func (h *transactionHandler) TrashedTransaction(c echo.Context) error {
+func (h *TransactionHandleApi) TrashedTransaction(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1129,7 +1129,7 @@ func (h *transactionHandler) TrashedTransaction(c echo.Context) error {
 		return transaction_errors.ErrApiFailedTrashTransaction(c)
 	}
 
-	so := h.mapping.ToApiResponseTransaction(res)
+	so := h.mapping.ToApiResponseTransactionDeleteAt(res)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -1145,7 +1145,7 @@ func (h *transactionHandler) TrashedTransaction(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore transaction:"
 // @Router /api/transactions/restore/{id} [post]
-func (h *transactionHandler) RestoreTransaction(c echo.Context) error {
+func (h *TransactionHandleApi) RestoreTransaction(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1168,7 +1168,7 @@ func (h *transactionHandler) RestoreTransaction(c echo.Context) error {
 		return transaction_errors.ErrApiFailedRestoreTransaction(c)
 	}
 
-	so := h.mapping.ToApiResponseTransaction(res)
+	so := h.mapping.ToApiResponseTransactionDeleteAt(res)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -1184,7 +1184,7 @@ func (h *transactionHandler) RestoreTransaction(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete transaction:"
 // @Router /api/transactions/permanent/{id} [delete]
-func (h *transactionHandler) DeletePermanent(c echo.Context) error {
+func (h *TransactionHandleApi) DeletePermanent(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1222,7 +1222,7 @@ func (h *transactionHandler) DeletePermanent(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore transaction:"
 // @Router /api/transactions/restore/all [post]
-func (h *transactionHandler) RestoreAllTransaction(c echo.Context) error {
+func (h *TransactionHandleApi) RestoreAllTransaction(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.transaction.RestoreAllTransaction(ctx, &emptypb.Empty{})
@@ -1249,7 +1249,7 @@ func (h *transactionHandler) RestoreAllTransaction(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete transaction:"
 // @Router /api/transactions/delete/all [post]
-func (h *transactionHandler) DeleteAllTransactionPermanent(c echo.Context) error {
+func (h *TransactionHandleApi) DeleteAllTransactionPermanent(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.transaction.DeleteAllTransactionPermanent(ctx, &emptypb.Empty{})

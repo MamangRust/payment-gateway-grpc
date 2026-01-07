@@ -57,7 +57,7 @@ func (s *authService) Register(request *requests.CreateUserRequest) (*response.U
 	}
 	request.Password = passwordHash
 
-	const defaultRoleName = "Admin Access 1"
+	const defaultRoleName = "ROLE_ADMIN"
 	role, err := s.role.FindByName(defaultRoleName)
 	if err != nil || role == nil {
 		s.logger.Error("Failed to find default role",

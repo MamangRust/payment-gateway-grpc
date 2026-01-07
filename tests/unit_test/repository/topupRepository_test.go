@@ -4,668 +4,264 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/record"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	mocks "MamangRust/paymentgatewaygrpc/internal/repository/mocks"
-	"fmt"
+	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func TestFindAllTopups_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+type TopupRepositorySuite struct {
+	suite.Suite
+	mockCtrl *gomock.Controller
+	mockRepo *mocks.MockTopupRepository
+}
 
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
+func (suite *TopupRepositorySuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.mockRepo = mocks.NewMockTopupRepository(suite.mockCtrl)
+}
 
-	topups := []*record.TopupRecord{
-		{
-			ID:          1,
-			CardNumber:  "1234",
-			TopupNo:     "TOPUP-001",
-			TopupAmount: 50000,
-			TopupMethod: "bank_transfer",
-			TopupTime:   "2024-12-25T09:00:00Z",
-			CreatedAt:   "2024-12-25T09:00:00Z",
-			UpdatedAt:   "2024-12-25T09:30:00Z",
-			DeletedAt:   nil,
-		},
-		{
-			ID:          2,
-			CardNumber:  "5678",
-			TopupNo:     "TOPUP-002",
-			TopupAmount: 75000,
-			TopupMethod: "credit_card",
-			TopupTime:   "2024-12-25T10:00:00Z",
-			CreatedAt:   "2024-12-25T10:00:00Z",
-			UpdatedAt:   "2024-12-25T10:30:00Z",
-			DeletedAt:   nil,
-		},
+func (suite *TopupRepositorySuite) TearDownTest() {
+	suite.mockCtrl.Finish()
+}
+
+func (suite *TopupRepositorySuite) TestFindAllTopups_Success() {
+	req := &requests.FindAllTopups{Search: "success", Page: 1, PageSize: 10}
+	topups := []*record.TopupRecord{{ID: 1, TopupNo: "TP001"}}
+	total := 1
+
+	suite.mockRepo.EXPECT().FindAllTopups(req).Return(topups, &total, nil)
+
+	result, totalRes, err := suite.mockRepo.FindAllTopups(req)
+
+	suite.NoError(err)
+	suite.Equal(topups, result)
+	suite.Equal(1, *totalRes)
+}
+
+func (suite *TopupRepositorySuite) TestFindByIdTopup_Success() {
+	topupID := 1
+	topup := &record.TopupRecord{ID: topupID, TopupNo: "TP001"}
+
+	suite.mockRepo.EXPECT().FindById(topupID).Return(topup, nil)
+
+	result, err := suite.mockRepo.FindById(topupID)
+
+	suite.NoError(err)
+	suite.Equal(topup, result)
+}
+
+func (suite *TopupRepositorySuite) TestFindByIdTopup_NotFound() {
+	topupID := 99
+	expectedErr := errors.New("topup not found")
+
+	suite.mockRepo.EXPECT().FindById(topupID).Return(nil, expectedErr)
+
+	result, err := suite.mockRepo.FindById(topupID)
+
+	suite.Error(err)
+	suite.Nil(result)
+	suite.Equal(expectedErr, err)
+}
+
+func (suite *TopupRepositorySuite) TestFindAllTopupByCardNumber_Success() {
+	req := &requests.FindAllTopupsByCardNumber{CardNumber: "1111-xxxx", Page: 1, PageSize: 10}
+	topups := []*record.TopupRecord{{ID: 2, CardNumber: "1111-xxxx"}}
+	total := 1
+
+	suite.mockRepo.EXPECT().FindAllTopupByCardNumber(req).Return(topups, &total, nil)
+
+	result, totalRes, err := suite.mockRepo.FindAllTopupByCardNumber(req)
+
+	suite.NoError(err)
+	suite.Equal(topups, result)
+	suite.Equal(1, *totalRes)
+}
+
+func (suite *TopupRepositorySuite) TestCreateTopup_Success() {
+	req := &requests.CreateTopupRequest{CardNumber: "2222-xxxx", TopupAmount: 100000, TopupMethod: "bank_transfer"}
+	createdTopup := &record.TopupRecord{ID: 10, CardNumber: "2222-xxxx", TopupNo: "TP010"}
+
+	suite.mockRepo.EXPECT().CreateTopup(req).Return(createdTopup, nil)
+
+	result, err := suite.mockRepo.CreateTopup(req)
+
+	suite.NoError(err)
+	suite.Equal(createdTopup, result)
+}
+
+func (suite *TopupRepositorySuite) TestUpdateTopupAmount_Success() {
+	req := &requests.UpdateTopupAmount{TopupID: 1, TopupAmount: 150000}
+	updatedTopup := &record.TopupRecord{ID: 1, TopupAmount: 150000}
+
+	suite.mockRepo.EXPECT().UpdateTopupAmount(req).Return(updatedTopup, nil)
+
+	result, err := suite.mockRepo.UpdateTopupAmount(req)
+
+	suite.NoError(err)
+	suite.Equal(int(150000), result.TopupAmount)
+}
+
+func (suite *TopupRepositorySuite) TestUpdateTopupStatus_Success() {
+	req := &requests.UpdateTopupStatus{TopupID: 1, Status: "failed"}
+	updatedTopup := &record.TopupRecord{ID: 10, CardNumber: "2222-xxxx", TopupNo: "TP010"}
+
+	suite.mockRepo.EXPECT().UpdateTopupStatus(req).Return(updatedTopup, nil)
+
+	result, err := suite.mockRepo.UpdateTopupStatus(req)
+
+	suite.NoError(err)
+	suite.Equal(updatedTopup, result)
+}
+
+func (suite *TopupRepositorySuite) TestTrashedTopup_Success() {
+	topupID := 1
+	trashedTime := "2024-01-01T00:00:00Z"
+	trashedTopup := &record.TopupRecord{ID: topupID, DeletedAt: &trashedTime}
+
+	suite.mockRepo.EXPECT().TrashedTopup(topupID).Return(trashedTopup, nil)
+
+	result, err := suite.mockRepo.TrashedTopup(topupID)
+
+	suite.NoError(err)
+	suite.NotNil(result.DeletedAt)
+	suite.Equal(trashedTopup, result)
+}
+
+func (suite *TopupRepositorySuite) TestDeleteTopupPermanent_Success() {
+	topupID := 1
+
+	suite.mockRepo.EXPECT().DeleteTopupPermanent(topupID).Return(true, nil)
+
+	result, err := suite.mockRepo.DeleteTopupPermanent(topupID)
+
+	suite.NoError(err)
+	suite.True(result)
+}
+
+func (suite *TopupRepositorySuite) TestRestoreAllTopup_Success() {
+	suite.mockRepo.EXPECT().RestoreAllTopup().Return(true, nil)
+
+	result, err := suite.mockRepo.RestoreAllTopup()
+
+	suite.NoError(err)
+	suite.True(result)
+}
+
+func (suite *TopupRepositorySuite) TestGetMonthTopupStatusSuccess_Success() {
+	req := &requests.MonthTopupStatus{Year: 2024, Month: 1}
+	monthlySuccess := []*record.TopupRecordMonthStatusSuccess{
+		{Year: "2024", Month: "01", TotalSuccess: 100, TotalAmount: 10000000},
 	}
 
-	mockRepo.EXPECT().FindAllTopups("", 1, 10).Return(topups, 2, nil)
+	suite.mockRepo.EXPECT().GetMonthTopupStatusSuccess(req).Return(monthlySuccess, nil)
 
-	result, total, err := mockRepo.FindAllTopups("", 1, 10)
+	result, err := suite.mockRepo.GetMonthTopupStatusSuccess(req)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, 2, total)
-	assert.Equal(t, topups, result)
+	suite.NoError(err)
+	suite.Equal(monthlySuccess, result)
 }
 
-func TestFindAllTopups_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	mockRepo.EXPECT().FindAllTopups("", 1, 10).Return(nil, 0, fmt.Errorf("database error"))
-
-	result, total, err := mockRepo.FindAllTopups("", 1, 10)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Equal(t, 0, total)
-	assert.Contains(t, err.Error(), "database error")
-}
-
-func TestFindAllTopups_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	mockRepo.EXPECT().FindAllTopups("", 1, 10).Return([]*record.TopupRecord{}, 0, nil)
-
-	result, total, err := mockRepo.FindAllTopups("", 1, 10)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, 0, total)
-	assert.Empty(t, result)
-}
-
-func TestFindByIdTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	expectedTopup := &record.TopupRecord{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupNo:     "TOPUP-001",
-		TopupAmount: 50000,
-		TopupMethod: "bank_transfer",
-		TopupTime:   "2024-12-25T09:00:00Z",
-		CreatedAt:   "2024-12-25T09:00:00Z",
-		UpdatedAt:   "2024-12-25T09:30:00Z",
-		DeletedAt:   nil,
+func (suite *TopupRepositorySuite) TestGetYearlyTopupStatusFailed_Success() {
+	year := 2023
+	yearlyFailed := []*record.TopupRecordYearStatusFailed{
+		{Year: "2023", TotalFailed: 5, TotalAmount: 250000},
 	}
 
-	mockRepo.EXPECT().FindById(1).Return(expectedTopup, nil)
+	suite.mockRepo.EXPECT().GetYearlyTopupStatusFailed(year).Return(yearlyFailed, nil)
 
-	result, err := mockRepo.FindById(1)
+	result, err := suite.mockRepo.GetYearlyTopupStatusFailed(year)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTopup, result)
+	suite.NoError(err)
+	suite.Equal(yearlyFailed, result)
 }
 
-func TestFindByIdTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	mockRepo.EXPECT().FindById(1).Return(nil, fmt.Errorf("database error"))
-
-	result, err := mockRepo.FindById(1)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "database error")
-}
-
-func TestFindByCardNumber_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	expectedTopups := []*record.TopupRecord{
-		{
-			ID:          1,
-			CardNumber:  "1234",
-			TopupNo:     "TOPUP-001",
-			TopupAmount: 50000,
-			TopupMethod: "bank_transfer",
-			TopupTime:   "2024-12-25T09:00:00Z",
-			CreatedAt:   "2024-12-25T09:00:00Z",
-			UpdatedAt:   "2024-12-25T09:30:00Z",
-			DeletedAt:   nil,
-		},
+func (suite *TopupRepositorySuite) TestGetMonthTopupStatusSuccessByCardNumber_Success() {
+	req := &requests.MonthTopupStatusCardNumber{CardNumber: "1111-xxxx", Year: 2024, Month: 1}
+	monthlySuccess := []*record.TopupRecordMonthStatusSuccess{
+		{Year: "2024", Month: "01", TotalSuccess: 10, TotalAmount: 1000000},
 	}
 
-	mockRepo.EXPECT().FindByCardNumber("1234").Return(expectedTopups, nil)
+	suite.mockRepo.EXPECT().GetMonthTopupStatusSuccessByCardNumber(req).Return(monthlySuccess, nil)
 
-	result, err := mockRepo.FindByCardNumber("1234")
+	result, err := suite.mockRepo.GetMonthTopupStatusSuccessByCardNumber(req)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTopups, result)
+	suite.NoError(err)
+	suite.Equal(monthlySuccess, result)
 }
 
-func TestFindByCardNumber_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	mockRepo.EXPECT().FindByCardNumber("1234").Return(nil, fmt.Errorf("database error"))
-
-	result, err := mockRepo.FindByCardNumber("1234")
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "database error")
-}
-
-func TestFindByActiveTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	expectedTopups := []*record.TopupRecord{
-		{
-			ID:          1,
-			CardNumber:  "1234",
-			TopupNo:     "TOPUP-001",
-			TopupAmount: 50000,
-			TopupMethod: "bank_transfer",
-			TopupTime:   "2024-12-25T09:00:00Z",
-			CreatedAt:   "2024-12-25T09:00:00Z",
-			UpdatedAt:   "2024-12-25T09:30:00Z",
-			DeletedAt:   nil,
-		},
-	}
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 1
-
-	mockRepo.EXPECT().FindByActive(search, page, pageSize).Return(expectedTopups, 1, nil)
-
-	result, totalRecord, err := mockRepo.FindByActive(search, page, pageSize)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expected, totalRecord)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTopups, result)
-}
-
-func TestFindByActiveTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 0
-
-	mockRepo.EXPECT().FindByActive(search, page, pageSize).Return(nil, 0, fmt.Errorf("database error"))
-
-	result, totalRecord, err := mockRepo.FindByActive(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "database error")
-}
-
-func TestFindByTrashedTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	expectedTopups := []*record.TopupRecord{
-		{
-			ID:          2,
-			CardNumber:  "5678",
-			TopupNo:     "TOPUP-002",
-			TopupAmount: 60000,
-			TopupMethod: "credit_card",
-			TopupTime:   "2024-12-25T10:00:00Z",
-			CreatedAt:   "2024-12-25T10:00:00Z",
-			UpdatedAt:   "2024-12-25T10:30:00Z",
-			DeletedAt:   nil,
-		},
+func (suite *TopupRepositorySuite) TestGetYearlyTopupStatusFailedByCardNumber_Success() {
+	req := &requests.YearTopupStatusCardNumber{CardNumber: "2222-xxxx", Year: 2023}
+	yearlyFailed := []*record.TopupRecordYearStatusFailed{
+		{Year: "2023", TotalFailed: 1, TotalAmount: 50000},
 	}
 
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 1
+	suite.mockRepo.EXPECT().GetYearlyTopupStatusFailedByCardNumber(req).Return(yearlyFailed, nil)
 
-	mockRepo.EXPECT().FindByTrashed(search, page, pageSize).Return(expectedTopups, 1, nil)
+	result, err := suite.mockRepo.GetYearlyTopupStatusFailedByCardNumber(req)
 
-	result, totalRecord, err := mockRepo.FindByTrashed(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTopups, result)
-}
-func TestFindByTrashedTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 0
-
-	mockRepo.EXPECT().FindByTrashed(search, page, pageSize).Return(nil, 0, fmt.Errorf("database error"))
-
-	result, totalRecord, err := mockRepo.FindByTrashed(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "database error")
+	suite.NoError(err)
+	suite.Equal(yearlyFailed, result)
 }
 
-func TestCountTopupsByDate_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	expectedCount := 10
-	date := "2024-12-25"
-
-	mockRepo.EXPECT().CountTopupsByDate(date).Return(expectedCount, nil)
-
-	result, err := mockRepo.CountTopupsByDate(date)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expectedCount, result)
-}
-
-func TestCountTopupsByDate_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	date := "2024-12-25"
-
-	mockRepo.EXPECT().CountTopupsByDate(date).Return(0, fmt.Errorf("database error"))
-
-	result, err := mockRepo.CountTopupsByDate(date)
-
-	assert.Error(t, err)
-	assert.Equal(t, 0, result)
-	assert.Contains(t, err.Error(), "database error")
-}
-
-func TestCountAllTopups_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	expectedCount := int64(100)
-	expectedCountPtr := &expectedCount
-
-	mockRepo.EXPECT().CountAllTopups().Return(expectedCountPtr, nil)
-
-	result, err := mockRepo.CountAllTopups()
-
-	assert.NoError(t, err)
-	assert.Equal(t, expectedCountPtr, result)
-}
-
-func TestCountAllTopups_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	expectedError := fmt.Errorf("database error")
-	mockRepo.EXPECT().CountAllTopups().Return(nil, expectedError)
-
-	result, err := mockRepo.CountAllTopups()
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "database error")
-}
-
-func TestCreateTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	request := requests.CreateTopupRequest{
-		CardNumber:  "1234",
-		TopupNo:     "TOPUP001",
-		TopupAmount: 100000,
-		TopupMethod: "Bank Transfer",
+func (suite *TopupRepositorySuite) TestGetMonthlyTopupMethods_Success() {
+	year := 2024
+	monthlyMethods := []*record.TopupMonthMethod{
+		{Month: "2024-01", TopupMethod: "bank_transfer", TotalTopups: 50, TotalAmount: 5000000},
+		{Month: "2024-01", TopupMethod: "ewallet", TotalTopups: 50, TotalAmount: 5000000},
 	}
 
-	expectedTopup := &record.TopupRecord{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupNo:     "TOPUP001",
-		TopupAmount: 100000,
-		TopupMethod: "Bank Transfer",
-		TopupTime:   "2024-12-25T10:00:00Z",
-		CreatedAt:   "2024-12-25T10:00:00Z",
-		UpdatedAt:   "2024-12-25T10:00:00Z",
+	suite.mockRepo.EXPECT().GetMonthlyTopupMethods(year).Return(monthlyMethods, nil)
+
+	result, err := suite.mockRepo.GetMonthlyTopupMethods(year)
+
+	suite.NoError(err)
+	suite.Equal(monthlyMethods, result)
+}
+
+func (suite *TopupRepositorySuite) TestGetYearlyTopupAmounts_Success() {
+	year := 2023
+	yearlyAmounts := []*record.TopupYearlyAmount{
+		{Year: "2023", TotalAmount: 120000000},
 	}
 
-	mockRepo.EXPECT().CreateTopup(&request).Return(expectedTopup, nil)
+	suite.mockRepo.EXPECT().GetYearlyTopupAmounts(year).Return(yearlyAmounts, nil)
 
-	result, err := mockRepo.CreateTopup(&request)
+	result, err := suite.mockRepo.GetYearlyTopupAmounts(year)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTopup, result)
+	suite.NoError(err)
+	suite.Equal(yearlyAmounts, result)
 }
 
-func TestCreateTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	request := requests.CreateTopupRequest{
-		CardNumber:  "1234",
-		TopupNo:     "TOPUP001",
-		TopupAmount: 100000,
-		TopupMethod: "Bank Transfer",
+func (suite *TopupRepositorySuite) TestGetMonthlyTopupMethodsByCardNumber_Success() {
+	req := &requests.YearMonthMethod{CardNumber: "1111-xxxx", Year: 2024}
+	monthlyMethods := []*record.TopupMonthMethod{
+		{Month: "2024-01", TopupMethod: "bank_transfer", TotalTopups: 5, TotalAmount: 500000},
 	}
 
-	mockRepo.EXPECT().CreateTopup(&request).Return(nil, fmt.Errorf("database error"))
+	suite.mockRepo.EXPECT().GetMonthlyTopupMethodsByCardNumber(req).Return(monthlyMethods, nil)
 
-	result, err := mockRepo.CreateTopup(&request)
+	result, err := suite.mockRepo.GetMonthlyTopupMethodsByCardNumber(req)
 
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "database error")
+	suite.NoError(err)
+	suite.Equal(monthlyMethods, result)
 }
 
-func TestCreateTopup_ValidationError(t *testing.T) {
-	request := requests.CreateTopupRequest{
-		CardNumber:  "",
-		TopupNo:     "",
-		TopupAmount: 0,
-		TopupMethod: "",
+func (suite *TopupRepositorySuite) TestGetYearlyTopupAmountsByCardNumber_Success() {
+	req := &requests.YearMonthMethod{CardNumber: "1111-xxxx", Year: 2023}
+	yearlyAmounts := []*record.TopupYearlyAmount{
+		{Year: "2023", TotalAmount: 12000000},
 	}
 
-	err := request.Validate()
+	suite.mockRepo.EXPECT().GetYearlyTopupAmountsByCardNumber(req).Return(yearlyAmounts, nil)
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Field validation for 'CardNumber' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'TopupNo' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'TopupAmount' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'TopupMethod' failed on the 'required' tag")
+	result, err := suite.mockRepo.GetYearlyTopupAmountsByCardNumber(req)
+
+	suite.NoError(err)
+	suite.Equal(yearlyAmounts, result)
 }
 
-func TestUpdateTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	request := requests.UpdateTopupRequest{
-		CardNumber:  "1234",
-		TopupID:     1,
-		TopupAmount: 200000,
-		TopupMethod: "Bank Transfer",
-	}
-
-	expectedTopup := &record.TopupRecord{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupNo:     "TOPUP001",
-		TopupAmount: 200000,
-		TopupMethod: "Bank Transfer",
-		TopupTime:   "2024-12-25T10:00:00Z",
-		CreatedAt:   "2024-12-25T10:00:00Z",
-		UpdatedAt:   "2024-12-25T10:10:00Z",
-	}
-
-	mockRepo.EXPECT().UpdateTopup(&request).Return(expectedTopup, nil)
-
-	result, err := mockRepo.UpdateTopup(&request)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTopup, result)
-}
-
-func TestUpdateTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	request := requests.UpdateTopupRequest{
-		CardNumber:  "1234",
-		TopupID:     1,
-		TopupAmount: 200000,
-		TopupMethod: "Bank Transfer",
-	}
-
-	mockRepo.EXPECT().UpdateTopup(&request).Return(nil, fmt.Errorf("failed to update topup"))
-
-	result, err := mockRepo.UpdateTopup(&request)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "failed to update topup")
-}
-
-func TestUpdateTopup_ValidationError(t *testing.T) {
-	request := requests.UpdateTopupRequest{
-		CardNumber:  "",
-		TopupID:     0,
-		TopupAmount: 0,
-		TopupMethod: "",
-	}
-
-	err := request.Validate()
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Field validation for 'CardNumber' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'TopupID' failed on the 'required' tag")
-
-	assert.Contains(t, err.Error(), "Field validation for 'TopupAmount' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'TopupMethod' failed on the 'required' tag")
-}
-
-func TestUpdateTopupAmount_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	request := requests.UpdateTopupAmount{
-		TopupID:     1,
-		TopupAmount: 150000,
-	}
-
-	expectedTopup := &record.TopupRecord{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupNo:     "TOPUP001",
-		TopupAmount: 150000,
-		TopupMethod: "Bank Transfer",
-		TopupTime:   "2024-12-25T12:00:00Z",
-		CreatedAt:   "2024-12-25T10:00:00Z",
-		UpdatedAt:   "2024-12-25T12:00:00Z",
-	}
-
-	mockRepo.EXPECT().UpdateTopupAmount(&request).Return(expectedTopup, nil)
-
-	result, err := mockRepo.UpdateTopupAmount(&request)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTopup.TopupAmount, result.TopupAmount)
-	assert.Equal(t, expectedTopup.ID, result.ID)
-}
-
-func TestUpdateTopupAmount_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	request := requests.UpdateTopupAmount{
-		TopupID:     1,
-		TopupAmount: 150000,
-	}
-
-	mockRepo.EXPECT().UpdateTopupAmount(&request).Return(nil, fmt.Errorf("failed to update topup amount"))
-
-	result, err := mockRepo.UpdateTopupAmount(&request)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "failed to update topup amount")
-}
-
-func TestUpdateTopupAmount_ValidationError(t *testing.T) {
-	request := requests.UpdateTopupAmount{
-		TopupID:     0,
-		TopupAmount: 0,
-	}
-
-	err := request.Validate()
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Field validation for 'TopupID' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'TopupAmount' failed on the 'required' tag")
-}
-
-func TestTrashedTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	expectedTopup := &record.TopupRecord{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupNo:     "TOPUP001",
-		TopupAmount: 150000,
-		TopupMethod: "Bank Transfer",
-		TopupTime:   "2024-12-25T12:00:00Z",
-		CreatedAt:   "2024-12-25T10:00:00Z",
-		UpdatedAt:   "2024-12-25T12:00:00Z",
-		DeletedAt:   new(string),
-	}
-
-	mockRepo.EXPECT().TrashedTopup(1).Return(expectedTopup, nil)
-
-	result, err := mockRepo.TrashedTopup(1)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTopup.ID, result.ID)
-	assert.NotNil(t, result.DeletedAt)
-}
-
-func TestTrashedTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	mockRepo.EXPECT().TrashedTopup(1).Return(nil, fmt.Errorf("failed to trash topup"))
-
-	result, err := mockRepo.TrashedTopup(1)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "failed to trash topup")
-}
-
-func TestRestoreTopup_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	expectedTopup := &record.TopupRecord{
-		ID:          1,
-		CardNumber:  "1234",
-		TopupNo:     "TOPUP001",
-		TopupAmount: 150000,
-		TopupMethod: "Bank Transfer",
-		TopupTime:   "2024-12-25T12:00:00Z",
-		CreatedAt:   "2024-12-25T10:00:00Z",
-		UpdatedAt:   "2024-12-25T12:00:00Z",
-		DeletedAt:   nil,
-	}
-
-	mockRepo.EXPECT().RestoreTopup(1).Return(expectedTopup, nil)
-
-	result, err := mockRepo.RestoreTopup(1)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedTopup.ID, result.ID)
-	assert.Nil(t, result.DeletedAt)
-}
-
-func TestRestoreTopup_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	mockRepo.EXPECT().RestoreTopup(1).Return(nil, fmt.Errorf("failed to restore topup"))
-
-	result, err := mockRepo.RestoreTopup(1)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "failed to restore topup")
-}
-
-func TestDeleteTopupPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	mockRepo.EXPECT().DeleteTopupPermanent(1).Return(nil)
-
-	err := mockRepo.DeleteTopupPermanent(1)
-
-	assert.NoError(t, err)
-}
-
-func TestDeleteTopupPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockTopupRepository(ctrl)
-
-	mockRepo.EXPECT().DeleteTopupPermanent(1).Return(fmt.Errorf("failed to delete topup permanently"))
-
-	err := mockRepo.DeleteTopupPermanent(1)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to delete topup permanently")
+func TestTopupRepositorySuite(t *testing.T) {
+	suite.Run(t, new(TopupRepositorySuite))
 }

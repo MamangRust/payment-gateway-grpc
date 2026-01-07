@@ -92,6 +92,14 @@ func (m *transactionResponseMapper) ToApiResponseTransaction(pbResponse *pb.ApiR
 	}
 }
 
+func (m *transactionResponseMapper) ToApiResponseTransactionDeleteAt(pbResponse *pb.ApiResponseTransactionDeleteAt) *response.ApiResponseTransactionDeleteAt {
+	return &response.ApiResponseTransactionDeleteAt{
+		Status:  pbResponse.Status,
+		Message: pbResponse.Message,
+		Data:    m.mapResponseTransactionDeleteAt(pbResponse.Data),
+	}
+}
+
 func (m *transactionResponseMapper) ToApiResponseTransactions(pbResponse *pb.ApiResponseTransactions) *response.ApiResponseTransactions {
 
 	return &response.ApiResponseTransactions{

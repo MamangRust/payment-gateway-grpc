@@ -1,1640 +1,729 @@
 package test
 
 import (
-	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	"MamangRust/paymentgatewaygrpc/internal/handler/api"
-	"MamangRust/paymentgatewaygrpc/internal/middlewares"
-	"MamangRust/paymentgatewaygrpc/internal/pb"
-	mock_pb "MamangRust/paymentgatewaygrpc/internal/pb/mocks"
-	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
-	"MamangRust/paymentgatewaygrpc/tests/utils"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
+	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
+	"MamangRust/paymentgatewaygrpc/internal/domain/response"
+	"MamangRust/paymentgatewaygrpc/internal/handler/api"
+	mock_apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api/mocks"
+	"MamangRust/paymentgatewaygrpc/internal/pb"
+	mock_pb "MamangRust/paymentgatewaygrpc/internal/pb/mocks"
+	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
+
 	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func TestFindAllTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+type TransactionHandlerTestSuite struct {
+	suite.Suite
+	Ctrl                  *gomock.Controller
+	MockMerchantClient    *mock_pb.MockMerchantServiceClient
+	MockTransactionClient *mock_pb.MockTransactionServiceClient
+	MockLogger            *mock_logger.MockLoggerInterface
+	MockMapper            *mock_apimapper.MockTransactionResponseMapper
+	E                     *echo.Echo
+	Handler               *api.TransactionHandleApi
+}
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+func (suite *TransactionHandlerTestSuite) SetupTest() {
+	suite.Ctrl = gomock.NewController(suite.T())
+	suite.MockTransactionClient = mock_pb.NewMockTransactionServiceClient(suite.Ctrl)
+	suite.MockMerchantClient = mock_pb.NewMockMerchantServiceClient(suite.Ctrl)
+	suite.MockLogger = mock_logger.NewMockLoggerInterface(suite.Ctrl)
+	suite.MockMapper = mock_apimapper.NewMockTransactionResponseMapper(suite.Ctrl)
+	suite.E = echo.New()
+	suite.Handler = api.NewHandlerTransaction(suite.MockTransactionClient, suite.MockMerchantClient, suite.E, suite.MockLogger, suite.MockMapper)
+}
 
-	expectedResponse := &pb.ApiResponsePaginationTransaction{
+func (suite *TransactionHandlerTestSuite) TearDownTest() {
+	suite.Ctrl.Finish()
+}
+
+func (suite *TransactionHandlerTestSuite) TestFindAllTransaction_Success() {
+	grpcResponse := &pb.ApiResponsePaginationTransaction{
 		Status:  "success",
 		Message: "Transactions retrieved successfully",
 		Data: []*pb.TransactionResponse{
-			{
-				Id:         1,
-				CardNumber: "1234567890123456",
-			},
-			{
-				Id:         2,
-				CardNumber: "1234567890123457",
-			},
+			{Id: 1, TransactionNo: "TX123", CardNumber: "1234", Amount: 100000},
+			{Id: 2, TransactionNo: "TX124", CardNumber: "5678", Amount: 200000},
 		},
-		Pagination: &pb.PaginationMeta{
-			CurrentPage: 1,
-			PageSize:    2,
-			TotalPages:  1,
-		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 2, TotalPages: 1},
+	}
+	expectedApiResponse := &response.ApiResponsePaginationTransaction{
+		Status:     grpcResponse.Status,
+		Message:    grpcResponse.Message,
+		Data:       []*response.TransactionResponse{{ID: 1, TransactionNo: "TX123", CardNumber: "1234", Amount: 100000}, {ID: 2, TransactionNo: "TX124", CardNumber: "5678", Amount: 200000}},
+		Pagination: &response.PaginationMeta{CurrentPage: 1, PageSize: 2, TotalPages: 1},
 	}
 
-	mockTransactionClient.EXPECT().
-		FindAllTransaction(
-			gomock.Any(),
-			&pb.FindAllTransactionRequest{
-				Page:     1,
-				PageSize: 10,
-				Search:   "",
-			},
-		).
-		Return(expectedResponse, nil)
+	suite.MockTransactionClient.EXPECT().FindAllTransaction(gomock.Any(), &pb.FindAllTransactionRequest{Page: 1, PageSize: 10, Search: "test"}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationTransaction(grpcResponse).Return(expectedApiResponse)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/transactions?page=1&page_size=10", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/transactions?page=1&page_size=10&search=test", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
+	err := suite.Handler.FindAll(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err := handler.FindAll(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsePaginationTransaction
+	var resp response.ApiResponsePaginationTransaction
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Transactions retrieved successfully", resp.Message)
-	assert.Len(t, resp.Data, 2)
+	suite.NoError(err)
+	suite.Equal("success", resp.Status)
+	suite.Len(resp.Data, 2)
 }
 
-func TestFindAllTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestFindAllTransaction_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTransactionClient.EXPECT().FindAllTransaction(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve transaction data", zap.Error(grpcError)).Times(1)
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockTransactionClient.EXPECT().
-		FindAllTransaction(
-			gomock.Any(),
-			&pb.FindAllTransactionRequest{
-				Page:     1,
-				PageSize: 10,
-				Search:   "",
-			},
-		).
-		Return(nil, fmt.Errorf("some internal error"))
-
-	mockLogger.EXPECT().Debug("Failed to retrieve transaction data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/transactions?page=1&page_size=10", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/transactions", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-
-	err := handler.FindAll(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to retrieve transaction data: ", resp.Message)
+	err := suite.Handler.FindAll(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestFindAllTransaction_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	expectedResponse := &pb.ApiResponsePaginationTransaction{
-		Status:  "success",
-		Message: "No transactions found",
-		Data:    []*pb.TransactionResponse{},
-		Pagination: &pb.PaginationMeta{
-			CurrentPage: 1,
-			PageSize:    10,
-			TotalPages:  1,
-		},
-	}
-
-	mockTransactionClient.EXPECT().
-		FindAllTransaction(
-			gomock.Any(),
-			&pb.FindAllTransactionRequest{
-				Page:     1,
-				PageSize: 10,
-				Search:   "",
-			},
-		).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/transactions?page=1&page_size=10", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-
-	err := handler.FindAll(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsePaginationTransaction
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "No transactions found", resp.Message)
-	assert.Len(t, resp.Data, 0)
-}
-
-func TestFindById_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	id := 1
-	expectedGRPCResponse := &pb.ApiResponseTransaction{
-		Status:  "success",
-		Message: "Transaction retrieved successfully",
-		Data: &pb.TransactionResponse{
-			Id:         1,
-			CardNumber: "1234567890123456",
-		},
-	}
-
-	mockTransactionClient.EXPECT().
-		FindByIdTransaction(gomock.Any(), &pb.FindByIdTransactionRequest{TransactionId: int32(id)}).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/transaction/%d", id), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues(fmt.Sprint(id))
-
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-
-	err := handler.FindById(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTransaction
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Transaction retrieved successfully", resp.Message)
-	assert.Equal(t, int32(1), resp.Data.Id)
-}
-
-func TestFindById_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	id := 1
-	mockTransactionClient.EXPECT().
-		FindByIdTransaction(gomock.Any(), &pb.FindByIdTransactionRequest{TransactionId: int32(id)}).
-		Return(nil, errors.New("internal server error")).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to retrieve transaction data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/transaction/%d", id), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues(fmt.Sprint(id))
-
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-
-	err := handler.FindById(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to retrieve transaction data")
-}
-
-func TestFindById_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	invalidID := "abc"
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/transaction/%s", invalidID), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues(invalidID)
-
-	mockLogger.EXPECT().Debug("Invalid transaction ID", gomock.Any()).Times(1)
-
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-
-	err := handler.FindById(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Bad Request: Invalid ID")
-}
-
-func TestFindByCardNumberTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
+func (suite *TransactionHandlerTestSuite) TestFindAllTransactionByCardNumber_Success() {
 	cardNumber := "1234567890123456"
-
-	expectedGRPCResponse := &pb.ApiResponseTransactions{
+	grpcResponse := &pb.ApiResponsePaginationTransaction{
 		Status:  "success",
-		Message: "Transaction retrieved successfully",
+		Message: "Transactions for card retrieved successfully",
 		Data: []*pb.TransactionResponse{
-			{
-				Id:         1,
-				CardNumber: cardNumber,
-			},
-			{
-				Id:         2,
-				CardNumber: "1234567890123457",
-			},
+			{Id: 1, TransactionNo: "TX123", CardNumber: cardNumber, Amount: 100000},
 		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 1, TotalPages: 1},
+	}
+	expectedApiResponse := &response.ApiResponsePaginationTransaction{
+		Status:     grpcResponse.Status,
+		Message:    grpcResponse.Message,
+		Data:       []*response.TransactionResponse{{ID: 1, TransactionNo: "TX123", CardNumber: cardNumber, Amount: 100000}},
+		Pagination: &response.PaginationMeta{CurrentPage: 1, PageSize: 1, TotalPages: 1},
 	}
 
-	mockTransactionClient.EXPECT().
-		FindByCardNumberTransaction(gomock.Any(), &pb.FindByCardNumberTransactionRequest{CardNumber: cardNumber}).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
+	suite.MockTransactionClient.EXPECT().FindAllTransactionByCardNumber(gomock.Any(), &pb.FindAllTransactionCardNumberRequest{CardNumber: cardNumber, Page: 1, PageSize: 10, Search: ""}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationTransaction(grpcResponse).Return(expectedApiResponse)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/transaction?card_number="+cardNumber, nil)
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/transactions/card-number/%s?page=1&page_size=10", cardNumber), nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("card_number")
+	c.SetParamValues(cardNumber)
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
+	err := suite.Handler.FindAllTransactionByCardNumber(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err := handler.FindByCardNumber(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTransactions
+	var resp response.ApiResponsePaginationTransaction
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Transaction retrieved successfully", resp.Message)
-	assert.Equal(t, cardNumber, resp.Data[0].CardNumber)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
 }
 
-func TestFindByCardNumberTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
+func (suite *TransactionHandlerTestSuite) TestFindAllTransactionByCardNumber_Failure() {
 	cardNumber := "1234567890123456"
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTransactionClient.EXPECT().FindAllTransactionByCardNumber(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve transaction data", zap.Error(grpcError)).Times(1)
 
-	mockTransactionClient.EXPECT().
-		FindByCardNumberTransaction(gomock.Any(), &pb.FindByCardNumberTransactionRequest{CardNumber: cardNumber}).
-		Return(nil, errors.New("internal server error")).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to retrieve transaction data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/transaction?card_number="+cardNumber, nil)
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/transactions/card-number/%s", cardNumber), nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("card_number")
+	c.SetParamValues(cardNumber)
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByCardNumber(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to retrieve transaction data")
+	err := suite.Handler.FindAllTransactionByCardNumber(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestFindByTransactionMerchantId_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestFindByIdTransaction_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseTransaction{Status: "success", Data: &pb.TransactionResponse{Id: int32(id), TransactionNo: "TX123", CardNumber: "1234", Amount: 100000}}
+	expectedApiResponse := &response.ApiResponseTransaction{Status: "success", Data: &response.TransactionResponse{ID: id, TransactionNo: "TX123", CardNumber: "1234", Amount: 100000}}
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
+	suite.MockTransactionClient.EXPECT().FindByIdTransaction(gomock.Any(), &pb.FindByIdTransactionRequest{TransactionId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTransaction(grpcResponse).Return(expectedApiResponse)
 
-	merchantId := 12345
-	expectedGRPCResponse := &pb.ApiResponseTransactions{
-		Status:  "success",
-		Message: "Transaction retrieved successfully",
+	req := httptest.NewRequest(http.MethodGet, "/api/transactions/1", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("1")
+
+	err := suite.Handler.FindById(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponseTransaction
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Equal(int(id), resp.Data.ID)
+}
+
+func (suite *TransactionHandlerTestSuite) TestFindByIdTransaction_InvalidID() {
+	req := httptest.NewRequest(http.MethodGet, "/api/transactions/abc", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("abc")
+
+	suite.MockLogger.EXPECT().
+		Debug("Invalid transaction ID", gomock.Any()).
+		Times(1)
+
+	err := suite.Handler.FindById(c)
+
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
+}
+
+func (suite *TransactionHandlerTestSuite) TestFindTransactionByMerchantId_Success() {
+	merchantId := 1
+
+	grpcResponse := &pb.ApiResponseTransactions{
+		Status: "success",
 		Data: []*pb.TransactionResponse{
-			{
-				Id:         1,
-				CardNumber: "1234567890123456",
-			},
-			{
-				Id:         2,
-				CardNumber: "1234567890123457",
-			},
+			{Id: 1, TransactionNo: "TX123", MerchantId: int32(merchantId)},
 		},
 	}
 
-	mockTransactionClient.EXPECT().
-		FindTransactionByMerchantId(gomock.Any(), &pb.FindTransactionByMerchantIdRequest{MerchantId: int32(merchantId)}).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/transaction?merchant_id=12345", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByTransactionMerchantId(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTransactions
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Transaction retrieved successfully", resp.Message)
-	assert.Equal(t, "1234567890123456", resp.Data[0].CardNumber)
-}
-
-func TestFindByTransactionMerchantId_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	merchantId := 12345
-
-	mockTransactionClient.EXPECT().
-		FindTransactionByMerchantId(gomock.Any(), &pb.FindTransactionByMerchantIdRequest{MerchantId: int32(merchantId)}).
-		Return(nil, errors.New("internal server error")).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to retrieve transaction data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/transaction?merchant_id=12345", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByTransactionMerchantId(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to retrieve transaction data")
-}
-
-func TestFindByTransactionMerchantId_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/transaction?merchant_id=invalid_id", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByTransactionMerchantId(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Bad Request: Invalid ID", resp.Message)
-}
-
-func TestFindByActiveTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	expectedGRPCResponse := &pb.ApiResponsePaginationTransactionDeleteAt{
-		Status:  "success",
-		Message: "Transaction retrieved successfully",
-		Data: []*pb.TransactionResponseDeleteAt{
-			{
-				Id:         1,
-				CardNumber: "1234567890123456",
-			},
-			{
-				Id:         2,
-				CardNumber: "1234567890123457",
-			},
-		},
-	}
-	request := &pb.FindAllTransactionRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockTransactionClient.EXPECT().
-		FindByActiveTransaction(gomock.Any(), request).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/transaction/active", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByActiveTransaction(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTransactions
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Transaction retrieved successfully", resp.Message)
-	assert.Len(t, resp.Data, 2)
-	assert.Equal(t, int32(1), resp.Data[0].Id)
-	assert.Equal(t, "1234567890123456", resp.Data[0].CardNumber)
-}
-
-func TestFindByActiveTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	request := &pb.FindAllTransactionRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockTransactionClient.EXPECT().
-		FindByActiveTransaction(gomock.Any(), request).
-		Return(nil, errors.New("internal server error")).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to retrieve transaction data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/transaction/active", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByActiveTransaction(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to retrieve transaction data")
-}
-
-func TestFindByActiveTransaction_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	request := &pb.FindAllTransactionRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	expectedGRPCResponse := &pb.ApiResponsePaginationTransactionDeleteAt{
-		Status:  "success",
-		Message: "Transaction retrieved successfully",
-		Data:    []*pb.TransactionResponseDeleteAt{},
-	}
-
-	mockTransactionClient.EXPECT().
-		FindByActiveTransaction(gomock.Any(), request).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/transaction/active", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByActiveTransaction(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTransactions
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Transaction retrieved successfully", resp.Message)
-	assert.Len(t, resp.Data, 0)
-}
-
-func TestFindByTrashedTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	request := &pb.FindAllTransactionRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	expectedGRPCResponse := &pb.ApiResponsePaginationTransactionDeleteAt{
-		Status:  "success",
-		Message: "Trashed transactions retrieved successfully",
-		Data: []*pb.TransactionResponseDeleteAt{
-			{
-				Id:         1,
-				CardNumber: "1234567890123456",
-			},
-			{
-				Id:         2,
-				CardNumber: "1234567890123457",
-			},
+	expectedApiResponse := &response.ApiResponseTransactions{
+		Status: "success",
+		Data: []*response.TransactionResponse{
+			{ID: 1, TransactionNo: "TX123", MerchantID: merchantId},
 		},
 	}
 
-	mockTransactionClient.EXPECT().
-		FindByTrashedTransaction(gomock.Any(), request).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
+	suite.MockTransactionClient.EXPECT().
+		FindTransactionByMerchantId(
+			gomock.Any(),
+			&pb.FindTransactionByMerchantIdRequest{MerchantId: int32(merchantId)},
+		).
+		Return(grpcResponse, nil)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/transaction/trashed", nil)
+	suite.MockMapper.EXPECT().
+		ToApiResponseTransactions(grpcResponse).
+		Return(expectedApiResponse)
+
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"/api/transactions/merchant/1",
+		nil,
+	)
+
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("merchant_id")
+	c.SetParamValues("1")
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
+	err := suite.Handler.FindByTransactionMerchantId(c)
 
-	err := handler.FindByTrashedTransaction(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	var resp pb.ApiResponseTransactions
+	var resp response.ApiResponseTransactions
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Trashed transactions retrieved successfully", resp.Message)
-	assert.Len(t, resp.Data, 2)
-	assert.Equal(t, int32(1), resp.Data[0].Id)
-	assert.Equal(t, "1234567890123456", resp.Data[0].CardNumber)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
 }
 
-func TestFindByTrashedTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestFindTransactionByMerchantId_Failure() {
+	merchantId := 1
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTransactionClient.EXPECT().FindTransactionByMerchantId(gomock.Any(), &pb.FindTransactionByMerchantIdRequest{MerchantId: int32(merchantId)}).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve transaction data", zap.Error(grpcError)).Times(1)
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	request := &pb.FindAllTransactionRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockTransactionClient.EXPECT().
-		FindByTrashedTransaction(gomock.Any(), request).
-		Return(nil, errors.New("internal server error")).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to retrieve transaction data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/transaction/trashed", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/transactions/merchant/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("merchant_id")
+	c.SetParamValues("1")
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByTrashedTransaction(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to retrieve transaction data")
+	err := suite.Handler.FindByTransactionMerchantId(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestFindByTrashedTransaction_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestFindByActiveTransaction_Success() {
+	grpcResponse := &pb.ApiResponsePaginationTransactionDeleteAt{Status: "success", Data: []*pb.TransactionResponseDeleteAt{{Id: 1, TransactionNo: "TX123"}}}
+	expectedApiResponse := &response.ApiResponsePaginationTransactionDeleteAt{Status: "success", Data: []*response.TransactionResponseDeleteAt{{ID: 1, TransactionNo: "TX123"}}}
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
+	suite.MockTransactionClient.EXPECT().FindByActiveTransaction(gomock.Any(), &pb.FindAllTransactionRequest{Page: 1, PageSize: 10, Search: ""}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationTransactionDeleteAt(grpcResponse).Return(expectedApiResponse)
 
-	expectedGRPCResponse := &pb.ApiResponsePaginationTransactionDeleteAt{
-		Status:  "success",
-		Message: "Trashed transactions retrieved successfully",
-		Data:    []*pb.TransactionResponseDeleteAt{},
-	}
-	request := &pb.FindAllTransactionRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockTransactionClient.EXPECT().
-		FindByTrashedTransaction(gomock.Any(), request).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/transaction/trashed", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/transactions/active", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
+	err := suite.Handler.FindByActiveTransaction(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err := handler.FindByTrashedTransaction(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTransactions
+	var resp response.ApiResponsePaginationTransactionDeleteAt
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Trashed transactions retrieved successfully", resp.Message)
-	assert.Len(t, resp.Data, 0)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
 }
 
-func TestCreateTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestFindByActiveTransaction_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTransactionClient.EXPECT().FindByActiveTransaction(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve transaction data", zap.Error(grpcError)).Times(1)
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
+	req := httptest.NewRequest(http.MethodGet, "/api/transactions/active", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
 
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
+	err := suite.Handler.FindByActiveTransaction(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
 
-	body := requests.CreateTransactionRequest{
+func (suite *TransactionHandlerTestSuite) TestFindByTrashedTransaction_Success() {
+	grpcResponse := &pb.ApiResponsePaginationTransactionDeleteAt{Status: "success", Data: []*pb.TransactionResponseDeleteAt{{Id: 2, TransactionNo: "TX999"}}}
+	expectedApiResponse := &response.ApiResponsePaginationTransactionDeleteAt{Status: "success", Data: []*response.TransactionResponseDeleteAt{{ID: 2, TransactionNo: "TX999"}}}
+
+	suite.MockTransactionClient.EXPECT().FindByTrashedTransaction(gomock.Any(), &pb.FindAllTransactionRequest{Page: 1, PageSize: 10, Search: ""}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationTransactionDeleteAt(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/transactions/trashed", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.FindByTrashedTransaction(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponsePaginationTransactionDeleteAt
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
+}
+
+func (suite *TransactionHandlerTestSuite) TestFindByTrashedTransaction_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTransactionClient.EXPECT().FindByTrashedTransaction(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve transaction data", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/transactions/trashed", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.FindByTrashedTransaction(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *TransactionHandlerTestSuite) TestCreateTransaction_Success() {
+	transactionTime := time.Now()
+	id := 1
+	apiKey := "test-api-key"
+
+	requestBody := requests.CreateTransactionRequest{
 		CardNumber:      "1234567890123456",
-		Amount:          1000000,
-		PaymentMethod:   "mandiri",
-		MerchantID:      utils.PtrInt(1),
-		TransactionTime: time.Now(),
+		Amount:          150000,
+		PaymentMethod:   "alfamart",
+		MerchantID:      &id,
+		TransactionTime: transactionTime,
 	}
 
-	mockMerchantClient.EXPECT().
-		FindByApiKey(gomock.Any(), &pb.FindByApiKeyRequest{
-			ApiKey: "test-api-key",
-		}).
-		Return(&pb.ApiResponseMerchant{
-			Status:  "success",
-			Message: "Merchant found successfully",
-			Data: &pb.MerchantResponse{
-				Id:   1,
-				Name: "test-merchant",
-			},
-		}, nil).
-		Times(1)
-
-	expectedGRPCRequest := &pb.CreateTransactionRequest{
-		CardNumber:      body.CardNumber,
-		Amount:          int32(body.Amount),
-		PaymentMethod:   body.PaymentMethod,
-		MerchantId:      int32(*body.MerchantID),
-		TransactionTime: timestamppb.New(body.TransactionTime),
-		ApiKey:          "test-api-key",
+	grpcRequest := &pb.CreateTransactionRequest{
+		ApiKey:          apiKey,
+		CardNumber:      requestBody.CardNumber,
+		Amount:          int32(requestBody.Amount),
+		PaymentMethod:   requestBody.PaymentMethod,
+		MerchantId:      int32(*requestBody.MerchantID),
+		TransactionTime: timestamppb.New(transactionTime),
 	}
 
-	expectedGRPCResponse := &pb.ApiResponseTransaction{
-		Status:  "success",
-		Message: "Transaction created successfully",
+	grpcResponse := &pb.ApiResponseTransaction{
+		Status: "success",
 		Data: &pb.TransactionResponse{
-			Id:         1,
-			CardNumber: "1234567890123456",
-			Amount:     1000,
+			Id:            3,
+			TransactionNo: "TX125",
+			CardNumber:    requestBody.CardNumber,
+			Amount:        int32(requestBody.Amount),
 		},
 	}
 
-	mockTransactionClient.EXPECT().
-		CreateTransaction(gomock.Any(), expectedGRPCRequest).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
+	expectedApiResponse := &response.ApiResponseTransaction{
+		Status: "success",
+		Data: &response.TransactionResponse{
+			ID:            3,
+			TransactionNo: "TX125",
+			CardNumber:    requestBody.CardNumber,
+			Amount:        requestBody.Amount,
+		},
+	}
 
-	e := echo.New()
-	reqBody, err := json.Marshal(body)
-	assert.NoError(t, err)
+	suite.MockTransactionClient.EXPECT().CreateTransaction(gomock.Any(), grpcRequest).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTransaction(grpcResponse).Return(expectedApiResponse)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/transaction", bytes.NewBuffer(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Api-Key", "test-api-key")
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/transactions/create", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
+	c.Set("apiKey", apiKey)
 
-	middleware := middlewares.ApiKeyMiddleware(mockMerchantClient)
-	h := middleware(handler.Create)
+	err := suite.Handler.Create(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err = h(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTransaction
+	var resp response.ApiResponseTransaction
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Transaction created successfully", resp.Message)
+	suite.NoError(err)
+	suite.Equal("TX125", resp.Data.TransactionNo)
 }
 
-func TestCreateTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestCreateTransaction_Failure() {
+	id := 1
+	apiKey := "test-api-key"
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
-
-	body := requests.CreateTransactionRequest{
+	requestBody := requests.CreateTransactionRequest{
 		CardNumber:      "1234567890123456",
-		Amount:          1000000,
-		PaymentMethod:   "mandiri",
-		MerchantID:      utils.PtrInt(1),
+		Amount:          150000,
+		PaymentMethod:   "alfamart",
+		MerchantID:      &id,
 		TransactionTime: time.Now(),
 	}
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTransactionClient.EXPECT().CreateTransaction(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to create transaction", zap.Error(grpcError)).Times(1)
 
-	mockMerchantClient.EXPECT().
-		FindByApiKey(gomock.Any(), &pb.FindByApiKeyRequest{
-			ApiKey: "test-api-key",
-		}).
-		Return(&pb.ApiResponseMerchant{
-			Status:  "success",
-			Message: "Merchant found successfully",
-			Data: &pb.MerchantResponse{
-				Id:   1,
-				Name: "test-merchant",
-			},
-		}, nil).
-		Times(1)
-
-	expectedGRPCRequest := &pb.CreateTransactionRequest{
-		CardNumber:      body.CardNumber,
-		Amount:          int32(body.Amount),
-		PaymentMethod:   body.PaymentMethod,
-		MerchantId:      int32(*body.MerchantID),
-		TransactionTime: timestamppb.New(body.TransactionTime),
-		ApiKey:          "test-api-key",
-	}
-
-	mockTransactionClient.EXPECT().
-		CreateTransaction(gomock.Any(), expectedGRPCRequest).
-		Return(nil, errors.New("gRPC error")).
-		Times(1)
-
-	e := echo.New()
-	reqBody, err := json.Marshal(body)
-	assert.NoError(t, err)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/transaction", bytes.NewBuffer(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Api-Key", "test-api-key")
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/transactions/create", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
+	c.Set("apiKey", apiKey)
 
-	middleware := middlewares.ApiKeyMiddleware(mockMerchantClient)
-	h := middleware(handler.Create)
-
-	err = h(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to create transaction: ", resp.Message)
+	err := suite.Handler.Create(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestCreateTransaction_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestCreateTransaction_ValidationError() {
+	apiKey := "test-api-key"
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
-
-	mockMerchantClient.EXPECT().
-		FindByApiKey(gomock.Any(), &pb.FindByApiKeyRequest{
-			ApiKey: "test-api-key",
-		}).
-		Return(&pb.ApiResponseMerchant{
-			Status:  "success",
-			Message: "Merchant found successfully",
-			Data: &pb.MerchantResponse{
-				Id:   1,
-				Name: "test-merchant",
-			},
-		}, nil).
-		Times(1)
-
-	body := requests.CreateTransactionRequest{
-		CardNumber:    "",
-		Amount:        0,
-		PaymentMethod: "",
+	invalidRequestBody := requests.CreateTransactionRequest{
+		CardNumber: "",
+		Amount:     40000,
 	}
 
-	e := echo.New()
-	reqBody, err := json.Marshal(body)
-	assert.NoError(t, err)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/transaction", bytes.NewBuffer(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Api-Key", "test-api-key")
+	bodyBytes, _ := json.Marshal(invalidRequestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/transactions/create", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
+	c.Set("apiKey", apiKey)
 
-	middleware := middlewares.ApiKeyMiddleware(mockMerchantClient)
-	h := middleware(handler.Create)
+	suite.MockLogger.EXPECT().
+		Debug("Validation Error", gomock.Any()).
+		Times(1)
 
-	err = h(c)
+	err := suite.Handler.Create(c)
 
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Validation Error")
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
 }
 
-func TestUpdateTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestUpdateTransaction_Success() {
+	id := 1
+	apiKey := "test-api-key"
+	transactionTime := time.Now()
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
-
-	body := requests.UpdateTransactionRequest{
-		TransactionID:   1,
+	requestBody := requests.UpdateTransactionRequest{
 		CardNumber:      "1234567890123456",
-		Amount:          1000000,
-		PaymentMethod:   "mandiri",
-		MerchantID:      utils.PtrInt(1),
-		TransactionTime: time.Now(),
+		Amount:          200000,
+		PaymentMethod:   "alfamart",
+		MerchantID:      &id,
+		TransactionTime: transactionTime,
 	}
 
-	mockMerchantClient.EXPECT().
-		FindByApiKey(gomock.Any(), &pb.FindByApiKeyRequest{
-			ApiKey: "test-api-key",
-		}).
-		Return(&pb.ApiResponseMerchant{
-			Status:  "success",
-			Message: "Merchant found successfully",
-			Data: &pb.MerchantResponse{
-				Id:   1,
-				Name: "test-merchant",
-			},
-		}, nil).
-		Times(1)
-
-	expectedGRPCRequest := &pb.UpdateTransactionRequest{
-		TransactionId:   int32(body.TransactionID),
-		CardNumber:      body.CardNumber,
-		Amount:          int32(body.Amount),
-		PaymentMethod:   body.PaymentMethod,
-		MerchantId:      int32(*body.MerchantID),
-		TransactionTime: timestamppb.New(body.TransactionTime),
-		ApiKey:          "test-api-key",
+	grpcRequest := &pb.UpdateTransactionRequest{
+		TransactionId:   int32(id),
+		CardNumber:      requestBody.CardNumber,
+		ApiKey:          apiKey,
+		Amount:          int32(requestBody.Amount),
+		PaymentMethod:   requestBody.PaymentMethod,
+		MerchantId:      int32(*requestBody.MerchantID),
+		TransactionTime: timestamppb.New(transactionTime),
 	}
 
-	expectedGRPCResponse := &pb.ApiResponseTransaction{
-		Status:  "success",
-		Message: "Transaction updated successfully",
+	grpcResponse := &pb.ApiResponseTransaction{
+		Status: "success",
 		Data: &pb.TransactionResponse{
-			Id:         1,
-			CardNumber: "1234567890123456",
-			Amount:     1000000,
+			Id:     int32(id),
+			Amount: int32(requestBody.Amount),
+		},
+	}
+	expectedApiResponse := &response.ApiResponseTransaction{
+		Status: "success",
+		Data: &response.TransactionResponse{
+			ID:     id,
+			Amount: requestBody.Amount,
 		},
 	}
 
-	mockTransactionClient.EXPECT().
-		UpdateTransaction(gomock.Any(), expectedGRPCRequest).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
+	suite.MockTransactionClient.EXPECT().UpdateTransaction(gomock.Any(), grpcRequest).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTransaction(grpcResponse).Return(expectedApiResponse)
 
-	e := echo.New()
-	e.POST("/api/transaction/update/:id", func(c echo.Context) error {
-		handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-		return handler.Update(c)
-	})
-
-	reqBody, err := json.Marshal(body)
-	assert.NoError(t, err)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/transaction/update/1", bytes.NewBuffer(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Api-Key", "test-api-key")
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/transactions/update/%d", id), bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-
-	c := e.NewContext(req, rec)
-	c.SetPath("/api/transaction/update/:id")
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
-	c.SetParamValues("1")
+	c.SetParamValues(strconv.Itoa(id))
 
-	middleware := middlewares.ApiKeyMiddleware(mockMerchantClient)
-	h := middleware(func(c echo.Context) error {
-		handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-		return handler.Update(c)
-	})
+	c.Set("apiKey", apiKey)
 
-	err = h(c)
+	err := suite.Handler.Update(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTransaction
+	var resp response.ApiResponseTransaction
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Transaction updated successfully", resp.Message)
+	suite.NoError(err)
+	suite.Equal(int(200000), resp.Data.Amount)
 }
 
-func TestUpdateTransaction_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
-
-	mockMerchantClient.EXPECT().
-		FindByApiKey(gomock.Any(), &pb.FindByApiKeyRequest{
-			ApiKey: "test-api-key",
-		}).
-		Return(&pb.ApiResponseMerchant{
-			Status:  "success",
-			Message: "Merchant found successfully",
-			Data: &pb.MerchantResponse{
-				Id:   1,
-				Name: "test-merchant",
-			},
-		}, nil).
+func (suite *TransactionHandlerTestSuite) TestUpdateTransaction_InvalidID() {
+	req := httptest.NewRequest(http.MethodPost, "/api/transactions/update/abc", nil)
+	suite.MockLogger.EXPECT().
+		Debug("Bad Request", gomock.Any()).
 		Times(1)
 
-	body := requests.UpdateTransactionRequest{
-		TransactionID:   0,
-		CardNumber:      "1234567890123456",
-		Amount:          1000000,
-		PaymentMethod:   "mandiri",
-		MerchantID:      utils.PtrInt(1),
-		TransactionTime: time.Now(),
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("abc")
+
+	err := suite.Handler.Update(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
+}
+
+func (suite *TransactionHandlerTestSuite) TestUpdateTransaction_ValidationError() {
+	id := 1
+	apiKey := "test-api-key"
+
+	invalidRequestBody := requests.UpdateTransactionRequest{
+		CardNumber: "",
+		Amount:     40000,
 	}
 
-	e := echo.New()
-	reqBody, err := json.Marshal(body)
-	assert.NoError(t, err)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/transaction/update/0", bytes.NewBuffer(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Api-Key", "test-api-key")
+	bodyBytes, _ := json.Marshal(invalidRequestBody)
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/transactions/update/%d", id), bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues(strconv.Itoa(id))
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
+	c.Set("apiKey", apiKey)
 
-	middleware := middlewares.ApiKeyMiddleware(mockMerchantClient)
-	h := middleware(handler.Update)
+	suite.MockLogger.EXPECT().
+		Debug("Validation Error", gomock.Any()).
+		Times(1)
 
-	err = h(c)
+	err := suite.Handler.Update(c)
 
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Bad Request: Invalid ID")
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
 }
 
-func TestUpdateTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestTrashedTransaction_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseTransactionDeleteAt{Status: "success", Data: &pb.TransactionResponseDeleteAt{Id: int32(id)}}
+	expectedApiResponse := &response.ApiResponseTransactionDeleteAt{Status: "success", Data: &response.TransactionResponseDeleteAt{ID: id}}
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
+	suite.MockTransactionClient.EXPECT().TrashedTransaction(gomock.Any(), &pb.FindByIdTransactionRequest{TransactionId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTransactionDeleteAt(grpcResponse).Return(expectedApiResponse)
 
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
-
-	body := requests.UpdateTransactionRequest{
-		TransactionID:   1,
-		CardNumber:      "1234567890123456",
-		Amount:          1000000,
-		PaymentMethod:   "mandiri",
-		MerchantID:      utils.PtrInt(1),
-		TransactionTime: time.Now(),
-	}
-
-	mockMerchantClient.EXPECT().
-		FindByApiKey(gomock.Any(), &pb.FindByApiKeyRequest{
-			ApiKey: "test-api-key",
-		}).
-		Return(&pb.ApiResponseMerchant{
-			Status:  "success",
-			Message: "Merchant found successfully",
-			Data: &pb.MerchantResponse{
-				Id:   1,
-				Name: "test-merchant",
-			},
-		}, nil).
-		Times(1)
-
-	expectedGRPCRequest := &pb.UpdateTransactionRequest{
-		TransactionId:   int32(body.TransactionID),
-		CardNumber:      body.CardNumber,
-		Amount:          int32(body.Amount),
-		PaymentMethod:   body.PaymentMethod,
-		MerchantId:      int32(*body.MerchantID),
-		TransactionTime: timestamppb.New(body.TransactionTime),
-		ApiKey:          "test-api-key",
-	}
-
-	mockTransactionClient.EXPECT().
-		UpdateTransaction(gomock.Any(), expectedGRPCRequest).
-		Return(nil, status.Error(codes.Internal, "internal server error")).
-		Times(1)
-
-	e := echo.New()
-	e.POST("/api/transaction/update/:id", func(c echo.Context) error {
-		handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-		return handler.Update(c)
-	})
-
-	reqBody, err := json.Marshal(body)
-	assert.NoError(t, err)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/transaction/update/1", bytes.NewBuffer(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Api-Key", "test-api-key")
+	req := httptest.NewRequest(http.MethodPost, "/api/transactions/trashed/1", nil)
 	rec := httptest.NewRecorder()
-
-	c := e.NewContext(req, rec)
-	c.SetPath("/api/transaction/update/:id")
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	middleware := middlewares.ApiKeyMiddleware(mockMerchantClient)
-	h := middleware(func(c echo.Context) error {
-		handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-		return handler.Update(c)
-	})
-
-	err = h(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to update transaction: ", resp.Message)
+	err := suite.Handler.TrashedTransaction(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 }
 
-func TestUpdateTransaction_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestTrashedTransaction_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTransactionClient.EXPECT().TrashedTransaction(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to trashed transaction", zap.Error(grpcError)).Times(1)
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
-
-	body := requests.UpdateTransactionRequest{
-		TransactionID:   1,
-		CardNumber:      "",
-		Amount:          1000000,
-		PaymentMethod:   "mandiri",
-		MerchantID:      utils.PtrInt(1),
-		TransactionTime: time.Now(),
-	}
-
-	mockMerchantClient.EXPECT().FindByApiKey(gomock.Any(), &pb.FindByApiKeyRequest{
-		ApiKey: "test-api-key",
-	}).Return(&pb.ApiResponseMerchant{
-		Status:  "success",
-		Message: "Merchant found successfully",
-		Data: &pb.MerchantResponse{
-			Id:   1,
-			Name: "test-merchant",
-		},
-	}, nil)
-
-	e := echo.New()
-	e.POST("/api/transaction/update/:id", func(c echo.Context) error {
-		handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-		return handler.Update(c)
-	})
-
-	reqBody, err := json.Marshal(body)
-	assert.NoError(t, err)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/transaction/update/1", bytes.NewBuffer(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Api-Key", "test-api-key")
+	req := httptest.NewRequest(http.MethodPost, "/api/transactions/trashed/1", nil)
 	rec := httptest.NewRecorder()
-
-	c := e.NewContext(req, rec)
-	c.SetPath("/api/transaction/update/:id")
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	middleware := middlewares.ApiKeyMiddleware(mockMerchantClient)
-	h := middleware(func(c echo.Context) error {
-		handler := api.NewHandlerTransaction(mockTransactionClient, mockMerchantClient, e, mockLogger)
-		return handler.Update(c)
-	})
-
-	err = h(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Validation Error: Key: 'UpdateTransactionRequest.CardNumber' Error:Field validation for 'CardNumber' failed on the 'required' tag", resp.Message)
+	err := suite.Handler.TrashedTransaction(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestTrashedTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestRestoreTransaction_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseTransactionDeleteAt{Status: "success", Data: &pb.TransactionResponseDeleteAt{Id: int32(id)}}
+	expectedApiResponse := &response.ApiResponseTransactionDeleteAt{Status: "success", Data: &response.TransactionResponseDeleteAt{ID: id}}
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockTransactionClient.EXPECT().RestoreTransaction(gomock.Any(), &pb.FindByIdTransactionRequest{TransactionId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTransactionDeleteAt(grpcResponse).Return(expectedApiResponse)
 
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
-
-	expectedGRPCResponse := &pb.ApiResponseTransaction{
-		Status:  "success",
-		Message: "Transaction trashed successfully",
-		Data: &pb.TransactionResponse{
-			Id:         1,
-			CardNumber: "1234567890123456",
-		},
-	}
-
-	mockTransactionClient.EXPECT().
-		TrashedTransaction(gomock.Any(), &pb.FindByIdTransactionRequest{
-			TransactionId: 1,
-		}).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/transaction/trashed/1", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/transactions/restore/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, nil, e, mockLogger)
-
-	err := handler.TrashedTransaction(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTransaction
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Transaction trashed successfully", resp.Message)
+	err := suite.Handler.RestoreTransaction(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 }
 
-func TestTrashedTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestRestoreTransaction_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTransactionClient.EXPECT().RestoreTransaction(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to restore transaction", zap.Error(grpcError)).Times(1)
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
-
-	mockTransactionClient.EXPECT().
-		TrashedTransaction(gomock.Any(), &pb.FindByIdTransactionRequest{
-			TransactionId: 1,
-		}).
-		Return(nil, errors.New("gRPC error")).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/transaction/trashed/1", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/transactions/restore/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, nil, e, mockLogger)
-
-	err := handler.TrashedTransaction(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to trashed transaction:", resp.Message)
+	err := suite.Handler.RestoreTransaction(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestTrashedTransaction_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestDeleteTransactionPermanent_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseTransactionDelete{Status: "success"}
+	expectedApiResponse := &response.ApiResponseTransactionDelete{Status: "success"}
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockTransactionClient.EXPECT().DeleteTransactionPermanent(gomock.Any(), &pb.FindByIdTransactionRequest{TransactionId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTransactionDelete(grpcResponse).Return(expectedApiResponse)
 
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/transaction/trashed/invalid-id", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/api/transactions/permanent/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("invalid-id")
-
-	handler := api.NewHandlerTransaction(mockTransactionClient, nil, e, mockLogger)
-
-	err := handler.TrashedTransaction(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Bad Request: Invalid ID", resp.Message)
-}
-
-func TestRestoreTransaction_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
-
-	expectedGRPCResponse := &pb.ApiResponseTransaction{
-		Status:  "success",
-		Message: "Transaction restored successfully",
-		Data: &pb.TransactionResponse{
-			Id:         1,
-			CardNumber: "1234567890123456",
-		},
-	}
-
-	mockTransactionClient.EXPECT().
-		RestoreTransaction(gomock.Any(), &pb.FindByIdTransactionRequest{
-			TransactionId: 1,
-		}).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/transaction/restore/1", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, nil, e, mockLogger)
-
-	err := handler.RestoreTransaction(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTransaction
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Transaction restored successfully", resp.Message)
+	err := suite.Handler.DeletePermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 }
 
-func TestRestoreTransaction_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestDeleteTransactionPermanent_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTransactionClient.EXPECT().DeleteTransactionPermanent(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to delete transaction", zap.Error(grpcError)).Times(1)
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
-
-	mockTransactionClient.EXPECT().
-		RestoreTransaction(gomock.Any(), &pb.FindByIdTransactionRequest{
-			TransactionId: 1,
-		}).
-		Return(nil, errors.New("gRPC error")).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/transaction/restore/1", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/api/transactions/permanent/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, nil, e, mockLogger)
-
-	err := handler.RestoreTransaction(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to restore transaction:", resp.Message)
+	err := suite.Handler.DeletePermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestRestoreTransaction_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestRestoreAllTransaction_Success() {
+	grpcResponse := &pb.ApiResponseTransactionAll{Status: "success"}
+	expectedApiResponse := &response.ApiResponseTransactionAll{Status: "success"}
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockLogger.EXPECT().Debug("Successfully restored all transaction").Times(1)
 
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
+	suite.MockTransactionClient.EXPECT().RestoreAllTransaction(gomock.Any(), &emptypb.Empty{}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTransactionAll(grpcResponse).Return(expectedApiResponse)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/transaction/restore/invalid-id", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/transactions/restore/all", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("invalid-id")
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, nil, e, mockLogger)
-
-	err := handler.RestoreTransaction(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Bad Request: Invalid ID", resp.Message)
+	err := suite.Handler.RestoreAllTransaction(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 }
 
-func TestDeletePermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestRestoreAllTransaction_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTransactionClient.EXPECT().RestoreAllTransaction(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Error("Failed to restore all transaction", zap.Error(grpcError)).Times(1)
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
-
-	expectedGRPCResponse := &pb.ApiResponseTransactionDelete{
-		Status:  "success",
-		Message: "Transaction deleted permanently",
-	}
-
-	mockTransactionClient.EXPECT().
-		DeleteTransactionPermanent(gomock.Any(), &pb.FindByIdTransactionRequest{
-			TransactionId: 1,
-		}).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/transaction/permanent/1", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/transactions/restore/all", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("1")
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, nil, e, mockLogger)
-
-	err := handler.DeletePermanent(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseTransactionDelete
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Transaction deleted permanently", resp.Message)
+	err := suite.Handler.RestoreAllTransaction(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestDeletePermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestDeleteAllTransactionPermanent_Success() {
+	grpcResponse := &pb.ApiResponseTransactionAll{Status: "success"}
+	expectedApiResponse := &response.ApiResponseTransactionAll{Status: "success"}
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockLogger.EXPECT().Debug("Successfully deleted all transaction permanently").Times(1)
 
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
+	suite.MockTransactionClient.EXPECT().DeleteAllTransactionPermanent(gomock.Any(), &emptypb.Empty{}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseTransactionAll(grpcResponse).Return(expectedApiResponse)
 
-	mockTransactionClient.EXPECT().
-		DeleteTransactionPermanent(gomock.Any(), &pb.FindByIdTransactionRequest{
-			TransactionId: 1,
-		}).
-		Return(nil, errors.New("gRPC error")).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/transaction/permanent/1", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/api/transactions/permanent/all", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("1")
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, nil, e, mockLogger)
-	err := handler.DeletePermanent(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to delete transaction:", resp.Message)
+	err := suite.Handler.DeleteAllTransactionPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 }
 
-func TestDeletePermanent_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *TransactionHandlerTestSuite) TestDeleteAllTransactionPermanent_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockTransactionClient.EXPECT().DeleteAllTransactionPermanent(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Error("Failed to permanently delete all transaction", zap.Error(grpcError)).Times(1)
 
-	mockTransactionClient := mock_pb.NewMockTransactionServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockLogger.EXPECT().
-		Debug(gomock.Any(), gomock.Any()).
-		AnyTimes()
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/transaction/permanent/invalid-id", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/api/transactions/permanent/all", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("invalid-id")
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerTransaction(mockTransactionClient, nil, e, mockLogger)
+	err := suite.Handler.DeleteAllTransactionPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
 
-	err := handler.DeletePermanent(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Bad Request: Invalid ID", resp.Message)
+func TestTransactionHandlerSuite(t *testing.T) {
+	suite.Run(t, new(TransactionHandlerTestSuite))
 }

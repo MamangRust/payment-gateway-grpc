@@ -27,6 +27,7 @@ type RoleProtoMapper interface {
 	ToProtoResponseRoleAll(status string, message string) *pb.ApiResponseRoleAll
 	ToProtoResponseRoleDelete(status string, message string) *pb.ApiResponseRoleDelete
 	ToProtoResponseRole(status string, message string, pbResponse *response.RoleResponse) *pb.ApiResponseRole
+	ToProtoResponseRoleDeleteAt(status string, message string, pbResponse *response.RoleResponseDeleteAt) *pb.ApiResponseRoleDeleteAt
 	ToProtoResponsesRole(status string, message string, pbResponse []*response.RoleResponse) *pb.ApiResponsesRole
 	ToProtoResponsePaginationRole(pagination *pb.PaginationMeta, status string, message string, pbResponse []*response.RoleResponse) *pb.ApiResponsePaginationRole
 	ToProtoResponsePaginationRoleDeleteAt(pagination *pb.PaginationMeta, status string, message string, pbResponse []*response.RoleResponseDeleteAt) *pb.ApiResponsePaginationRoleDeleteAt
@@ -34,8 +35,9 @@ type RoleProtoMapper interface {
 
 type CardProtoMapper interface {
 	ToProtoResponseCard(status string, message string, card *response.CardResponse) *pb.ApiResponseCard
+	ToProtoResponseCardDeleteAt(status string, message string, card *response.CardResponseDeleteAt) *pb.ApiResponseCardDeleteAt
 	ToProtoResponsePaginationCard(pagination *pb.PaginationMeta, status string, message string, cards []*response.CardResponse) *pb.ApiResponsePaginationCard
-	ToProtoResponseCardDeleteAt(status string, message string) *pb.ApiResponseCardDelete
+	ToProtoResponseCardDelete(status string, message string) *pb.ApiResponseCardDelete
 	ToProtoResponseCardAll(status string, message string) *pb.ApiResponseCardAll
 	ToProtoResponsePaginationCardDeletedAt(pagination *pb.PaginationMeta, status string, message string, cards []*response.CardResponseDeleteAt) *pb.ApiResponsePaginationCardDeleteAt
 	ToProtoResponseDashboardCard(status string, message string, dash *response.DashboardCard) *pb.ApiResponseDashboardCard
@@ -50,6 +52,7 @@ type MerchantProtoMapper interface {
 	ToProtoResponsePaginationMerchant(pagination *pb.PaginationMeta, status string, message string, merchants []*response.MerchantResponse) *pb.ApiResponsePaginationMerchant
 	ToProtoResponseMerchants(status string, message string, res []*response.MerchantResponse) *pb.ApiResponsesMerchant
 	ToProtoResponseMerchant(status string, message string, res *response.MerchantResponse) *pb.ApiResponseMerchant
+	ToProtoResponseMerchantDeleteAt(status string, message string, res *response.MerchantResponseDeleteAt) *pb.ApiResponseMerchantDeleteAt
 	ToProtoResponseMerchantAll(status string, message string) *pb.ApiResponseMerchantAll
 	ToProtoResponseMerchantDelete(status string, message string) *pb.ApiResponseMerchantDelete
 
@@ -66,6 +69,7 @@ type MerchantProtoMapper interface {
 
 type SaldoProtoMapper interface {
 	ToProtoResponseSaldo(status string, message string, pbResponse *response.SaldoResponse) *pb.ApiResponseSaldo
+	ToProtoResponseSaldoDeleteAt(status string, message string, pbResponse *response.SaldoResponseDeleteAt) *pb.ApiResponseSaldoDeleteAt
 	ToProtoResponsesSaldo(status string, message string, pbResponse []*response.SaldoResponse) *pb.ApiResponsesSaldo
 	ToProtoResponseSaldoDelete(status string, message string) *pb.ApiResponseSaldoDelete
 	ToProtoResponseSaldoAll(status string, message string) *pb.ApiResponseSaldoAll
@@ -105,6 +109,7 @@ type TransactionProtoMapper interface {
 	ToProtoResponseTransactionMonthAmount(status string, message string, pbResponse []*response.TransactionMonthAmountResponse) *pb.ApiResponseTransactionMonthAmount
 	ToProtoResponseTransactionYearAmount(status string, message string, pbResponse []*response.TransactionYearlyAmountResponse) *pb.ApiResponseTransactionYearAmount
 	ToProtoResponseTransaction(status string, message string, pbResponse *response.TransactionResponse) *pb.ApiResponseTransaction
+	ToProtoResponseTransactionDeleteAt(status string, message string, pbResponse *response.TransactionResponseDeleteAt) *pb.ApiResponseTransactionDeleteAt
 	ToProtoResponseTransactions(status string, message string, pbResponse []*response.TransactionResponse) *pb.ApiResponseTransactions
 	ToProtoResponseTransactionDelete(status string, message string) *pb.ApiResponseTransactionDelete
 	ToProtoResponseTransactionAll(status string, message string) *pb.ApiResponseTransactionAll
@@ -120,6 +125,7 @@ type TransferProtoMapper interface {
 	ToProtoResponseTransferMonthAmount(status string, message string, pbResponse []*response.TransferMonthAmountResponse) *pb.ApiResponseTransferMonthAmount
 	ToProtoResponseTransferYearAmount(status string, message string, pbResponse []*response.TransferYearAmountResponse) *pb.ApiResponseTransferYearAmount
 	ToProtoResponseTransfer(status string, message string, pbResponse *response.TransferResponse) *pb.ApiResponseTransfer
+	ToProtoResponseTransferDeleteAt(status string, message string, pbResponse *response.TransferResponseDeleteAt) *pb.ApiResponseTransferDeleteAt
 	ToProtoResponseTransfers(status string, message string, pbResponse []*response.TransferResponse) *pb.ApiResponseTransfers
 	ToProtoResponseTransferDelete(status string, message string) *pb.ApiResponseTransferDelete
 	ToProtoResponseTransferAll(status string, message string) *pb.ApiResponseTransferAll
@@ -129,6 +135,7 @@ type TransferProtoMapper interface {
 
 type WithdrawalProtoMapper interface {
 	ToProtoResponseWithdraw(status string, message string, withdraw *response.WithdrawResponse) *pb.ApiResponseWithdraw
+	ToProtoResponseWithdrawDeleteAt(status string, message string, withdraw *response.WithdrawResponseDeleteAt) *pb.ApiResponseWithdrawDeleteAt
 	ToProtoResponsesWithdraw(status string, message string, pbResponse []*response.WithdrawResponse) *pb.ApiResponsesWithdraw
 	ToProtoResponseWithdrawDelete(status string, message string) *pb.ApiResponseWithdrawDelete
 	ToProtoResponseWithdrawAll(status string, message string) *pb.ApiResponseWithdrawAll

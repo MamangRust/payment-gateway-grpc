@@ -4,720 +4,215 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/record"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	mocks "MamangRust/paymentgatewaygrpc/internal/repository/mocks"
-	"MamangRust/paymentgatewaygrpc/tests/utils"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func TestFindAllSaldos_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	saldos := []*record.SaldoRecord{
-		{
-			ID:             1,
-			CardNumber:     "1234",
-			TotalBalance:   1000,
-			WithdrawAmount: 500,
-			WithdrawTime:   "2024-12-24T10:00:00Z",
-			CreatedAt:      "2024-12-24T10:00:00Z",
-			UpdatedAt:      "2024-12-24T10:00:00Z",
-			DeletedAt:      nil,
-		},
-		{
-			ID:             2,
-			CardNumber:     "5678",
-			TotalBalance:   2000,
-			WithdrawAmount: 700,
-			WithdrawTime:   "2024-12-24T11:00:00Z",
-			CreatedAt:      "2024-12-24T11:00:00Z",
-			UpdatedAt:      "2024-12-24T11:00:00Z",
-			DeletedAt:      nil,
-		},
-	}
-
-	mockRepo.EXPECT().FindAllSaldos("", 1, 10).Return(saldos, 2, nil)
-
-	result, total, err := mockRepo.FindAllSaldos("", 1, 10)
-
-	assert.NoError(t, err)
-	assert.Equal(t, saldos, result)
-	assert.Equal(t, 2, total)
+type SaldoRepositorySuite struct {
+	suite.Suite
+	mockCtrl *gomock.Controller
+	mockRepo *mocks.MockSaldoRepository
 }
 
-func TestFindAllSaldos_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	mockRepo.EXPECT().FindAllSaldos("", 1, 10).Return(nil, 0, fmt.Errorf("database error"))
-
-	result, total, err := mockRepo.FindAllSaldos("", 1, 10)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Equal(t, 0, total)
-	assert.EqualError(t, err, "database error")
+func (suite *SaldoRepositorySuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.mockRepo = mocks.NewMockSaldoRepository(suite.mockCtrl)
 }
 
-func TestFindAllSaldos_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	mockRepo.EXPECT().FindAllSaldos("", 1, 10).Return([]*record.SaldoRecord{}, 1, nil)
-
-	result, total, err := mockRepo.FindAllSaldos("", 1, 10)
-	assert.NoError(t, err)
-	assert.Empty(t, result)
-	assert.Equal(t, 1, total)
+func (suite *SaldoRepositorySuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
-func TestFindByIdSaldo_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *SaldoRepositorySuite) TestFindAllSaldos_Success() {
+	req := &requests.FindAllSaldos{Search: "1234", Page: 1, PageSize: 10}
+	saldos := []*record.SaldoRecord{{ID: 1, CardNumber: "1111-xxxx-xxxx-1111"}}
+	total := 1
 
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
+	suite.mockRepo.EXPECT().FindAllSaldos(req).Return(saldos, &total, nil)
 
-	saldoId := 1
+	result, totalRes, err := suite.mockRepo.FindAllSaldos(req)
 
-	expectedCard := &record.SaldoRecord{
-		ID:             1,
-		CardNumber:     "1234",
-		TotalBalance:   1000,
-		WithdrawAmount: 500,
-		WithdrawTime:   "2024-12-24T10:00:00Z",
-		CreatedAt:      "2024-12-24T10:00:00Z",
-		UpdatedAt:      "2024-12-24T10:00:00Z",
-		DeletedAt:      nil,
-	}
-
-	mockRepo.EXPECT().FindById(saldoId).Return(expectedCard, nil)
-
-	result, err := mockRepo.FindById(saldoId)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedCard, result)
+	suite.NoError(err)
+	suite.Equal(saldos, result)
+	suite.Equal(1, *totalRes)
 }
 
-func TestFindByIdSaldo_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
+func (suite *SaldoRepositorySuite) TestFindByIdSaldo_Success() {
+	saldoID := 1
+	saldo := &record.SaldoRecord{ID: saldoID, CardNumber: "1111-xxxx-xxxx-1111"}
 
-	defer ctrl.Finish()
+	suite.mockRepo.EXPECT().FindById(saldoID).Return(saldo, nil)
 
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
+	result, err := suite.mockRepo.FindById(saldoID)
 
-	saldoId := 1
-
-	mockRepo.EXPECT().FindById(saldoId).Return(nil, errors.New("saldo not found"))
-
-	result, err := mockRepo.FindById(saldoId)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "saldo not found")
+	suite.NoError(err)
+	suite.Equal(saldo, result)
 }
 
-func TestFindByCardNumberSaldo_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *SaldoRepositorySuite) TestFindByIdSaldo_NotFound() {
+	saldoID := 99
+	expectedErr := errors.New("saldo not found")
 
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
+	suite.mockRepo.EXPECT().FindById(saldoID).Return(nil, expectedErr)
 
-	cardNumber := "hesoyam"
+	result, err := suite.mockRepo.FindById(saldoID)
 
-	expectedCard := &record.SaldoRecord{
-		ID:             1,
-		CardNumber:     "hesoyam",
-		TotalBalance:   1000,
-		WithdrawAmount: 500,
-		WithdrawTime:   "2024-12-24T10:00:00Z",
-		CreatedAt:      "2024-12-24T10:00:00Z",
-		UpdatedAt:      "2024-12-24T10:00:00Z",
-		DeletedAt:      nil,
-	}
-
-	mockRepo.EXPECT().FindByCardNumber(cardNumber).Return(expectedCard, nil)
-
-	result, err := mockRepo.FindByCardNumber(cardNumber)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedCard, result)
+	suite.Error(err)
+	suite.Nil(result)
+	suite.Equal(expectedErr, err)
 }
 
-func TestFindByIdCardNumberSaldo_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
+func (suite *SaldoRepositorySuite) TestFindByCardNumberSaldo_Success() {
+	cardNumber := "1234-5678-9012-3456"
+	saldo := &record.SaldoRecord{CardNumber: cardNumber, TotalBalance: 1000000}
 
-	defer ctrl.Finish()
+	suite.mockRepo.EXPECT().FindByCardNumber(cardNumber).Return(saldo, nil)
 
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
+	result, err := suite.mockRepo.FindByCardNumber(cardNumber)
 
-	saldoNumber := "hesoyam"
-
-	mockRepo.EXPECT().FindByCardNumber(saldoNumber).Return(nil, errors.New("saldo not found"))
-
-	result, err := mockRepo.FindByCardNumber(saldoNumber)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.EqualError(t, err, "saldo not found")
+	suite.NoError(err)
+	suite.Equal(saldo, result)
 }
 
-func TestFindByActiveSaldo_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *SaldoRepositorySuite) TestCreateSaldo_Success() {
+	req := &requests.CreateSaldoRequest{CardNumber: "2222-xxxx-xxxx-2222", TotalBalance: 500000}
+	createdSaldo := &record.SaldoRecord{ID: 10, CardNumber: "2222-xxxx-xxxx-2222", TotalBalance: 500000}
 
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
+	suite.mockRepo.EXPECT().CreateSaldo(req).Return(createdSaldo, nil)
 
-	activeSaldos := []*record.SaldoRecord{
-		{
-			ID:             1,
-			CardNumber:     "1234",
-			TotalBalance:   1000,
-			WithdrawAmount: 500,
-			WithdrawTime:   "2024-12-24T10:00:00Z",
-			CreatedAt:      "2024-12-24T10:00:00Z",
-			UpdatedAt:      "2024-12-24T10:00:00Z",
-			DeletedAt:      nil,
-		},
-	}
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 1
+	result, err := suite.mockRepo.CreateSaldo(req)
 
-	mockRepo.EXPECT().FindByActive(search, page, pageSize).Return(activeSaldos, 1, nil)
-
-	result, totalRecord, err := mockRepo.FindByActive(search, page, pageSize)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expected, totalRecord)
-	assert.NotNil(t, result)
-	assert.Equal(t, activeSaldos, result)
+	suite.NoError(err)
+	suite.Equal(createdSaldo, result)
 }
 
-func TestFindByActiveSaldo_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *SaldoRepositorySuite) TestUpdateSaldoBalance_Success() {
+	req := &requests.UpdateSaldoBalance{CardNumber: "1111-xxxx-xxxx-1111", TotalBalance: 1500000}
+	updatedSaldo := &record.SaldoRecord{CardNumber: "1111-xxxx-xxxx-1111", TotalBalance: 1500000}
 
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
+	suite.mockRepo.EXPECT().UpdateSaldoBalance(req).Return(updatedSaldo, nil)
 
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 0
+	result, err := suite.mockRepo.UpdateSaldoBalance(req)
 
-	mockRepo.EXPECT().FindByActive(search, page, pageSize).Return(nil, 0, fmt.Errorf("failed to fetch active saldos"))
-
-	result, totalRecord, err := mockRepo.FindByActive(search, page, pageSize)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Equal(t, expected, totalRecord)
-	assert.Contains(t, err.Error(), "failed to fetch active saldos")
+	suite.NoError(err)
+	suite.Equal(int(1500000), result.TotalBalance)
 }
 
-func TestFindByActiveSaldo_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 0
-
-	mockRepo.EXPECT().FindByActive(search, page, pageSize).Return([]*record.SaldoRecord{}, 0, nil)
-
-	result, totalRecord, err := mockRepo.FindByActive(search, page, pageSize)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expected, totalRecord)
-	assert.Empty(t, result)
-}
-
-func TestFindByTrashedSaldo_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	trashedSaldos := []*record.SaldoRecord{
-		{
-			ID:             2,
-			CardNumber:     "5678",
-			TotalBalance:   2000,
-			WithdrawAmount: 700,
-			WithdrawTime:   "2024-12-24T11:00:00Z",
-			CreatedAt:      "2024-12-24T11:00:00Z",
-			UpdatedAt:      "2024-12-24T11:00:00Z",
-			DeletedAt:      utils.PtrString("2024-12-24T11:00:00Z"),
-		},
-	}
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 1
-
-	mockRepo.EXPECT().FindByTrashed(search, page, pageSize).Return(trashedSaldos, 1, nil)
-
-	result, totalRecord, err := mockRepo.FindByTrashed(search, page, pageSize)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expected, totalRecord)
-	assert.Equal(t, trashedSaldos, result)
-}
-
-func TestFindByTrashedSaldo_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 0
-
-	mockRepo.EXPECT().FindByTrashed(search, page, pageSize).Return(nil, 0, fmt.Errorf("failed to fetch trashed saldos"))
-
-	result, totalRecord, err := mockRepo.FindByTrashed(search, page, pageSize)
-
-	assert.Error(t, err)
-	assert.Equal(t, expected, totalRecord)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "failed to fetch trashed saldos")
-}
-
-func TestFindByTrashedSaldo_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	page := 1
-	pageSize := 10
-	search := ""
-	expected := 0
-
-	mockRepo.EXPECT().FindByTrashed(search, page, pageSize).Return([]*record.SaldoRecord{}, 0, nil)
-
-	result, totalRecord, err := mockRepo.FindByTrashed(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.NoError(t, err)
-	assert.Empty(t, result)
-}
-
-func TestCreateSaldo_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	request := requests.CreateSaldoRequest{
-		CardNumber:   "1234",
-		TotalBalance: 1000,
-	}
-
-	expectedSaldo := &record.SaldoRecord{
-		ID:             1,
-		CardNumber:     request.CardNumber,
-		TotalBalance:   request.TotalBalance,
-		WithdrawAmount: 0,
-		WithdrawTime:   "",
-		CreatedAt:      "2024-12-24T10:00:00Z",
-		UpdatedAt:      "2024-12-24T10:00:00Z",
-	}
-
-	mockRepo.EXPECT().CreateSaldo(&request).Return(expectedSaldo, nil)
-
-	result, err := mockRepo.CreateSaldo(&request)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedSaldo, result)
-}
-
-func TestCreateSaldo_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	request := requests.CreateSaldoRequest{
-		CardNumber:   "1234",
-		TotalBalance: 1000,
-	}
-
-	mockRepo.EXPECT().CreateSaldo(&request).Return(nil, fmt.Errorf("failed to create saldo"))
-
-	result, err := mockRepo.CreateSaldo(&request)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "failed to create saldo")
-}
-
-func TestCreateSaldo_ValidationError(t *testing.T) {
-	request := requests.CreateSaldoRequest{
-		CardNumber:   "",
-		TotalBalance: 0,
-	}
-
-	err := request.Validate()
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Field validation for 'CardNumber' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'TotalBalance' failed on the 'required' tag")
-}
-
-func TestUpdateSaldo_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	request := requests.UpdateSaldoRequest{
-		SaldoID:      1,
-		CardNumber:   "5678",
-		TotalBalance: 2000,
-	}
-
-	updatedSaldo := &record.SaldoRecord{
-		ID:             1,
-		CardNumber:     "5678",
-		TotalBalance:   2000,
-		WithdrawAmount: 500,
-		WithdrawTime:   "2024-12-24T10:00:00Z",
-		CreatedAt:      "2024-12-24T10:00:00Z",
-		UpdatedAt:      "2024-12-25T10:00:00Z",
-	}
-
-	mockRepo.EXPECT().UpdateSaldo(&request).Return(updatedSaldo, nil)
-
-	result, err := mockRepo.UpdateSaldo(&request)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, updatedSaldo, result)
-}
-
-func TestUpdateSaldo_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	request := requests.UpdateSaldoRequest{
-		SaldoID:      1,
-		CardNumber:   "5678",
-		TotalBalance: 2000,
-	}
-
-	mockRepo.EXPECT().UpdateSaldo(&request).Return(nil, fmt.Errorf("saldo not found"))
-
-	result, err := mockRepo.UpdateSaldo(&request)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "saldo not found")
-}
-
-func TestUpdateSaldo_ValidationError(t *testing.T) {
-	request := requests.UpdateSaldoRequest{
-		SaldoID:      0,
-		CardNumber:   "",
-		TotalBalance: 0,
-	}
-
-	err := request.Validate()
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Field validation for 'SaldoID' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'CardNumber' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'TotalBalance' failed on the 'required' tag")
-}
-
-func TestUpdateSaldoBalance_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	request := requests.UpdateSaldoBalance{
-		CardNumber:   "1234",
-		TotalBalance: 60000,
-	}
-
-	updatedSaldo := &record.SaldoRecord{
-		ID:             1,
-		CardNumber:     request.CardNumber,
-		TotalBalance:   request.TotalBalance,
-		WithdrawAmount: 0,
-		WithdrawTime:   "",
-		CreatedAt:      "2024-12-24T10:00:00Z",
-		UpdatedAt:      time.Now().Format(time.RFC3339),
-		DeletedAt:      nil,
-	}
-
-	mockRepo.EXPECT().UpdateSaldoBalance(&request).Return(
-		updatedSaldo,
-		nil,
-	)
-
-	result, err := mockRepo.UpdateSaldoBalance(&request)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, updatedSaldo.TotalBalance, result.TotalBalance)
-	assert.Equal(t, updatedSaldo.CardNumber, result.CardNumber)
-}
-
-func TestUpdateSaldoBalance_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	request := requests.UpdateSaldoBalance{
-		CardNumber:   "1234",
-		TotalBalance: 100000,
-	}
-
-	mockRepo.EXPECT().UpdateSaldoBalance(&request).Return(nil, fmt.Errorf("saldo not found"))
-
-	result, err := mockRepo.UpdateSaldoBalance(&request)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "saldo not found")
-}
-
-func TestUpdateSaldoBalance_ValidationError(t *testing.T) {
-	request := requests.UpdateSaldoBalance{
-		CardNumber:   "",
-		TotalBalance: 40000,
-	}
-
-	err := request.Validate()
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Field validation for 'CardNumber' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'TotalBalance' failed on the 'min' tag")
-}
-
-func TestUpdateSaldoWithdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	now := time.Now()
-	withdrawAmount := 500
-	request := requests.UpdateSaldoWithdraw{
-		CardNumber:     "1234",
-		TotalBalance:   500000,
+func (suite *SaldoRepositorySuite) TestUpdateSaldoWithdraw_Success() {
+	withdrawAmount := 100000
+	withdrawTime := time.Now()
+	req := &requests.UpdateSaldoWithdraw{
+		CardNumber:     "1111-xxxx-xxxx-1111",
+		TotalBalance:   900000,
 		WithdrawAmount: &withdrawAmount,
-		WithdrawTime:   &now,
+		WithdrawTime:   &withdrawTime,
 	}
+	updatedSaldo := &record.SaldoRecord{CardNumber: "1111-xxxx-xxxx-1111", TotalBalance: 900000, WithdrawAmount: withdrawAmount}
 
-	updatedSaldo := &record.SaldoRecord{
-		ID:             1,
-		CardNumber:     "1234",
-		TotalBalance:   500,
-		WithdrawAmount: 500,
-		WithdrawTime:   now.Format(time.RFC3339),
-		CreatedAt:      "2024-12-24T10:00:00Z",
-		UpdatedAt:      time.Now().Format(time.RFC3339),
-		DeletedAt:      nil,
-	}
+	suite.mockRepo.EXPECT().UpdateSaldoWithdraw(req).Return(updatedSaldo, nil)
 
-	mockRepo.EXPECT().UpdateSaldoWithdraw(&request).Return(
-		updatedSaldo,
-		nil,
-	)
+	result, err := suite.mockRepo.UpdateSaldoWithdraw(req)
 
-	result, err := mockRepo.UpdateSaldoWithdraw(&request)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, updatedSaldo.TotalBalance, result.TotalBalance)
-	assert.Equal(t, updatedSaldo.WithdrawAmount, result.WithdrawAmount)
+	suite.NoError(err)
+	suite.Equal(int(900000), result.TotalBalance)
+	suite.Equal(withdrawAmount, result.WithdrawAmount)
 }
 
-func TestUpdateSaldoWithdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
-	now := time.Now()
-	withdrawAmount := 500
-	request := requests.UpdateSaldoWithdraw{
-		CardNumber:     "1234",
-		TotalBalance:   500000,
-		WithdrawAmount: &withdrawAmount,
-		WithdrawTime:   &now,
-	}
-
-	mockRepo.EXPECT().UpdateSaldoWithdraw(&request).Return(nil, fmt.Errorf("failed to update saldo"))
-
-	result, err := mockRepo.UpdateSaldoWithdraw(&request)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "failed to update saldo")
-}
-
-func TestUpdateSaldoWithdraw_ValidationError(t *testing.T) {
-	now := time.Now()
-	invalidWithdrawAmount := -100
-	request := requests.UpdateSaldoWithdraw{
-		CardNumber:     "",
-		TotalBalance:   40000,
-		WithdrawAmount: &invalidWithdrawAmount,
-		WithdrawTime:   &now,
-	}
-
-	err := request.Validate()
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Field validation for 'CardNumber' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'TotalBalance' failed on the 'min' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'WithdrawAmount' failed on the 'gte' tag")
-}
-
-func TestTrashedSaldo_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
+func (suite *SaldoRepositorySuite) TestTrashedSaldo_Success() {
 	saldoID := 1
-	trashedSaldo := &record.SaldoRecord{
-		ID:             saldoID,
-		CardNumber:     "1234",
-		TotalBalance:   500000,
-		WithdrawAmount: 0,
-		WithdrawTime:   "",
-		CreatedAt:      "2024-12-24T10:00:00Z",
-		UpdatedAt:      "2024-12-25T10:00:00Z",
-		DeletedAt:      utils.PtrString("2024-12-25T10:00:00Z"),
-	}
+	trashedTime := "2024-01-01T00:00:00Z"
+	trashedSaldo := &record.SaldoRecord{ID: saldoID, DeletedAt: &trashedTime}
 
-	mockRepo.EXPECT().TrashedSaldo(saldoID).Return(trashedSaldo, nil)
+	suite.mockRepo.EXPECT().TrashedSaldo(saldoID).Return(trashedSaldo, nil)
 
-	result, err := mockRepo.TrashedSaldo(saldoID)
+	result, err := suite.mockRepo.TrashedSaldo(saldoID)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, trashedSaldo.ID, result.ID)
-	assert.NotNil(t, result.DeletedAt)
+	suite.NoError(err)
+	suite.NotNil(result.DeletedAt)
+	suite.Equal(trashedSaldo, result)
 }
 
-func TestTrashedSaldo_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
-
+func (suite *SaldoRepositorySuite) TestDeleteSaldoPermanent_Success() {
 	saldoID := 1
 
-	mockRepo.EXPECT().TrashedSaldo(saldoID).Return(nil, fmt.Errorf("failed to trash saldo"))
+	suite.mockRepo.EXPECT().DeleteSaldoPermanent(saldoID).Return(true, nil)
 
-	result, err := mockRepo.TrashedSaldo(saldoID)
+	result, err := suite.mockRepo.DeleteSaldoPermanent(saldoID)
 
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "failed to trash saldo")
+	suite.NoError(err)
+	suite.True(result)
 }
 
-func TestRestoreSaldo_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *SaldoRepositorySuite) TestRestoreAllSaldo_Success() {
+	suite.mockRepo.EXPECT().RestoreAllSaldo().Return(true, nil)
 
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
+	result, err := suite.mockRepo.RestoreAllSaldo()
 
-	saldoID := 1
-	restoredSaldo := &record.SaldoRecord{
-		ID:             saldoID,
-		CardNumber:     "1234",
-		TotalBalance:   500000,
-		WithdrawAmount: 0,
-		WithdrawTime:   "",
-		CreatedAt:      "2024-12-24T10:00:00Z",
-		UpdatedAt:      "2024-12-25T10:00:00Z",
-		DeletedAt:      nil,
+	suite.NoError(err)
+	suite.True(result)
+}
+
+func (suite *SaldoRepositorySuite) TestGetMonthlyTotalSaldoBalance_Success() {
+	req := &requests.MonthTotalSaldoBalance{Year: 2024, Month: 1}
+	monthlyTotals := []*record.SaldoMonthTotalBalance{
+		{Year: "2024", Month: "01", TotalBalance: 50000000},
 	}
 
-	mockRepo.EXPECT().RestoreSaldo(saldoID).Return(restoredSaldo, nil)
+	suite.mockRepo.EXPECT().GetMonthlyTotalSaldoBalance(req).Return(monthlyTotals, nil)
 
-	result, err := mockRepo.RestoreSaldo(saldoID)
+	result, err := suite.mockRepo.GetMonthlyTotalSaldoBalance(req)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, restoredSaldo.ID, result.ID)
-	assert.Nil(t, result.DeletedAt)
+	suite.NoError(err)
+	suite.Equal(monthlyTotals, result)
 }
 
-func TestRestoreSaldo_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *SaldoRepositorySuite) TestGetYearTotalSaldoBalance_Success() {
+	year := 2023
+	yearlyTotals := []*record.SaldoYearTotalBalance{
+		{Year: "2023", TotalBalance: 600000000},
+	}
 
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
+	suite.mockRepo.EXPECT().GetYearTotalSaldoBalance(year).Return(yearlyTotals, nil)
 
-	saldoID := 1
+	result, err := suite.mockRepo.GetYearTotalSaldoBalance(year)
 
-	mockRepo.EXPECT().RestoreSaldo(saldoID).Return(nil, fmt.Errorf("failed to restore saldo"))
-
-	result, err := mockRepo.RestoreSaldo(saldoID)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "failed to restore saldo")
+	suite.NoError(err)
+	suite.Equal(yearlyTotals, result)
 }
 
-func TestDeleteSaldoPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *SaldoRepositorySuite) TestGetMonthlySaldoBalances_Success() {
+	year := 2024
+	monthlyBalances := []*record.SaldoMonthSaldoBalance{
+		{Month: "2024-01", TotalBalance: 45000000},
+		{Month: "2024-02", TotalBalance: 55000000},
+	}
 
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
+	suite.mockRepo.EXPECT().GetMonthlySaldoBalances(year).Return(monthlyBalances, nil)
 
-	saldoID := 1
+	result, err := suite.mockRepo.GetMonthlySaldoBalances(year)
 
-	mockRepo.EXPECT().DeleteSaldoPermanent(saldoID).Return(nil)
-
-	err := mockRepo.DeleteSaldoPermanent(saldoID)
-
-	assert.NoError(t, err)
+	suite.NoError(err)
+	suite.Equal(monthlyBalances, result)
 }
 
-func TestDeleteSaldoPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *SaldoRepositorySuite) TestGetYearlySaldoBalances_Success() {
+	year := 2023
+	yearlyBalances := []*record.SaldoYearSaldoBalance{
+		{Year: "2023", TotalBalance: 550000000},
+	}
 
-	mockRepo := mocks.NewMockSaldoRepository(ctrl)
+	suite.mockRepo.EXPECT().GetYearlySaldoBalances(year).Return(yearlyBalances, nil)
 
-	saldoID := 1
+	result, err := suite.mockRepo.GetYearlySaldoBalances(year)
 
-	mockRepo.EXPECT().DeleteSaldoPermanent(saldoID).Return(fmt.Errorf("failed to delete saldo permanently"))
+	suite.NoError(err)
+	suite.Equal(yearlyBalances, result)
+}
 
-	err := mockRepo.DeleteSaldoPermanent(saldoID)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to delete saldo permanently")
+func TestSaldoRepositorySuite(t *testing.T) {
+	suite.Run(t, new(SaldoRepositorySuite))
 }

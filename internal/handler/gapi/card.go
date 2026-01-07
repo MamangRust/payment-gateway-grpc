@@ -19,7 +19,7 @@ type cardHandleGrpc struct {
 	mapping     protomapper.CardProtoMapper
 }
 
-func NewCardHandleGrpc(card service.CardService, mapping protomapper.CardProtoMapper) *cardHandleGrpc {
+func NewCardHandleGrpc(card service.CardService, mapping protomapper.CardProtoMapper) CardHandleGrpc {
 	return &cardHandleGrpc{cardService: card, mapping: mapping}
 }
 
@@ -813,7 +813,7 @@ func (s *cardHandleGrpc) UpdateCard(ctx context.Context, req *pb.UpdateCardReque
 	return so, nil
 }
 
-func (s *cardHandleGrpc) TrashedCard(ctx context.Context, req *pb.FindByIdCardRequest) (*pb.ApiResponseCard, error) {
+func (s *cardHandleGrpc) TrashedCard(ctx context.Context, req *pb.FindByIdCardRequest) (*pb.ApiResponseCardDeleteAt, error) {
 	id := int(req.GetCardId())
 
 	if id == 0 {
@@ -826,12 +826,12 @@ func (s *cardHandleGrpc) TrashedCard(ctx context.Context, req *pb.FindByIdCardRe
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseCard("success", "Successfully trashed card", res)
+	so := s.mapping.ToProtoResponseCardDeleteAt("success", "Successfully trashed card", res)
 
 	return so, nil
 }
 
-func (s *cardHandleGrpc) RestoreCard(ctx context.Context, req *pb.FindByIdCardRequest) (*pb.ApiResponseCard, error) {
+func (s *cardHandleGrpc) RestoreCard(ctx context.Context, req *pb.FindByIdCardRequest) (*pb.ApiResponseCardDeleteAt, error) {
 	id := int(req.GetCardId())
 
 	if id == 0 {
@@ -844,7 +844,7 @@ func (s *cardHandleGrpc) RestoreCard(ctx context.Context, req *pb.FindByIdCardRe
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseCard("success", "Successfully restored card", res)
+	so := s.mapping.ToProtoResponseCardDeleteAt("success", "Successfully restored card", res)
 
 	return so, nil
 }
@@ -862,7 +862,7 @@ func (s *cardHandleGrpc) DeleteCardPermanent(ctx context.Context, req *pb.FindBy
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseCardDeleteAt("success", "Successfully deleted card")
+	so := s.mapping.ToProtoResponseCardDelete("success", "Successfully deleted card")
 
 	return so, nil
 }

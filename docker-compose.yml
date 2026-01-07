@@ -1,6 +1,20 @@
-version: '3.9'
-
 services:
+  pyroscope:
+    image: grafana/pyroscope:latest
+    ports:
+    - 4040:4040
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+    - GF_PLUGINS_PREINSTALL_SYNC=grafana-pyroscope-app
+    - GF_AUTH_ANONYMOUS_ENABLED=true
+    - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    volumes:
+    - ./grafana-provisioning:/etc/grafana/provisioning
+    ports:
+    - 3000:3000
+
   postgres:
     image: postgres:17-alpine
     container_name: postgres
@@ -14,6 +28,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DRAGON -d PAYMENT_GATEWAY"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 
   migrate:
     build:
@@ -30,7 +51,8 @@ services:
     networks:
       - app_network
     depends_on:
-      - postgres
+      postgres:
+        condition: service_started
 
   server:
     build:
@@ -45,8 +67,10 @@ services:
     networks:
       - app_network
     depends_on:
-      - postgres
-      - migrate
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_started
 
   client:
     build:
@@ -61,7 +85,8 @@ services:
     networks:
       - app_network
     depends_on:
-      - server
+      server:
+        condition: service_started
 
 volumes:
   postgres_data:

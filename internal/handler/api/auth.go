@@ -15,14 +15,14 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type authHandleApi struct {
+type AuthHandleApi struct {
 	client  pb.AuthServiceClient
 	logger  logger.LoggerInterface
 	mapping apimapper.AuthResponseMapper
 }
 
-func NewHandlerAuth(client pb.AuthServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapper apimapper.AuthResponseMapper) *authHandleApi {
-	authHandler := &authHandleApi{
+func NewHandlerAuth(client pb.AuthServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapper apimapper.AuthResponseMapper) *AuthHandleApi {
+	authHandler := &AuthHandleApi{
 		client:  client,
 		logger:  logger,
 		mapping: mapper,
@@ -45,7 +45,7 @@ func NewHandlerAuth(client pb.AuthServiceClient, router *echo.Echo, logger logge
 // @Produce json
 // @Success 200 {string} string "Hello"
 // @Router /auth/hello [get]
-func (h *authHandleApi) HandleHello(c echo.Context) error {
+func (h *AuthHandleApi) HandleHello(c echo.Context) error {
 	return c.String(200, "Hello")
 }
 
@@ -60,7 +60,7 @@ func (h *authHandleApi) HandleHello(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
 // @Router /api/auth/register [post]
-func (h *authHandleApi) Register(c echo.Context) error {
+func (h *AuthHandleApi) Register(c echo.Context) error {
 	var body requests.CreateUserRequest
 
 	if err := c.Bind(&body); err != nil {
@@ -106,7 +106,7 @@ func (h *authHandleApi) Register(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
 // @Router /api/auth/login [post]
-func (h *authHandleApi) Login(c echo.Context) error {
+func (h *AuthHandleApi) Login(c echo.Context) error {
 	var body requests.AuthRequest
 
 	if err := c.Bind(&body); err != nil {
@@ -127,7 +127,6 @@ func (h *authHandleApi) Login(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.client.LoginUser(ctx, data)
-
 	if err != nil {
 		if status.Code(err) == codes.Unauthenticated {
 			h.logger.Debug("Invalid login attempt", zap.String("email", body.Email))
@@ -139,14 +138,11 @@ func (h *authHandleApi) Login(c echo.Context) error {
 		if status.Code(err) == codes.Internal && strings.Contains(err.Error(), "empty token") {
 			return auth_errors.ErrInvalidAccessToken(c)
 		}
+
+		return auth_errors.ErrInvalidLogin(c)
 	}
 
 	mappedResponse := h.mapping.ToResponseLogin(res)
-
-	if mappedResponse.Data == nil || mappedResponse.Data.AccessToken == "" {
-		h.logger.Error("Empty token in final response", zap.Any("response", mappedResponse))
-		return auth_errors.ErrApiLogin(c)
-	}
 
 	return c.JSON(http.StatusOK, mappedResponse)
 }
@@ -163,7 +159,7 @@ func (h *authHandleApi) Login(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
 // @Router /api/auth/refresh-token [post]
-func (h *authHandleApi) RefreshToken(c echo.Context) error {
+func (h *AuthHandleApi) RefreshToken(c echo.Context) error {
 	var body requests.RefreshTokenRequest
 
 	if err := c.Bind(&body); err != nil {
@@ -201,10 +197,8 @@ func (h *authHandleApi) RefreshToken(c echo.Context) error {
 // @Failure 401 {object} response.ErrorResponse "Unauthorized"
 // @Failure 500 {object} response.ErrorResponse "Internal Server Error"
 // @Router /api/auth/me [get]
-func (h *authHandleApi) GetMe(c echo.Context) error {
+func (h *AuthHandleApi) GetMe(c echo.Context) error {
 	authHeader := c.Request().Header.Get("Authorization")
-
-	h.logger.Debug("Authorization header: ", zap.String("authHeader", authHeader))
 
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		h.logger.Debug("Authorization header is missing or invalid format")

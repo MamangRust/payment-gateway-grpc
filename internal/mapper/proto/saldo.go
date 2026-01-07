@@ -22,6 +22,14 @@ func (s *saldoProtoMapper) ToProtoResponseSaldo(status string, message string, p
 	}
 }
 
+func (s *saldoProtoMapper) ToProtoResponseSaldoDeleteAt(status string, message string, pbResponse *response.SaldoResponseDeleteAt) *pb.ApiResponseSaldoDeleteAt {
+	return &pb.ApiResponseSaldoDeleteAt{
+		Status:  status,
+		Message: message,
+		Data:    s.mapResponseSaldoDeleteAt(pbResponse),
+	}
+}
+
 func (s *saldoProtoMapper) ToProtoResponsesSaldo(status string, message string, pbResponse []*response.SaldoResponse) *pb.ApiResponsesSaldo {
 	return &pb.ApiResponsesSaldo{
 		Status:  status,

@@ -21,8 +21,8 @@ type RoleService interface {
 	FindByUserId(id int) ([]*response.RoleResponse, *response.ErrorResponse)
 	CreateRole(request *requests.CreateRoleRequest) (*response.RoleResponse, *response.ErrorResponse)
 	UpdateRole(request *requests.UpdateRoleRequest) (*response.RoleResponse, *response.ErrorResponse)
-	TrashedRole(role_id int) (*response.RoleResponse, *response.ErrorResponse)
-	RestoreRole(role_id int) (*response.RoleResponse, *response.ErrorResponse)
+	TrashedRole(role_id int) (*response.RoleResponseDeleteAt, *response.ErrorResponse)
+	RestoreRole(role_id int) (*response.RoleResponseDeleteAt, *response.ErrorResponse)
 	DeleteRolePermanent(role_id int) (bool, *response.ErrorResponse)
 
 	RestoreAllRole() (bool, *response.ErrorResponse)
@@ -68,8 +68,8 @@ type CardService interface {
 
 	CreateCard(request *requests.CreateCardRequest) (*response.CardResponse, *response.ErrorResponse)
 	UpdateCard(request *requests.UpdateCardRequest) (*response.CardResponse, *response.ErrorResponse)
-	TrashedCard(cardId int) (*response.CardResponse, *response.ErrorResponse)
-	RestoreCard(cardId int) (*response.CardResponse, *response.ErrorResponse)
+	TrashedCard(cardId int) (*response.CardResponseDeleteAt, *response.ErrorResponse)
+	RestoreCard(cardId int) (*response.CardResponseDeleteAt, *response.ErrorResponse)
 	DeleteCardPermanent(cardId int) (bool, *response.ErrorResponse)
 
 	RestoreAllCard() (bool, *response.ErrorResponse)
@@ -112,8 +112,8 @@ type MerchantService interface {
 	FindByMerchantUserId(user_id int) ([]*response.MerchantResponse, *response.ErrorResponse)
 	CreateMerchant(request *requests.CreateMerchantRequest) (*response.MerchantResponse, *response.ErrorResponse)
 	UpdateMerchant(request *requests.UpdateMerchantRequest) (*response.MerchantResponse, *response.ErrorResponse)
-	TrashedMerchant(merchant_id int) (*response.MerchantResponse, *response.ErrorResponse)
-	RestoreMerchant(merchant_id int) (*response.MerchantResponse, *response.ErrorResponse)
+	TrashedMerchant(merchant_id int) (*response.MerchantResponseDeleteAt, *response.ErrorResponse)
+	RestoreMerchant(merchant_id int) (*response.MerchantResponseDeleteAt, *response.ErrorResponse)
 	DeleteMerchantPermanent(merchant_id int) (bool, *response.ErrorResponse)
 
 	RestoreAllMerchant() (bool, *response.ErrorResponse)
@@ -134,8 +134,8 @@ type SaldoService interface {
 	FindByTrashed(req *requests.FindAllSaldos) ([]*response.SaldoResponseDeleteAt, *int, *response.ErrorResponse)
 	CreateSaldo(request *requests.CreateSaldoRequest) (*response.SaldoResponse, *response.ErrorResponse)
 	UpdateSaldo(request *requests.UpdateSaldoRequest) (*response.SaldoResponse, *response.ErrorResponse)
-	TrashSaldo(saldo_id int) (*response.SaldoResponse, *response.ErrorResponse)
-	RestoreSaldo(saldo_id int) (*response.SaldoResponse, *response.ErrorResponse)
+	TrashSaldo(saldo_id int) (*response.SaldoResponseDeleteAt, *response.ErrorResponse)
+	RestoreSaldo(saldo_id int) (*response.SaldoResponseDeleteAt, *response.ErrorResponse)
 	DeleteSaldoPermanent(saldo_id int) (bool, *response.ErrorResponse)
 
 	RestoreAllSaldo() (bool, *response.ErrorResponse)
@@ -211,8 +211,8 @@ type TransactionService interface {
 	FindTransactionByMerchantId(merchant_id int) ([]*response.TransactionResponse, *response.ErrorResponse)
 	Create(apiKey string, request *requests.CreateTransactionRequest) (*response.TransactionResponse, *response.ErrorResponse)
 	Update(apiKey string, request *requests.UpdateTransactionRequest) (*response.TransactionResponse, *response.ErrorResponse)
-	TrashedTransaction(transaction_id int) (*response.TransactionResponse, *response.ErrorResponse)
-	RestoreTransaction(transaction_id int) (*response.TransactionResponse, *response.ErrorResponse)
+	TrashedTransaction(transaction_id int) (*response.TransactionResponseDeleteAt, *response.ErrorResponse)
+	RestoreTransaction(transaction_id int) (*response.TransactionResponseDeleteAt, *response.ErrorResponse)
 	DeleteTransactionPermanent(transaction_id int) (bool, *response.ErrorResponse)
 
 	RestoreAllTransaction() (bool, *response.ErrorResponse)
@@ -246,8 +246,8 @@ type TransferService interface {
 	FindTransferByTransferTo(transfer_to string) ([]*response.TransferResponse, *response.ErrorResponse)
 	CreateTransaction(request *requests.CreateTransferRequest) (*response.TransferResponse, *response.ErrorResponse)
 	UpdateTransaction(request *requests.UpdateTransferRequest) (*response.TransferResponse, *response.ErrorResponse)
-	TrashedTransfer(transfer_id int) (*response.TransferResponse, *response.ErrorResponse)
-	RestoreTransfer(transfer_id int) (*response.TransferResponse, *response.ErrorResponse)
+	TrashedTransfer(transfer_id int) (*response.TransferResponseDeleteAt, *response.ErrorResponse)
+	RestoreTransfer(transfer_id int) (*response.TransferResponseDeleteAt, *response.ErrorResponse)
 	DeleteTransferPermanent(transfer_id int) (bool, *response.ErrorResponse)
 
 	RestoreAllTransfer() (bool, *response.ErrorResponse)
@@ -294,8 +294,8 @@ type WithdrawService interface {
 	FindByTrashed(req *requests.FindAllWithdraws) ([]*response.WithdrawResponseDeleteAt, *int, *response.ErrorResponse)
 	Create(request *requests.CreateWithdrawRequest) (*response.WithdrawResponse, *response.ErrorResponse)
 	Update(request *requests.UpdateWithdrawRequest) (*response.WithdrawResponse, *response.ErrorResponse)
-	TrashedWithdraw(withdraw_id int) (*response.WithdrawResponse, *response.ErrorResponse)
-	RestoreWithdraw(withdraw_id int) (*response.WithdrawResponse, *response.ErrorResponse)
+	TrashedWithdraw(withdraw_id int) (*response.WithdrawResponseDeleteAt, *response.ErrorResponse)
+	RestoreWithdraw(withdraw_id int) (*response.WithdrawResponseDeleteAt, *response.ErrorResponse)
 	DeleteWithdrawPermanent(withdraw_id int) (bool, *response.ErrorResponse)
 
 	RestoreAllWithdraw() (bool, *response.ErrorResponse)

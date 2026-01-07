@@ -580,7 +580,7 @@ func (s *withdrawService) Update(request *requests.UpdateWithdrawRequest) (*resp
 	return so, nil
 }
 
-func (s *withdrawService) TrashedWithdraw(withdraw_id int) (*response.WithdrawResponse, *response.ErrorResponse) {
+func (s *withdrawService) TrashedWithdraw(withdraw_id int) (*response.WithdrawResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Trashing withdraw", zap.Int("withdraw_id", withdraw_id))
 
 	res, err := s.withdrawRepository.TrashedWithdraw(withdraw_id)
@@ -593,14 +593,14 @@ func (s *withdrawService) TrashedWithdraw(withdraw_id int) (*response.WithdrawRe
 		return nil, withdraw_errors.ErrFailedTrashedWithdraw
 	}
 
-	withdrawResponse := s.mapping.ToWithdrawResponse(res)
+	withdrawResponse := s.mapping.ToWithdrawResponseDeleteAt(res)
 
 	s.logger.Debug("Successfully trashed withdraw", zap.Int("withdraw_id", withdraw_id))
 
 	return withdrawResponse, nil
 }
 
-func (s *withdrawService) RestoreWithdraw(withdraw_id int) (*response.WithdrawResponse, *response.ErrorResponse) {
+func (s *withdrawService) RestoreWithdraw(withdraw_id int) (*response.WithdrawResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Restoring withdraw", zap.Int("withdraw_id", withdraw_id))
 
 	res, err := s.withdrawRepository.RestoreWithdraw(withdraw_id)
@@ -613,7 +613,7 @@ func (s *withdrawService) RestoreWithdraw(withdraw_id int) (*response.WithdrawRe
 		return nil, withdraw_errors.ErrFailedRestoreWithdraw
 	}
 
-	withdrawResponse := s.mapping.ToWithdrawResponse(res)
+	withdrawResponse := s.mapping.ToWithdrawResponseDeleteAt(res)
 
 	s.logger.Debug("Successfully restored withdraw", zap.Int("withdraw_id", withdraw_id))
 

@@ -4,549 +4,232 @@ import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/record"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	mocks "MamangRust/paymentgatewaygrpc/internal/repository/mocks"
-	"MamangRust/paymentgatewaygrpc/tests/utils"
-	"fmt"
+	"errors"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func TestFindAll_Withdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	search := "card_1234"
-	page := 1
-	pageSize := 10
-
-	expectedWithdrawRecords := []*record.WithdrawRecord{
-		{
-			ID:             1,
-			CardNumber:     "card_1234",
-			WithdrawAmount: 100000,
-			WithdrawTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-			DeletedAt:      nil,
-		},
-		{
-			ID:             2,
-			CardNumber:     "card_1234",
-			WithdrawAmount: 200000,
-			WithdrawTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-			DeletedAt:      nil,
-		},
-	}
-
-	mockRepo.EXPECT().FindAll(search, page, pageSize).Return(expectedWithdrawRecords, 2, nil)
-
-	result, count, err := mockRepo.FindAll(search, page, pageSize)
-
-	assert.NoError(t, err)
-	assert.Equal(t, 2, count)
-	assert.Len(t, result, 2)
-	assert.Equal(t, "card_1234", result[0].CardNumber)
+type WithdrawRepositorySuite struct {
+	suite.Suite
+	mockCtrl *gomock.Controller
+	mockRepo *mocks.MockWithdrawRepository
 }
 
-func TestFindAll_Withdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	search := "card_1234"
-	page := 1
-	pageSize := 10
-
-	mockRepo.EXPECT().FindAll(search, page, pageSize).Return(nil, 0, fmt.Errorf("failed to fetch withdraw records"))
-
-	result, count, err := mockRepo.FindAll(search, page, pageSize)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Equal(t, 0, count)
-	assert.Contains(t, err.Error(), "failed to fetch withdraw records")
+func (suite *WithdrawRepositorySuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.mockRepo = mocks.NewMockWithdrawRepository(suite.mockCtrl)
 }
 
-func TestFindAll_Withdraw_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	search := "card_9999"
-	page := 1
-	pageSize := 10
-
-	mockRepo.EXPECT().FindAll(search, page, pageSize).Return([]*record.WithdrawRecord{}, 0, nil)
-
-	result, count, err := mockRepo.FindAll(search, page, pageSize)
-
-	assert.NoError(t, err)
-	assert.Equal(t, 0, count)
-	assert.Len(t, result, 0)
+func (suite *WithdrawRepositorySuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
-func TestFindById_Withdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
+func (suite *WithdrawRepositorySuite) TestFindAllWithdraw_Success() {
+	req := &requests.FindAllWithdraws{Search: "success", Page: 1, PageSize: 10}
+	withdraws := []*record.WithdrawRecord{{ID: 1, WithdrawNo: "WD001"}}
+	total := 1
 
+	suite.mockRepo.EXPECT().FindAll(req).Return(withdraws, &total, nil)
+
+	result, totalRes, err := suite.mockRepo.FindAll(req)
+
+	suite.NoError(err)
+	suite.Equal(withdraws, result)
+	suite.Equal(1, *totalRes)
+}
+
+func (suite *WithdrawRepositorySuite) TestFindByIdWithdraw_Success() {
 	id := 1
+	withdraw := &record.WithdrawRecord{ID: id, WithdrawNo: "WD001"}
 
-	expectedWithdrawRecord := &record.WithdrawRecord{
-		ID:             id,
-		CardNumber:     "card_1234",
-		WithdrawAmount: 150000,
-		WithdrawTime:   time.Now().Format(time.RFC3339),
-		CreatedAt:      time.Now().Format(time.RFC3339),
-		UpdatedAt:      time.Now().Format(time.RFC3339),
-		DeletedAt:      nil,
-	}
+	suite.mockRepo.EXPECT().FindById(id).Return(withdraw, nil)
 
-	mockRepo.EXPECT().FindById(id).Return(expectedWithdrawRecord, nil)
+	result, err := suite.mockRepo.FindById(id)
 
-	result, err := mockRepo.FindById(id)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, id, result.ID)
-	assert.Equal(t, "card_1234", result.CardNumber)
-	assert.Equal(t, 150000, result.WithdrawAmount)
+	suite.NoError(err)
+	suite.Equal(withdraw, result)
 }
 
-func TestFindById_Withdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
+func (suite *WithdrawRepositorySuite) TestFindByIdWithdraw_NotFound() {
+	id := 99
+	expectedErr := errors.New("withdraw not found")
 
-	id := 1
+	suite.mockRepo.EXPECT().FindById(id).Return(nil, expectedErr)
 
-	mockRepo.EXPECT().FindById(id).Return(nil, fmt.Errorf("failed to fetch withdraw record"))
+	result, err := suite.mockRepo.FindById(id)
 
-	result, err := mockRepo.FindById(id)
-
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "failed to fetch withdraw record")
+	suite.Error(err)
+	suite.Nil(result)
+	suite.Equal(expectedErr, err)
 }
 
-func TestFindByActive_Withdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
+func (suite *WithdrawRepositorySuite) TestFindAllByCardNumber_Success() {
+	req := &requests.FindAllWithdrawCardNumber{CardNumber: "1111-xxxx", Page: 1, PageSize: 10}
+	withdraws := []*record.WithdrawRecord{{ID: 2, CardNumber: "1111-xxxx"}}
+	total := 1
 
-	expectedRecords := []*record.WithdrawRecord{
-		{
-			ID:             1,
-			CardNumber:     "card_1234",
-			WithdrawAmount: 150000,
-			WithdrawTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-			DeletedAt:      nil,
-		},
-		{
-			ID:             2,
-			CardNumber:     "card_5678",
-			WithdrawAmount: 200000,
-			WithdrawTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-			DeletedAt:      nil,
-		},
-	}
+	suite.mockRepo.EXPECT().FindAllByCardNumber(req).Return(withdraws, &total, nil)
 
-	search := "user1"
-	page := 1
-	pageSize := 1
-	expected := 2
+	result, totalRes, err := suite.mockRepo.FindAllByCardNumber(req)
 
-	mockRepo.EXPECT().FindByActive(search, page, pageSize).Return(expectedRecords, expected, nil)
-
-	result, totalRecord, err := mockRepo.FindByActive(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, len(expectedRecords), len(result))
+	suite.NoError(err)
+	suite.Equal(withdraws, result)
+	suite.Equal(1, *totalRes)
 }
 
-func TestFindByActive_Withdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	search := "user1"
-	page := 1
-	pageSize := 1
-	expected := 0
-
-	mockRepo.EXPECT().FindByActive(search, page, pageSize).Return(nil, expected, fmt.Errorf("database error"))
-
-	result, totalRecord, err := mockRepo.FindByActive(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "database error")
-}
-
-func TestFindByActive_WithdrawRecord_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	search := "user1"
-	page := 1
-	pageSize := 1
-	expected := 0
-
-	mockRepo.EXPECT().FindByActive(search, page, pageSize).Return([]*record.WithdrawRecord{}, expected, nil)
-
-	result, totalRecord, err := mockRepo.FindByActive(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, 0, len(result))
-}
-
-func TestFindByTrashed_Withdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	expectedRecords := []*record.WithdrawRecord{
-		{
-			ID:             3,
-			CardNumber:     "card_9999",
-			WithdrawAmount: 100000,
-			WithdrawTime:   time.Now().Format(time.RFC3339),
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			UpdatedAt:      time.Now().Format(time.RFC3339),
-			DeletedAt:      utils.PtrString(time.Now().Format(time.RFC3339)),
-		},
-	}
-
-	search := "user1"
-	page := 1
-	pageSize := 1
-	expected := 2
-
-	mockRepo.EXPECT().FindByTrashed(search, page, pageSize).Return(expectedRecords, expected, nil)
-
-	result, totalRecord, err := mockRepo.FindByTrashed(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, len(expectedRecords), len(result))
-}
-
-func TestFindByTrashed_Withdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	search := "user1"
-	page := 1
-	pageSize := 1
-	expected := 0
-
-	mockRepo.EXPECT().FindByTrashed(search, page, pageSize).Return(nil, expected, fmt.Errorf("database error"))
-
-	result, totalRecord, err := mockRepo.FindByTrashed(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "database error")
-}
-
-func TestFindByTrashed_Withdraw_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	search := "user1"
-	page := 1
-	pageSize := 1
-	expected := 0
-
-	mockRepo.EXPECT().FindByTrashed(search, page, pageSize).Return([]*record.WithdrawRecord{}, expected, nil)
-
-	result, totalRecord, err := mockRepo.FindByTrashed(search, page, pageSize)
-
-	assert.Equal(t, expected, totalRecord)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, 0, len(result))
-}
-
-func TestCountWithdrawByActiveDate_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	expectedCount := int64(2)
-	date := time.Now()
-
-	mockRepo.EXPECT().CountActiveByDate(date).Return((expectedCount), nil)
-
-	count, err := mockRepo.CountActiveByDate(date)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expectedCount, count)
-}
-
-func TestCountWithdrawByActiveDate_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	expectedError := fmt.Errorf("database error")
-	date := time.Now()
-
-	mockRepo.EXPECT().CountActiveByDate(date).Return(int64(0), expectedError)
-
-	count, err := mockRepo.CountActiveByDate(date)
-
-	assert.Error(t, err)
-	assert.Equal(t, expectedError.Error(), err.Error())
-
-	assert.Equal(t, int64(0), count)
-}
-
-func TestCreateWithdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	request := requests.CreateWithdrawRequest{
-		CardNumber:     "success_card",
+func (suite *WithdrawRepositorySuite) TestCreateWithdraw_Success() {
+	req := &requests.CreateWithdrawRequest{
+		CardNumber:     "2222-xxxx",
 		WithdrawAmount: 100000,
 		WithdrawTime:   time.Now(),
 	}
+	createdWithdraw := &record.WithdrawRecord{ID: 10, CardNumber: "2222-xxxx", WithdrawNo: "WD010"}
 
-	expectedRecord := &record.WithdrawRecord{
-		ID:             1,
-		CardNumber:     request.CardNumber,
-		WithdrawAmount: request.WithdrawAmount,
-		WithdrawTime:   request.WithdrawTime.Format(time.RFC3339),
-		CreatedAt:      time.Now().Format(time.RFC3339),
-		UpdatedAt:      time.Now().Format(time.RFC3339),
+	suite.mockRepo.EXPECT().CreateWithdraw(req).Return(createdWithdraw, nil)
+
+	result, err := suite.mockRepo.CreateWithdraw(req)
+
+	suite.NoError(err)
+	suite.Equal(createdWithdraw, result)
+}
+
+func (suite *WithdrawRepositorySuite) TestTrashedWithdraw_Success() {
+	withdrawID := 1
+	trashedTime := "2024-01-01T00:00:00Z"
+	trashedWithdraw := &record.WithdrawRecord{ID: withdrawID, DeletedAt: &trashedTime}
+
+	suite.mockRepo.EXPECT().TrashedWithdraw(withdrawID).Return(trashedWithdraw, nil)
+
+	result, err := suite.mockRepo.TrashedWithdraw(withdrawID)
+
+	suite.NoError(err)
+	suite.NotNil(result.DeletedAt)
+	suite.Equal(trashedWithdraw, result)
+}
+
+func (suite *WithdrawRepositorySuite) TestDeleteWithdrawPermanent_Success() {
+	withdrawID := 1
+
+	suite.mockRepo.EXPECT().DeleteWithdrawPermanent(withdrawID).Return(true, nil)
+
+	result, err := suite.mockRepo.DeleteWithdrawPermanent(withdrawID)
+
+	suite.NoError(err)
+	suite.True(result)
+}
+
+func (suite *WithdrawRepositorySuite) TestRestoreAllWithdraw_Success() {
+	suite.mockRepo.EXPECT().RestoreAllWithdraw().Return(true, nil)
+
+	result, err := suite.mockRepo.RestoreAllWithdraw()
+
+	suite.NoError(err)
+	suite.True(result)
+}
+
+func (suite *WithdrawRepositorySuite) TestGetMonthWithdrawStatusSuccess_Success() {
+	req := &requests.MonthStatusWithdraw{Year: 2024, Month: 1}
+	monthlySuccess := []*record.WithdrawRecordMonthStatusSuccess{
+		{Year: "2024", Month: "01", TotalSuccess: 50, TotalAmount: 5000000},
 	}
 
-	mockRepo.EXPECT().CreateWithdraw(&request).Return(expectedRecord, nil)
+	suite.mockRepo.EXPECT().GetMonthWithdrawStatusSuccess(req).Return(monthlySuccess, nil)
 
-	record, err := mockRepo.CreateWithdraw(&request)
+	result, err := suite.mockRepo.GetMonthWithdrawStatusSuccess(req)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, record)
-	assert.Equal(t, expectedRecord, record)
+	suite.NoError(err)
+	suite.Equal(monthlySuccess, result)
 }
 
-func TestCreateWithdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	request := requests.CreateWithdrawRequest{
-		CardNumber:     "failure_card",
-		WithdrawAmount: 100000,
-		WithdrawTime:   time.Now(),
+func (suite *WithdrawRepositorySuite) TestGetYearlyWithdrawStatusFailed_Success() {
+	year := 2023
+	yearlyFailed := []*record.WithdrawRecordYearStatusFailed{
+		{Year: "2023", TotalFailed: 2, TotalAmount: 100000},
 	}
 
-	mockRepo.EXPECT().CreateWithdraw(&request).Return(nil, fmt.Errorf("failed to create withdraw record"))
+	suite.mockRepo.EXPECT().GetYearlyWithdrawStatusFailed(year).Return(yearlyFailed, nil)
 
-	record, err := mockRepo.CreateWithdraw(&request)
+	result, err := suite.mockRepo.GetYearlyWithdrawStatusFailed(year)
 
-	assert.Error(t, err)
-	assert.Nil(t, record)
-	assert.Equal(t, "failed to create withdraw record", err.Error())
+	suite.NoError(err)
+	suite.Equal(yearlyFailed, result)
 }
 
-func TestCreateWithdraw_ValidationError(t *testing.T) {
-	request := requests.CreateWithdrawRequest{
-		CardNumber:     "",
-		WithdrawAmount: 0,
-		WithdrawTime:   time.Time{},
+func (suite *WithdrawRepositorySuite) TestGetMonthWithdrawStatusSuccessByCardNumber_Success() {
+	req := &requests.MonthStatusWithdrawCardNumber{CardNumber: "1111-xxxx", Year: 2024, Month: 1}
+	monthlySuccess := []*record.WithdrawRecordMonthStatusSuccess{
+		{Year: "2024", Month: "01", TotalSuccess: 5, TotalAmount: 500000},
 	}
 
-	err := request.Validate()
+	suite.mockRepo.EXPECT().GetMonthWithdrawStatusSuccessByCardNumber(req).Return(monthlySuccess, nil)
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Field validation for 'CardNumber' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'WithdrawAmount' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'WithdrawTime' failed on the 'required' tag")
+	result, err := suite.mockRepo.GetMonthWithdrawStatusSuccessByCardNumber(req)
+
+	suite.NoError(err)
+	suite.Equal(monthlySuccess, result)
 }
 
-func TestUpdateWithdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	request := requests.UpdateWithdrawRequest{
-		CardNumber:     "updated_card",
-		WithdrawID:     1,
-		WithdrawAmount: 100000,
-		WithdrawTime:   time.Now(),
+func (suite *WithdrawRepositorySuite) TestGetYearlyWithdrawStatusFailedByCardNumber_Success() {
+	req := &requests.YearStatusWithdrawCardNumber{CardNumber: "2222-xxxx", Year: 2023}
+	yearlyFailed := []*record.WithdrawRecordYearStatusFailed{
+		{Year: "2023", TotalFailed: 1, TotalAmount: 50000},
 	}
 
-	expectedRecord := &record.WithdrawRecord{
-		ID:             request.WithdrawID,
-		CardNumber:     request.CardNumber,
-		WithdrawAmount: request.WithdrawAmount,
-		WithdrawTime:   request.WithdrawTime.Format(time.RFC3339),
-		CreatedAt:      time.Now().Add(-24 * time.Hour).Format(time.RFC3339),
-		UpdatedAt:      time.Now().Format(time.RFC3339),
+	suite.mockRepo.EXPECT().GetYearlyWithdrawStatusFailedByCardNumber(req).Return(yearlyFailed, nil)
+
+	result, err := suite.mockRepo.GetYearlyWithdrawStatusFailedByCardNumber(req)
+
+	suite.NoError(err)
+	suite.Equal(yearlyFailed, result)
+}
+
+func (suite *WithdrawRepositorySuite) TestGetMonthlyWithdraws_Success() {
+	year := 2024
+	monthlyAmounts := []*record.WithdrawMonthlyAmount{
+		{Month: "2024-01", TotalAmount: 4500000},
+		{Month: "2024-02", TotalAmount: 5500000},
 	}
 
-	mockRepo.EXPECT().UpdateWithdraw(&request).Return(expectedRecord, nil)
+	suite.mockRepo.EXPECT().GetMonthlyWithdraws(year).Return(monthlyAmounts, nil)
 
-	record, err := mockRepo.UpdateWithdraw(&request)
+	result, err := suite.mockRepo.GetMonthlyWithdraws(year)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, record)
-	assert.Equal(t, expectedRecord, record)
+	suite.NoError(err)
+	suite.Equal(monthlyAmounts, result)
 }
 
-func TestUpdateWithdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	request := requests.UpdateWithdrawRequest{
-		CardNumber:     "failure_card",
-		WithdrawID:     99,
-		WithdrawAmount: 100000,
-		WithdrawTime:   time.Now(),
+func (suite *WithdrawRepositorySuite) TestGetMonthlyWithdrawsByCardNumber_Success() {
+	req := &requests.YearMonthCardNumber{CardNumber: "1111-xxxx", Year: 2024}
+	monthlyAmounts := []*record.WithdrawMonthlyAmount{
+		{Month: "2024-01", TotalAmount: 500000},
+		{Month: "2024-02", TotalAmount: 300000},
 	}
 
-	mockRepo.EXPECT().UpdateWithdraw(&request).Return(nil, fmt.Errorf("withdraw record not found"))
+	suite.mockRepo.EXPECT().GetMonthlyWithdrawsByCardNumber(req).Return(monthlyAmounts, nil)
 
-	record, err := mockRepo.UpdateWithdraw(&request)
+	result, err := suite.mockRepo.GetMonthlyWithdrawsByCardNumber(req)
 
-	assert.Error(t, err)
-	assert.Nil(t, record)
-	assert.Equal(t, "withdraw record not found", err.Error())
+	suite.NoError(err)
+	suite.Equal(monthlyAmounts, result)
 }
 
-func TestUpdateWithdraw_ValidationError(t *testing.T) {
-	request := requests.UpdateWithdrawRequest{
-		CardNumber:     "",
-		WithdrawID:     0,
-		WithdrawAmount: 0,
-		WithdrawTime:   time.Time{},
+func (suite *WithdrawRepositorySuite) TestGetYearlyWithdrawsByCardNumber_Success() {
+	req := &requests.YearMonthCardNumber{CardNumber: "1111-xxxx", Year: 2023}
+	yearlyAmounts := []*record.WithdrawYearlyAmount{
+		{Year: "2023", TotalAmount: 12000000},
 	}
 
-	err := request.Validate()
+	suite.mockRepo.EXPECT().GetYearlyWithdrawsByCardNumber(req).Return(yearlyAmounts, nil)
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Field validation for 'CardNumber' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'WithdrawID' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'WithdrawAmount' failed on the 'required' tag")
-	assert.Contains(t, err.Error(), "Field validation for 'WithdrawTime' failed on the 'required' tag")
+	result, err := suite.mockRepo.GetYearlyWithdrawsByCardNumber(req)
+
+	suite.NoError(err)
+	suite.Equal(yearlyAmounts, result)
 }
 
-func TestTrashedWithdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	expectedRecord := &record.WithdrawRecord{
-		ID:             1,
-		CardNumber:     "123456789",
-		WithdrawAmount: 75000,
-		DeletedAt:      utils.PtrString(time.Now().Format(time.RFC3339)),
-	}
-
-	mockRepo.EXPECT().TrashedWithdraw(1).Return(expectedRecord, nil)
-
-	record, err := mockRepo.TrashedWithdraw(1)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, record)
-	assert.Equal(t, expectedRecord, record)
-}
-
-func TestTrashedWithdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	mockRepo.EXPECT().TrashedWithdraw(99).Return(nil, fmt.Errorf("withdraw record not found"))
-
-	record, err := mockRepo.TrashedWithdraw(99)
-
-	assert.Error(t, err)
-	assert.Nil(t, record)
-	assert.Equal(t, "withdraw record not found", err.Error())
-}
-
-func TestRestoreWithdraw_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	expectedRecord := &record.WithdrawRecord{
-		ID:             1,
-		CardNumber:     "123456789",
-		WithdrawAmount: 75000,
-		DeletedAt:      nil,
-	}
-
-	mockRepo.EXPECT().RestoreWithdraw(1).Return(expectedRecord, nil)
-
-	record, err := mockRepo.RestoreWithdraw(1)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, record)
-	assert.Equal(t, expectedRecord, record)
-}
-
-func TestRestoreWithdraw_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	mockRepo.EXPECT().RestoreWithdraw(99).Return(nil, fmt.Errorf("withdraw record not found"))
-
-	record, err := mockRepo.RestoreWithdraw(99)
-
-	assert.Error(t, err)
-	assert.Nil(t, record)
-	assert.Equal(t, "withdraw record not found", err.Error())
-}
-
-func TestDeleteWithdrawPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	mockRepo.EXPECT().DeleteWithdrawPermanent(1).Return(nil)
-
-	err := mockRepo.DeleteWithdrawPermanent(1)
-
-	assert.NoError(t, err)
-}
-
-func TestDeleteWithdrawPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := mocks.NewMockWithdrawRepository(ctrl)
-
-	mockRepo.EXPECT().DeleteWithdrawPermanent(99).Return(fmt.Errorf("withdraw record not found"))
-
-	err := mockRepo.DeleteWithdrawPermanent(99)
-
-	assert.Error(t, err)
-	assert.Equal(t, "withdraw record not found", err.Error())
+func TestWithdrawRepositorySuite(t *testing.T) {
+	suite.Run(t, new(WithdrawRepositorySuite))
 }

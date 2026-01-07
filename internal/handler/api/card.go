@@ -15,14 +15,14 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type cardHandleApi struct {
+type CardHandleApi struct {
 	card    pb.CardServiceClient
 	logger  logger.LoggerInterface
 	mapping apimapper.CardResponseMapper
 }
 
-func NewHandlerCard(card pb.CardServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapper apimapper.CardResponseMapper) *cardHandleApi {
-	cardHandler := &cardHandleApi{
+func NewHandlerCard(card pb.CardServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapper apimapper.CardResponseMapper) *CardHandleApi {
+	cardHandler := &CardHandleApi{
 		card:    card,
 		logger:  logger,
 		mapping: mapper,
@@ -96,7 +96,7 @@ func NewHandlerCard(card pb.CardServiceClient, router *echo.Echo, logger logger.
 // @Success 200 {object} response.ApiResponsePaginationCard "Card data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card data"
 // @Router /api/card [get]
-func (h *cardHandleApi) FindAll(c echo.Context) error {
+func (h *CardHandleApi) FindAll(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -141,7 +141,7 @@ func (h *cardHandleApi) FindAll(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid card ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/{id} [get]
-func (h *cardHandleApi) FindById(c echo.Context) error {
+func (h *CardHandleApi) FindById(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		h.logger.Debug("Invalid card ID", zap.Error(err))
@@ -177,11 +177,17 @@ func (h *cardHandleApi) FindById(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid user ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/user [get]
-func (h *cardHandleApi) FindByUserID(c echo.Context) error {
-	userID, ok := c.Get("user_id").(int32)
+func (h *CardHandleApi) FindByUserID(c echo.Context) error {
+	userIDStr, ok := c.Get("userID").(string)
 	if !ok {
 		return card_errors.ErrApiInvalidUserID(c)
 	}
+
+	uid, err := strconv.ParseInt(userIDStr, 10, 32)
+	if err != nil {
+		return card_errors.ErrApiInvalidUserID(c)
+	}
+	userID := int32(uid)
 
 	ctx := c.Request().Context()
 
@@ -210,7 +216,7 @@ func (h *cardHandleApi) FindByUserID(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseDashboardCard
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/dashboard [get]
-func (h *cardHandleApi) DashboardCard(c echo.Context) error {
+func (h *CardHandleApi) DashboardCard(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.card.DashboardCard(ctx, &emptypb.Empty{})
@@ -234,7 +240,7 @@ func (h *cardHandleApi) DashboardCard(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/dashboard/{cardNumber} [get]
-func (h *cardHandleApi) DashboardCardCardNumber(c echo.Context) error {
+func (h *CardHandleApi) DashboardCardCardNumber(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	cardNumber := c.Param("cardNumber")
@@ -268,7 +274,7 @@ func (h *cardHandleApi) DashboardCardCardNumber(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-balance [get]
-func (h *cardHandleApi) FindMonthlyBalance(c echo.Context) error {
+func (h *CardHandleApi) FindMonthlyBalance(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -304,7 +310,7 @@ func (h *cardHandleApi) FindMonthlyBalance(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-balance [get]
-func (h *cardHandleApi) FindYearlyBalance(c echo.Context) error {
+func (h *CardHandleApi) FindYearlyBalance(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -341,7 +347,7 @@ func (h *cardHandleApi) FindYearlyBalance(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-topup-amount [get]
-func (h *cardHandleApi) FindMonthlyTopupAmount(c echo.Context) error {
+func (h *CardHandleApi) FindMonthlyTopupAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -377,7 +383,7 @@ func (h *cardHandleApi) FindMonthlyTopupAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/topup/yearly-topup-amount [get]
-func (h *cardHandleApi) FindYearlyTopupAmount(c echo.Context) error {
+func (h *CardHandleApi) FindYearlyTopupAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -413,7 +419,7 @@ func (h *cardHandleApi) FindYearlyTopupAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-withdraw-amount [get]
-func (h *cardHandleApi) FindMonthlyWithdrawAmount(c echo.Context) error {
+func (h *CardHandleApi) FindMonthlyWithdrawAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -449,7 +455,7 @@ func (h *cardHandleApi) FindMonthlyWithdrawAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-withdraw-amount [get]
-func (h *cardHandleApi) FindYearlyWithdrawAmount(c echo.Context) error {
+func (h *CardHandleApi) FindYearlyWithdrawAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -485,7 +491,7 @@ func (h *cardHandleApi) FindYearlyWithdrawAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transaction-amount [get]
-func (h *cardHandleApi) FindMonthlyTransactionAmount(c echo.Context) error {
+func (h *CardHandleApi) FindMonthlyTransactionAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -521,7 +527,7 @@ func (h *cardHandleApi) FindMonthlyTransactionAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transaction-amount [get]
-func (h *cardHandleApi) FindYearlyTransactionAmount(c echo.Context) error {
+func (h *CardHandleApi) FindYearlyTransactionAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -557,7 +563,7 @@ func (h *cardHandleApi) FindYearlyTransactionAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transfer-sender-amount [get]
-func (h *cardHandleApi) FindMonthlyTransferSenderAmount(c echo.Context) error {
+func (h *CardHandleApi) FindMonthlyTransferSenderAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -593,7 +599,7 @@ func (h *cardHandleApi) FindMonthlyTransferSenderAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/transfer/yearly-transfer-sender-amount [get]
-func (h *cardHandleApi) FindYearlyTransferSenderAmount(c echo.Context) error {
+func (h *CardHandleApi) FindYearlyTransferSenderAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -629,7 +635,7 @@ func (h *cardHandleApi) FindYearlyTransferSenderAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transfer-receiver-amount [get]
-func (h *cardHandleApi) FindMonthlyTransferReceiverAmount(c echo.Context) error {
+func (h *CardHandleApi) FindMonthlyTransferReceiverAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -665,7 +671,7 @@ func (h *cardHandleApi) FindMonthlyTransferReceiverAmount(c echo.Context) error 
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transfer-receiver-amount [get]
-func (h *cardHandleApi) FindYearlyTransferReceiverAmount(c echo.Context) error {
+func (h *CardHandleApi) FindYearlyTransferReceiverAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -702,7 +708,7 @@ func (h *cardHandleApi) FindYearlyTransferReceiverAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-balance-by-card [get]
-func (h *cardHandleApi) FindMonthlyBalanceByCardNumber(c echo.Context) error {
+func (h *CardHandleApi) FindMonthlyBalanceByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -745,7 +751,7 @@ func (h *cardHandleApi) FindMonthlyBalanceByCardNumber(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-balance-by-card [get]
-func (h *cardHandleApi) FindYearlyBalanceByCardNumber(c echo.Context) error {
+func (h *CardHandleApi) FindYearlyBalanceByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -788,7 +794,7 @@ func (h *cardHandleApi) FindYearlyBalanceByCardNumber(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-topup-amount-by-card [get]
-func (h *cardHandleApi) FindMonthlyTopupAmountByCardNumber(c echo.Context) error {
+func (h *CardHandleApi) FindMonthlyTopupAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -831,7 +837,7 @@ func (h *cardHandleApi) FindMonthlyTopupAmountByCardNumber(c echo.Context) error
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-topup-amount-by-card [get]
-func (h *cardHandleApi) FindYearlyTopupAmountByCardNumber(c echo.Context) error {
+func (h *CardHandleApi) FindYearlyTopupAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -875,7 +881,7 @@ func (h *cardHandleApi) FindYearlyTopupAmountByCardNumber(c echo.Context) error 
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-withdraw-amount-by-card [get]
-func (h *cardHandleApi) FindMonthlyWithdrawAmountByCardNumber(c echo.Context) error {
+func (h *CardHandleApi) FindMonthlyWithdrawAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 
@@ -917,7 +923,7 @@ func (h *cardHandleApi) FindMonthlyWithdrawAmountByCardNumber(c echo.Context) er
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-withdraw-amount-by-card [get]
-func (h *cardHandleApi) FindYearlyWithdrawAmountByCardNumber(c echo.Context) error {
+func (h *CardHandleApi) FindYearlyWithdrawAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -961,7 +967,7 @@ func (h *cardHandleApi) FindYearlyWithdrawAmountByCardNumber(c echo.Context) err
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transaction-amount-by-card [get]
-func (h *cardHandleApi) FindMonthlyTransactionAmountByCardNumber(c echo.Context) error {
+func (h *CardHandleApi) FindMonthlyTransactionAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -1005,7 +1011,7 @@ func (h *cardHandleApi) FindMonthlyTransactionAmountByCardNumber(c echo.Context)
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transaction-amount-by-card [get]
-func (h *cardHandleApi) FindYearlyTransactionAmountByCardNumber(c echo.Context) error {
+func (h *CardHandleApi) FindYearlyTransactionAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -1049,7 +1055,7 @@ func (h *cardHandleApi) FindYearlyTransactionAmountByCardNumber(c echo.Context) 
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transfer-sender-amount-by-card [get]
-func (h *cardHandleApi) FindMonthlyTransferSenderAmountByCardNumber(c echo.Context) error {
+func (h *CardHandleApi) FindMonthlyTransferSenderAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -1093,7 +1099,7 @@ func (h *cardHandleApi) FindMonthlyTransferSenderAmountByCardNumber(c echo.Conte
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transfer-sender-amount-by-card [get]
-func (h *cardHandleApi) FindYearlyTransferSenderAmountByCardNumber(c echo.Context) error {
+func (h *CardHandleApi) FindYearlyTransferSenderAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -1137,7 +1143,7 @@ func (h *cardHandleApi) FindYearlyTransferSenderAmountByCardNumber(c echo.Contex
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transfer-receiver-amount-by-card [get]
-func (h *cardHandleApi) FindMonthlyTransferReceiverAmountByCardNumber(c echo.Context) error {
+func (h *CardHandleApi) FindMonthlyTransferReceiverAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -1182,7 +1188,7 @@ func (h *cardHandleApi) FindMonthlyTransferReceiverAmountByCardNumber(c echo.Con
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transfer-receiver-amount-by-card [get]
-func (h *cardHandleApi) FindYearlyTransferReceiverAmountByCardNumber(c echo.Context) error {
+func (h *CardHandleApi) FindYearlyTransferReceiverAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
@@ -1224,7 +1230,7 @@ func (h *cardHandleApi) FindYearlyTransferReceiverAmountByCardNumber(c echo.Cont
 // @Failure 400 {object} response.ErrorResponse "Invalid Saldo ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/active [get]
-func (h *cardHandleApi) FindByActive(c echo.Context) error {
+func (h *CardHandleApi) FindByActive(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -1269,7 +1275,7 @@ func (h *cardHandleApi) FindByActive(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsePaginationCardDeleteAt "Card data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/trashed [get]
-func (h *cardHandleApi) FindByTrashed(c echo.Context) error {
+func (h *CardHandleApi) FindByTrashed(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -1313,7 +1319,7 @@ func (h *cardHandleApi) FindByTrashed(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Failed to fetch card record"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/{card_number} [get]
-func (h *cardHandleApi) FindByCardNumber(c echo.Context) error {
+func (h *CardHandleApi) FindByCardNumber(c echo.Context) error {
 	cardNumber := c.Param("card_number")
 
 	ctx := c.Request().Context()
@@ -1345,7 +1351,7 @@ func (h *cardHandleApi) FindByCardNumber(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to create card"
 // @Router /api/card/create [post]
-func (h *cardHandleApi) CreateCard(c echo.Context) error {
+func (h *CardHandleApi) CreateCard(c echo.Context) error {
 	var body requests.CreateCardRequest
 
 	if err := c.Bind(&body); err != nil {
@@ -1392,7 +1398,7 @@ func (h *cardHandleApi) CreateCard(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to update card"
 // @Router /api/card/update/{id} [post]
-func (h *cardHandleApi) UpdateCard(c echo.Context) error {
+func (h *CardHandleApi) UpdateCard(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1448,7 +1454,7 @@ func (h *cardHandleApi) UpdateCard(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to trashed card"
 // @Router /api/card/trashed/{id} [post]
-func (h *cardHandleApi) TrashedCard(c echo.Context) error {
+func (h *CardHandleApi) TrashedCard(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1471,7 +1477,7 @@ func (h *cardHandleApi) TrashedCard(c echo.Context) error {
 		return card_errors.ErrApiFailedTrashCard(c)
 	}
 
-	so := h.mapping.ToApiResponseCard(res)
+	so := h.mapping.ToApiResponseCardDeleteAt(res)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -1487,7 +1493,7 @@ func (h *cardHandleApi) TrashedCard(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore card"
 // @Router /api/card/restore/{id} [post]
-func (h *cardHandleApi) RestoreCard(c echo.Context) error {
+func (h *CardHandleApi) RestoreCard(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1510,7 +1516,7 @@ func (h *cardHandleApi) RestoreCard(c echo.Context) error {
 		return card_errors.ErrApiFailedRestoreCard(c)
 	}
 
-	so := h.mapping.ToApiResponseCard(res)
+	so := h.mapping.ToApiResponseCardDeleteAt(res)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -1526,7 +1532,7 @@ func (h *cardHandleApi) RestoreCard(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete card"
 // @Router /api/card/permanent/{id} [delete]
-func (h *cardHandleApi) DeleteCardPermanent(c echo.Context) error {
+func (h *CardHandleApi) DeleteCardPermanent(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -1549,7 +1555,7 @@ func (h *cardHandleApi) DeleteCardPermanent(c echo.Context) error {
 		return card_errors.ErrApiFailedDeleteCardPermanent(c)
 	}
 
-	so := h.mapping.ToApiResponseCardDeleteAt(res)
+	so := h.mapping.ToApiResponseCardDelete(res)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -1563,7 +1569,7 @@ func (h *cardHandleApi) DeleteCardPermanent(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseCardAll "Successfully restored all card records"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore all card records"
 // @Router /api/card/restore/all [post]
-func (h *cardHandleApi) RestoreAllCard(c echo.Context) error {
+func (h *CardHandleApi) RestoreAllCard(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.card.RestoreAllCard(ctx, &emptypb.Empty{})
@@ -1588,7 +1594,7 @@ func (h *cardHandleApi) RestoreAllCard(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseCardAll "Successfully deleted all card records permanently"
 // @Failure 500 {object} response.ErrorResponse "Failed to permanently delete all card records"
 // @Router /api/card/permanent/all [post]
-func (h *cardHandleApi) DeleteAllCardPermanent(c echo.Context) error {
+func (h *CardHandleApi) DeleteAllCardPermanent(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.card.DeleteAllCardPermanent(ctx, &emptypb.Empty{})

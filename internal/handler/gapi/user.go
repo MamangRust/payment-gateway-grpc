@@ -270,7 +270,7 @@ func (s *userHandleGrpc) RestoreAllUser(ctx context.Context, _ *emptypb.Empty) (
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseUserAll("success", "Successfully restore all user")
+	so := s.mapping.ToProtoResponseUserAll("success", "Successfully restored all users")
 
 	return so, nil
 }
@@ -282,7 +282,7 @@ func (s *userHandleGrpc) DeleteAllUserPermanent(ctx context.Context, _ *emptypb.
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseUserAll("success", "Successfully delete user permanen")
+	so := s.mapping.ToProtoResponseUserAll("success", "Successfully deleted all users permanently")
 
 	return so, nil
 }

@@ -469,7 +469,7 @@ func (s *topupService) FindByActive(req *requests.FindAllTopups) ([]*response.To
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search))
 
-		return nil, nil, topup_errors.ErrFailedFindAllTopups
+		return nil, nil, topup_errors.ErrFailedFindActiveTopups
 	}
 
 	so := s.mapping.ToTopupResponsesDeleteAt(topups)
@@ -508,7 +508,7 @@ func (s *topupService) FindByTrashed(req *requests.FindAllTopups) ([]*response.T
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search))
 
-		return nil, nil, topup_errors.ErrFailedFindAllTopups
+		return nil, nil, topup_errors.ErrFailedFindTrashedTopups
 	}
 
 	so := s.mapping.ToTopupResponsesDeleteAt(topups)
@@ -761,7 +761,7 @@ func (s *topupService) TrashedTopup(topup_id int) (*response.TopupResponseDelete
 	res, err := s.topupRepository.TrashedTopup(topup_id)
 
 	if err != nil {
-		s.logger.Error("Failed to move user to trash",
+		s.logger.Error("Failed to move topup to trash",
 			zap.Int("topup_id", topup_id),
 			zap.Error(err))
 
@@ -779,7 +779,7 @@ func (s *topupService) TrashedTopup(topup_id int) (*response.TopupResponseDelete
 
 func (s *topupService) RestoreTopup(topup_id int) (*response.TopupResponseDeleteAt, *response.ErrorResponse) {
 	s.logger.Debug("Starting RestoreTopup process",
-		zap.Int("topupID", topup_id),
+		zap.Int("topup_id", topup_id),
 	)
 
 	res, err := s.topupRepository.RestoreTopup(topup_id)
@@ -795,7 +795,7 @@ func (s *topupService) RestoreTopup(topup_id int) (*response.TopupResponseDelete
 	so := s.mapping.ToTopupResponseDeleteAt(res)
 
 	s.logger.Debug("RestoreTopup process completed",
-		zap.Int("topupID", topup_id),
+		zap.Int("topup_id", topup_id),
 	)
 
 	return so, nil
@@ -803,7 +803,7 @@ func (s *topupService) RestoreTopup(topup_id int) (*response.TopupResponseDelete
 
 func (s *topupService) DeleteTopupPermanent(topup_id int) (bool, *response.ErrorResponse) {
 	s.logger.Debug("Starting DeleteTopupPermanent process",
-		zap.Int("topupID", topup_id),
+		zap.Int("topup_id", topup_id),
 	)
 
 	_, err := s.topupRepository.DeleteTopupPermanent(topup_id)
@@ -815,7 +815,7 @@ func (s *topupService) DeleteTopupPermanent(topup_id int) (bool, *response.Error
 	}
 
 	s.logger.Debug("DeleteTopupPermanent process completed",
-		zap.Int("topupID", topup_id),
+		zap.Int("topup_id", topup_id),
 	)
 
 	return true, nil

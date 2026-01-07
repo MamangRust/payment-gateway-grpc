@@ -10,245 +10,283 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-func TestLoginUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+type AuthHandleGrpcTestSuite struct {
+	suite.Suite
+	Ctrl            *gomock.Controller
+	MockAuthService *mock_service.MockAuthService
+	MockProtoMapper *mock_protomapper.MockAuthProtoMapper
+	Handler         gapi.AuthHandleGrpc
+}
 
-	mockAuthService := mock_service.NewMockAuthService(ctrl)
-	mockMapper := mock_protomapper.NewMockAuthProtoMapper(ctrl)
+func (suite *AuthHandleGrpcTestSuite) SetupTest() {
+	suite.Ctrl = gomock.NewController(suite.T())
+	suite.MockAuthService = mock_service.NewMockAuthService(suite.Ctrl)
+	suite.MockProtoMapper = mock_protomapper.NewMockAuthProtoMapper(suite.Ctrl)
+	suite.Handler = gapi.NewAuthHandleGrpc(suite.MockAuthService, suite.MockProtoMapper)
+}
 
-	loginRequest := &pb.LoginRequest{Email: "test@example.com", Password: "password123"}
-	loginRequestService := &requests.AuthRequest{
+func (suite *AuthHandleGrpcTestSuite) TearDownTest() {
+	suite.Ctrl.Finish()
+}
+
+func (suite *AuthHandleGrpcTestSuite) TestLoginUser_Success() {
+	req := &pb.LoginRequest{
 		Email:    "test@example.com",
 		Password: "password123",
 	}
 
-	loginResponse := &response.TokenResponse{
-		AccessToken:  "jwt_token_123",
-		RefreshToken: "refresh_token_123",
-	}
-
-	mockAuthService.EXPECT().Login(loginRequestService).Return(loginResponse, nil)
-
-	mockMapper.EXPECT().ToResponseLogin(loginResponse).Return(&pb.ApiResponseLogin{
-		Status:  "success",
-		Message: "Login successful",
-		Data: &pb.TokenResponse{
-			AccessToken:  loginResponse.AccessToken,
-			RefreshToken: loginResponse.RefreshToken,
-		},
-	})
-
-	handler := gapi.NewAuthHandleGrpc(mockAuthService, mockMapper)
-
-	resp, err := handler.LoginUser(context.Background(), loginRequest)
-
-	assert.Nil(t, err)
-	assert.NotNil(t, resp)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Login successful", resp.Message)
-
-	assert.NotNil(t, resp.Data)
-	assert.NotNil(t, resp.Data.AccessToken)
-	assert.NotNil(t, resp.Data.RefreshToken)
-}
-
-func TestLoginUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockAuthService := mock_service.NewMockAuthService(ctrl)
-	mockMapper := mock_protomapper.NewMockAuthProtoMapper(ctrl)
-
-	loginRequest := &pb.LoginRequest{Email: "test@example.com", Password: "wrong-password"}
-	loginRequestService := &requests.AuthRequest{
+	expectedServiceReq := &requests.AuthRequest{
 		Email:    "test@example.com",
-		Password: "wrong-password",
+		Password: "password123",
 	}
 
-	mockAuthService.EXPECT().Login(loginRequestService).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "invalid credentials",
-	})
-
-	handler := gapi.NewAuthHandleGrpc(mockAuthService, mockMapper)
-
-	resp, errRes := handler.LoginUser(context.Background(), loginRequest)
-
-	assert.NotNil(t, errRes)
-	assert.Nil(t, resp)
-	assert.Contains(t, errRes.Error(), "Login failed")
-}
-
-func TestLoginUser_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockAuthService := mock_service.NewMockAuthService(ctrl)
-	mockMapper := mock_protomapper.NewMockAuthProtoMapper(ctrl)
-
-	loginRequest := &pb.LoginRequest{Email: "", Password: ""}
-
-	req := &requests.AuthRequest{
-		Email:    "",
-		Password: "",
+	mockServiceResponse := &response.TokenResponse{
+		AccessToken:  "mock_access_token",
+		RefreshToken: "mock_refresh_token",
 	}
 
-	mockAuthService.EXPECT().Login(req).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "invalid credentials",
-	})
+	expectedGrpcResponse := &pb.ApiResponseLogin{
+		Status:  "success",
+		Message: "Login successfully",
+		Data: &pb.TokenResponse{
+			AccessToken:  mockServiceResponse.AccessToken,
+			RefreshToken: mockServiceResponse.RefreshToken,
+		},
+	}
 
-	handler := gapi.NewAuthHandleGrpc(mockAuthService, mockMapper)
+	suite.MockAuthService.EXPECT().Login(gomock.Eq(expectedServiceReq)).Return(mockServiceResponse, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseLogin("success", "Login successfully", mockServiceResponse).Return(expectedGrpcResponse)
 
-	resp, errRes := handler.LoginUser(context.Background(), loginRequest)
+	resp, err := suite.Handler.LoginUser(context.Background(), req)
 
-	assert.NotNil(t, errRes)
-	assert.Nil(t, resp)
-	assert.Contains(t, errRes.Error(), "Login failed")
+	suite.NoError(err)
+	suite.NotNil(resp)
+	suite.Equal(expectedGrpcResponse.Status, resp.GetStatus())
+	suite.Equal(expectedGrpcResponse.Message, resp.GetMessage())
+	suite.Equal(expectedGrpcResponse.Data.AccessToken, resp.GetData().GetAccessToken())
+	suite.Equal(expectedGrpcResponse.Data.RefreshToken, resp.GetData().GetRefreshToken())
 }
 
-func TestRegisterUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *AuthHandleGrpcTestSuite) TestLoginUser_Failure_InvalidCredentials() {
+	req := &pb.LoginRequest{
+		Email:    "test@example.com",
+		Password: "wrongpassword",
+	}
 
-	mockAuthService := mock_service.NewMockAuthService(ctrl)
-	mockMapper := mock_protomapper.NewMockAuthProtoMapper(ctrl)
+	expectedServiceReq := &requests.AuthRequest{
+		Email:    "test@example.com",
+		Password: "wrongpassword",
+	}
 
-	request := &requests.CreateUserRequest{
-		FirstName:       "John",
-		LastName:        "Doe",
-		Email:           "test@example.com",
+	serviceError := &response.ErrorResponse{
+		Status:  "error",
+		Message: "invalid credentials",
+		Code:    int(codes.Unauthenticated),
+	}
+
+	suite.MockAuthService.EXPECT().Login(gomock.Eq(expectedServiceReq)).Return(nil, serviceError)
+
+	resp, err := suite.Handler.LoginUser(context.Background(), req)
+
+	suite.Error(err)
+	suite.Nil(resp)
+
+	statusErr, ok := status.FromError(err)
+	suite.True(ok, "Error harus berupa gRPC status error")
+	suite.Equal(codes.Unauthenticated, statusErr.Code())
+	suite.Contains(statusErr.Message(), serviceError.Message)
+}
+
+func (suite *AuthHandleGrpcTestSuite) TestRegisterUser_Success() {
+	req := &pb.RegisterRequest{
+		Firstname:       "John",
+		Lastname:        "Doe",
+		Email:           "john.doe@example.com",
 		Password:        "password123",
 		ConfirmPassword: "password123",
 	}
 
-	registerRequest := &pb.RegisterRequest{
-		Firstname:       request.FirstName,
-		Lastname:        request.LastName,
-		Email:           request.Email,
-		Password:        request.Password,
-		ConfirmPassword: request.ConfirmPassword,
+	expectedServiceReq := &requests.CreateUserRequest{
+		FirstName:       "John",
+		LastName:        "Doe",
+		Email:           "john.doe@example.com",
+		Password:        "password123",
+		ConfirmPassword: "password123",
 	}
 
-	expectedResponse := &response.UserResponse{
+	mockServiceResponse := &response.UserResponse{
 		ID:        1,
 		FirstName: "John",
 		LastName:  "Doe",
-		Email:     "test@example.com",
+		Email:     "john.doe@example.com",
 	}
 
-	myexpected := &pb.ApiResponseRegister{
+	expectedGrpcResponse := &pb.ApiResponseRegister{
 		Status:  "success",
-		Message: "User registered successfully",
+		Message: "Registration successfully",
 		Data: &pb.UserResponse{
-			Id:        int32(expectedResponse.ID),
-			Firstname: expectedResponse.FirstName,
-			Lastname:  expectedResponse.LastName,
-			Email:     expectedResponse.Email,
+			Id:        int32(mockServiceResponse.ID),
+			Firstname: mockServiceResponse.FirstName,
+			Lastname:  mockServiceResponse.LastName,
+			Email:     mockServiceResponse.Email,
 		},
 	}
 
-	mockAuthService.EXPECT().Register(&requests.CreateUserRequest{
-		FirstName:       "John",
-		LastName:        "Doe",
-		Email:           "test@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
-	}).Return(expectedResponse, nil)
+	suite.MockAuthService.EXPECT().Register(gomock.Eq(expectedServiceReq)).Return(mockServiceResponse, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseRegister("success", "Registration successfully", mockServiceResponse).Return(expectedGrpcResponse)
 
-	mockMapper.EXPECT().ToResponseRegister(expectedResponse).Return(myexpected)
+	resp, err := suite.Handler.RegisterUser(context.Background(), req)
 
-	handler := gapi.NewAuthHandleGrpc(mockAuthService, mockMapper)
-
-	resp, err := handler.RegisterUser(context.Background(), registerRequest)
-
-	assert.Nil(t, err)
-	assert.NotNil(t, resp)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "User registered successfully", resp.Message)
-
-	assert.Equal(t, int32(expectedResponse.ID), resp.Data.Id)
-	assert.Equal(t, expectedResponse.FirstName, resp.Data.Firstname)
-	assert.Equal(t, expectedResponse.LastName, resp.Data.Lastname)
-	assert.Equal(t, expectedResponse.Email, resp.Data.Email)
-
+	suite.NoError(err)
+	suite.NotNil(resp)
+	suite.Equal(expectedGrpcResponse.Status, resp.GetStatus())
+	suite.Equal(expectedGrpcResponse.Data.Id, resp.GetData().GetId())
 }
 
-func TestRegisterUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockAuthService := mock_service.NewMockAuthService(ctrl)
-	mockMapper := mock_protomapper.NewMockAuthProtoMapper(ctrl)
-
-	request := &requests.CreateUserRequest{
-		FirstName:       "John",
-		LastName:        "Doe",
-		Email:           "test@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
+func (suite *AuthHandleGrpcTestSuite) TestRegisterUser_Failure_EmailExists() {
+	req := &pb.RegisterRequest{
+		Firstname: "Jane",
+		Lastname:  "Doe",
+		Email:     "existing@example.com",
+		Password:  "password123",
 	}
 
-	registerRequest := &pb.RegisterRequest{
-		Firstname:       request.FirstName,
-		Lastname:        request.LastName,
-		Email:           request.Email,
-		Password:        request.Password,
-		ConfirmPassword: request.ConfirmPassword,
-	}
-
-	mockAuthService.EXPECT().Register(request).Return(nil, &response.ErrorResponse{
+	serviceError := &response.ErrorResponse{
 		Status:  "error",
-		Message: "registration failed",
-	})
+		Message: "email already exists",
+		Code:    int(codes.AlreadyExists),
+	}
 
-	handler := gapi.NewAuthHandleGrpc(mockAuthService, mockMapper)
+	suite.MockAuthService.EXPECT().Register(gomock.Any()).Return(nil, serviceError)
 
-	resp, err := handler.RegisterUser(context.Background(), registerRequest)
+	resp, err := suite.Handler.RegisterUser(context.Background(), req)
 
-	assert.NotNil(t, err)
-	assert.Nil(t, resp)
-	assert.Contains(t, err.Error(), "status: error, message: registration failed")
+	suite.Error(err)
+	suite.Nil(resp)
+
+	statusErr, ok := status.FromError(err)
+	suite.True(ok)
+	suite.Equal(codes.AlreadyExists, statusErr.Code())
+	suite.Contains(statusErr.Message(), serviceError.Message)
 }
 
-func TestRegisterUser_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockAuthService := mock_service.NewMockAuthService(ctrl)
-	mockMapper := mock_protomapper.NewMockAuthProtoMapper(ctrl)
-
-	request := &requests.CreateUserRequest{
-		FirstName:       "",
-		LastName:        "",
-		Email:           "",
-		Password:        "",
-		ConfirmPassword: "",
+func (suite *AuthHandleGrpcTestSuite) TestRefreshToken_Success() {
+	req := &pb.RefreshTokenRequest{
+		RefreshToken: "valid_refresh_token",
 	}
 
-	registerRequest := &pb.RegisterRequest{
-		Firstname:       request.FirstName,
-		Lastname:        request.LastName,
-		Email:           request.Email,
-		Password:        request.Password,
-		ConfirmPassword: request.ConfirmPassword,
+	mockServiceResponse := &response.TokenResponse{
+		AccessToken:  "new_access_token",
+		RefreshToken: "new_refresh_token",
 	}
 
-	mockAuthService.EXPECT().Register(request).Return(nil, &response.ErrorResponse{
+	expectedGrpcResponse := &pb.ApiResponseRefreshToken{
+		Status:  "success",
+		Message: "Refresh token successfully",
+		Data: &pb.TokenResponse{
+			AccessToken:  mockServiceResponse.AccessToken,
+			RefreshToken: mockServiceResponse.RefreshToken,
+		},
+	}
+
+	suite.MockAuthService.EXPECT().RefreshToken(req.RefreshToken).Return(mockServiceResponse, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseRefreshToken("success", "Refresh token successfully", mockServiceResponse).Return(expectedGrpcResponse)
+
+	resp, err := suite.Handler.RefreshToken(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(resp)
+	suite.Equal(expectedGrpcResponse.Status, resp.GetStatus())
+}
+
+func (suite *AuthHandleGrpcTestSuite) TestRefreshToken_Failure_InvalidToken() {
+	req := &pb.RefreshTokenRequest{
+		RefreshToken: "invalid_token",
+	}
+
+	serviceError := &response.ErrorResponse{
 		Status:  "error",
-		Message: "registration failed",
-	})
+		Message: "invalid or expired refresh token",
+		Code:    int(codes.Unauthenticated),
+	}
 
-	handler := gapi.NewAuthHandleGrpc(mockAuthService, mockMapper)
+	suite.MockAuthService.EXPECT().RefreshToken(req.RefreshToken).Return(nil, serviceError)
 
-	resp, err := handler.RegisterUser(context.Background(), registerRequest)
+	resp, err := suite.Handler.RefreshToken(context.Background(), req)
 
-	assert.NotNil(t, err)
-	assert.Nil(t, resp)
-	assert.Contains(t, err.Error(), "error: code = InvalidArgument desc = status: error, message: registration failed")
+	suite.Error(err)
+	suite.Nil(resp)
+
+	statusErr, ok := status.FromError(err)
+	suite.True(ok)
+	suite.Equal(codes.Unauthenticated, statusErr.Code())
+	suite.Contains(statusErr.Message(), serviceError.Message)
+}
+
+func (suite *AuthHandleGrpcTestSuite) TestGetMe_Success() {
+	req := &pb.GetMeRequest{
+		AccessToken: "valid_access_token",
+	}
+
+	mockServiceResponse := &response.UserResponse{
+		ID:        1,
+		FirstName: "Test",
+		LastName:  "User",
+		Email:     "test@example.com",
+	}
+
+	expectedGrpcResponse := &pb.ApiResponseGetMe{
+		Status:  "success",
+		Message: "Refresh token successfully",
+		Data: &pb.UserResponse{
+			Id:        int32(mockServiceResponse.ID),
+			Firstname: mockServiceResponse.FirstName,
+			Lastname:  mockServiceResponse.LastName,
+			Email:     mockServiceResponse.Email,
+		},
+	}
+
+	suite.MockAuthService.EXPECT().GetMe(req.AccessToken).Return(mockServiceResponse, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseGetMe("success", "Refresh token successfully", mockServiceResponse).Return(expectedGrpcResponse)
+
+	resp, err := suite.Handler.GetMe(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(resp)
+	suite.Equal(expectedGrpcResponse.Status, resp.GetStatus())
+	suite.Equal(expectedGrpcResponse.Data.Id, resp.GetData().GetId())
+}
+
+func (suite *AuthHandleGrpcTestSuite) TestGetMe_Failure_Unauthorized() {
+	req := &pb.GetMeRequest{
+		AccessToken: "invalid_access_token",
+	}
+
+	serviceError := &response.ErrorResponse{
+		Status:  "error",
+		Message: "invalid token",
+		Code:    int(codes.Unauthenticated),
+	}
+
+	suite.MockAuthService.EXPECT().GetMe(req.AccessToken).Return(nil, serviceError)
+
+	resp, err := suite.Handler.GetMe(context.Background(), req)
+
+	suite.Error(err)
+	suite.Nil(resp)
+
+	statusErr, ok := status.FromError(err)
+	suite.True(ok)
+	suite.Equal(codes.Unauthenticated, statusErr.Code())
+	suite.Contains(statusErr.Message(), serviceError.Message)
+}
+
+func TestAuthHandleGrpcSuite(t *testing.T) {
+	suite.Run(t, new(AuthHandleGrpcTestSuite))
 }

@@ -1,1465 +1,729 @@
 package test
 
 import (
-	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	"MamangRust/paymentgatewaygrpc/internal/handler/api"
-	"MamangRust/paymentgatewaygrpc/internal/pb"
-	mock_pb "MamangRust/paymentgatewaygrpc/internal/pb/mocks"
-	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
+	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
+	"MamangRust/paymentgatewaygrpc/internal/domain/response"
+	"MamangRust/paymentgatewaygrpc/internal/handler/api"
+	mock_apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api/mocks"
+	"MamangRust/paymentgatewaygrpc/internal/pb"
+	mock_pb "MamangRust/paymentgatewaygrpc/internal/pb/mocks"
+	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
+
 	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func TestFindAllMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+type MerchantHandlerTestSuite struct {
+	suite.Suite
+	Ctrl                  *gomock.Controller
+	MockMerchantClient    *mock_pb.MockMerchantServiceClient
+	MockTransactionClient *mock_pb.MockTransactionServiceClient
+	MockLogger            *mock_logger.MockLoggerInterface
+	MockMapper            *mock_apimapper.MockMerchantResponseMapper
+	E                     *echo.Echo
+	Handler               *api.MerchantHandleApi
+}
 
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+func (suite *MerchantHandlerTestSuite) SetupTest() {
+	suite.Ctrl = gomock.NewController(suite.T())
+	suite.MockMerchantClient = mock_pb.NewMockMerchantServiceClient(suite.Ctrl)
+	suite.MockTransactionClient = mock_pb.NewMockTransactionServiceClient(suite.Ctrl)
+	suite.MockLogger = mock_logger.NewMockLoggerInterface(suite.Ctrl)
+	suite.MockMapper = mock_apimapper.NewMockMerchantResponseMapper(suite.Ctrl)
+	suite.E = echo.New()
+	suite.Handler = api.NewHandlerMerchant(suite.MockMerchantClient, suite.E, suite.MockLogger, suite.MockMapper)
+}
 
-	page, pageSize := 1, 10
-	search := "merchant"
+func (suite *MerchantHandlerTestSuite) TearDownTest() {
+	suite.Ctrl.Finish()
+}
 
-	expectedResponse := &pb.ApiResponsePaginationMerchant{
+func (suite *MerchantHandlerTestSuite) TestFindAllMerchant_Success() {
+	grpcResponse := &pb.ApiResponsePaginationMerchant{
 		Status:  "success",
 		Message: "Merchants retrieved successfully",
 		Data: []*pb.MerchantResponse{
-			{Id: 1, Name: "Merchant 1"},
-			{Id: 2, Name: "Merchant 2"},
+			{Id: 1, Name: "Merchant 1", ApiKey: "api-key-1"},
+			{Id: 2, Name: "Merchant 2", ApiKey: "api-key-2"},
 		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 2, TotalPages: 1},
+	}
+	expectedApiResponse := &response.ApiResponsePaginationMerchant{
+		Status:     grpcResponse.Status,
+		Message:    grpcResponse.Message,
+		Data:       []*response.MerchantResponse{{ID: 1, Name: "Merchant 1", ApiKey: "api-key-1"}, {ID: 2, Name: "Merchant 2", ApiKey: "api-key-2"}},
+		Pagination: &response.PaginationMeta{CurrentPage: 1, PageSize: 2, TotalPages: 1},
 	}
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/merchant?page=%d&page_size=%d&search=%s", page, pageSize, search), nil)
+	suite.MockMerchantClient.EXPECT().FindAllMerchant(gomock.Any(), &pb.FindAllMerchantRequest{Page: 1, PageSize: 10, Search: "test"}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsesMerchant(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/merchants?page=1&page_size=10&search=test", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	mockMerchantClient.EXPECT().
-		FindAllMerchant(gomock.Any(), &pb.FindAllMerchantRequest{
-			Page:     int32(page),
-			PageSize: int32(pageSize),
-			Search:   search,
-		}).
-		Return(expectedResponse, nil).
-		Times(1)
+	err := suite.Handler.FindAll(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.FindAll(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsePaginationMerchant
+	var resp response.ApiResponsePaginationMerchant
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Merchants retrieved successfully", resp.Message)
-	assert.Len(t, resp.Data, 2)
-	assert.Equal(t, "Merchant 1", resp.Data[0].Name)
-	assert.Equal(t, "Merchant 2", resp.Data[1].Name)
+	suite.NoError(err)
+	suite.Equal("success", resp.Status)
+	suite.Len(resp.Data, 2)
 }
 
-func TestFindAllMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantHandlerTestSuite) TestFindAllMerchant_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockMerchantClient.EXPECT().FindAllMerchant(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve merchant data", zap.Error(grpcError)).Times(1)
 
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	page, pageSize := 1, 10
-	search := "merchant"
-
-	mockLogger.EXPECT().Debug("Failed to retrieve merchant data", gomock.Any()).Times(1)
-
-	mockMerchantClient.EXPECT().
-		FindAllMerchant(gomock.Any(), &pb.FindAllMerchantRequest{
-			Page:     int32(page),
-			PageSize: int32(pageSize),
-			Search:   search,
-		}).
-		Return(nil, fmt.Errorf("internal server error")).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/merchant?page=%d&page_size=%d&search=%s", page, pageSize, search), nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/merchants", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.FindAll(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to retrieve merchant data: ", resp.Message)
+	err := suite.Handler.FindAll(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestFindAll_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	page, pageSize := 1, 10
-	search := "nonexistent"
-
-	expectedResponse := &pb.ApiResponsePaginationMerchant{
-		Status:  "success",
-		Message: "No merchants found",
-		Data:    []*pb.MerchantResponse{},
-	}
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/merchant?page=%d&page_size=%d&search=%s", page, pageSize, search), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	mockMerchantClient.EXPECT().
-		FindAllMerchant(gomock.Any(), &pb.FindAllMerchantRequest{
-			Page:     int32(page),
-			PageSize: int32(pageSize),
-			Search:   search,
-		}).
-		Return(expectedResponse, nil).
-		Times(1)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.FindAll(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsePaginationMerchant
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "No merchants found", resp.Message)
-	assert.Len(t, resp.Data, 0)
-}
-
-func TestFindByIdMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
+func (suite *MerchantHandlerTestSuite) TestFindByIdMerchant_Success() {
 	id := 1
-	expectedResponse := &pb.ApiResponseMerchant{
-		Status:  "success",
-		Message: "Merchant retrieved successfully",
-		Data: &pb.MerchantResponse{
-			Id:   1,
-			Name: "Merchant 1",
-		},
-	}
+	grpcResponse := &pb.ApiResponseMerchant{Status: "success", Data: &pb.MerchantResponse{Id: int32(id), Name: "Merchant 1", ApiKey: "api-key-1"}}
+	expectedApiResponse := &response.ApiResponseMerchant{Status: "success", Data: &response.MerchantResponse{ID: id, Name: "Merchant 1", ApiKey: "api-key-1"}}
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/merchant/%d", id), nil)
+	suite.MockMerchantClient.EXPECT().FindByIdMerchant(gomock.Any(), &pb.FindByIdMerchantRequest{MerchantId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseMerchant(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/merchants/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues(fmt.Sprint(id))
-
-	mockMerchantClient.EXPECT().
-		FindByIdMerchant(gomock.Any(), &pb.FindByIdMerchantRequest{
-			MerchantId: int32(id),
-		}).
-		Return(expectedResponse, nil).
-		Times(1)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.FindById(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseMerchant
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Merchant retrieved successfully", resp.Message)
-	assert.Equal(t, int32(1), resp.Data.Id)
-	assert.Equal(t, "Merchant 1", resp.Data.Name)
-}
-
-func TestFindByIdMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	id := 1
-
-	mockLogger.EXPECT().Debug("Failed to retrieve merchant data", gomock.Any()).Times(1)
-
-	mockMerchantClient.EXPECT().
-		FindByIdMerchant(gomock.Any(), &pb.FindByIdMerchantRequest{
-			MerchantId: int32(id),
-		}).
-		Return(nil, fmt.Errorf("internal server error")).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/merchant/%d", id), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues(fmt.Sprint(id))
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.FindById(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to retrieve merchant data: ", resp.Message)
-}
-
-func TestFindByIdMerchant_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	invalidID := "abc"
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/merchant/%s", invalidID), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues(invalidID)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.FindById(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Invalid merchant ID", resp.Message)
-}
-
-func TestFindByApiKey_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	apiKey := "valid-api-key"
-	expectedResponse := &pb.ApiResponseMerchant{
-		Status:  "success",
-		Message: "Merchant retrieved successfully",
-		Data: &pb.MerchantResponse{
-			Id:   1,
-			Name: "Merchant 1",
-		},
-	}
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/merchant/find?api_key=%s", apiKey), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	mockMerchantClient.EXPECT().
-		FindByApiKey(gomock.Any(), &pb.FindByApiKeyRequest{
-			ApiKey: apiKey,
-		}).
-		Return(expectedResponse, nil).
-		Times(1)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByApiKey(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseMerchant
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Merchant retrieved successfully", resp.Message)
-	assert.Equal(t, int32(1), resp.Data.Id)
-	assert.Equal(t, "Merchant 1", resp.Data.Name)
-}
-
-func TestFindByApiKey_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	apiKey := "valid-api-key"
-
-	mockLogger.EXPECT().Debug("Failed to retrieve merchant data", gomock.Any()).Times(1)
-
-	mockMerchantClient.EXPECT().
-		FindByApiKey(gomock.Any(), &pb.FindByApiKeyRequest{
-			ApiKey: apiKey,
-		}).
-		Return(nil, fmt.Errorf("internal server error")).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/merchant/find?api_key=%s", apiKey), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByApiKey(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to retrieve merchant data: ", resp.Message)
-}
-
-func TestFindByMerchantUserId_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	userID := int32(1)
-
-	expectedResponse := []*pb.MerchantResponse{
-		{
-			Id:   1,
-			Name: "Merchant 1",
-		},
-		{
-			Id:   2,
-			Name: "Merchant 2",
-		},
-	}
-	mockResponse := &pb.ApiResponsesMerchant{
-		Status:  "success",
-		Message: "Merchant retrieved successfully",
-		Data:    expectedResponse,
-	}
-
-	mockMerchantClient.EXPECT().
-		FindByMerchantUserId(
-			gomock.Any(),
-			&pb.FindByMerchantUserIdRequest{UserId: userID},
-		).
-		Return(mockResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/merchant/merchant-user", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.Set("user_id", userID)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-	err := handler.FindByMerchantUserId(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsesMerchant
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Merchant retrieved successfully", resp.Message)
-	assert.Equal(t, expectedResponse[0].Id, resp.Data[0].Id)
-	assert.Equal(t, expectedResponse[0].Name, resp.Data[0].Name)
-}
-
-func TestFindByMerchantUserId_InvalidUserID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	invalidUserID := "not_a_number"
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/merchant/merchant-user", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.Set("user_id", invalidUserID)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-	err := handler.FindByMerchantUserId(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp struct {
-		Status  string `json:"status"`
-		Message string `json:"message"`
-	}
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Invalid merchant ID")
-}
-
-func TestFindByMerchantUserId_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	userID := int32(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/merchant/merchant-user", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-	err := handler.FindByMerchantUserId(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Invalid merchant ID", resp.Message)
-
-	mockMerchantClient.EXPECT().
-		FindByMerchantUserId(
-			gomock.Any(),
-			&pb.FindByMerchantUserIdRequest{UserId: userID},
-		).
-		Return(nil, fmt.Errorf("service error"))
-
-	mockLogger.EXPECT().Debug("Failed to retrieve merchant data", gomock.Any()).Times(1)
-
-	e = echo.New()
-	req = httptest.NewRequest(http.MethodGet, "/api/merchant/merchant-user", nil)
-	rec = httptest.NewRecorder()
-	c = e.NewContext(req, rec)
-	c.Set("user_id", userID)
-
-	handler = api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-	err = handler.FindByMerchantUserId(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to retrieve merchant data: ", resp.Message)
-
-	mockMerchantClient.EXPECT().
-		FindByMerchantUserId(
-			gomock.Any(),
-			&pb.FindByMerchantUserIdRequest{UserId: userID},
-		).
-		Return(&pb.ApiResponsesMerchant{
-			Status:  "error",
-			Message: "Invalid merchant ID",
-			Data:    nil,
-		}, nil)
-
-	e = echo.New()
-	req = httptest.NewRequest(http.MethodGet, "/api/merchant/merchant-user", nil)
-	rec = httptest.NewRecorder()
-	c = e.NewContext(req, rec)
-	c.Set("user_id", userID)
-
-	handler = api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-	err = handler.FindByMerchantUserId(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var respEmpty pb.ApiResponsesMerchant
-	err = json.Unmarshal(rec.Body.Bytes(), &respEmpty)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", respEmpty.Status)
-	assert.Equal(t, "Invalid merchant ID", respEmpty.Message)
-	assert.Nil(t, respEmpty.Data)
-}
-
-func TestFindByActiveMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	expectedResponse := []*pb.MerchantResponseDeleteAt{
-		{
-			Id:   1,
-			Name: "Active Merchant 1",
-		},
-		{
-			Id:   2,
-			Name: "Active Merchant 2",
-		},
-	}
-
-	request := &pb.FindAllMerchantRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockResponse := &pb.ApiResponsePaginationMerchantDeleteAt{
-		Status:  "success",
-		Message: "Active merchants retrieved successfully",
-		Data:    expectedResponse,
-	}
-
-	mockMerchantClient.EXPECT().
-		FindByActive(gomock.Any(), request).
-		Return(mockResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/merchant/active", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByActive(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsesMerchant
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Active merchants retrieved successfully", resp.Message)
-	assert.Equal(t, len(expectedResponse), len(resp.Data))
-	assert.Equal(t, expectedResponse[0].Id, resp.Data[0].Id)
-	assert.Equal(t, expectedResponse[0].Name, resp.Data[0].Name)
-}
-
-func TestFindByActiveMerchant_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockResponse := &pb.ApiResponsePaginationMerchantDeleteAt{
-		Status:  "success",
-		Message: "No active merchants found",
-		Data:    []*pb.MerchantResponseDeleteAt{},
-	}
-
-	mockMerchantClient.EXPECT().
-		FindByActive(gomock.Any(), gomock.Any()).
-		Return(mockResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/merchant/active", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByActive(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsesMerchant
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "No active merchants found", resp.Message)
-	assert.Equal(t, 0, len(resp.Data))
-}
-
-func TestFindByActiveMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockMerchantClient.EXPECT().
-		FindByActive(gomock.Any(), gomock.Any()).
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve merchant data: ",
-		}).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to retrieve merchant data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/merchant/active", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByActive(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to retrieve merchant data: ", resp.Message)
-}
-
-func TestFindByTrashedMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	expectedResponse := []*pb.MerchantResponseDeleteAt{
-		{
-			Id:   1,
-			Name: "Trashed Merchant 1",
-		},
-		{
-			Id:   2,
-			Name: "Trashed Merchant 2",
-		},
-	}
-	request := &pb.FindAllMerchantRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockResponse := &pb.ApiResponsePaginationMerchantDeleteAt{
-		Status:  "success",
-		Message: "Trashed merchants retrieved successfully",
-		Data:    expectedResponse,
-	}
-
-	mockMerchantClient.EXPECT().
-		FindByTrashed(gomock.Any(), request).
-		Return(mockResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/merchant/trashed", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByTrashed(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsesMerchant
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Trashed merchants retrieved successfully", resp.Message)
-	assert.Equal(t, len(expectedResponse), len(resp.Data))
-	assert.Equal(t, expectedResponse[0].Id, resp.Data[0].Id)
-	assert.Equal(t, expectedResponse[0].Name, resp.Data[0].Name)
-}
-
-func TestFindByTrashedMerchant_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockResponse := &pb.ApiResponsePaginationMerchantDeleteAt{
-		Status:  "success",
-		Message: "No trashed merchants found",
-		Data:    []*pb.MerchantResponseDeleteAt{},
-	}
-
-	request := &pb.FindAllMerchantRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockMerchantClient.EXPECT().
-		FindByTrashed(gomock.Any(), request).
-		Return(mockResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/merchant/trashed", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByTrashed(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsesMerchant
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "No trashed merchants found", resp.Message)
-	assert.Equal(t, 0, len(resp.Data))
-}
-
-func TestFindByTrashed_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockMerchantClient.EXPECT().
-		FindByTrashed(gomock.Any(), gomock.Any()).
-		Return(nil, fmt.Errorf("service error")).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to retrieve merchant data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/merchant/trashed", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.FindByTrashed(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to retrieve merchant data: ", resp.Message)
-}
-
-func TestCreateMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	body := requests.CreateMerchantRequest{
-		Name:   "New Merchant",
-		UserID: 1,
-	}
-
-	expectedResponse := &pb.ApiResponseMerchant{
-		Status:  "success",
-		Message: "Merchant created successfully",
-		Data: &pb.MerchantResponse{
-			Id:   1,
-			Name: "New Merchant",
-		},
-	}
-
-	mockMerchantClient.EXPECT().
-		CreateMerchant(
-			gomock.Any(),
-			&pb.CreateMerchantRequest{
-				Name:   body.Name,
-				UserId: int32(body.UserID),
-			},
-		).
-		Return(expectedResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	bodyJSON, _ := json.Marshal(body)
-	req := httptest.NewRequest(http.MethodPost, "/api/merchant", bytes.NewReader(bodyJSON))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.Create(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseMerchant
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Merchant created successfully", resp.Message)
-	assert.Equal(t, expectedResponse.Data.Id, resp.Data.Id)
-	assert.Equal(t, expectedResponse.Data.Name, resp.Data.Name)
-}
-
-func TestCreateMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	body := requests.CreateMerchantRequest{
-		Name:   "New Merchant",
-		UserID: 1,
-	}
-
-	mockMerchantClient.EXPECT().
-		CreateMerchant(
-			gomock.Any(),
-			&pb.CreateMerchantRequest{
-				Name:   body.Name,
-				UserId: int32(body.UserID),
-			},
-		).
-		Return(nil, fmt.Errorf("service error")).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to create merchant", gomock.Any()).Times(1)
-
-	e := echo.New()
-	bodyJSON, _ := json.Marshal(body)
-	req := httptest.NewRequest(http.MethodPost, "/api/merchant", bytes.NewReader(bodyJSON))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.Create(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to create merchant:")
-}
-
-func TestCreateMerchant_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	body := requests.CreateMerchantRequest{
-		Name:   "",
-		UserID: 0,
-	}
-
-	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).Times(1)
-
-	e := echo.New()
-	bodyJSON, _ := json.Marshal(body)
-	req := httptest.NewRequest(http.MethodPost, "/api/merchant", bytes.NewReader(bodyJSON))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.Create(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Validation Error:")
-	assert.Contains(t, resp.Message, "'Name' failed on the 'required' tag")
-	assert.Contains(t, resp.Message, "'UserID' failed on the 'required' tag")
-}
-
-func TestUpdateMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	body := requests.UpdateMerchantRequest{
-		MerchantID: 1,
-		Name:       "Updated Merchant",
-		UserID:     1,
-		Status:     "active",
-	}
-
-	expectedResponse := &pb.ApiResponseMerchant{
-		Status:  "success",
-		Message: "Merchant updated successfully",
-		Data: &pb.MerchantResponse{
-			Id:   1,
-			Name: "Updated Merchant",
-		},
-	}
-
-	mockMerchantClient.EXPECT().
-		UpdateMerchant(
-			gomock.Any(),
-			&pb.UpdateMerchantRequest{
-				MerchantId: int32(body.MerchantID),
-				Name:       body.Name,
-				UserId:     int32(body.UserID),
-				Status:     body.Status,
-			},
-		).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	bodyJSON, _ := json.Marshal(body)
-	req := httptest.NewRequest(http.MethodPost, "/api/merchant/update", bytes.NewReader(bodyJSON))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	c.Set("id", int32(body.MerchantID))
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.Update(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseMerchant
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Merchant updated successfully", resp.Message)
-	assert.Equal(t, body.MerchantID, int(resp.Data.Id))
-	assert.Equal(t, body.Name, resp.Data.Name)
-}
-
-func TestUpdateMerchant_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	body := requests.UpdateMerchantRequest{
-		MerchantID: 0,
-		Name:       "Updated Merchant",
-		UserID:     1,
-		Status:     "active",
-	}
-
-	merchantId := "invalid"
-
-	e := echo.New()
-	bodyBytes, _ := json.Marshal(body)
-	req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/merchant/update/%s", merchantId), bytes.NewReader(bodyBytes))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues(merchantId)
-
-	mockLogger.EXPECT().Debug("Invalid merchant ID", gomock.Any()).Times(1)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.Update(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Invalid merchant ID", resp.Message)
-
-}
-
-func TestUpdateMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	body := requests.UpdateMerchantRequest{
-		MerchantID: 1,
-		Name:       "Updated Merchant",
-		UserID:     1,
-		Status:     "active",
-	}
-
-	mockLogger.EXPECT().Debug("Failed to update merchant", gomock.Any()).Times(1)
-
-	mockMerchantClient.EXPECT().
-		UpdateMerchant(
-			gomock.Any(),
-			&pb.UpdateMerchantRequest{
-				MerchantId: int32(body.MerchantID),
-				Name:       body.Name,
-				UserId:     int32(body.UserID),
-				Status:     body.Status,
-			},
-		).
-		Return(nil, status.Error(codes.Internal, "internal server error"))
-
-	e := echo.New()
-	bodyJSON, _ := json.Marshal(body)
-	req := httptest.NewRequest(http.MethodPost, "/api/merchant/update", bytes.NewReader(bodyJSON))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	c.Set("id", int32(body.MerchantID))
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.Update(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to update merchant: ", resp.Message)
-}
-
-func TestUpdateMerchant_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	body := requests.UpdateMerchantRequest{
-		MerchantID: 1,
-		Name:       "",
-		UserID:     1,
-		Status:     "active",
-	}
-
-	mockLogger.EXPECT().Debug("Validation Error", gomock.Any()).Times(1)
-
-	e := echo.New()
-	bodyJSON, _ := json.Marshal(body)
-	req := httptest.NewRequest(http.MethodPost, "/api/merchant/update", bytes.NewReader(bodyJSON))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	c.Set("id", int32(body.MerchantID))
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.Update(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Validation Error: ", resp.Message)
-}
-
-func TestTrashedMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	merchantID := 1
-
-	expectedResponse := &pb.ApiResponseMerchant{
-		Status:  "success",
-		Message: "Merchant trashed successfully",
-		Data: &pb.MerchantResponse{
-			Id:   int32(merchantID),
-			Name: "Merchant 1",
-		},
-	}
-
-	mockMerchantClient.EXPECT().
-		TrashedMerchant(
-			gomock.Any(),
-			&pb.FindByIdMerchantRequest{MerchantId: int32(merchantID)},
-		).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/merchant/trashed/1", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
+	err := suite.Handler.FindById(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err := handler.TrashedMerchant(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseMerchant
+	var resp response.ApiResponseMerchant
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Merchant trashed successfully", resp.Message)
-	assert.Equal(t, int32(merchantID), resp.Data.Id)
-	assert.Equal(t, "Merchant 1", resp.Data.Name)
+	suite.NoError(err)
+	suite.Equal(int(id), resp.Data.ID)
 }
 
-func TestTrashedMerchant_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/merchant/trashed/invalid-id", nil)
+func (suite *MerchantHandlerTestSuite) TestFindByIdMerchant_InvalidID() {
+	req := httptest.NewRequest(http.MethodGet, "/api/merchants/abc", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
-	c.SetParamValues("invalid-id")
+	c.SetParamValues("abc")
 
-	mockLogger.EXPECT().Debug("Bad Request", gomock.Any()).Times(1)
+	err := suite.Handler.FindById(c)
 
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.TrashedMerchant(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Bad Request: Invalid ID")
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
 }
 
-func TestTrashedMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantHandlerTestSuite) TestFindByApiKey_Success() {
+	apiKey := "test-api-key-123"
 
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	merchantID := 1
-
-	mockMerchantClient.EXPECT().
-		TrashedMerchant(
-			gomock.Any(),
-			&pb.FindByIdMerchantRequest{MerchantId: int32(merchantID)},
-		).
-		Return(nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to trashed merchant",
-		})
-
-	mockLogger.EXPECT().Debug("Failed to trashed merchant", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/merchant/trashed/1", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("1")
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.TrashedMerchant(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to trashed merchant")
-}
-
-func TestRestoreMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	merchantID := 1
-
-	expectedResponse := &pb.ApiResponseMerchant{
-		Status:  "success",
-		Message: "Merchant restored successfully",
+	grpcResponse := &pb.ApiResponseMerchant{
+		Status: "success",
 		Data: &pb.MerchantResponse{
-			Id:     int32(merchantID),
+			Id:     1,
 			Name:   "Merchant 1",
-			Status: "active",
+			ApiKey: apiKey,
 		},
 	}
 
-	mockMerchantClient.EXPECT().
-		RestoreMerchant(
-			gomock.Any(),
-			&pb.FindByIdMerchantRequest{MerchantId: int32(merchantID)},
-		).
-		Return(expectedResponse, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/merchant/restore/1", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("1")
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.RestoreMerchant(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseMerchant
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Merchant restored successfully", resp.Message)
-	assert.Equal(t, int32(merchantID), resp.Data.Id)
-	assert.Equal(t, "active", resp.Data.Status)
-}
-
-func TestRestoreMerchant_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/merchant/restore/invalid-id", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("invalid-id")
-
-	mockLogger.EXPECT().Debug("Bad Request", gomock.Any()).Times(1)
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.RestoreMerchant(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Bad Request: Invalid ID")
-}
-
-func TestRestoreMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	merchantID := 1
-
-	mockMerchantClient.EXPECT().
-		RestoreMerchant(
-			gomock.Any(),
-			&pb.FindByIdMerchantRequest{MerchantId: int32(merchantID)},
-		).
-		Return(nil, fmt.Errorf("internal server error"))
-
-	mockLogger.EXPECT().Debug("Failed to restore merchant", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/merchant/restore/1", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("1")
-
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
-
-	err := handler.RestoreMerchant(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to restore merchant:", resp.Message)
-}
-
-func TestDeleteMerchant_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	merchantID := 1
-
-	expectedResponse := &pb.ApiResponseMerchatDelete{
-		Status:  "success",
-		Message: "Merchant deleted successfully",
+	expectedApiResponse := &response.ApiResponseMerchant{
+		Status: "success",
+		Data: &response.MerchantResponse{
+			ID:     1,
+			Name:   "Merchant 1",
+			ApiKey: apiKey,
+		},
 	}
 
-	mockMerchantClient.EXPECT().
-		DeleteMerchantPermanent(
+	suite.MockMerchantClient.EXPECT().
+		FindByApiKey(
 			gomock.Any(),
-			&pb.FindByIdMerchantRequest{MerchantId: int32(merchantID)},
+			&pb.FindByApiKeyRequest{ApiKey: apiKey},
 		).
-		Return(expectedResponse, nil)
+		Return(grpcResponse, nil).
+		Times(1)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/merchant/delete/1", nil)
+	suite.MockMapper.EXPECT().
+		ToApiResponseMerchant(grpcResponse).
+		Return(expectedApiResponse).
+		Times(1)
+
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"/api/merchants/api-key?api_key="+apiKey,
+		nil,
+	)
+
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("1")
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
+	err := suite.Handler.FindByApiKey(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err := handler.Delete(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseMerchant
+	var resp response.ApiResponseMerchant
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Merchant deleted successfully", resp.Message)
+	suite.NoError(err)
+	suite.Equal(apiKey, resp.Data.ApiKey)
 }
 
-func TestDeleteMerchant_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantHandlerTestSuite) TestFindByApiKey_Failure() {
+	apiKey := "test-api-key-123"
+	grpcError := errors.New("gRPC service unavailable")
 
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockMerchantClient.EXPECT().
+		FindByApiKey(
+			gomock.Any(),
+			&pb.FindByApiKeyRequest{ApiKey: apiKey},
+		).
+		Return(nil, grpcError).
+		Times(1)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/merchant/delete/invalid", nil)
+	suite.MockLogger.EXPECT().
+		Debug("Failed to retrieve merchant data", gomock.Any()).
+		Times(1)
+
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"/api/merchants/api-key?api_key="+apiKey,
+		nil,
+	)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("invalid")
+	c := suite.E.NewContext(req, rec)
 
-	// mockLogger.EXPECT().
-	// 	Debug("Bad Request: Invalid ID", gomock.Any()).
+	err := suite.Handler.FindByApiKey(c)
+
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *MerchantHandlerTestSuite) TestFindByMerchantUserId_Success() {
+	userId := int32(1)
+
+	grpcResponse := &pb.ApiResponsesMerchant{
+		Status: "success",
+		Data: []*pb.MerchantResponse{
+			{Id: 1, Name: "Merchant 1", UserId: userId},
+		},
+	}
+
+	expectedApiResponse := &response.ApiResponsesMerchant{
+		Status: "success",
+		Data: []*response.MerchantResponse{
+			{ID: 1, Name: "Merchant 1", UserID: int(userId)},
+		},
+	}
+
+	suite.MockMerchantClient.EXPECT().
+		FindByMerchantUserId(
+			gomock.Any(),
+			&pb.FindByMerchantUserIdRequest{UserId: userId},
+		).
+		Return(grpcResponse, nil).
+		Times(1)
+
+	suite.MockMapper.EXPECT().
+		ToApiResponseMerchants(grpcResponse).
+		Return(expectedApiResponse).
+		Times(1)
+
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"/api/merchants/merchant-user",
+		nil,
+	)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	c.Set("user_id", userId)
+
+	err := suite.Handler.FindByMerchantUserId(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponsesMerchant
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
+}
+
+func (suite *MerchantHandlerTestSuite) TestFindByMerchantUserId_Failure() {
+	userId := int32(1)
+	grpcError := errors.New("gRPC service unavailable")
+
+	suite.MockMerchantClient.EXPECT().
+		FindByMerchantUserId(
+			gomock.Any(),
+			&pb.FindByMerchantUserIdRequest{UserId: userId},
+		).
+		Return(nil, grpcError).
+		Times(1)
+
+	suite.MockLogger.EXPECT().
+		Debug("Failed to retrieve merchant data", gomock.Any()).
+		Times(1)
+
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"/api/merchants/merchant-user",
+		nil,
+	)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	c.Set("user_id", userId)
+
+	err := suite.Handler.FindByMerchantUserId(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *MerchantHandlerTestSuite) TestFindByActiveMerchant_Success() {
+	grpcResponse := &pb.ApiResponsePaginationMerchantDeleteAt{Status: "success", Data: []*pb.MerchantResponseDeleteAt{{Id: 1, Name: "Merchant 1"}}}
+	expectedApiResponse := &response.ApiResponsePaginationMerchantDeleteAt{Status: "success", Data: []*response.MerchantResponseDeleteAt{{ID: 1, Name: "Merchant 1"}}}
+
+	suite.MockMerchantClient.EXPECT().FindByActive(gomock.Any(), &pb.FindAllMerchantRequest{Page: 1, PageSize: 10, Search: ""}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsesMerchantDeleteAt(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/merchants/active", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.FindByActive(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponsePaginationMerchantDeleteAt
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
+}
+
+func (suite *MerchantHandlerTestSuite) TestFindByActiveMerchant_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockMerchantClient.EXPECT().FindByActive(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve merchant data", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/merchants/active", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.FindByActive(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *MerchantHandlerTestSuite) TestFindByTrashedMerchant_Success() {
+	grpcResponse := &pb.ApiResponsePaginationMerchantDeleteAt{Status: "success", Data: []*pb.MerchantResponseDeleteAt{{Id: 2, Name: "Merchant 2"}}}
+	expectedApiResponse := &response.ApiResponsePaginationMerchantDeleteAt{Status: "success", Data: []*response.MerchantResponseDeleteAt{{ID: 2, Name: "Merchant 2"}}}
+
+	suite.MockMerchantClient.EXPECT().FindByTrashed(gomock.Any(), &pb.FindAllMerchantRequest{Page: 1, PageSize: 10, Search: ""}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsesMerchantDeleteAt(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/merchants/trashed", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.FindByTrashed(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponsePaginationMerchantDeleteAt
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
+}
+
+func (suite *MerchantHandlerTestSuite) TestFindByTrashedMerchant_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockMerchantClient.EXPECT().FindByTrashed(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve merchant data", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/merchants/trashed", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.FindByTrashed(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *MerchantHandlerTestSuite) TestCreateMerchant_Success() {
+	userId := 1
+	requestBody := requests.CreateMerchantRequest{
+		Name:   "Test Merchant",
+		UserID: userId,
+	}
+
+	grpcRequest := &pb.CreateMerchantRequest{
+		Name:   requestBody.Name,
+		UserId: int32(requestBody.UserID),
+	}
+
+	grpcResponse := &pb.ApiResponseMerchant{
+		Status: "success",
+		Data: &pb.MerchantResponse{
+			Id:     3,
+			Name:   requestBody.Name,
+			UserId: int32(userId),
+		},
+	}
+
+	expectedApiResponse := &response.ApiResponseMerchant{
+		Status: "success",
+		Data: &response.MerchantResponse{
+			ID:     3,
+			Name:   requestBody.Name,
+			UserID: userId,
+		},
+	}
+
+	suite.MockMerchantClient.EXPECT().CreateMerchant(gomock.Any(), grpcRequest).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseMerchant(grpcResponse).Return(expectedApiResponse)
+
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/merchants/create", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.Create(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponseMerchant
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Equal(3, resp.Data.ID)
+}
+
+func (suite *MerchantHandlerTestSuite) TestCreateMerchant_Failure() {
+	userId := 1
+	requestBody := requests.CreateMerchantRequest{
+		Name:   "Test Merchant",
+		UserID: userId,
+	}
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockMerchantClient.EXPECT().CreateMerchant(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to create merchant", zap.Error(grpcError)).Times(1)
+
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/merchants/create", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.Create(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *MerchantHandlerTestSuite) TestCreateMerchant_ValidationError() {
+	invalidRequestBody := requests.CreateMerchantRequest{
+		Name: "",
+	}
+
+	bodyBytes, _ := json.Marshal(invalidRequestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/merchants/create", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	suite.MockLogger.EXPECT().
+		Debug("Validation Error", gomock.Any()).
+		Times(1)
+
+	err := suite.Handler.Create(c)
+
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
+}
+
+func (suite *MerchantHandlerTestSuite) TestUpdateMerchant_Success() {
+	id := 1
+	userId := 1
+	requestBody := requests.UpdateMerchantRequest{
+		Name:   "Updated Merchant",
+		UserID: userId,
+		Status: "active",
+	}
+
+	grpcRequest := &pb.UpdateMerchantRequest{
+		MerchantId: int32(id),
+		Name:       requestBody.Name,
+		UserId:     int32(requestBody.UserID),
+		Status:     requestBody.Status,
+	}
+
+	grpcResponse := &pb.ApiResponseMerchant{
+		Status: "success",
+		Data: &pb.MerchantResponse{
+			Id:     int32(id),
+			Name:   requestBody.Name,
+			Status: requestBody.Status,
+		},
+	}
+	expectedApiResponse := &response.ApiResponseMerchant{
+		Status: "success",
+		Data: &response.MerchantResponse{
+			ID:     id,
+			Name:   requestBody.Name,
+			Status: requestBody.Status,
+		},
+	}
+
+	suite.MockMerchantClient.EXPECT().UpdateMerchant(gomock.Any(), grpcRequest).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseMerchant(grpcResponse).Return(expectedApiResponse)
+
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/merchants/updates/%d", id), bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues(strconv.Itoa(id))
+
+	err := suite.Handler.Update(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp response.ApiResponseMerchant
+	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	suite.NoError(err)
+	suite.Equal("Updated Merchant", resp.Data.Name)
+}
+
+func (suite *MerchantHandlerTestSuite) TestUpdateMerchant_InvalidID() {
+	req := httptest.NewRequest(http.MethodPost, "/api/merchants/updates/abc", nil)
+	// suite.MockLogger.EXPECT().
+	// 	Debug("Bad Request", gomock.Any()).
 	// 	Times(1)
 
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("abc")
 
-	err := handler.Delete(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp struct {
-		Status  string `json:"status"`
-		Message string `json:"message"`
-	}
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Bad Request: Invalid ID")
+	err := suite.Handler.Update(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
 }
 
-func TestDeleteMerchant_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *MerchantHandlerTestSuite) TestUpdateMerchant_ValidationError() {
+	id := 1
+	invalidRequestBody := requests.UpdateMerchantRequest{
+		Name: "",
+	}
 
-	mockMerchantClient := mock_pb.NewMockMerchantServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	merchantID := 1
-
-	mockMerchantClient.EXPECT().
-		DeleteMerchantPermanent(
-			gomock.Any(),
-			&pb.FindByIdMerchantRequest{MerchantId: int32(merchantID)},
-		).
-		Return(nil, fmt.Errorf("internal server error"))
-
-	mockLogger.EXPECT().Debug("Failed to delete merchant", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/merchant/delete/1", nil)
+	bodyBytes, _ := json.Marshal(invalidRequestBody)
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/merchants/updates/%d", id), bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues(strconv.Itoa(id))
+
+	suite.MockLogger.EXPECT().
+		Debug("Validation Error", gomock.Any()).
+		Times(1)
+
+	err := suite.Handler.Update(c)
+
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
+}
+
+func (suite *MerchantHandlerTestSuite) TestTrashedMerchant_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseMerchantDeleteAt{Status: "success", Data: &pb.MerchantResponseDeleteAt{Id: int32(id)}}
+	expectedApiResponse := &response.ApiResponseMerchantDeleteAt{Status: "success", Data: &response.MerchantResponseDeleteAt{ID: id}}
+
+	suite.MockMerchantClient.EXPECT().TrashedMerchant(gomock.Any(), &pb.FindByIdMerchantRequest{MerchantId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseMerchantDeleteAt(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/merchants/trashed/1", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerMerchant(mockMerchantClient, e, mockLogger)
+	err := suite.Handler.TrashedMerchant(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+}
 
-	err := handler.Delete(c)
+func (suite *MerchantHandlerTestSuite) TestTrashedMerchant_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockMerchantClient.EXPECT().TrashedMerchant(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to trashed merchant", zap.Error(grpcError)).Times(1)
 
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	req := httptest.NewRequest(http.MethodPost, "/api/merchants/trashed/1", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("1")
 
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
+	err := suite.Handler.TrashedMerchant(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
 
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to delete merchant:", resp.Message)
+func (suite *MerchantHandlerTestSuite) TestRestoreMerchant_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseMerchantDeleteAt{Status: "success", Data: &pb.MerchantResponseDeleteAt{Id: int32(id)}}
+	expectedApiResponse := &response.ApiResponseMerchantDeleteAt{Status: "success", Data: &response.MerchantResponseDeleteAt{ID: id}}
+
+	suite.MockMerchantClient.EXPECT().RestoreMerchant(gomock.Any(), &pb.FindByIdMerchantRequest{MerchantId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseMerchantDeleteAt(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/merchants/restore/1", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("1")
+
+	err := suite.Handler.RestoreMerchant(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+}
+
+func (suite *MerchantHandlerTestSuite) TestRestoreMerchant_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockMerchantClient.EXPECT().RestoreMerchant(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to restore merchant", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/merchants/restore/1", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("1")
+
+	err := suite.Handler.RestoreMerchant(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *MerchantHandlerTestSuite) TestDeleteMerchantPermanent_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseMerchantDelete{Status: "success"}
+	expectedApiResponse := &response.ApiResponseMerchantDelete{Status: "success"}
+
+	suite.MockMerchantClient.EXPECT().DeleteMerchantPermanent(gomock.Any(), &pb.FindByIdMerchantRequest{MerchantId: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseMerchantDelete(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/merchants/permanent/1", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("1")
+
+	err := suite.Handler.Delete(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+}
+
+func (suite *MerchantHandlerTestSuite) TestDeleteMerchantPermanent_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockMerchantClient.EXPECT().DeleteMerchantPermanent(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to delete merchant", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/merchants/permanent/1", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("1")
+
+	err := suite.Handler.Delete(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *MerchantHandlerTestSuite) TestRestoreAllMerchant_Success() {
+	grpcResponse := &pb.ApiResponseMerchantAll{Status: "success"}
+	expectedApiResponse := &response.ApiResponseMerchantAll{Status: "success"}
+
+	suite.MockLogger.EXPECT().Debug("Successfully restored all merchant").Times(1)
+
+	suite.MockMerchantClient.EXPECT().RestoreAllMerchant(gomock.Any(), &emptypb.Empty{}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseMerchantAll(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/merchants/restore/all", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.RestoreAllMerchant(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+}
+
+func (suite *MerchantHandlerTestSuite) TestRestoreAllMerchant_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockMerchantClient.EXPECT().RestoreAllMerchant(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Error("Failed to restore all merchant", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/merchants/restore/all", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.RestoreAllMerchant(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *MerchantHandlerTestSuite) TestDeleteAllMerchantPermanent_Success() {
+	grpcResponse := &pb.ApiResponseMerchantAll{Status: "success"}
+	expectedApiResponse := &response.ApiResponseMerchantAll{Status: "success"}
+
+	suite.MockLogger.EXPECT().Debug("Successfully deleted all merchant permanently").Times(1)
+
+	suite.MockMerchantClient.EXPECT().DeleteAllMerchantPermanent(gomock.Any(), &emptypb.Empty{}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseMerchantAll(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/merchants/permanent/all", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.DeleteAllMerchantPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+}
+
+func (suite *MerchantHandlerTestSuite) TestDeleteAllMerchantPermanent_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockMerchantClient.EXPECT().DeleteAllMerchantPermanent(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Error("Failed to permanently delete all merchant", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/merchants/permanent/all", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.DeleteAllMerchantPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func TestMerchantHandlerSuite(t *testing.T) {
+	suite.Run(t, new(MerchantHandlerTestSuite))
 }

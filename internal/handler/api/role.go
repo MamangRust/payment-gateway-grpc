@@ -14,14 +14,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type roleHandleApi struct {
+type RoleHandleApi struct {
 	role    pb.RoleServiceClient
 	logger  logger.LoggerInterface
 	mapping apimapper.RoleResponseMapper
 }
 
-func NewHandlerRole(role pb.RoleServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.RoleResponseMapper) *roleHandleApi {
-	roleHandler := &roleHandleApi{
+func NewHandlerRole(role pb.RoleServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.RoleResponseMapper) *RoleHandleApi {
+	roleHandler := &RoleHandleApi{
 		role:    role,
 		logger:  logger,
 		mapping: mapping,
@@ -60,7 +60,7 @@ func NewHandlerRole(role pb.RoleServiceClient, router *echo.Echo, logger logger.
 // @Failure 400 {object} response.ErrorResponse "Invalid query parameters"
 // @Failure 500 {object} response.ErrorResponse "Failed to fetch roles"
 // @Router /api/role [get]
-func (h *roleHandleApi) FindAll(c echo.Context) error {
+func (h *RoleHandleApi) FindAll(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -104,7 +104,7 @@ func (h *roleHandleApi) FindAll(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid role ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to fetch role"
 // @Router /api/role/{id} [get]
-func (h *roleHandleApi) FindById(c echo.Context) error {
+func (h *RoleHandleApi) FindById(c echo.Context) error {
 	roleID, err := strconv.Atoi(c.Param("id"))
 	if err != nil || roleID <= 0 {
 		return role_errors.ErrApiRoleInvalidId(c)
@@ -141,7 +141,7 @@ func (h *roleHandleApi) FindById(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid query parameters"
 // @Failure 500 {object} response.ErrorResponse "Failed to fetch active roles"
 // @Router /api/role/active [get]
-func (h *roleHandleApi) FindByActive(c echo.Context) error {
+func (h *RoleHandleApi) FindByActive(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -187,7 +187,7 @@ func (h *roleHandleApi) FindByActive(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid query parameters"
 // @Failure 500 {object} response.ErrorResponse "Failed to fetch trashed roles"
 // @Router /api/role/trashed [get]
-func (h *roleHandleApi) FindByTrashed(c echo.Context) error {
+func (h *RoleHandleApi) FindByTrashed(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -231,7 +231,7 @@ func (h *roleHandleApi) FindByTrashed(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid user ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to fetch role by user ID"
 // @Router /api/role/user/{user_id} [get]
-func (h *roleHandleApi) FindByUserId(c echo.Context) error {
+func (h *RoleHandleApi) FindByUserId(c echo.Context) error {
 	userID, err := strconv.Atoi(c.Param("user_id"))
 	if err != nil || userID <= 0 {
 		return role_errors.ErrApiRoleInvalidId(c)
@@ -266,7 +266,7 @@ func (h *roleHandleApi) FindByUserId(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid request body"
 // @Failure 500 {object} response.ErrorResponse "Failed to create role"
 // @Router /api/role [post]
-func (h *roleHandleApi) Create(c echo.Context) error {
+func (h *RoleHandleApi) Create(c echo.Context) error {
 	var req requests.CreateRoleRequest
 
 	if err := c.Bind(&req); err != nil {
@@ -308,7 +308,7 @@ func (h *roleHandleApi) Create(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid role ID or request body"
 // @Failure 500 {object} response.ErrorResponse "Failed to update role"
 // @Router /api/role/{id} [post]
-func (h *roleHandleApi) Update(c echo.Context) error {
+func (h *RoleHandleApi) Update(c echo.Context) error {
 	roleID, err := strconv.Atoi(c.Param("id"))
 	if err != nil || roleID <= 0 {
 		return role_errors.ErrInvalidRoleId(c)
@@ -353,7 +353,7 @@ func (h *roleHandleApi) Update(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid role ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to soft-delete role"
 // @Router /api/role/{id} [delete]
-func (h *roleHandleApi) Trashed(c echo.Context) error {
+func (h *RoleHandleApi) Trashed(c echo.Context) error {
 	roleID, err := strconv.Atoi(c.Param("id"))
 	if err != nil || roleID <= 0 {
 		return role_errors.ErrInvalidRoleId(c)
@@ -371,7 +371,7 @@ func (h *roleHandleApi) Trashed(c echo.Context) error {
 		return role_errors.ErrApiFailedTrashedRole(c)
 	}
 
-	so := h.mapping.ToApiResponseRole(res)
+	so := h.mapping.ToApiResponseRoleDeleteAt(res)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -388,7 +388,7 @@ func (h *roleHandleApi) Trashed(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid role ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore role"
 // @Router /api/role/restore/{id} [put]
-func (h *roleHandleApi) Restore(c echo.Context) error {
+func (h *RoleHandleApi) Restore(c echo.Context) error {
 	roleID, err := strconv.Atoi(c.Param("id"))
 	if err != nil || roleID <= 0 {
 		return role_errors.ErrInvalidRoleId(c)
@@ -406,7 +406,7 @@ func (h *roleHandleApi) Restore(c echo.Context) error {
 		return role_errors.ErrApiFailedRestoreRole(c)
 	}
 
-	so := h.mapping.ToApiResponseRole(res)
+	so := h.mapping.ToApiResponseRoleDeleteAt(res)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -423,7 +423,7 @@ func (h *roleHandleApi) Restore(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid role ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete role permanently"
 // @Router /api/role/permanent/{id} [delete]
-func (h *roleHandleApi) DeletePermanent(c echo.Context) error {
+func (h *RoleHandleApi) DeletePermanent(c echo.Context) error {
 	roleID, err := strconv.Atoi(c.Param("id"))
 	if err != nil || roleID <= 0 {
 		return role_errors.ErrInvalidRoleId(c)
@@ -456,7 +456,7 @@ func (h *roleHandleApi) DeletePermanent(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseRoleAll "Restored roles data"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore all roles"
 // @Router /api/role/restore/all [post]
-func (h *roleHandleApi) RestoreAll(c echo.Context) error {
+func (h *RoleHandleApi) RestoreAll(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.role.RestoreAllRole(ctx, &emptypb.Empty{})
@@ -480,7 +480,7 @@ func (h *roleHandleApi) RestoreAll(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseRoleAll "Permanently deleted roles data"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete all roles permanently"
 // @Router /api/role/permanent/all [post]
-func (h *roleHandleApi) DeleteAllPermanent(c echo.Context) error {
+func (h *RoleHandleApi) DeleteAllPermanent(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.role.DeleteAllRolePermanent(ctx, &emptypb.Empty{})

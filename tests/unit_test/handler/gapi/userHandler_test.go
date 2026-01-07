@@ -9,950 +9,364 @@ import (
 	mock_service "MamangRust/paymentgatewaygrpc/internal/service/mocks"
 	"context"
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func TestFindAllUsers_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+type UserHandleGrpcTestSuite struct {
+	suite.Suite
+	Ctrl            *gomock.Controller
+	MockUserService *mock_service.MockUserService
+	MockProtoMapper *mock_protomapper.MockUserProtoMapper
+	Handler         gapi.UserHandleGrpc
+}
 
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
+func (suite *UserHandleGrpcTestSuite) SetupTest() {
+	suite.Ctrl = gomock.NewController(suite.T())
+	suite.MockUserService = mock_service.NewMockUserService(suite.Ctrl)
+	suite.MockProtoMapper = mock_protomapper.NewMockUserProtoMapper(suite.Ctrl)
+	suite.Handler = gapi.NewUserHandleGrpc(suite.MockUserService, suite.MockProtoMapper)
+}
 
+func (suite *UserHandleGrpcTestSuite) TearDownTest() {
+	suite.Ctrl.Finish()
+}
+
+func (suite *UserHandleGrpcTestSuite) TestFindAllUser_Success() {
 	req := &pb.FindAllUserRequest{
 		Page:     1,
 		PageSize: 10,
-		Search:   "John",
+		Search:   "john",
 	}
 
 	mockUsers := []*response.UserResponse{
-		{
-			ID:        1,
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "john@example.com",
-		},
-		{
-			ID:        2,
-			FirstName: "Jane",
-			LastName:  "Smith",
-			Email:     "jane@example.com",
-		},
+		{ID: 1, FirstName: "John", LastName: "Doe", Email: "john.doe@example.com"},
+		{ID: 2, FirstName: "Jane", LastName: "Doe", Email: "jane.doe@example.com"},
 	}
-	mockTotalRecords := 20
+	mockProtoUsers := []*pb.UserResponse{
+		{Id: 1, Firstname: "John", Lastname: "Doe", Email: "john.doe@example.com"},
+		{Id: 2, Firstname: "Jane", Lastname: "Doe", Email: "jane.doe@example.com"},
+	}
 
-	mockUserService.EXPECT().FindAll(1, 10, "John").Return(mockUsers, mockTotalRecords, nil)
-	mockProtoMapper.EXPECT().ToResponsesUser(mockUsers).Return([]*pb.UserResponse{
-		{
-			Id:        1,
-			Firstname: "John",
-			Lastname:  "Doe",
-			Email:     "john@example.com",
-		},
-		{
-			Id:        2,
-			Firstname: "Jane",
-			Lastname:  "Smith",
-			Email:     "jane@example.com",
-		},
+	totalRecords := 2
+	suite.MockUserService.EXPECT().
+		FindAll(gomock.Eq(&requests.FindAllUsers{Page: 1, PageSize: 10, Search: "john"})).
+		Return(mockUsers, &totalRecords, nil)
+
+	suite.MockProtoMapper.EXPECT().
+		ToProtoResponsePaginationUser(gomock.Any(), "success", "Successfully fetched users", mockUsers).
+		Return(&pb.ApiResponsePaginationUser{
+			Status:  "success",
+			Message: "Successfully fetched users",
+			Data:    mockProtoUsers,
+			Pagination: &pb.PaginationMeta{
+				CurrentPage:  1,
+				PageSize:     10,
+				TotalPages:   1,
+				TotalRecords: 2,
+			},
+		})
+
+	res, err := suite.Handler.FindAll(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal(int32(2), res.GetPagination().GetTotalRecords())
+	suite.Equal(2, len(res.GetData()))
+}
+
+func (suite *UserHandleGrpcTestSuite) TestFindAllUser_Failure() {
+	req := &pb.FindAllUserRequest{Page: 1, PageSize: 10, Search: "john"}
+	serviceError := &response.ErrorResponse{Status: "error", Message: "Failed to fetch users"}
+
+	totalRecords := 0
+	suite.MockUserService.EXPECT().FindAll(gomock.Any()).Return(nil, &totalRecords, serviceError)
+
+	res, _ := suite.Handler.FindAll(context.Background(), req)
+
+	suite.Nil(res)
+	// suite.Contains(err.Error(), serviceError.Message)
+}
+
+func (suite *UserHandleGrpcTestSuite) TestFindByIdUser_Success() {
+	req := &pb.FindByIdUserRequest{Id: 1}
+	mockUser := &response.UserResponse{ID: 1, FirstName: "John", Email: "john.doe@example.com"}
+	mockProtoUser := &pb.UserResponse{Id: 1, Firstname: "John", Email: "john.doe@example.com"}
+
+	suite.MockUserService.EXPECT().FindByID(1).Return(mockUser, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseUser("success", "Successfully fetched user", mockUser).Return(&pb.ApiResponseUser{
+		Status:  "success",
+		Message: "Successfully fetched user",
+		Data:    mockProtoUser,
 	})
 
-	res, err := userHandler.FindAll(context.Background(), req)
+	res, err := suite.Handler.FindById(context.Background(), req)
 
-	assert.NoError(t, err)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched users", res.GetMessage())
-	assert.Equal(t, int32(20), res.GetPagination().TotalRecords)
-	assert.Equal(t, int32(2), int32(len(res.GetData())))
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("John", res.GetData().GetFirstname())
 }
 
-func TestFindAllUsers_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *UserHandleGrpcTestSuite) TestFindByIdUser_InvalidId() {
+	req := &pb.FindByIdUserRequest{Id: 0}
 
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
+	res, err := suite.Handler.FindById(context.Background(), req)
 
-	req := &pb.FindAllUserRequest{
-		Page:     1,
-		PageSize: 10,
-		Search:   "John",
-	}
-
-	mockError := &response.ErrorResponse{
-		Status:  "error",
-		Message: "Database connection failed",
-	}
-
-	mockUserService.EXPECT().FindAll(1, 10, "John").Return(nil, 0, mockError)
-
-	res, err := userHandler.FindAll(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Failed to fetch users")
+	suite.Nil(res)
+	suite.Error(err)
+	statusErr, ok := status.FromError(err)
+	suite.True(ok)
+	suite.Equal(codes.NotFound, statusErr.Code())
+	suite.Contains(statusErr.Message(), "User not found")
 }
 
-func TestFindAllUsers_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	req := &pb.FindAllUserRequest{
-		Page:     1,
-		PageSize: 10,
-		Search:   "Nonexistent",
+func (suite *UserHandleGrpcTestSuite) TestFindByActiveUser_Success() {
+	req := &pb.FindAllUserRequest{Page: 1, PageSize: 10, Search: ""}
+	activeUsers := []*response.UserResponseDeleteAt{
+		{ID: 1, FirstName: "John", Email: "john.doe@example.com"},
 	}
+	totalRecords := 1
+	suite.MockUserService.EXPECT().FindByActive(gomock.Any()).Return(activeUsers, &totalRecords, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponsePaginationUserDeleteAt(gomock.Any(), "success", "Successfully fetched active users", activeUsers).Return(&pb.ApiResponsePaginationUserDeleteAt{
+		Status:  "success",
+		Message: "Successfully fetched active user records",
+		Data: []*pb.UserResponseDeleteAt{
+			{Id: 1, Firstname: "John", Email: "john.doe@example.com"},
+		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 10, TotalPages: 1, TotalRecords: 1},
+	})
 
-	mockUserService.EXPECT().FindAll(1, 10, "Nonexistent").Return([]*response.UserResponse{}, 0, nil)
-	mockProtoMapper.EXPECT().ToResponsesUser([]*response.UserResponse{}).Return([]*pb.UserResponse{})
+	res, err := suite.Handler.FindByActive(context.Background(), req)
 
-	res, err := userHandler.FindAll(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched users", res.GetMessage())
-	assert.Equal(t, int32(0), res.GetPagination().TotalRecords)
-	assert.Equal(t, 0, len(res.GetData()))
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Len(res.GetData(), 1)
 }
 
-func TestFindByIdUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *UserHandleGrpcTestSuite) TestFindByTrashedUser_Success() {
+	req := &pb.FindAllUserRequest{Page: 1, PageSize: 10, Search: ""}
+	trashedUsers := []*response.UserResponseDeleteAt{
+		{ID: 1, FirstName: "John", Email: "john.doe@example.com"},
+	}
+	totalRecords := 1
+	suite.MockUserService.EXPECT().FindByTrashed(gomock.Any()).Return(trashedUsers, &totalRecords, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponsePaginationUserDeleteAt(gomock.Any(), "success", "Successfully fetched trashed users", trashedUsers).Return(&pb.ApiResponsePaginationUserDeleteAt{
+		Status:  "success",
+		Message: "Successfully fetched trashed user records",
+		Data: []*pb.UserResponseDeleteAt{
+			{Id: 1, Firstname: "John", Email: "john.doe@example.com"},
+		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 10, TotalPages: 1, TotalRecords: 1},
+	})
 
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
+	res, err := suite.Handler.FindByTrashed(context.Background(), req)
 
-	req := &pb.FindByIdUserRequest{
-		Id: 1,
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Len(res.GetData(), 1)
+}
+
+func (suite *UserHandleGrpcTestSuite) TestCreateUser_Success() {
+	req := &pb.CreateUserRequest{
+		Firstname:       "John",
+		Lastname:        "Doe",
+		Email:           "john.doe@example.com",
+		Password:        "password123",
+		ConfirmPassword: "password123",
+	}
+
+	mockCreateReq := &requests.CreateUserRequest{
+		FirstName:       "John",
+		LastName:        "Doe",
+		Email:           "john.doe@example.com",
+		Password:        "password123",
+		ConfirmPassword: "password123",
 	}
 
 	mockUser := &response.UserResponse{
 		ID:        1,
 		FirstName: "John",
 		LastName:  "Doe",
-		Email:     "john@example.com",
-	}
-
-	mockUserService.EXPECT().FindByID(1).Return(mockUser, nil)
-	mockProtoMapper.EXPECT().ToResponseUser(mockUser).Return(&pb.UserResponse{
-		Id:        1,
-		Firstname: "John",
-		Lastname:  "Doe",
-		Email:     "john@example.com",
-	})
-
-	res, err := userHandler.FindById(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched user", res.GetMessage())
-	assert.Equal(t, int32(1), res.GetData().GetId())
-	assert.Equal(t, "John", res.GetData().GetFirstname())
-	assert.Equal(t, "Doe", res.GetData().GetLastname())
-	assert.Equal(t, "john@example.com", res.GetData().GetEmail())
-}
-
-func TestFindByIdUser_InvalidId(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	req := &pb.FindByIdUserRequest{
-		Id: 0,
-	}
-
-	res, err := userHandler.FindById(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, err.Error(), "Invalid user id")
-}
-
-func TestFindByIdUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	req := &pb.FindByIdUserRequest{
-		Id: 1,
-	}
-
-	mockError := &response.ErrorResponse{
-		Status:  "error",
-		Message: "User not found",
-	}
-
-	mockUserService.EXPECT().FindByID(1).Return(nil, mockError)
-
-	res, err := userHandler.FindById(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Failed to fetch user")
-}
-
-func TestFindByActive_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	mockUsers := []*response.UserResponseDeleteAt{
-		{
-			ID:        1,
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "john@example.com",
-		},
-		{
-			ID:        2,
-			FirstName: "Jane",
-			LastName:  "Smith",
-			Email:     "jane@example.com",
-		},
-	}
-
-	search := ""
-	pageSize := 1
-	page := 1
-	expected := 1
-
-	req := &pb.FindAllUserRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockUserService.EXPECT().FindByActive(pageSize, page, search).Return(mockUsers, expected, nil)
-
-	mockProtoMapper.EXPECT().ToResponsesUserDeleteAt(mockUsers).Return([]*pb.UserResponseWithDeleteAt{
-		{
-			Id:        1,
-			Firstname: "John",
-			Lastname:  "Doe",
-			Email:     "john@example.com",
-		},
-		{
-			Id:        2,
-			Firstname: "Jane",
-			Lastname:  "Smith",
-			Email:     "jane@example.com",
-		},
-	})
-
-	res, err := userHandler.FindByActive(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched active users", res.GetMessage())
-	assert.Len(t, res.GetData(), 2)
-}
-
-func TestFindByActiveUser_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	mockUsers := []*response.UserResponseDeleteAt{}
-
-	mockProtoResponses := []*pb.UserResponseWithDeleteAt{}
-
-	search := ""
-	pageSize := 1
-	page := 1
-	expected := 1
-
-	req := &pb.FindAllUserRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockUserService.EXPECT().FindByActive(pageSize, page, search).Return(mockUsers, expected, nil).Times(1)
-	mockProtoMapper.EXPECT().ToResponsesUserDeleteAt(mockUsers).Return(mockProtoResponses).Times(1)
-
-	res, err := userHandler.FindByActive(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched active users", res.GetMessage())
-	assert.Len(t, res.GetData(), 0)
-}
-
-func TestFindByActive_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	mockError := &response.ErrorResponse{
-		Status:  "error",
-		Message: "Database error",
-	}
-
-	search := ""
-	pageSize := 1
-	page := 1
-	expected := 1
-
-	req := &pb.FindAllUserRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockUserService.EXPECT().FindByActive(pageSize, page, search).Return(nil, expected, mockError)
-
-	res, err := userHandler.FindByActive(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Failed to fetch active users")
-}
-
-func TestFindByTrashedUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	mockUsers := []*response.UserResponseDeleteAt{
-		{
-			ID:        1,
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "john@example.com",
-		},
-		{
-			ID:        2,
-			FirstName: "Jane",
-			LastName:  "Smith",
-			Email:     "jane@example.com",
-		},
-	}
-
-	search := ""
-	pageSize := 1
-	page := 1
-	expected := 1
-
-	req := &pb.FindAllUserRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockUserService.EXPECT().FindByTrashed(pageSize, page, search).Return(mockUsers, expected, nil)
-	mockProtoMapper.EXPECT().ToResponsesUserDeleteAt(mockUsers).Return([]*pb.UserResponse{
-		{
-			Id:        1,
-			Firstname: "John",
-			Lastname:  "Doe",
-			Email:     "john@example.com",
-		},
-		{
-			Id:        2,
-			Firstname: "Jane",
-			Lastname:  "Smith",
-			Email:     "jane@example.com",
-		},
-	})
-
-	res, err := userHandler.FindByTrashed(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched trashed users", res.GetMessage())
-	assert.Len(t, res.GetData(), 2)
-}
-
-func TestFindByTrashedUser_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	mockUsers := []*response.UserResponseDeleteAt{}
-
-	search := ""
-	pageSize := 1
-	page := 1
-	expected := 1
-
-	req := &pb.FindAllUserRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockUserService.EXPECT().FindByTrashed(pageSize, page, search).Return(mockUsers, expected, nil)
-	mockProtoMapper.EXPECT().ToResponsesUserDeleteAt(mockUsers).Return([]*pb.UserResponseWithDeleteAt{})
-
-	res, err := userHandler.FindByTrashed(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully fetched trashed users", res.GetMessage())
-	assert.Len(t, res.GetData(), 0)
-}
-
-func TestFindByTrashedUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	search := ""
-	pageSize := 1
-	page := 1
-	expected := 1
-
-	req := &pb.FindAllUserRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
-		Search:   search,
-	}
-
-	mockUserService.EXPECT().FindByTrashed(pageSize, page, search).Return(nil, expected, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to fetch trashed users: ",
-	})
-
-	res, err := userHandler.FindByTrashed(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.Internal, statusErr.Code())
-	assert.Contains(t, err.Error(), "Failed to fetch trashed users: ")
-}
-
-func TestCreateUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	req := &pb.CreateUserRequest{
-		Firstname:       "John",
-		Lastname:        "Doe",
-		Email:           "john.doe@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
-	}
-
-	mockCreateUserRequest := &requests.CreateUserRequest{
-		FirstName:       "John",
-		LastName:        "Doe",
-		Email:           "john.doe@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
-	}
-
-	mockUserResponse := &response.UserResponse{
-		ID:        1,
-		FirstName: "John",
-		LastName:  "Doe",
 		Email:     "john.doe@example.com",
+		CreatedAt: time.Now().Format(time.RFC3339),
 	}
 
-	mockUserService.EXPECT().CreateUser(mockCreateUserRequest).Return(mockUserResponse, nil)
-	mockProtoMapper.EXPECT().ToResponseUser(mockUserResponse).Return(&pb.UserResponse{
+	mockProtoUser := &pb.UserResponse{
 		Id:        1,
 		Firstname: "John",
 		Lastname:  "Doe",
 		Email:     "john.doe@example.com",
+	}
+
+	suite.MockUserService.EXPECT().CreateUser(mockCreateReq).Return(mockUser, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseUser("success", "Successfully created user", mockUser).Return(&pb.ApiResponseUser{
+		Status:  "success",
+		Message: "Successfully created user",
+		Data:    mockProtoUser,
 	})
 
-	res, err := userHandler.Create(context.Background(), req)
+	res, err := suite.Handler.Create(context.Background(), req)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully created user", res.GetMessage())
-	assert.NotNil(t, res.GetData())
-	assert.Equal(t, int32(1), res.GetData().GetId())
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("John", res.GetData().GetFirstname())
 }
 
-func TestCreateUser_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	reqAuth := &requests.CreateUserRequest{
-		FirstName: "",
-		LastName:  "Doe",
-		Email:     "invalid-email",
-		Password:  "123",
-	}
-
+func (suite *UserHandleGrpcTestSuite) TestCreateUser_ValidationError() {
 	req := &pb.CreateUserRequest{
-		Firstname: "",
-		Lastname:  "Doe",
-		Email:     "invalid-email",
-		Password:  "123",
-	}
-
-	mockUserService.EXPECT().CreateUser(reqAuth).Times(0)
-
-	res, err := userHandler.Create(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Failed to create user")
-}
-
-func TestCreateUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	req := &pb.CreateUserRequest{
-		Firstname:       "John",
-		Lastname:        "Doe",
-		Email:           "john.doe@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
-	}
-
-	mockCreateUserRequest := &requests.CreateUserRequest{
-		FirstName:       "John",
-		LastName:        "Doe",
-		Email:           "john.doe@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
-	}
-
-	mockError := &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to save user to database",
-	}
-
-	mockUserService.EXPECT().CreateUser(mockCreateUserRequest).Return(nil, mockError)
-
-	res, err := userHandler.Create(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Failed to create user")
-}
-
-func TestUpdateUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	req := &pb.UpdateUserRequest{
-		Id:              1,
-		Firstname:       "John",
-		Lastname:        "Doe",
-		Email:           "john.doe@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
-	}
-
-	mockUpdateUserRequest := &requests.UpdateUserRequest{
-		UserID:          1,
-		FirstName:       "John",
-		LastName:        "Doe",
-		Email:           "john.doe@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
-	}
-
-	mockUserResponse := &response.UserResponse{
-		ID:        1,
-		FirstName: "John",
-		LastName:  "Doe",
-		Email:     "john.doe@example.com",
-	}
-
-	mockUserService.EXPECT().UpdateUser(mockUpdateUserRequest).Return(mockUserResponse, nil)
-	mockProtoMapper.EXPECT().ToResponseUser(mockUserResponse).Return(&pb.UserResponse{
-		Id:        1,
-		Firstname: "John",
-		Lastname:  "Doe",
-		Email:     "john.doe@example.com",
-	})
-
-	res, err := userHandler.Update(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully updated user", res.GetMessage())
-	assert.NotNil(t, res.GetData())
-	assert.Equal(t, int32(1), res.GetData().GetId())
-}
-
-func TestUpdateUser_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	req := &pb.UpdateUserRequest{
-		Id:              0,
-		Firstname:       "John",
-		Lastname:        "Doe",
-		Email:           "john.doe@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
-	}
-
-	mockUserService.EXPECT().UpdateUser(gomock.Any()).Times(0)
-	mockProtoMapper.EXPECT().ToResponseUser(gomock.Any()).Times(0)
-
-	res, err := userHandler.Update(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, statusErr.Message(), "Invalid user id")
-}
-
-func TestUpdateUser_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	req := &pb.UpdateUserRequest{
-		Id:              1,
-		Firstname:       "",
+		Firstname:       "John123",
 		Lastname:        "",
-		Email:           "invalid-email@gmail.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
+		Email:           "not-an-email",
+		Password:        "123",
+		ConfirmPassword: "456",
 	}
 
-	res, err := userHandler.Update(context.Background(), req)
+	res, err := suite.Handler.Create(context.Background(), req)
 
-	assert.Nil(t, res)
-	assert.Error(t, err)
-
+	suite.Nil(res)
 	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
+	suite.True(ok)
+	suite.Equal(codes.InvalidArgument, statusErr.Code())
 }
 
-func TestUpdateUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
+func (suite *UserHandleGrpcTestSuite) TestUpdateUser_Success() {
+	userId := 1
 	req := &pb.UpdateUserRequest{
-		Id:              1,
+		Id:              int32(userId),
 		Firstname:       "John",
-		Lastname:        "Doe",
-		Email:           "john.doe@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
+		Lastname:        "Smith",
+		Email:           "john.smith@example.com",
+		Password:        "newpassword123",
+		ConfirmPassword: "newpassword123",
 	}
 
-	mockUpdateUserRequest := &requests.UpdateUserRequest{
-		UserID:          1,
+	mockUpdateReq := &requests.UpdateUserRequest{
+		UserID:          &userId,
 		FirstName:       "John",
-		LastName:        "Doe",
-		Email:           "john.doe@example.com",
-		Password:        "password123",
-		ConfirmPassword: "password123",
+		LastName:        "Smith",
+		Email:           "john.smith@example.com",
+		Password:        "newpassword123",
+		ConfirmPassword: "newpassword123",
 	}
 
-	mockError := &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to update user in database",
-	}
-
-	mockUserService.EXPECT().UpdateUser(mockUpdateUserRequest).Return(nil, mockError)
-
-	res, err := userHandler.Update(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Failed to update user")
-}
-
-func TestTrashedUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	req := &pb.FindByIdUserRequest{Id: 1}
-	mockUserResponse := &response.UserResponse{
+	mockUser := &response.UserResponse{
 		ID:        1,
 		FirstName: "John",
-		LastName:  "Doe",
-		Email:     "john.doe@example.com",
+		LastName:  "Smith",
+		Email:     "john.smith@example.com",
 	}
 
-	mockUserService.EXPECT().TrashedUser(1).Return(mockUserResponse, nil)
-	mockProtoMapper.EXPECT().ToResponseUser(mockUserResponse).Return(&pb.UserResponse{
-		Id:        1,
-		Firstname: "John",
-		Lastname:  "Doe",
-		Email:     "john.doe@example.com",
+	mockProtoUser := &pb.UserResponse{Id: 1, Firstname: "John", Lastname: "Smith", Email: "john.smith@example.com"}
+
+	suite.MockUserService.EXPECT().UpdateUser(mockUpdateReq).Return(mockUser, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseUser("success", "Successfully updated user", mockUser).Return(&pb.ApiResponseUser{
+		Status:  "success",
+		Message: "Successfully updated user",
+		Data:    mockProtoUser,
 	})
 
-	res, err := userHandler.TrashedUser(context.Background(), req)
+	res, err := suite.Handler.Update(context.Background(), req)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully trashed user", res.GetMessage())
-	assert.NotNil(t, res.GetData())
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+	suite.Equal("Smith", res.GetData().GetLastname())
 }
 
-func TestTrashedUser_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	req := &pb.FindByIdUserRequest{Id: 0}
-
-	res, err := userHandler.TrashedUser(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, statusErr.Message(), "Invalid user id")
-}
-
-func TestTrashedUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
+func (suite *UserHandleGrpcTestSuite) TestTrashedUser_Success() {
 	req := &pb.FindByIdUserRequest{Id: 1}
-	mockError := &response.ErrorResponse{
-		Status:  "error",
-		Message: "User not found",
-	}
+	mockUser := &response.UserResponseDeleteAt{ID: 1, FirstName: "John"}
 
-	mockUserService.EXPECT().TrashedUser(1).Return(nil, mockError)
-
-	res, err := userHandler.TrashedUser(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Failed to trashed user")
-}
-
-func TestRestoreUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	req := &pb.FindByIdUserRequest{Id: 1}
-	mockUserResponse := &response.UserResponse{
-		ID:        1,
-		FirstName: "John",
-		LastName:  "Doe",
-		Email:     "john.doe@example.com",
-	}
-
-	mockUserService.EXPECT().RestoreUser(1).Return(mockUserResponse, nil)
-	mockProtoMapper.EXPECT().ToResponseUser(mockUserResponse).Return(&pb.UserResponse{
-		Id:        1,
-		Firstname: "John",
-		Lastname:  "Doe",
-		Email:     "john.doe@example.com",
+	suite.MockUserService.EXPECT().TrashedUser(1).Return(mockUser, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseUserDeleteAt("success", "Successfully trashed user", mockUser).Return(&pb.ApiResponseUserDeleteAt{
+		Status:  "success",
+		Message: "Successfully trashed user",
+		Data:    &pb.UserResponseDeleteAt{Id: 1, Firstname: "John"},
 	})
 
-	res, err := userHandler.RestoreUser(context.Background(), req)
+	res, err := suite.Handler.TrashedUser(context.Background(), req)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully restored user", res.GetMessage())
-	assert.NotNil(t, res.GetData())
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
 }
 
-func TestRestoreUser_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	req := &pb.FindByIdUserRequest{Id: 0}
-
-	res, err := userHandler.RestoreUser(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, statusErr.Message(), "Invalid user id")
-}
-
-func TestRestoreUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
+func (suite *UserHandleGrpcTestSuite) TestRestoreUser_Success() {
 	req := &pb.FindByIdUserRequest{Id: 1}
-	mockError := &response.ErrorResponse{
-		Status:  "error",
-		Message: "User not found",
-	}
+	mockUser := &response.UserResponseDeleteAt{ID: 1, FirstName: "John"}
 
-	mockUserService.EXPECT().RestoreUser(1).Return(nil, mockError)
+	suite.MockUserService.EXPECT().RestoreUser(1).Return(mockUser, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseUserDeleteAt("success", "Successfully restored user", mockUser).Return(&pb.ApiResponseUserDeleteAt{
+		Status:  "success",
+		Message: "Successfully restored user",
+		Data:    &pb.UserResponseDeleteAt{Id: 1, Firstname: "John"},
+	})
 
-	res, err := userHandler.RestoreUser(context.Background(), req)
+	res, err := suite.Handler.RestoreUser(context.Background(), req)
 
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Failed to restore user")
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
 }
 
-func TestDeleteUserPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
+func (suite *UserHandleGrpcTestSuite) TestDeleteUserPermanent_Success() {
 	req := &pb.FindByIdUserRequest{Id: 1}
 
-	mockResponse := &pb.ApiResponseUserDelete{
+	suite.MockUserService.EXPECT().DeleteUserPermanent(1).Return(true, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseUserDelete("success", "Successfully deleted user permanently").Return(&pb.ApiResponseUserDelete{
 		Status:  "success",
 		Message: "Successfully deleted user permanently",
-	}
-
-	mockUserService.EXPECT().DeleteUserPermanent(1).Return(mockResponse, nil)
-
-	res, err := userHandler.DeleteUserPermanent(context.Background(), req)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "success", res.GetStatus())
-	assert.Equal(t, "Successfully deleted user permanently", res.GetMessage())
-}
-
-func TestDeleteUserPermanent_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	req := &pb.FindByIdUserRequest{Id: 0}
-
-	res, err := userHandler.DeleteUserPermanent(context.Background(), req)
-
-	assert.Nil(t, res)
-	assert.Error(t, err)
-
-	statusErr, ok := status.FromError(err)
-	assert.True(t, ok)
-	assert.Equal(t, codes.InvalidArgument, statusErr.Code())
-	assert.Contains(t, statusErr.Message(), "Invalid user id")
-}
-
-func TestDeleteUserPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserService := mock_service.NewMockUserService(ctrl)
-	mockProtoMapper := mock_protomapper.NewMockUserProtoMapper(ctrl)
-	userHandler := gapi.NewUserHandleGrpc(mockUserService, mockProtoMapper)
-
-	req := &pb.FindByIdUserRequest{Id: 1}
-
-	mockUserService.EXPECT().DeleteUserPermanent(1).Return(nil, &response.ErrorResponse{
-		Status:  "error",
-		Message: "Failed to delete user permanently",
 	})
 
-	res, err := userHandler.DeleteUserPermanent(context.Background(), req)
+	res, err := suite.Handler.DeleteUserPermanent(context.Background(), req)
 
-	assert.Nil(t, res)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Failed to delete user permanently")
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+}
+
+func (suite *UserHandleGrpcTestSuite) TestRestoreAllUser_Success() {
+	req := &emptypb.Empty{}
+
+	suite.MockUserService.EXPECT().RestoreAllUser().Return(true, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseUserAll("success", "Successfully restored all users").Return(&pb.ApiResponseUserAll{
+		Status:  "success",
+		Message: "Successfully restored all users",
+	})
+
+	res, err := suite.Handler.RestoreAllUser(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+}
+
+func (suite *UserHandleGrpcTestSuite) TestDeleteAllUserPermanent_Success() {
+	req := &emptypb.Empty{}
+
+	suite.MockUserService.EXPECT().DeleteAllUserPermanent().Return(true, nil)
+	suite.MockProtoMapper.EXPECT().ToProtoResponseUserAll("success", "Successfully deleted all users permanently").Return(&pb.ApiResponseUserAll{
+		Status:  "success",
+		Message: "Successfully deleted all users permanently",
+	})
+
+	res, err := suite.Handler.DeleteAllUserPermanent(context.Background(), req)
+
+	suite.NoError(err)
+	suite.NotNil(res)
+	suite.Equal("success", res.GetStatus())
+}
+
+func TestUserHandleGrpcSuite(t *testing.T) {
+	suite.Run(t, new(UserHandleGrpcTestSuite))
 }

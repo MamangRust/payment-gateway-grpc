@@ -1,491 +1,215 @@
 package test
 
 import (
-	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	"MamangRust/paymentgatewaygrpc/internal/handler/api"
-	"MamangRust/paymentgatewaygrpc/internal/pb"
-	mock_pb "MamangRust/paymentgatewaygrpc/internal/pb/mocks"
-	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
+	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
+	"MamangRust/paymentgatewaygrpc/internal/domain/response"
+	"MamangRust/paymentgatewaygrpc/internal/handler/api"
+	mock_apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api/mocks"
+	"MamangRust/paymentgatewaygrpc/internal/pb"
+	mock_pb "MamangRust/paymentgatewaygrpc/internal/pb/mocks"
+	mock_logger "MamangRust/paymentgatewaygrpc/pkg/logger/mocks"
+
 	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func TestFindAllUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+type UserHandlerTestSuite struct {
+	suite.Suite
+	Ctrl           *gomock.Controller
+	MockUserClient *mock_pb.MockUserServiceClient
+	MockLogger     *mock_logger.MockLoggerInterface
+	MockMapper     *mock_apimapper.MockUserResponseMapper
+	E              *echo.Echo
+	Handler        *api.UserHandleApi
+}
 
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+func (suite *UserHandlerTestSuite) SetupTest() {
+	suite.Ctrl = gomock.NewController(suite.T())
+	suite.MockUserClient = mock_pb.NewMockUserServiceClient(suite.Ctrl)
+	suite.MockLogger = mock_logger.NewMockLoggerInterface(suite.Ctrl)
+	suite.MockMapper = mock_apimapper.NewMockUserResponseMapper(suite.Ctrl)
+	suite.E = echo.New()
+	suite.Handler = api.NewHandlerUser(suite.MockUserClient, suite.E, suite.MockLogger, suite.MockMapper)
+}
 
-	expectedResponse := &pb.ApiResponsePaginationUser{
+func (suite *UserHandlerTestSuite) TearDownTest() {
+	suite.Ctrl.Finish()
+}
+
+func (suite *UserHandlerTestSuite) TestFindAllUser_Success() {
+	grpcResponse := &pb.ApiResponsePaginationUser{
 		Status:  "success",
 		Message: "Users retrieved successfully",
 		Data: []*pb.UserResponse{
-			{
-				Id:        1,
-				Firstname: "John",
-				Lastname:  "Doe",
-				Email:     "john.doe@example.com",
-			},
-			{
-				Id:        2,
-				Firstname: "Jane",
-				Lastname:  "Doe",
-				Email:     "jane.doe@example.com",
-			},
+			{Id: 1, Firstname: "John", Lastname: "Doe", Email: "john.doe@example.com"},
+			{Id: 2, Firstname: "Jane", Lastname: "Doe", Email: "jane.doe@example.com"},
 		},
-		Pagination: &pb.PaginationMeta{
-			CurrentPage: 1,
-			PageSize:    2,
-			TotalPages:  1,
-		},
+		Pagination: &pb.PaginationMeta{CurrentPage: 1, PageSize: 2, TotalPages: 1},
+	}
+	expectedApiResponse := &response.ApiResponsePaginationUser{
+		Status:     grpcResponse.Status,
+		Message:    grpcResponse.Message,
+		Data:       []*response.UserResponse{{ID: 1, FirstName: "John", LastName: "Doe", Email: "john.doe@example.com"}, {ID: 2, FirstName: "Jane", LastName: "Doe", Email: "jane.doe@example.com"}},
+		Pagination: &response.PaginationMeta{CurrentPage: 1, PageSize: 2, TotalPages: 1},
 	}
 
-	mockUserClient.EXPECT().
-		FindAll(gomock.Any(), &pb.FindAllUserRequest{
-			Page:     1,
-			PageSize: 10,
-			Search:   "",
-		}).
-		Return(expectedResponse, nil)
+	suite.MockUserClient.EXPECT().FindAll(gomock.Any(), &pb.FindAllUserRequest{Page: 1, PageSize: 10, Search: "john"}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationUser(grpcResponse).Return(expectedApiResponse)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/users?page=1&page_size=10", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/user?page=1&page_size=10&search=john", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
+	err := suite.Handler.FindAllUser(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err := handler.FindAllUser(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsePaginationUser
+	var resp response.ApiResponsePaginationUser
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Users retrieved successfully", resp.Message)
-	assert.Len(t, resp.Data, 2)
+	suite.NoError(err)
+	suite.Equal("success", resp.Status)
+	suite.Len(resp.Data, 2)
 }
 
-func TestFindAllUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *UserHandlerTestSuite) TestFindAllUser_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockUserClient.EXPECT().FindAll(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve user data", zap.Error(grpcError)).Times(1)
 
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockUserClient.EXPECT().
-		FindAll(gomock.Any(), &pb.FindAllUserRequest{
-			Page:     1,
-			PageSize: 10,
-			Search:   "",
-		}).
-		Return(nil, fmt.Errorf("internal server error"))
-
-	mockLogger.EXPECT().Debug("Failed to retrieve user data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/users?page=1&page_size=10", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/user", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	err := handler.FindAllUser(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to retrieve user data: ", resp.Message)
+	err := suite.Handler.FindAllUser(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestFindAllUser_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	mockUserClient.EXPECT().
-		FindAll(gomock.Any(), &pb.FindAllUserRequest{
-			Page:     1,
-			PageSize: 10,
-			Search:   "",
-		}).
-		Return(&pb.ApiResponsePaginationUser{
-			Status:     "success",
-			Message:    "No users found",
-			Data:       []*pb.UserResponse{},
-			Pagination: &pb.PaginationMeta{},
-		}, nil)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/users?page=1&page_size=10", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	err := handler.FindAllUser(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsePaginationUser
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "No users found", resp.Message)
-	assert.Len(t, resp.Data, 0)
-}
-
-func TestFindByIdUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	e := echo.New()
+func (suite *UserHandlerTestSuite) TestFindByIdUser_Success() {
 	id := 1
+	grpcResponse := &pb.ApiResponseUser{Status: "success", Data: &pb.UserResponse{Id: int32(id), Firstname: "John", Lastname: "Doe", Email: "john.doe@example.com"}}
+	expectedApiResponse := &response.ApiResponseUser{Status: "success", Data: &response.UserResponse{ID: id, FirstName: "John", LastName: "Doe", Email: "john.doe@example.com"}}
 
-	mockUserClient.EXPECT().
-		FindById(gomock.Any(), &pb.FindByIdUserRequest{
-			Id: int32(id),
-		}).
-		Return(&pb.ApiResponseUser{
-			Status:  "success",
-			Message: "User retrieved successfully",
-			Data: &pb.UserResponse{
-				Id:        int32(id),
-				Firstname: "John",
-				Lastname:  "Doe",
-				Email:     "john.doe@example.com",
-			},
-		}, nil).Times(1)
+	suite.MockUserClient.EXPECT().FindById(gomock.Any(), &pb.FindByIdUserRequest{Id: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseUser(grpcResponse).Return(expectedApiResponse)
 
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/users/%d", id), nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/user/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
-	c.SetParamValues(fmt.Sprintf("%d", id))
+	c.SetParamValues("1")
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-	err := handler.FindById(c)
+	err := suite.Handler.FindById(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseUser
+	var resp response.ApiResponseUser
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "User retrieved successfully", resp.Message)
-	assert.NotNil(t, resp.Data)
+	suite.NoError(err)
+	suite.Equal(int(id), resp.Data.ID)
 }
 
-func TestFindByIdUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	e := echo.New()
-	id := 1
-
-	mockUserClient.EXPECT().
-		FindById(gomock.Any(), &pb.FindByIdUserRequest{
-			Id: int32(id),
-		}).
-		Return(nil, fmt.Errorf("gRPC service unavailable")).Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to retrieve user data", gomock.Any()).Times(1)
-
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/users/%d", id), nil)
+func (suite *UserHandlerTestSuite) TestFindByIdUser_InvalidID() {
+	req := httptest.NewRequest(http.MethodGet, "/api/user/abc", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
-	c.SetParamValues(fmt.Sprintf("%d", id))
+	c.SetParamValues("abc")
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-	err := handler.FindById(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Failed to retrieve user data")
-}
-
-func TestFindByIdUser_Empty(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	e := echo.New()
-	id := 1
-
-	mockUserClient.EXPECT().
-		FindById(gomock.Any(), &pb.FindByIdUserRequest{
-			Id: int32(id),
-		}).
-		Return(&pb.ApiResponseUser{
-			Status:  "success",
-			Message: "User not found",
-			Data:    nil,
-		}, nil).Times(1)
-
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/users/%d", id), nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues(fmt.Sprintf("%d", id))
-
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-	err := handler.FindById(c)
-
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseUser
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "User not found", resp.Message)
-}
-
-func TestFindByActiveUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	request := &pb.FindAllUserRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockUserClient.EXPECT().
-		FindByActive(gomock.Any(), request).
-		Return(&pb.ApiResponsePaginationUserDeleteAt{
-			Status:  "success",
-			Message: "Users retrieved successfully",
-			Data: []*pb.UserResponseWithDeleteAt{
-				{
-					Id:        1,
-					Firstname: "John",
-					Lastname:  "Doe",
-					CreatedAt: "2023-08-01T10:00:00Z",
-					UpdatedAt: "2023-08-01T10:00:00Z",
-				},
-				{
-					Id:        2,
-					Firstname: "Jane",
-					Lastname:  "Doe",
-					CreatedAt: "2023-08-01T10:00:00Z",
-					UpdatedAt: "2023-08-01T10:00:00Z",
-				},
-			},
-		}, nil).
+	suite.MockLogger.EXPECT().
+		Debug("Invalid user ID", gomock.Any()).
 		Times(1)
 
-	e := echo.New()
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
+	err := suite.Handler.FindById(c)
 
-	req := httptest.NewRequest(http.MethodGet, "/api/users/active", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	err := handler.FindByActive(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsesUser
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-
-	assert.NoError(t, err)
-
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Users retrieved successfully", resp.Message)
-	assert.Len(t, resp.Data, 2)
-
-	users := resp.Data
-
-	assert.Equal(t, "John", users[0].Firstname)
-	assert.Equal(t, "Jane", users[1].Firstname)
+	suite.NoError(err)
+	suite.Equal(http.StatusNotFound, rec.Code)
 }
 
-func TestFindByActiveUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *UserHandlerTestSuite) TestFindByActiveUser_Success() {
+	grpcResponse := &pb.ApiResponsePaginationUserDeleteAt{Status: "success", Data: []*pb.UserResponseDeleteAt{{Id: 1, Firstname: "John"}}}
+	expectedApiResponse := &response.ApiResponsePaginationUserDeleteAt{Status: "success", Data: []*response.UserResponseDeleteAt{{ID: 1, FirstName: "John"}}}
 
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockUserClient.EXPECT().FindByActive(gomock.Any(), &pb.FindAllUserRequest{Page: 1, PageSize: 10, Search: ""}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationUserDeleteAt(grpcResponse).Return(expectedApiResponse)
 
-	request := &pb.FindAllUserRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockUserClient.EXPECT().
-		FindByActive(gomock.Any(), request).
-		Return(nil, fmt.Errorf("failed to retrieve user data")).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to retrieve user data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/users/active", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/user/active", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	err := handler.FindByActive(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	err := suite.Handler.FindByActive(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	var resp response.ErrorResponse
+	var resp response.ApiResponsePaginationUserDeleteAt
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to retrieve user data: ", resp.Message)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
 }
 
-func TestFindByTrashedUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *UserHandlerTestSuite) TestFindByActiveUser_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockUserClient.EXPECT().FindByActive(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve user data", zap.Error(grpcError)).Times(1)
 
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	request := &pb.FindAllUserRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockUserClient.EXPECT().
-		FindByTrashed(gomock.Any(), request).
-		Return(&pb.ApiResponsePaginationUserDeleteAt{
-			Status:  "success",
-			Message: "Trashed users retrieved successfully",
-			Data: []*pb.UserResponseWithDeleteAt{
-				{
-					Id:        1,
-					Firstname: "John",
-					Lastname:  "Doe",
-					CreatedAt: "2023-08-01T10:00:00Z",
-					UpdatedAt: "2023-08-01T10:00:00Z",
-				},
-				{
-					Id:        2,
-					Firstname: "Jane",
-					Lastname:  "Doe",
-					CreatedAt: "2023-08-01T10:00:00Z",
-					UpdatedAt: "2023-08-01T10:00:00Z",
-				},
-			},
-		}, nil).
-		Times(1)
-
-	e := echo.New()
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/users/trashed", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/user/active", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	err := handler.FindByTrashed(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponsePaginationUserDeleteAt
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-
-	assert.NoError(t, err)
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "Trashed users retrieved successfully", resp.Message)
-	assert.Len(t, resp.Data, 2)
-
-	users := resp.Data
-
-	assert.Equal(t, "John", users[0].Firstname)
-	assert.Equal(t, "Jane", users[1].Firstname)
+	err := suite.Handler.FindByActive(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestFindByTrashedUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *UserHandlerTestSuite) TestFindByTrashedUser_Success() {
+	grpcResponse := &pb.ApiResponsePaginationUserDeleteAt{Status: "success", Data: []*pb.UserResponseDeleteAt{{Id: 2, Firstname: "Old User"}}}
+	expectedApiResponse := &response.ApiResponsePaginationUserDeleteAt{Status: "success", Data: []*response.UserResponseDeleteAt{{ID: 2, FirstName: "Old User"}}}
 
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockUserClient.EXPECT().FindByTrashed(gomock.Any(), &pb.FindAllUserRequest{Page: 1, PageSize: 10, Search: ""}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponsePaginationUserDeleteAt(grpcResponse).Return(expectedApiResponse)
 
-	request := &pb.FindAllUserRequest{
-		Search:   "",
-		Page:     1,
-		PageSize: 10,
-	}
-
-	mockUserClient.EXPECT().
-		FindByTrashed(gomock.Any(), request).
-		Return(nil, fmt.Errorf("failed to retrieve trashed user data")).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to retrieve user data", gomock.Any()).Times(1)
-
-	e := echo.New()
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/users/trashed", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/user/trashed", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 
-	err := handler.FindByTrashed(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	err := suite.Handler.FindByTrashed(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	var resp response.ErrorResponse
+	var resp response.ApiResponsePaginationUserDeleteAt
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-
-	assert.NoError(t, err)
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to retrieve user data: ", resp.Message)
+	suite.NoError(err)
+	suite.Len(resp.Data, 1)
 }
 
-func TestCreateUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *UserHandlerTestSuite) TestFindByTrashedUser_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockUserClient.EXPECT().FindByTrashed(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to retrieve user data", zap.Error(grpcError)).Times(1)
 
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	req := httptest.NewRequest(http.MethodGet, "/api/user/trashed", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
 
+	err := suite.Handler.FindByTrashed(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func (suite *UserHandlerTestSuite) TestCreateUser_Success() {
 	requestBody := requests.CreateUserRequest{
 		FirstName:       "John",
 		LastName:        "Doe",
@@ -493,69 +217,36 @@ func TestCreateUser_Success(t *testing.T) {
 		Password:        "password123",
 		ConfirmPassword: "password123",
 	}
-
-	expectedGRPCRequest := &pb.CreateUserRequest{
+	grpcRequest := &pb.CreateUserRequest{
 		Firstname:       requestBody.FirstName,
 		Lastname:        requestBody.LastName,
 		Email:           requestBody.Email,
 		Password:        requestBody.Password,
 		ConfirmPassword: requestBody.ConfirmPassword,
 	}
+	grpcResponse := &pb.ApiResponseUser{Status: "success", Data: &pb.UserResponse{Id: 3, Firstname: "John", Lastname: "Doe", Email: "john.doe@example.com"}}
+	expectedApiResponse := &response.ApiResponseUser{Status: "success", Data: &response.UserResponse{ID: 3, FirstName: "John", LastName: "Doe", Email: "john.doe@example.com"}}
 
-	expectedGRPCResponse := &pb.UserResponse{
-		Id:        1,
-		Firstname: "John",
-		Lastname:  "Doe",
-		Email:     "john.doe@example.com",
-	}
+	suite.MockUserClient.EXPECT().Create(gomock.Any(), grpcRequest).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseUser(grpcResponse).Return(expectedApiResponse)
 
-	expectedAPIResponse := &pb.ApiResponseUser{
-		Status:  "success",
-		Message: "User created successfully",
-		Data:    expectedGRPCResponse,
-	}
-
-	mockUserClient.EXPECT().
-		Create(gomock.Any(), expectedGRPCRequest).
-		Return(expectedAPIResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	requestBodyBytes, err := json.Marshal(requestBody)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
-
-	httpReq := httptest.NewRequest(http.MethodPost, "/api/users", bytes.NewReader(requestBodyBytes))
-	httpReq.Header.Set("Content-Type", "application/json")
-
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/user/create", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
+	err := suite.Handler.Create(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err = handler.Create(c)
-	assert.NoError(t, err)
-
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseUser
+	var resp response.ApiResponseUser
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "User created successfully", resp.Message)
-	assert.NotNil(t, resp.Data)
-	assert.Equal(t, expectedGRPCResponse, resp.Data)
+	suite.NoError(err)
+	suite.Equal("John", resp.Data.FirstName)
 }
 
-func TestCreateUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
+func (suite *UserHandlerTestSuite) TestCreateUser_Failure() {
 	requestBody := requests.CreateUserRequest{
 		FirstName:       "John",
 		LastName:        "Doe",
@@ -563,614 +254,295 @@ func TestCreateUser_Failure(t *testing.T) {
 		Password:        "password123",
 		ConfirmPassword: "password123",
 	}
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockUserClient.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to create user", zap.Error(grpcError)).Times(1)
 
-	expectedGRPCRequest := &pb.CreateUserRequest{
-		Firstname:       requestBody.FirstName,
-		Lastname:        requestBody.LastName,
-		Email:           requestBody.Email,
-		Password:        requestBody.Password,
-		ConfirmPassword: requestBody.ConfirmPassword,
-	}
-
-	mockUserClient.EXPECT().
-		Create(gomock.Any(), expectedGRPCRequest).
-		Return(nil, errors.New("internal server error")).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to create user", gomock.Any()).Times(1)
-
-	e := echo.New()
-	requestBodyBytes, err := json.Marshal(requestBody)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
-
-	httpReq := httptest.NewRequest(http.MethodPost, "/api/users", bytes.NewReader(requestBodyBytes))
-	httpReq.Header.Set("Content-Type", "application/json")
-
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/user/create", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
+	c := suite.E.NewContext(req, rec)
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	err = handler.Create(c)
-	assert.NoError(t, err)
-
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to create user: ", resp.Message)
+	err := suite.Handler.Create(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestCreateUser_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	requestBody := requests.CreateUserRequest{
+func (suite *UserHandlerTestSuite) TestCreateUser_ValidationError() {
+	invalidRequestBody := requests.CreateUserRequest{
 		FirstName: "",
-		LastName:  "",
 		Email:     "invalid-email",
 	}
 
-	e := echo.New()
-	requestBodyBytes, err := json.Marshal(requestBody)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
-
-	httpReq := httptest.NewRequest(http.MethodPost, "/api/users", bytes.NewReader(requestBodyBytes))
-	httpReq.Header.Set("Content-Type", "application/json")
-
+	bodyBytes, _ := json.Marshal(invalidRequestBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/user/create", bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
+	c := suite.E.NewContext(req, rec)
 
-	mockLogger.EXPECT().Debug("Validation Error", gomock.Any()).Times(1)
+	suite.MockLogger.EXPECT().
+		Debug("Validation Error", gomock.Any()).
+		Times(1)
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
+	err := suite.Handler.Create(c)
 
-	err = handler.Create(c)
-	assert.NoError(t, err)
-
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Validation Error:")
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
 }
 
-func TestUpdateUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
+func (suite *UserHandlerTestSuite) TestUpdateUser_Success() {
+	id := 1
 	requestBody := requests.UpdateUserRequest{
-		UserID:          1,
 		FirstName:       "John",
-		LastName:        "Doe",
-		Email:           "john.doe@example.com",
+		LastName:        "Smith",
+		Email:           "john.smith@example.com",
 		Password:        "newpassword123",
 		ConfirmPassword: "newpassword123",
 	}
-
-	expectedGRPCRequest := &pb.UpdateUserRequest{
-		Id:              int32(requestBody.UserID),
+	grpcRequest := &pb.UpdateUserRequest{
+		Id:              int32(id),
 		Firstname:       requestBody.FirstName,
 		Lastname:        requestBody.LastName,
 		Email:           requestBody.Email,
 		Password:        requestBody.Password,
 		ConfirmPassword: requestBody.ConfirmPassword,
 	}
+	grpcResponse := &pb.ApiResponseUser{Status: "success", Data: &pb.UserResponse{Id: int32(id), Firstname: "John", Lastname: "Smith", Email: "john.smith@example.com"}}
+	expectedApiResponse := &response.ApiResponseUser{Status: "success", Data: &response.UserResponse{ID: id, FirstName: "John", LastName: "Smith", Email: "john.smith@example.com"}}
 
-	expectedGRPCResponse := &pb.ApiResponseUser{
-		Status:  "success",
-		Message: "User updated successfully",
-		Data: &pb.UserResponse{
-			Id:        1,
-			Firstname: "John",
-			Lastname:  "Doe",
-			Email:     "john.doe@example.com",
-		},
-	}
+	suite.MockUserClient.EXPECT().Update(gomock.Any(), grpcRequest).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseUser(grpcResponse).Return(expectedApiResponse)
 
-	mockUserClient.EXPECT().
-		Update(gomock.Any(), expectedGRPCRequest).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	requestBodyBytes, err := json.Marshal(requestBody)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
-
-	httpReq := httptest.NewRequest(http.MethodPut, "/api/users/update/1", bytes.NewReader(requestBodyBytes))
-	httpReq.Header.Set("Content-Type", "application/json")
-
+	bodyBytes, _ := json.Marshal(requestBody)
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/user/update/%d", id), bytes.NewReader(bodyBytes))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues(strconv.Itoa(id))
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
+	err := suite.Handler.Update(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 
-	err = handler.Update(c)
-	assert.NoError(t, err)
-
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseUser
+	var resp response.ApiResponseUser
 	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "User updated successfully", resp.Message)
-	assert.Equal(t, "John", resp.Data.Firstname)
-	assert.Equal(t, "Doe", resp.Data.Lastname)
+	suite.NoError(err)
+	suite.Equal("Smith", resp.Data.LastName)
 }
 
-func TestUpdateUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	requestBody := requests.UpdateUserRequest{
-		UserID:          1,
-		FirstName:       "John",
-		LastName:        "Doe",
-		Email:           "john.doe@example.com",
-		Password:        "newpassword123",
-		ConfirmPassword: "newpassword123",
-	}
-
-	expectedGRPCRequest := &pb.UpdateUserRequest{
-		Id:              int32(requestBody.UserID),
-		Firstname:       requestBody.FirstName,
-		Lastname:        requestBody.LastName,
-		Email:           requestBody.Email,
-		Password:        requestBody.Password,
-		ConfirmPassword: requestBody.ConfirmPassword,
-	}
-
-	mockUserClient.EXPECT().
-		Update(gomock.Any(), expectedGRPCRequest).
-		Return(nil, errors.New("internal server error")).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to update user", gomock.Any()).Times(1)
-
-	e := echo.New()
-	requestBodyBytes, err := json.Marshal(requestBody)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
-
-	httpReq := httptest.NewRequest(http.MethodPut, "/api/users/update/1", bytes.NewReader(requestBodyBytes))
-	httpReq.Header.Set("Content-Type", "application/json")
-
+func (suite *UserHandlerTestSuite) TestUpdateUser_InvalidID() {
+	req := httptest.NewRequest(http.MethodPost, "/api/user/update/abc", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("abc")
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	err = handler.Update(c)
-	assert.NoError(t, err)
-
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to update user: ", resp.Message)
+	err := suite.Handler.Update(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusNotFound, rec.Code)
 }
 
-func TestUpdateUser_ValidationError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	requestBody := requests.UpdateUserRequest{
-		UserID:    1,
+func (suite *UserHandlerTestSuite) TestUpdateUser_ValidationError() {
+	id := 1
+	invalidRequestBody := requests.UpdateUserRequest{
 		FirstName: "",
-		LastName:  "",
 		Email:     "invalid-email",
 	}
 
-	e := echo.New()
-	requestBodyBytes, err := json.Marshal(requestBody)
-	if err != nil {
-		t.Fatalf("Failed to marshal request body: %v", err)
-	}
-
-	httpReq := httptest.NewRequest(http.MethodPut, "/api/users/update/1", bytes.NewReader(requestBodyBytes))
-	httpReq.Header.Set("Content-Type", "application/json")
+	bodyBytes, _ := json.Marshal(invalidRequestBody)
+	req := httptest.NewRequest(
+		http.MethodPost,
+		fmt.Sprintf("/api/user/update/%d", id),
+		bytes.NewReader(bodyBytes),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 	rec := httptest.NewRecorder()
-	c := e.NewContext(httpReq, rec)
+	c := suite.E.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues(strconv.Itoa(id))
 
-	mockLogger.EXPECT().Debug("Validation Error", gomock.Any()).Times(1)
-
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	err = handler.Update(c)
-	assert.NoError(t, err)
-
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Contains(t, resp.Message, "Validation Error:")
-}
-
-func TestTrashedUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	userID := 1
-	expectedGRPCRequest := &pb.FindByIdUserRequest{
-		Id: int32(userID),
-	}
-
-	expectedGRPCResponse := &pb.ApiResponseUser{
-		Status:  "success",
-		Message: "User trashed successfully",
-		Data: &pb.UserResponse{
-			Id:        1,
-			Firstname: "John",
-			Lastname:  "Doe",
-			Email:     "john.doe@example.com",
-		},
-	}
-
-	mockUserClient.EXPECT().
-		TrashedUser(gomock.Any(), expectedGRPCRequest).
-		Return(expectedGRPCResponse, nil).
+	suite.MockLogger.EXPECT().
+		Debug("Validation Error", gomock.Any()).
 		Times(1)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/users/trashed/1", nil)
+	err := suite.Handler.Update(c)
+
+	suite.NoError(err)
+	suite.Equal(http.StatusBadRequest, rec.Code)
+}
+
+func (suite *UserHandlerTestSuite) TestTrashedUser_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseUserDeleteAt{Status: "success", Data: &pb.UserResponseDeleteAt{Id: int32(id)}}
+	expectedApiResponse := &response.ApiResponseUserDeleteAt{Status: "success", Data: &response.UserResponseDeleteAt{ID: id}}
+
+	suite.MockUserClient.EXPECT().TrashedUser(gomock.Any(), &pb.FindByIdUserRequest{Id: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseUserDeleteAt(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/user/trashed/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	err := handler.TrashedUser(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseUser
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "User trashed successfully", resp.Message)
-	assert.Equal(t, int32(1), resp.Data.Id)
-	assert.Equal(t, "John", resp.Data.Firstname)
+	err := suite.Handler.TrashedUser(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 }
 
-func TestTrashedUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *UserHandlerTestSuite) TestTrashedUser_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockUserClient.EXPECT().TrashedUser(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to trashed user", zap.Error(grpcError)).Times(1)
 
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	userID := 1
-	expectedGRPCRequest := &pb.FindByIdUserRequest{
-		Id: int32(userID),
-	}
-
-	mockUserClient.EXPECT().
-		TrashedUser(gomock.Any(), expectedGRPCRequest).
-		Return(nil, errors.New("internal server error")).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to trashed user", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/users/trashed/1", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/user/trashed/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	err := handler.TrashedUser(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to trashed user: ", resp.Message)
+	err := suite.Handler.TrashedUser(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestTrashedUser_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *UserHandlerTestSuite) TestRestoreUser_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseUserDeleteAt{Status: "success", Data: &pb.UserResponseDeleteAt{Id: int32(id)}}
+	expectedApiResponse := &response.ApiResponseUserDeleteAt{Status: "success", Data: &response.UserResponseDeleteAt{ID: id}}
 
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockUserClient.EXPECT().RestoreUser(gomock.Any(), &pb.FindByIdUserRequest{Id: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseUserDeleteAt(grpcResponse).Return(expectedApiResponse)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/users/trashed/invalid-id", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/user/restore/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("invalid-id")
-
-	mockLogger.EXPECT().Debug("Invalid user ID", gomock.Any()).Times(1)
-
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	err := handler.TrashedUser(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Invalid user ID", resp.Message)
-}
-
-func TestRestoreUser_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	userID := 1
-	expectedGRPCRequest := &pb.FindByIdUserRequest{
-		Id: int32(userID),
-	}
-
-	expectedGRPCResponse := &pb.ApiResponseUser{
-		Status:  "success",
-		Message: "User restored successfully",
-		Data: &pb.UserResponse{
-			Id:        1,
-			Firstname: "John",
-			Lastname:  "Doe",
-			Email:     "john.doe@example.com",
-		},
-	}
-
-	mockUserClient.EXPECT().
-		RestoreUser(gomock.Any(), expectedGRPCRequest).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/users/restore/1", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	err := handler.RestoreUser(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseUser
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "User restored successfully", resp.Message)
-	assert.Equal(t, int32(1), resp.Data.Id)
-	assert.Equal(t, "John", resp.Data.Firstname)
+	err := suite.Handler.RestoreUser(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 }
 
-func TestRestoreUser_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *UserHandlerTestSuite) TestRestoreUser_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockUserClient.EXPECT().RestoreUser(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to restore user", zap.Error(grpcError)).Times(1)
 
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	userID := 1
-	expectedGRPCRequest := &pb.FindByIdUserRequest{
-		Id: int32(userID),
-	}
-
-	mockUserClient.EXPECT().
-		RestoreUser(gomock.Any(), expectedGRPCRequest).
-		Return(nil, errors.New("internal server error")).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to restore user", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/users/restore/1", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/user/restore/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	err := handler.RestoreUser(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to restore user: ", resp.Message)
+	err := suite.Handler.RestoreUser(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestRestoreUser_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *UserHandlerTestSuite) TestDeleteUserPermanent_Success() {
+	id := 1
+	grpcResponse := &pb.ApiResponseUserDelete{Status: "success"}
+	expectedApiResponse := &response.ApiResponseUserDelete{Status: "success"}
 
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockUserClient.EXPECT().DeleteUserPermanent(gomock.Any(), &pb.FindByIdUserRequest{Id: int32(id)}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseUserDelete(grpcResponse).Return(expectedApiResponse)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/users/restore/invalid-id", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/api/user/permanent/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("invalid-id")
-
-	mockLogger.EXPECT().Debug("Invalid user ID", gomock.Any()).Times(1)
-
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	err := handler.RestoreUser(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Invalid user ID", resp.Message)
-}
-
-func TestDeleteUserPermanent_Success(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	userID := 1
-	expectedGRPCRequest := &pb.FindByIdUserRequest{
-		Id: int32(userID),
-	}
-
-	expectedGRPCResponse := &pb.ApiResponseUserDelete{
-		Status:  "success",
-		Message: "User deleted permanently",
-	}
-
-	mockUserClient.EXPECT().
-		DeleteUserPermanent(gomock.Any(), expectedGRPCRequest).
-		Return(expectedGRPCResponse, nil).
-		Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/users/delete-permanent/1", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	err := handler.DeleteUserPermanent(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var resp pb.ApiResponseUserDelete
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "success", resp.Status)
-	assert.Equal(t, "User deleted permanently", resp.Message)
+	err := suite.Handler.DeleteUserPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
 }
 
-func TestDeleteUserPermanent_Failure(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *UserHandlerTestSuite) TestDeleteUserPermanent_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockUserClient.EXPECT().DeleteUserPermanent(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Debug("Failed to delete user", zap.Error(grpcError)).Times(1)
 
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
-
-	userID := 1
-	expectedGRPCRequest := &pb.FindByIdUserRequest{
-		Id: int32(userID),
-	}
-
-	mockUserClient.EXPECT().
-		DeleteUserPermanent(gomock.Any(), expectedGRPCRequest).
-		Return(nil, errors.New("internal server error")).
-		Times(1)
-
-	mockLogger.EXPECT().Debug("Failed to delete user", gomock.Any()).Times(1)
-
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/users/delete-permanent/1", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/api/user/permanent/1", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	c := suite.E.NewContext(req, rec)
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
-
-	err := handler.DeleteUserPermanent(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Failed to delete user: ", resp.Message)
+	err := suite.Handler.DeleteUserPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
 }
 
-func TestDeleteUserPermanent_InvalidID(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func (suite *UserHandlerTestSuite) TestRestoreAllUser_Success() {
+	grpcResponse := &pb.ApiResponseUserAll{Status: "success"}
+	expectedApiResponse := &response.ApiResponseUserAll{Status: "success"}
 
-	mockUserClient := mock_pb.NewMockUserServiceClient(ctrl)
-	mockLogger := mock_logger.NewMockLoggerInterface(ctrl)
+	suite.MockLogger.EXPECT().Debug("Successfully restored all user").Times(1)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/users/delete-permanent/invalid-id", nil)
+	suite.MockUserClient.EXPECT().RestoreAllUser(gomock.Any(), &emptypb.Empty{}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseUserAll(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/user/restore/all", nil)
 	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	c.SetParamNames("id")
-	c.SetParamValues("invalid-id")
+	c := suite.E.NewContext(req, rec)
 
-	mockLogger.EXPECT().Debug("Invalid user ID", gomock.Any()).Times(1)
+	err := suite.Handler.RestoreAllUser(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+}
 
-	handler := api.NewHandlerUser(mockUserClient, e, mockLogger)
+func (suite *UserHandlerTestSuite) TestRestoreAllUser_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockUserClient.EXPECT().RestoreAllUser(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Error("Failed to restore all user", zap.Error(grpcError)).Times(1)
 
-	err := handler.DeleteUserPermanent(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	req := httptest.NewRequest(http.MethodPost, "/api/user/restore/all", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
 
-	var resp response.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &resp)
-	assert.NoError(t, err)
+	err := suite.Handler.RestoreAllUser(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
 
-	assert.Equal(t, "error", resp.Status)
-	assert.Equal(t, "Invalid user ID", resp.Message)
+func (suite *UserHandlerTestSuite) TestDeleteAllUserPermanent_Success() {
+	grpcResponse := &pb.ApiResponseUserAll{Status: "success"}
+	expectedApiResponse := &response.ApiResponseUserAll{Status: "success"}
+
+	suite.MockLogger.EXPECT().Debug("Successfully deleted all user permanently").Times(1)
+
+	suite.MockUserClient.EXPECT().DeleteAllUserPermanent(gomock.Any(), &emptypb.Empty{}).Return(grpcResponse, nil)
+	suite.MockMapper.EXPECT().ToApiResponseUserAll(grpcResponse).Return(expectedApiResponse)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/user/permanent/all", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.DeleteAllUserPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, rec.Code)
+}
+
+func (suite *UserHandlerTestSuite) TestDeleteAllUserPermanent_Failure() {
+	grpcError := errors.New("gRPC service unavailable")
+	suite.MockUserClient.EXPECT().DeleteAllUserPermanent(gomock.Any(), gomock.Any()).Return(nil, grpcError)
+	suite.MockLogger.EXPECT().Error("Failed to permanently delete all user", zap.Error(grpcError)).Times(1)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/user/permanent/all", nil)
+	rec := httptest.NewRecorder()
+	c := suite.E.NewContext(req, rec)
+
+	err := suite.Handler.DeleteAllUserPermanent(c)
+	suite.NoError(err)
+	suite.Equal(http.StatusInternalServerError, rec.Code)
+}
+
+func TestUserHandlerSuite(t *testing.T) {
+	suite.Run(t, new(UserHandlerTestSuite))
 }

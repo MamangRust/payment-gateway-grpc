@@ -36,6 +36,14 @@ func (s *roleProtoMapper) ToProtoResponseRole(status string, message string, pbR
 	}
 }
 
+func (s *roleProtoMapper) ToProtoResponseRoleDeleteAt(status string, message string, pbResponse *response.RoleResponseDeleteAt) *pb.ApiResponseRoleDeleteAt {
+	return &pb.ApiResponseRoleDeleteAt{
+		Status:  status,
+		Message: message,
+		Data:    s.mapResponseRoleDeleteAt(pbResponse),
+	}
+}
+
 func (s *roleProtoMapper) ToProtoResponsesRole(status string, message string, pbResponse []*response.RoleResponse) *pb.ApiResponsesRole {
 	return &pb.ApiResponsesRole{
 		Status:  status,

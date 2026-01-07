@@ -4,8 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"net"
+	"os"
 
+	"github.com/grafana/pyroscope-go"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -14,6 +17,7 @@ import (
 	protomapper "MamangRust/paymentgatewaygrpc/internal/mapper/proto"
 	recordmapper "MamangRust/paymentgatewaygrpc/internal/mapper/record"
 	responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/service"
+	"MamangRust/paymentgatewaygrpc/internal/middlewares"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
 	"MamangRust/paymentgatewaygrpc/internal/repository"
 	"MamangRust/paymentgatewaygrpc/internal/service"
@@ -41,6 +45,29 @@ type Server struct {
 
 func NewServer() (*Server, error) {
 	flag.Parse()
+
+	_, err := pyroscope.Start(pyroscope.Config{
+		ApplicationName: "server",
+		ServerAddress:   os.Getenv("PYROSCOPE_SERVER"),
+
+		ProfileTypes: []pyroscope.ProfileType{
+			pyroscope.ProfileCPU,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
+			pyroscope.ProfileInuseObjects,
+			pyroscope.ProfileInuseSpace,
+		},
+
+		Tags: map[string]string{
+			"service": "grpc-server",
+			"env":     os.Getenv("ENV"),
+			"version": os.Getenv("VERSION"),
+		},
+	})
+
+	if err != nil {
+		log.Fatal("Failed to initialize pyroscope:", err)
+	}
 
 	logger, err := logger.NewLogger()
 	if err != nil {
@@ -125,7 +152,11 @@ func (s *Server) Run() {
 		s.Logger.Fatal("Failed to listen", zap.Error(err))
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			middlewares.PyroscopeUnaryInterceptor(),
+		),
+	)
 
 	pb.RegisterAuthServiceServer(grpcServer, s.Handlers.Auth)
 	pb.RegisterUserServiceServer(grpcServer, s.Handlers.User)

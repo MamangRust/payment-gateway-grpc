@@ -129,6 +129,12 @@ type ApiResponseTransaction struct {
 	Data    *TransactionResponse `json:"data"`
 }
 
+type ApiResponseTransactionDeleteAt struct {
+	Status  string                       `json:"status"`
+	Message string                       `json:"message"`
+	Data    *TransactionResponseDeleteAt `json:"data"`
+}
+
 type ApiResponseTransactions struct {
 	Status  string                 `json:"status"`
 	Message string                 `json:"message"`

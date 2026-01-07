@@ -95,7 +95,7 @@ func (s *roleHandleGrpc) FindByUserId(ctx context.Context, req *pb.FindByIdUserR
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	roleResponse := s.mapping.ToProtoResponsesRole("success", "Successfully fetched role by user ID", role)
+	roleResponse := s.mapping.ToProtoResponsesRole("success", "Successfully fetched role by user id", role)
 
 	return roleResponse, nil
 }
@@ -223,7 +223,7 @@ func (s *roleHandleGrpc) UpdateRole(ctx context.Context, reqPb *pb.UpdateRoleReq
 	return so, nil
 }
 
-func (s *roleHandleGrpc) TrashedRole(ctx context.Context, req *pb.FindByIdRoleRequest) (*pb.ApiResponseRole, error) {
+func (s *roleHandleGrpc) TrashedRole(ctx context.Context, req *pb.FindByIdRoleRequest) (*pb.ApiResponseRoleDeleteAt, error) {
 	roleID := int(req.GetRoleId())
 
 	if roleID == 0 {
@@ -236,12 +236,12 @@ func (s *roleHandleGrpc) TrashedRole(ctx context.Context, req *pb.FindByIdRoleRe
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseRole("success", "Successfully trashed role", role)
+	so := s.mapping.ToProtoResponseRoleDeleteAt("success", "Successfully trashed role", role)
 
 	return so, nil
 }
 
-func (s *roleHandleGrpc) RestoreRole(ctx context.Context, req *pb.FindByIdRoleRequest) (*pb.ApiResponseRole, error) {
+func (s *roleHandleGrpc) RestoreRole(ctx context.Context, req *pb.FindByIdRoleRequest) (*pb.ApiResponseRoleDeleteAt, error) {
 	roleID := int(req.GetRoleId())
 
 	if roleID == 0 {
@@ -254,7 +254,7 @@ func (s *roleHandleGrpc) RestoreRole(ctx context.Context, req *pb.FindByIdRoleRe
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseRole("success", "Successfully restored role", role)
+	so := s.mapping.ToProtoResponseRoleDeleteAt("success", "Successfully restored role", role)
 
 	return so, nil
 }

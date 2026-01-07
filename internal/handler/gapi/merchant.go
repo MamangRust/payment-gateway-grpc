@@ -19,7 +19,7 @@ type merchantHandleGrpc struct {
 	mapping         protomapper.MerchantProtoMapper
 }
 
-func NewMerchantHandleGrpc(merchantService service.MerchantService, mapping protomapper.MerchantProtoMapper) *merchantHandleGrpc {
+func NewMerchantHandleGrpc(merchantService service.MerchantService, mapping protomapper.MerchantProtoMapper) MerchantHandleGrpc {
 	return &merchantHandleGrpc{merchantService: merchantService, mapping: mapping}
 }
 
@@ -687,7 +687,7 @@ func (s *merchantHandleGrpc) UpdateMerchant(ctx context.Context, req *pb.UpdateM
 	return so, nil
 }
 
-func (s *merchantHandleGrpc) TrashedMerchant(ctx context.Context, req *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchant, error) {
+func (s *merchantHandleGrpc) TrashedMerchant(ctx context.Context, req *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchantDeleteAt, error) {
 	id := int(req.GetMerchantId())
 
 	if id == 0 {
@@ -700,12 +700,12 @@ func (s *merchantHandleGrpc) TrashedMerchant(ctx context.Context, req *pb.FindBy
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseMerchant("success", "Successfully trashed merchant", merchant)
+	so := s.mapping.ToProtoResponseMerchantDeleteAt("success", "Successfully trashed merchant", merchant)
 
 	return so, nil
 }
 
-func (s *merchantHandleGrpc) RestoreMerchant(ctx context.Context, req *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchant, error) {
+func (s *merchantHandleGrpc) RestoreMerchant(ctx context.Context, req *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchantDeleteAt, error) {
 	id := int(req.GetMerchantId())
 
 	if id == 0 {
@@ -718,12 +718,12 @@ func (s *merchantHandleGrpc) RestoreMerchant(ctx context.Context, req *pb.FindBy
 		return nil, response.ToGrpcErrorFromErrorResponse(err)
 	}
 
-	so := s.mapping.ToProtoResponseMerchant("success", "Successfully restored merchant", merchant)
+	so := s.mapping.ToProtoResponseMerchantDeleteAt("success", "Successfully restored merchant", merchant)
 
 	return so, nil
 }
 
-func (s *merchantHandleGrpc) DeleteMerchant(ctx context.Context, req *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchantDelete, error) {
+func (s *merchantHandleGrpc) DeleteMerchantPermanent(ctx context.Context, req *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchantDelete, error) {
 	id := int(req.GetMerchantId())
 
 	if id == 0 {

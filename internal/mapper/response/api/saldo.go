@@ -16,7 +16,15 @@ func (s *saldoResponse) ToApiResponseSaldo(pbResponse *pb.ApiResponseSaldo) *res
 	return &response.ApiResponseSaldo{
 		Status:  pbResponse.Status,
 		Message: pbResponse.Message,
-		Data:    *s.mapResponseSaldo(pbResponse.Data),
+		Data:    s.mapResponseSaldo(pbResponse.Data),
+	}
+}
+
+func (s *saldoResponse) ToApiResponseSaldoDeleteAt(pbResponse *pb.ApiResponseSaldoDeleteAt) *response.ApiResponseSaldoDeleteAt {
+	return &response.ApiResponseSaldoDeleteAt{
+		Status:  pbResponse.Status,
+		Message: pbResponse.Message,
+		Data:    s.mapResponseSaldoDeleteAt(pbResponse.Data),
 	}
 }
 

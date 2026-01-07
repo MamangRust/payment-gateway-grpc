@@ -19,6 +19,14 @@ func (s *cardResponseMapper) ToApiResponseCard(card *pb.ApiResponseCard) *respon
 	}
 }
 
+func (s *cardResponseMapper) ToApiResponseCardDeleteAt(card *pb.ApiResponseCardDeleteAt) *response.ApiResponseCardDeleteAt {
+	return &response.ApiResponseCardDeleteAt{
+		Status:  card.Status,
+		Message: card.Message,
+		Data:    s.mapCardResponseDeleteAt(card.Data),
+	}
+}
+
 func (s *cardResponseMapper) ToApiResponsesCard(cards *pb.ApiResponsePaginationCard) *response.ApiResponsePaginationCard {
 	return &response.ApiResponsePaginationCard{
 		Status:     cards.Status,
@@ -29,7 +37,7 @@ func (s *cardResponseMapper) ToApiResponsesCard(cards *pb.ApiResponsePaginationC
 
 }
 
-func (s *cardResponseMapper) ToApiResponseCardDeleteAt(card *pb.ApiResponseCardDelete) *response.ApiResponseCardDelete {
+func (s *cardResponseMapper) ToApiResponseCardDelete(card *pb.ApiResponseCardDelete) *response.ApiResponseCardDelete {
 	return &response.ApiResponseCardDelete{
 		Status:  card.Status,
 		Message: card.Message,

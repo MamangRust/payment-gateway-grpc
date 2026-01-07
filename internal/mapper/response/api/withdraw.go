@@ -20,6 +20,14 @@ func (m *withdrawResponseMapper) ToApiResponseWithdraw(pbResponse *pb.ApiRespons
 	}
 }
 
+func (m *withdrawResponseMapper) ToApiResponseWithdrawDeleteAt(pbResponse *pb.ApiResponseWithdrawDeleteAt) *response.ApiResponseWithdrawDeleteAt {
+	return &response.ApiResponseWithdrawDeleteAt{
+		Status:  pbResponse.Status,
+		Message: pbResponse.Message,
+		Data:    m.mapResponseWithdrawalDeleteAt(pbResponse.Data),
+	}
+}
+
 func (m *withdrawResponseMapper) ToApiResponsesWithdraw(pbResponse *pb.ApiResponsesWithdraw) *response.ApiResponsesWithdraw {
 	return &response.ApiResponsesWithdraw{
 		Status:  pbResponse.Status,
@@ -47,7 +55,7 @@ func (m *withdrawResponseMapper) ToApiResponsePaginationWithdraw(pbResponse *pb.
 		Status:     pbResponse.Status,
 		Message:    pbResponse.Message,
 		Data:       m.mapResponsesWithdrawal(pbResponse.Data),
-		Pagination: *mapPaginationMeta(pbResponse.Pagination),
+		Pagination: mapPaginationMeta(pbResponse.Pagination),
 	}
 }
 
@@ -56,7 +64,7 @@ func (m *withdrawResponseMapper) ToApiResponsePaginationWithdrawDeleteAt(pbRespo
 		Status:     pbResponse.Status,
 		Message:    pbResponse.Message,
 		Data:       m.mapResponsesWithdrawalDeleteAt(pbResponse.Data),
-		Pagination: *mapPaginationMeta(pbResponse.Pagination),
+		Pagination: mapPaginationMeta(pbResponse.Pagination),
 	}
 }
 

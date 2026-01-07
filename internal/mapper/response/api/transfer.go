@@ -67,6 +67,14 @@ func (m *transferResponseMapper) ToApiResponseTransfer(pbResponse *pb.ApiRespons
 	}
 }
 
+func (m *transferResponseMapper) ToApiResponseTransferDeleteAt(pbResponse *pb.ApiResponseTransferDeleteAt) *response.ApiResponseTransferDeleteAt {
+	return &response.ApiResponseTransferDeleteAt{
+		Status:  pbResponse.Status,
+		Message: pbResponse.Message,
+		Data:    m.mapResponseTransferDeleteAt(pbResponse.Data),
+	}
+}
+
 func (m *transferResponseMapper) ToApiResponseTransfers(pbResponse *pb.ApiResponseTransfers) *response.ApiResponseTransfers {
 	return &response.ApiResponseTransfers{
 		Status:  pbResponse.Status,

@@ -41,8 +41,8 @@ var (
 
 	ErrGrpcFailedCreateTransaction          = response.NewGrpcError("transaction", "Failed to create transaction", int(codes.Internal))
 	ErrGrpcFailedUpdateTransaction          = response.NewGrpcError("transaction", "Failed to update transaction", int(codes.Internal))
-	ErrGrpcValidateCreateTransactionRequest = response.NewGrpcError("transaction", "Invalid input for create card", int(codes.InvalidArgument))
-	ErrGrpcValidateUpdateTransactionRequest = response.NewGrpcError("transaction", "Invalid input for update card", int(codes.InvalidArgument))
+	ErrGrpcValidateCreateTransactionRequest = response.NewGrpcError("transaction", "Invalid input for create transaction", int(codes.InvalidArgument))
+	ErrGrpcValidateUpdateTransactionRequest = response.NewGrpcError("transaction", "Invalid input for update transaction", int(codes.InvalidArgument))
 
 	ErrGrpcFailedTrashedTransaction         = response.NewGrpcError("transaction", "Failed to move transaction to trash", int(codes.Internal))
 	ErrGrpcFailedRestoreTransaction         = response.NewGrpcError("transaction", "Failed to restore transaction", int(codes.Internal))
