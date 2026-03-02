@@ -78,3 +78,9 @@ docker-up:
 
 docker-down:
 	docker compose down
+
+build-client:
+	go build -ldflags="-s -w" -o client ./cmd/client
+
+build-server:
+	go build -ldflags="-s -w" -o server ./cmd/server

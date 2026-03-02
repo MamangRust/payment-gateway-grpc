@@ -14,21 +14,30 @@
 --   - Useful for transaction monitoring and auditing
 -- name: GetTransactions :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
-FROM
-    transactions
+    transaction_id,
+    transaction_no,
+    card_number,
+    amount,
+    payment_method,
+    merchant_id,
+    transaction_time,
+    status,
+    created_at,
+    updated_at,
+    COUNT(*) OVER () AS total_count
+FROM transactions
 WHERE
     deleted_at IS NULL
-    AND ($1::TEXT IS NULL
+    AND (
+        $1::TEXT IS NULL
         OR card_number ILIKE '%' || $1 || '%'
         OR payment_method ILIKE '%' || $1 || '%'
         OR status ILIKE '%' || $1 || '%'
     )
-ORDER BY
-    transaction_time DESC
-LIMIT $2 OFFSET $3;
-
+ORDER BY transaction_time DESC
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetActiveTransactions: Retrieves paginated active transactions with search
 -- Purpose: List all non-deleted transactions with filtering options
@@ -46,17 +55,30 @@ LIMIT $2 OFFSET $3;
 --   - Used in transaction management interfaces
 -- name: GetActiveTransactions :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
-FROM
-    transactions
+    transaction_id,
+    transaction_no,
+    card_number,
+    amount,
+    payment_method,
+    merchant_id,
+    transaction_time,
+    status,
+    created_at,
+    updated_at,
+    deleted_at,
+    COUNT(*) OVER () AS total_count
+FROM transactions
 WHERE
     deleted_at IS NULL
-    AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%' OR payment_method ILIKE '%' || $1 || '%')
-ORDER BY
-    transaction_time DESC
-LIMIT $2 OFFSET $3;
-
+    AND (
+        $1::TEXT IS NULL
+        OR card_number ILIKE '%' || $1 || '%'
+        OR payment_method ILIKE '%' || $1 || '%'
+    )
+ORDER BY transaction_time DESC
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetTrashedTransactions: Retrieves paginated soft-deleted transactions
 -- Purpose: List all deleted transactions for recovery or audit purposes
@@ -73,17 +95,30 @@ LIMIT $2 OFFSET $3;
 --   - Used in admin interfaces for transaction recovery
 -- name: GetTrashedTransactions :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
-FROM
-    transactions
+    transaction_id,
+    transaction_no,
+    card_number,
+    amount,
+    payment_method,
+    merchant_id,
+    transaction_time,
+    status,
+    created_at,
+    updated_at,
+    deleted_at,
+    COUNT(*) OVER () AS total_count
+FROM transactions
 WHERE
     deleted_at IS NOT NULL
-    AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%' OR payment_method ILIKE '%' || $1 || '%')
-ORDER BY
-    transaction_time DESC
-LIMIT $2 OFFSET $3;
-
+    AND (
+        $1::TEXT IS NULL
+        OR card_number ILIKE '%' || $1 || '%'
+        OR payment_method ILIKE '%' || $1 || '%'
+    )
+ORDER BY transaction_time DESC
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetTransactionByID: Retrieves a single transaction by its ID
 -- Purpose: Get detailed information about a specific transaction
@@ -95,7 +130,17 @@ LIMIT $2 OFFSET $3;
 --   - Only returns active transactions (deleted_at IS NULL)
 --   - Useful for transaction details viewing and verification
 -- name: GetTransactionByID :one
-SELECT *
+SELECT
+    transaction_id,
+    transaction_no,
+    card_number,
+    amount,
+    payment_method,
+    merchant_id,
+    transaction_time,
+    status,
+    created_at,
+    updated_at
 FROM transactions
 WHERE
     transaction_id = $1
@@ -118,10 +163,18 @@ WHERE
 --   - Useful for cardholder transaction history
 -- name: GetTransactionsByCardNumber :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
-FROM
-    transactions
+    transaction_id,
+    transaction_no,
+    card_number,
+    amount,
+    payment_method,
+    merchant_id,
+    transaction_time,
+    status,
+    created_at,
+    updated_at,
+    COUNT(*) OVER () AS total_count
+FROM transactions
 WHERE
     deleted_at IS NULL
     AND card_number = $1
@@ -130,9 +183,10 @@ WHERE
         OR payment_method ILIKE '%' || $2 || '%'
         OR status ILIKE '%' || $2 || '%'
     )
-ORDER BY
-    transaction_time DESC
-LIMIT $3 OFFSET $4;
+ORDER BY transaction_time DESC
+LIMIT $3
+OFFSET
+    $4;
 
 -- GetTransactionsByMerchantID: Retrieves transactions for a specific merchant
 -- Purpose: List all transactions associated with a merchant
@@ -146,7 +200,17 @@ LIMIT $3 OFFSET $4;
 --   - No pagination (assumes manageable number of records per merchant)
 --   - Useful for merchant transaction reports
 -- name: GetTransactionsByMerchantID :many
-SELECT *
+SELECT
+    transaction_id,
+    transaction_no,
+    card_number,
+    amount,
+    payment_method,
+    merchant_id,
+    transaction_time,
+    status,
+    created_at,
+    updated_at
 FROM transactions
 WHERE
     merchant_id = $1
@@ -169,7 +233,6 @@ WHERE
     transaction_id = $1
     AND deleted_at IS NOT NULL;
 
-
 -- GetMonthTransactionStatusSuccess: Retrieves monthly success metrics for transactions
 -- Purpose: Analyze successful transaction trends across comparison periods
 -- Parameters:
@@ -190,66 +253,103 @@ WHERE
 --   - Orders by year and month (newest first)
 --   - Useful for identifying seasonal transaction patterns and revenue trends
 -- name: GetMonthTransactionStatusSuccess :many
-WITH monthly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transaction_time)::integer AS year,
-        EXTRACT(MONTH FROM t.transaction_time)::integer AS month,
-        COUNT(*) AS total_success,
-        COALESCE(SUM(t.amount), 0)::integer AS total_amount
-    FROM
-        transactions t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'success'
-        AND (
-            (t.transaction_time >= $1::timestamp AND t.transaction_time <= $2::timestamp)
-            OR (t.transaction_time >= $3::timestamp AND t.transaction_time <= $4::timestamp)
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transaction_time),
-        EXTRACT(MONTH FROM t.transaction_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-        total_success,
-        total_amount
-    FROM
-        monthly_data
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $1::timestamp)::text AS year,
-        TO_CHAR($1::timestamp, 'Mon') AS month,
-        0 AS total_success,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    monthly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            )::integer AS year,
+            EXTRACT(
+                MONTH
+                FROM t.transaction_time
+            )::integer AS month,
+            COUNT(*) AS total_success,
+            COALESCE(SUM(t.amount), 0)::integer AS total_amount
+        FROM transactions t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'success'
+            AND (
+                (
+                    t.transaction_time >= $1::timestamp
+                    AND t.transaction_time <= $2::timestamp
+                )
+                OR (
+                    t.transaction_time >= $3::timestamp
+                    AND t.transaction_time <= $4::timestamp
+                )
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            ),
+            EXTRACT(
+                MONTH
+                FROM t.transaction_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            TO_CHAR(
+                TO_DATE(month::text, 'MM'),
+                'Mon'
+            ) AS month,
+            total_success,
+            total_amount
         FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $1::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $1::timestamp)::integer
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $1::timestamp
+            )::text AS year,
+            TO_CHAR($1::timestamp, 'Mon') AS month,
+            0 AS total_success,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $1::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $1::timestamp
+                    )::integer
+            )
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $3::timestamp
+            )::text AS year,
+            TO_CHAR($3::timestamp, 'Mon') AS month,
+            0 AS total_success,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $3::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $3::timestamp
+                    )::integer
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
-        TO_CHAR($3::timestamp, 'Mon') AS month,
-        0 AS total_success,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC,
-    TO_DATE(month, 'Mon') DESC;
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC, TO_DATE(month, 'Mon') DESC;
 
 -- GetYearlyTransactionStatusSuccess: Retrieves yearly success metrics for transactions
 -- Purpose: Compare annual successful transaction performance
@@ -267,59 +367,68 @@ ORDER BY
 --   - Useful for year-over-year growth analysis and financial reporting
 --   - Helps identify annual transaction volume and revenue trends
 -- name: GetYearlyTransactionStatusSuccess :many
-WITH yearly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transaction_time)::integer AS year,
-        COUNT(*) AS total_success,
-        COALESCE(SUM(t.amount), 0)::integer AS total_amount
-    FROM
-        transactions t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'success'
-        AND (
-            EXTRACT(YEAR FROM t.transaction_time) = $1::integer
-            OR EXTRACT(YEAR FROM t.transaction_time) = $1::integer - 1
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transaction_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        total_success::integer,
-        total_amount::integer
-    FROM
-        yearly_data
-
-    UNION ALL
-
-    SELECT
-        $1::text AS year,
-        0::integer AS total_success,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    yearly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            )::integer AS year,
+            COUNT(*) AS total_success,
+            COALESCE(SUM(t.amount), 0)::integer AS total_amount
+        FROM transactions t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'success'
+            AND (
+                EXTRACT(
+                    YEAR
+                    FROM t.transaction_time
+                ) = $1::integer
+                OR EXTRACT(
+                    YEAR
+                    FROM t.transaction_time
+                ) = $1::integer - 1
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            total_success::integer,
+            total_amount::integer
         FROM yearly_data
-        WHERE year = $1::integer
+        UNION ALL
+        SELECT
+            $1::text AS year,
+            0::integer AS total_success,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer
+            )
+        UNION ALL
+        SELECT ($1::integer - 1)::text AS year,
+            0::integer AS total_success,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer - 1
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        ($1::integer - 1)::text AS year,
-        0::integer AS total_success,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM yearly_data
-        WHERE year = $1::integer - 1
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC;
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC;
 
 -- GetMonthTransactionStatusFailed: Retrieves monthly failed metrics for transactions
 -- Purpose: Analyze failedful transaction trends across comparison periods
@@ -341,66 +450,103 @@ ORDER BY
 --   - Orders by year and month (newest first)
 --   - Useful for identifying seasonal transaction patterns and revenue trends
 -- name: GetMonthTransactionStatusFailed :many
-WITH monthly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transaction_time)::integer AS year,
-        EXTRACT(MONTH FROM t.transaction_time)::integer AS month,
-        COUNT(*) AS total_failed,
-        COALESCE(SUM(t.amount), 0)::integer AS total_amount
-    FROM
-        transactions t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'failed'
-        AND (
-            (t.transaction_time >= $1::timestamp AND t.transaction_time <= $2::timestamp)
-            OR (t.transaction_time >= $3::timestamp AND t.transaction_time <= $4::timestamp)
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transaction_time),
-        EXTRACT(MONTH FROM t.transaction_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-        total_failed,
-        total_amount
-    FROM
-        monthly_data
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $1::timestamp)::text AS year,
-        TO_CHAR($1::timestamp, 'Mon') AS month,
-        0 AS total_failed,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    monthly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            )::integer AS year,
+            EXTRACT(
+                MONTH
+                FROM t.transaction_time
+            )::integer AS month,
+            COUNT(*) AS total_failed,
+            COALESCE(SUM(t.amount), 0)::integer AS total_amount
+        FROM transactions t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'failed'
+            AND (
+                (
+                    t.transaction_time >= $1::timestamp
+                    AND t.transaction_time <= $2::timestamp
+                )
+                OR (
+                    t.transaction_time >= $3::timestamp
+                    AND t.transaction_time <= $4::timestamp
+                )
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            ),
+            EXTRACT(
+                MONTH
+                FROM t.transaction_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            TO_CHAR(
+                TO_DATE(month::text, 'MM'),
+                'Mon'
+            ) AS month,
+            total_failed,
+            total_amount
         FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $1::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $1::timestamp)::integer
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $1::timestamp
+            )::text AS year,
+            TO_CHAR($1::timestamp, 'Mon') AS month,
+            0 AS total_failed,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $1::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $1::timestamp
+                    )::integer
+            )
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $3::timestamp
+            )::text AS year,
+            TO_CHAR($3::timestamp, 'Mon') AS month,
+            0 AS total_failed,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $3::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $3::timestamp
+                    )::integer
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
-        TO_CHAR($3::timestamp, 'Mon') AS month,
-        0 AS total_failed,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC,
-    TO_DATE(month, 'Mon') DESC;
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC, TO_DATE(month, 'Mon') DESC;
 
 -- GetYearlyTransactionStatusFailed: Retrieves yearly failed metrics for transactions
 -- Purpose: Compare annual failedful transaction performance
@@ -418,59 +564,68 @@ ORDER BY
 --   - Useful for year-over-year growth analysis and financial reporting
 --   - Helps identify annual transaction volume and revenue trends
 -- name: GetYearlyTransactionStatusFailed :many
-WITH yearly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transaction_time)::integer AS year,
-        COUNT(*) AS total_failed,
-        COALESCE(SUM(t.amount), 0)::integer AS total_amount
-    FROM
-        transactions t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'failed'
-        AND (
-            EXTRACT(YEAR FROM t.transaction_time) = $1::integer
-            OR EXTRACT(YEAR FROM t.transaction_time) = $1::integer - 1
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transaction_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        total_failed::integer,
-        total_amount::integer
-    FROM
-        yearly_data
-
-    UNION ALL
-
-    SELECT
-        $1::text AS year,
-        0::integer AS total_failed,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    yearly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            )::integer AS year,
+            COUNT(*) AS total_failed,
+            COALESCE(SUM(t.amount), 0)::integer AS total_amount
+        FROM transactions t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'failed'
+            AND (
+                EXTRACT(
+                    YEAR
+                    FROM t.transaction_time
+                ) = $1::integer
+                OR EXTRACT(
+                    YEAR
+                    FROM t.transaction_time
+                ) = $1::integer - 1
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            total_failed::integer,
+            total_amount::integer
         FROM yearly_data
-        WHERE year = $1::integer
+        UNION ALL
+        SELECT
+            $1::text AS year,
+            0::integer AS total_failed,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer
+            )
+        UNION ALL
+        SELECT ($1::integer - 1)::text AS year,
+            0::integer AS total_failed,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer - 1
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        ($1::integer - 1)::text AS year,
-        0::integer AS total_failed,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM yearly_data
-        WHERE year = $1::integer - 1
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC;
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC;
 
 -- GetMonthTransactionStatusSuccessCardNumber: Retrieves monthly success metrics for transactions
 -- Purpose: Analyze successful transaction trends across comparison periods
@@ -493,68 +648,104 @@ ORDER BY
 --   - Orders by year and month (newest first)
 --   - Useful for identifying seasonal transaction patterns and revenue trends
 -- name: GetMonthTransactionStatusSuccessCardNumber :many
-WITH monthly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transaction_time)::integer AS year,
-        EXTRACT(MONTH FROM t.transaction_time)::integer AS month,
-        COUNT(*) AS total_success,
-        COALESCE(SUM(t.amount), 0)::integer AS total_amount
-    FROM
-        transactions t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'success'
-        AND t.card_number = $1
-        AND (
-            (t.transaction_time >= $2::timestamp AND t.transaction_time <= $3::timestamp)
-            OR (t.transaction_time >= $4::timestamp AND t.transaction_time <= $5::timestamp)
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transaction_time),
-        EXTRACT(MONTH FROM t.transaction_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-        total_success,
-        total_amount
-    FROM
-        monthly_data
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $2::timestamp)::text AS year,
-        TO_CHAR($2::timestamp, 'Mon') AS month,
-        0 AS total_success,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    monthly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            )::integer AS year,
+            EXTRACT(
+                MONTH
+                FROM t.transaction_time
+            )::integer AS month,
+            COUNT(*) AS total_success,
+            COALESCE(SUM(t.amount), 0)::integer AS total_amount
+        FROM transactions t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'success'
+            AND t.card_number = $1
+            AND (
+                (
+                    t.transaction_time >= $2::timestamp
+                    AND t.transaction_time <= $3::timestamp
+                )
+                OR (
+                    t.transaction_time >= $4::timestamp
+                    AND t.transaction_time <= $5::timestamp
+                )
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            ),
+            EXTRACT(
+                MONTH
+                FROM t.transaction_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            TO_CHAR(
+                TO_DATE(month::text, 'MM'),
+                'Mon'
+            ) AS month,
+            total_success,
+            total_amount
         FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $2::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $2::timestamp)::integer
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $2::timestamp
+            )::text AS year,
+            TO_CHAR($2::timestamp, 'Mon') AS month,
+            0 AS total_success,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $2::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $2::timestamp
+                    )::integer
+            )
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $3::timestamp
+            )::text AS year,
+            TO_CHAR($3::timestamp, 'Mon') AS month,
+            0 AS total_success,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $3::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $3::timestamp
+                    )::integer
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
-        TO_CHAR($3::timestamp, 'Mon') AS month,
-        0 AS total_success,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC,
-    TO_DATE(month, 'Mon') DESC;
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC, TO_DATE(month, 'Mon') DESC;
 
 -- GetYearlyTransactionStatusSuccessCardNumber: Retrieves yearly success metrics for transactions
 -- Purpose: Compare annual successful transaction performance
@@ -573,59 +764,69 @@ ORDER BY
 --   - Useful for year-over-year growth analysis and financial reporting
 --   - Helps identify annual transaction volume and revenue trends
 -- name: GetYearlyTransactionStatusSuccessCardNumber :many
-WITH yearly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transaction_time)::integer AS year,
-        COUNT(*) AS total_success,
-        COALESCE(SUM(t.amount), 0)::integer AS total_amount
-    FROM
-        transactions t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'success'
-        AND t.card_number = $1
-        AND (
-            EXTRACT(YEAR FROM t.transaction_time) = $2::integer
-            OR EXTRACT(YEAR FROM t.transaction_time) = $2::integer - 1
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transaction_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        total_success::integer,
-        total_amount::integer
-    FROM
-        yearly_data
-
-    UNION ALL
-
-    SELECT
-        $2::text AS year,
-        0::integer AS total_success,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    yearly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            )::integer AS year,
+            COUNT(*) AS total_success,
+            COALESCE(SUM(t.amount), 0)::integer AS total_amount
+        FROM transactions t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'success'
+            AND t.card_number = $1
+            AND (
+                EXTRACT(
+                    YEAR
+                    FROM t.transaction_time
+                ) = $2::integer
+                OR EXTRACT(
+                    YEAR
+                    FROM t.transaction_time
+                ) = $2::integer - 1
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            total_success::integer,
+            total_amount::integer
         FROM yearly_data
-        WHERE year = $2::integer
+        UNION ALL
+        SELECT
+            $2::text AS year,
+            0::integer AS total_success,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $2::integer
+            )
+        UNION ALL
+        SELECT ($2::integer - 1)::text AS year,
+            0::integer AS total_success,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $2::integer - 1
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        ($2::integer - 1)::text AS year,
-        0::integer AS total_success,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM yearly_data
-        WHERE year = $2::integer - 1
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC;
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC;
 
 -- GetMonthTransactionStatusFailed: Retrieves monthly failed metrics for transactions
 -- Purpose: Analyze failedful transaction trends across comparison periods
@@ -648,68 +849,104 @@ ORDER BY
 --   - Orders by year and month (newest first)
 --   - Useful for identifying seasonal transaction patterns and revenue trends
 -- name: GetMonthTransactionStatusFailedCardNumber :many
-WITH monthly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transaction_time)::integer AS year,
-        EXTRACT(MONTH FROM t.transaction_time)::integer AS month,
-        COUNT(*) AS total_failed,
-        COALESCE(SUM(t.amount), 0)::integer AS total_amount
-    FROM
-        transactions t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'failed'
-        AND t.card_number = $1
-        AND (
-            (t.transaction_time >= $2::timestamp AND t.transaction_time <= $3::timestamp)
-            OR (t.transaction_time >= $4::timestamp AND t.transaction_time <= $5::timestamp)
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transaction_time),
-        EXTRACT(MONTH FROM t.transaction_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-        total_failed,
-        total_amount
-    FROM
-        monthly_data
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $2::timestamp)::text AS year,
-        TO_CHAR($2::timestamp, 'Mon') AS month,
-        0 AS total_failed,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    monthly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            )::integer AS year,
+            EXTRACT(
+                MONTH
+                FROM t.transaction_time
+            )::integer AS month,
+            COUNT(*) AS total_failed,
+            COALESCE(SUM(t.amount), 0)::integer AS total_amount
+        FROM transactions t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'failed'
+            AND t.card_number = $1
+            AND (
+                (
+                    t.transaction_time >= $2::timestamp
+                    AND t.transaction_time <= $3::timestamp
+                )
+                OR (
+                    t.transaction_time >= $4::timestamp
+                    AND t.transaction_time <= $5::timestamp
+                )
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            ),
+            EXTRACT(
+                MONTH
+                FROM t.transaction_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            TO_CHAR(
+                TO_DATE(month::text, 'MM'),
+                'Mon'
+            ) AS month,
+            total_failed,
+            total_amount
         FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $2::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $2::timestamp)::integer
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $2::timestamp
+            )::text AS year,
+            TO_CHAR($2::timestamp, 'Mon') AS month,
+            0 AS total_failed,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $2::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $2::timestamp
+                    )::integer
+            )
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $3::timestamp
+            )::text AS year,
+            TO_CHAR($3::timestamp, 'Mon') AS month,
+            0 AS total_failed,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $3::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $3::timestamp
+                    )::integer
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
-        TO_CHAR($3::timestamp, 'Mon') AS month,
-        0 AS total_failed,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC,
-    TO_DATE(month, 'Mon') DESC;
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC, TO_DATE(month, 'Mon') DESC;
 
 -- GetYearlyTransactionStatusFailed: Retrieves yearly failed metrics for transactions
 -- Purpose: Compare annual failedful transaction performance
@@ -728,59 +965,69 @@ ORDER BY
 --   - Useful for year-over-year growth analysis and financial reporting
 --   - Helps identify annual transaction volume and revenue trends
 -- name: GetYearlyTransactionStatusFailedCardNumber :many
-WITH yearly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transaction_time)::integer AS year,
-        COUNT(*) AS total_failed,
-        COALESCE(SUM(t.amount), 0)::integer AS total_amount
-    FROM
-        transactions t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'failed'
-        AND t.card_number = $1
-        AND (
-            EXTRACT(YEAR FROM t.transaction_time) = $2::integer
-            OR EXTRACT(YEAR FROM t.transaction_time) = $2::integer - 1
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transaction_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        total_failed::integer,
-        total_amount::integer
-    FROM
-        yearly_data
-
-    UNION ALL
-
-    SELECT
-        $2::text AS year,
-        0::integer AS total_failed,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    yearly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            )::integer AS year,
+            COUNT(*) AS total_failed,
+            COALESCE(SUM(t.amount), 0)::integer AS total_amount
+        FROM transactions t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'failed'
+            AND t.card_number = $1
+            AND (
+                EXTRACT(
+                    YEAR
+                    FROM t.transaction_time
+                ) = $2::integer
+                OR EXTRACT(
+                    YEAR
+                    FROM t.transaction_time
+                ) = $2::integer - 1
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            total_failed::integer,
+            total_amount::integer
         FROM yearly_data
-        WHERE year = $2::integer
+        UNION ALL
+        SELECT
+            $2::text AS year,
+            0::integer AS total_failed,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $2::integer
+            )
+        UNION ALL
+        SELECT ($2::integer - 1)::text AS year,
+            0::integer AS total_failed,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $2::integer - 1
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        ($2::integer - 1)::text AS year,
-        0::integer AS total_failed,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM yearly_data
-        WHERE year = $2::integer - 1
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC;
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC;
 
 -- GetMonthlyPaymentMethods: Retrieves a monthly summary of transaction transactions categorized by payment method
 -- Purpose:
@@ -797,18 +1044,19 @@ ORDER BY
 --   - Excludes soft-deleted transactions (deleted_at IS NULL)
 --   - Uses CROSS JOIN to ensure all months and methods are represented
 -- name: GetMonthlyPaymentMethods :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $1::timestamp),
-        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-),
-payment_methods AS (
-    SELECT DISTINCT payment_method
-    FROM transactions
-    WHERE deleted_at IS NULL
-)
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $1::timestamp), date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    ),
+    payment_methods AS (
+        SELECT DISTINCT
+            payment_method
+        FROM transactions
+        WHERE
+            deleted_at IS NULL
+    )
 SELECT
     TO_CHAR(m.month, 'Mon') AS month,
     pm.payment_method,
@@ -816,20 +1064,27 @@ SELECT
     COALESCE(SUM(t.amount), 0)::int AS total_amount
 FROM
     months m
-CROSS JOIN
-    payment_methods pm
-LEFT JOIN
-    transactions t ON EXTRACT(MONTH FROM t.transaction_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.transaction_time) = EXTRACT(YEAR FROM m.month)
+    CROSS JOIN payment_methods pm
+    LEFT JOIN transactions t ON EXTRACT(
+        MONTH
+        FROM t.transaction_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.transaction_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.payment_method = pm.payment_method
     AND t.deleted_at IS NULL
 GROUP BY
     m.month,
     pm.payment_method
-ORDER BY
-    m.month,
-    pm.payment_method;
-
+ORDER BY m.month, pm.payment_method;
 
 -- GetYearlyPaymentMethods: Retrieves yearly summary of transaction transactions grouped by payment method over a 5-year span
 -- Purpose:
@@ -846,22 +1101,31 @@ ORDER BY
 --   - Excludes soft-deleted transactions (deleted_at IS NULL)
 -- name: GetYearlyPaymentMethods :many
 SELECT
-    EXTRACT(YEAR FROM t.created_at) AS year,
+    EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) AS year,
     t.payment_method,
     COUNT(t.transaction_id) AS total_transactions,
     SUM(t.amount) AS total_amount
-FROM
-    transactions t
+FROM transactions t
 WHERE
     t.deleted_at IS NULL
-    AND EXTRACT(YEAR FROM t.created_at) >= $1 - 4
-    AND EXTRACT(YEAR FROM t.created_at) <= $1
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) >= $1 - 4
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) <= $1
 GROUP BY
-    EXTRACT(YEAR FROM t.created_at),
+    EXTRACT(
+        YEAR
+        FROM t.created_at
+    ),
     t.payment_method
-ORDER BY
-    year;
-
+ORDER BY year;
 
 -- GetMonthlyAmounts: Retrieves total transaction amount per month for a specific year
 -- Purpose:
@@ -875,28 +1139,33 @@ ORDER BY
 --   - Uses LEFT JOIN to ensure all months are included, even with 0 transactions
 --   - Filters out soft-deleted data (deleted_at IS NULL)
 -- name: GetMonthlyAmounts :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $1::timestamp),
-        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(t.amount), 0)::int AS total_amount
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $1::timestamp), date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(t.amount), 0)::int AS total_amount
 FROM
     months m
-LEFT JOIN
-    transactions t ON EXTRACT(MONTH FROM t.transaction_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.transaction_time) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN transactions t ON EXTRACT(
+        MONTH
+        FROM t.transaction_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.transaction_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.deleted_at IS NULL
 GROUP BY
     m.month
-ORDER BY
-    m.month;
-
-
+ORDER BY m.month;
 
 -- GetYearlyAmounts: Retrieves total transaction amount per year over a 5-year span
 -- Purpose:
@@ -909,20 +1178,27 @@ ORDER BY
 -- Business Logic:
 --   - Excludes soft-deleted transactions (deleted_at IS NULL)
 -- name: GetYearlyAmounts :many
-SELECT
-    EXTRACT(YEAR FROM t.created_at) AS year,
-    SUM(t.amount) AS total_amount
-FROM
-    transactions t
+SELECT EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) AS year, SUM(t.amount) AS total_amount
+FROM transactions t
 WHERE
     t.deleted_at IS NULL
-    AND EXTRACT(YEAR FROM t.created_at) >= $1 - 4
-    AND EXTRACT(YEAR FROM t.created_at) <= $1
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) >= $1 - 4
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) <= $1
 GROUP BY
-    EXTRACT(YEAR FROM t.created_at)
-ORDER BY
-    year;
-
+    EXTRACT(
+        YEAR
+        FROM t.created_at
+    )
+ORDER BY year;
 
 -- GetTransactionByCardNumber: Retrieves paginated transactions for a specific card with optional filtering
 -- Purpose: View transaction history for a particular card with search capability
@@ -941,19 +1217,19 @@ ORDER BY
 --   - Includes pagination metadata via total_count
 --   - Useful for cardholder transaction history views and statements
 -- name: GetTransactionByCardNumber :many
-SELECT
-    *,
-    COUNT(*) OVER() AS total_count
-FROM
-    transactions
+SELECT *, COUNT(*) OVER () AS total_count
+FROM transactions
 WHERE
     deleted_at IS NULL
     AND card_number = $1
-    AND ($2::TEXT IS NULL OR payment_method ILIKE '%' || $2 || '%')
-ORDER BY
-    transaction_time DESC
-LIMIT $3 OFFSET $4;
-
+    AND (
+        $2::TEXT IS NULL
+        OR payment_method ILIKE '%' || $2 || '%'
+    )
+ORDER BY transaction_time DESC
+LIMIT $3
+OFFSET
+    $4;
 
 -- GetMonthlyPaymentMethodsByCardNumber: Retrieves a monthly summary of transaction transactions categorized by payment method
 -- Purpose:
@@ -971,18 +1247,19 @@ LIMIT $3 OFFSET $4;
 --   - Excludes soft-deleted transactions (deleted_at IS NULL)
 --   - Uses CROSS JOIN to ensure all months and methods are represent
 -- name: GetMonthlyPaymentMethodsByCardNumber :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $2::timestamp),
-        date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-),
-payment_methods AS (
-    SELECT DISTINCT payment_method
-    FROM transactions
-    WHERE deleted_at IS NULL
-)
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $2::timestamp), date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    ),
+    payment_methods AS (
+        SELECT DISTINCT
+            payment_method
+        FROM transactions
+        WHERE
+            deleted_at IS NULL
+    )
 SELECT
     TO_CHAR(m.month, 'Mon') AS month,
     pm.payment_method,
@@ -990,23 +1267,28 @@ SELECT
     COALESCE(SUM(t.amount), 0)::int AS total_amount
 FROM
     months m
-CROSS JOIN
-    payment_methods pm
-LEFT JOIN
-    transactions t ON EXTRACT(MONTH FROM t.transaction_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.transaction_time) = EXTRACT(YEAR FROM m.month)
+    CROSS JOIN payment_methods pm
+    LEFT JOIN transactions t ON EXTRACT(
+        MONTH
+        FROM t.transaction_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.transaction_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.payment_method = pm.payment_method
     AND t.card_number = $1
     AND t.deleted_at IS NULL
 GROUP BY
     m.month,
     pm.payment_method
-ORDER BY
-    m.month,
-    pm.payment_method;
-
-
-
+ORDER BY m.month, pm.payment_method;
 
 -- GetYearlyPaymentMethodsByCardNumber: Retrieves yearly summary of transaction transactions grouped by payment method over a 5-year span
 -- Purpose:
@@ -1024,23 +1306,32 @@ ORDER BY
 --   - Excludes soft-deleted transactions (deleted_at IS NULL)
 -- name: GetYearlyPaymentMethodsByCardNumber :many
 SELECT
-    EXTRACT(YEAR FROM t.created_at) AS year,
+    EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) AS year,
     t.payment_method,
     COUNT(t.transaction_id) AS total_transactions,
     SUM(t.amount) AS total_amount
-FROM
-    transactions t
+FROM transactions t
 WHERE
     t.deleted_at IS NULL
     AND t.card_number = $1
-    AND EXTRACT(YEAR FROM t.created_at) >= $2 - 4
-    AND EXTRACT(YEAR FROM t.created_at) <= $2
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) >= $2 - 4
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) <= $2
 GROUP BY
-    EXTRACT(YEAR FROM t.created_at),
+    EXTRACT(
+        YEAR
+        FROM t.created_at
+    ),
     t.payment_method
-ORDER BY
-    year;
-
+ORDER BY year;
 
 -- GetMonthlyAmountsByCardNumber: Retrieves total transaction amount per month for a specific year
 -- Purpose:
@@ -1055,28 +1346,34 @@ ORDER BY
 --   - Uses LEFT JOIN to ensure all months are included, even with 0 transactions
 --   - Filters out soft-deleted data (deleted_at IS NULL)
 -- name: GetMonthlyAmountsByCardNumber :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $2::timestamp),
-        date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(t.amount), 0)::int AS total_amount
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $2::timestamp), date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(t.amount), 0)::int AS total_amount
 FROM
     months m
-LEFT JOIN
-    transactions t ON EXTRACT(MONTH FROM t.transaction_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.transaction_time) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN transactions t ON EXTRACT(
+        MONTH
+        FROM t.transaction_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.transaction_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.card_number = $1
     AND t.deleted_at IS NULL
 GROUP BY
     m.month
-ORDER BY
-    m.month;
-
+ORDER BY m.month;
 
 -- GetYearlyAmountsByCardNumber:  Retrieves total transaction amount per year over a 5-year span
 -- Purpose:
@@ -1090,22 +1387,28 @@ ORDER BY
 -- Business Logic:
 --   - Excludes soft-deleted transactions (deleted_at IS NULL)
 -- name: GetYearlyAmountsByCardNumber :many
-SELECT
-    EXTRACT(YEAR FROM t.created_at) AS year,
-    SUM(t.amount) AS total_amount
-FROM
-    transactions t
+SELECT EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) AS year, SUM(t.amount) AS total_amount
+FROM transactions t
 WHERE
     t.deleted_at IS NULL
     AND t.card_number = $1
-    AND EXTRACT(YEAR FROM t.created_at) >= $2 - 4
-    AND EXTRACT(YEAR FROM t.created_at) <= $2
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) >= $2 - 4
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) <= $2
 GROUP BY
-    EXTRACT(YEAR FROM t.created_at)
-ORDER BY
-    year;
-
-
+    EXTRACT(
+        YEAR
+        FROM t.created_at
+    )
+ORDER BY year;
 
 -- CreateTransaction: Creates a new transaction record
 -- Purpose: Record a financial transaction in the system
@@ -1139,7 +1442,18 @@ VALUES (
         $5,
         current_timestamp,
         current_timestamp
-    ) RETURNING *;
+    )
+RETURNING
+    transaction_id,
+    transaction_no,
+    card_number,
+    amount,
+    payment_method,
+    merchant_id,
+    transaction_time,
+    status,
+    created_at,
+    updated_at;
 
 -- UpdateTransaction: Modifies an existing transaction's details
 -- Purpose: Update transaction information
@@ -1166,7 +1480,17 @@ SET
 WHERE
     transaction_id = $1
     AND deleted_at IS NULL
-RETURNING *;
+RETURNING
+    transaction_id,
+    transaction_no,
+    card_number,
+    amount,
+    payment_method,
+    merchant_id,
+    transaction_time,
+    status,
+    created_at,
+    updated_at;
 
 -- UpdateTransactionStatus: Changes a transaction's status
 -- Purpose: Update transaction processing status
@@ -1185,7 +1509,17 @@ SET
 WHERE
     transaction_id = $1
     AND deleted_at IS NULL
-RETURNING *;
+RETURNING
+    transaction_id,
+    transaction_no,
+    card_number,
+    amount,
+    payment_method,
+    merchant_id,
+    transaction_time,
+    status,
+    created_at,
+    updated_at;
 
 -- TrashTransaction: Soft-deletes a transaction record
 -- Purpose: Remove transaction from active use without permanent deletion
@@ -1202,7 +1536,18 @@ SET
 WHERE
     transaction_id = $1
     AND deleted_at IS NULL
-RETURNING *;
+RETURNING
+    transaction_id,
+    transaction_no,
+    card_number,
+    amount,
+    payment_method,
+    merchant_id,
+    transaction_time,
+    status,
+    created_at,
+    updated_at,
+    deleted_at;
 
 -- RestoreTransaction: Recovers a soft-deleted transaction
 -- Purpose: Reactivate a previously trashed transaction
@@ -1219,7 +1564,18 @@ SET
 WHERE
     transaction_id = $1
     AND deleted_at IS NOT NULL
-RETURNING *;
+RETURNING
+    transaction_id,
+    transaction_no,
+    card_number,
+    amount,
+    payment_method,
+    merchant_id,
+    transaction_time,
+    status,
+    created_at,
+    updated_at,
+    deleted_at;
 
 -- DeleteTransactionPermanently: Hard-deletes a trashed transaction
 -- Purpose: Permanently remove a transaction from the system
@@ -1231,7 +1587,10 @@ RETURNING *;
 --   - Irreversible operation
 --   - Used for data cleanup after retention period
 -- name: DeleteTransactionPermanently :exec
-DELETE FROM transactions WHERE transaction_id = $1 AND deleted_at IS NOT NULL;
+DELETE FROM transactions
+WHERE
+    transaction_id = $1
+    AND deleted_at IS NOT NULL;
 
 -- RestoreAllTransactions: Recovers all trashed transactions
 -- Purpose: Mass restoration of deleted transactions
@@ -1254,6 +1613,4 @@ WHERE
 --   - Frees database space from old records
 --   - Typically used during maintenance periods
 -- name: DeleteAllPermanentTransactions :exec
-DELETE FROM transactions
-WHERE
-    deleted_at IS NOT NULL;
+DELETE FROM transactions WHERE deleted_at IS NOT NULL;

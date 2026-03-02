@@ -1,17 +1,20 @@
 package service
 
 import (
+	topup_cache "MamangRust/paymentgatewaygrpc/internal/cache/topup"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/service"
+	"MamangRust/paymentgatewaygrpc/internal/errorhandler"
+	"context"
 
 	"MamangRust/paymentgatewaygrpc/internal/repository"
+	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/card_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/saldo_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/topup_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
-	"time"
+	"MamangRust/paymentgatewaygrpc/pkg/observability"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
 
@@ -20,31 +23,37 @@ type topupService struct {
 	topupRepository repository.TopupRepository
 	saldoRepository repository.SaldoRepository
 	logger          logger.LoggerInterface
-	mapping         responseservice.TopupResponseMapper
+	observability   observability.TraceLoggerObservability
+	cache           topup_cache.TopupMencach
 }
 
-func NewTopupService(cardRepository repository.CardRepository,
-	topupRepository repository.TopupRepository,
-	saldoRepository repository.SaldoRepository,
-	logger logger.LoggerInterface, mapping responseservice.TopupResponseMapper) *topupService {
+type TopupServiceDeps struct {
+	CardRepo  repository.CardRepository
+	TopupRepo repository.TopupRepository
+	SaldoRepo repository.SaldoRepository
+
+	Logger        logger.LoggerInterface
+	Observability observability.TraceLoggerObservability
+	Cache         topup_cache.TopupMencach
+}
+
+func NewTopupService(deps TopupServiceDeps) *topupService {
 	return &topupService{
-		topupRepository: topupRepository,
-		saldoRepository: saldoRepository,
-		cardRepository:  cardRepository,
-		logger:          logger,
-		mapping:         mapping,
+		cardRepository:  deps.CardRepo,
+		topupRepository: deps.TopupRepo,
+		saldoRepository: deps.SaldoRepo,
+		logger:          deps.Logger,
+		observability:   deps.Observability,
+		cache:           deps.Cache,
 	}
 }
 
-func (s *topupService) FindAll(req *requests.FindAllTopups) ([]*response.TopupResponse, *int, *response.ErrorResponse) {
+func (s *topupService) FindAll(ctx context.Context, req *requests.FindAllTopups) ([]*db.GetTopupsRow, *int, error) {
+	const method = "FindAll"
+
 	page := req.Page
 	pageSize := req.PageSize
 	search := req.Search
-
-	s.logger.Debug("Fetching topup",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
 
 	if page <= 0 {
 		page = 1
@@ -53,41 +62,61 @@ func (s *topupService) FindAll(req *requests.FindAllTopups) ([]*response.TopupRe
 		pageSize = 10
 	}
 
-	topups, totalRecords, err := s.topupRepository.FindAllTopups(req)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("page", page),
+		attribute.Int("pageSize", pageSize),
+		attribute.String("search", search))
 
-	if err != nil {
-		s.logger.Error("Failed to fetch topup",
-			zap.Error(err),
-			zap.Int("page", page),
-			zap.Int("pageSize", pageSize),
-			zap.String("search", search))
+	defer func() {
+		end(status)
+	}()
 
-		return nil, nil, topup_errors.ErrFailedFindAllTopups
+	if data, total, found := s.cache.GetCachedTopupsCache(ctx, req); found {
+		logSuccess("Successfully retrieved all topup records from cache", zap.Int("totalRecords", *total), zap.Int("page", page), zap.Int("pageSize", pageSize))
+		return data, total, nil
 	}
 
-	so := s.mapping.ToTopupResponses(topups)
+	topups, err := s.topupRepository.FindAllTopups(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandlerErrorPagination[[]*db.GetTopupsRow](
+			s.logger,
+			topup_errors.ErrFailedFindAllTopups,
+			method,
+			span,
 
-	s.logger.Debug("Successfully fetched topup",
-		zap.Int("totalRecords", *totalRecords),
+			zap.Int("page", page),
+			zap.Int("pageSize", pageSize),
+			zap.String("search", search),
+		)
+	}
+
+	var totalCount int
+
+	if len(topups) > 0 {
+		totalCount = int(topups[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+
+	s.cache.SetCachedTopupsCache(ctx, req, topups, &totalCount)
+
+	logSuccess("Successfully fetched topup",
+		zap.Int("totalRecords", totalCount),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
-	return so, totalRecords, nil
+	return topups, &totalCount, nil
 }
 
-func (s *topupService) FindAllByCardNumber(req *requests.FindAllTopupsByCardNumber) ([]*response.TopupResponse, *int, *response.ErrorResponse) {
+func (s *topupService) FindAllByCardNumber(ctx context.Context, req *requests.FindAllTopupsByCardNumber) ([]*db.GetTopupsByCardNumberRow, *int, error) {
+	const method = "FindAllByCardNumber"
+
 	page := req.Page
 	pageSize := req.PageSize
 	search := req.Search
 	card_number := req.CardNumber
 
-	s.logger.Debug("Fetching topup by card number",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search),
-		zap.String("card_number", card_number),
-	)
-
 	if page <= 0 {
 		page = 1
 	}
@@ -95,363 +124,96 @@ func (s *topupService) FindAllByCardNumber(req *requests.FindAllTopupsByCardNumb
 		pageSize = 10
 	}
 
-	topups, totalRecords, err := s.topupRepository.FindAllTopupByCardNumber(req)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("page", page),
+		attribute.Int("pageSize", pageSize),
+		attribute.String("search", search))
 
+	defer func() {
+		end(status)
+	}()
+
+	if data, total, found := s.cache.GetCacheTopupByCardCache(ctx, req); found {
+		logSuccess("Successfully retrieved all topup records from cache", zap.Int("totalRecords", *total), zap.Int("page", page), zap.Int("pageSize", pageSize))
+		return data, total, nil
+	}
+
+	topups, err := s.topupRepository.FindAllTopupByCardNumber(ctx, req)
 	if err != nil {
-		s.logger.Error("Failed to fetch topup by card number",
-			zap.Error(err),
+		status = "error"
+		return errorhandler.HandlerErrorPagination[[]*db.GetTopupsByCardNumberRow](
+			s.logger,
+			topup_errors.ErrFailedFindAllTopupsByCardNumber,
+			method,
+			span,
+
 			zap.Int("page", page),
 			zap.Int("pageSize", pageSize),
 			zap.String("search", search),
 			zap.String("card_number", card_number),
 		)
-
-		return nil, nil, topup_errors.ErrFailedFindAllTopupsByCardNumber
 	}
 
-	so := s.mapping.ToTopupResponses(topups)
+	var totalCount int
 
-	s.logger.Debug("Successfully fetched topup",
-		zap.Int("totalRecords", *totalRecords),
+	if len(topups) > 0 {
+		totalCount = int(topups[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+
+	s.cache.SetCacheTopupByCardCache(ctx, req, topups, &totalCount)
+
+	logSuccess("Successfully fetched topup by card number",
+		zap.Int("totalRecords", totalCount),
 		zap.Int("page", page),
-		zap.Int("pageSize", pageSize))
+		zap.Int("pageSize", pageSize),
+		zap.String("card_number", card_number))
 
-	return so, totalRecords, nil
+	return topups, &totalCount, nil
 }
 
-func (s *topupService) FindById(topupID int) (*response.TopupResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching topup by ID", zap.Int("topup_id", topupID))
+func (s *topupService) FindById(ctx context.Context, topupID int) (*db.GetTopupByIDRow, error) {
+	const method = "FindById"
 
-	topup, err := s.topupRepository.FindById(topupID)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("topup_id", topupID))
 
-	if err != nil {
-		s.logger.Error("failed to find topup by id", zap.Error(err))
+	defer func() {
+		end(status)
+	}()
 
-		return nil, topup_errors.ErrTopupNotFoundRes
+	if data, found := s.cache.GetCachedTopupCache(ctx, topupID); found {
+		logSuccess("Successfully retrieved topup from cache", zap.Int("topup.id", topupID))
+		return data, nil
 	}
 
-	so := s.mapping.ToTopupResponse(topup)
-
-	s.logger.Debug("Successfully fetched topup", zap.Int("topup_id", topupID))
-
-	return so, nil
-}
-
-func (s *topupService) FindMonthTopupStatusSuccess(req *requests.MonthTopupStatus) ([]*response.TopupResponseMonthStatusSuccess, *response.ErrorResponse) {
-	year := req.Year
-	month := req.Month
-
-	s.logger.Debug("Fetching monthly topup status success", zap.Int("year", year), zap.Int("month", month))
-
-	records, err := s.topupRepository.GetMonthTopupStatusSuccess(req)
-
+	topup, err := s.topupRepository.FindById(ctx, topupID)
 	if err != nil {
-		s.logger.Error("failed to fetch monthly topup status success", zap.Error(err))
+		status = "error"
+		return errorhandler.HandleError[*db.GetTopupByIDRow](
+			s.logger,
+			topup_errors.ErrTopupNotFoundRes,
+			method,
+			span,
 
-		return nil, topup_errors.ErrFailedFindMonthTopupStatusSuccess
+			zap.Int("topup_id", topupID),
+		)
 	}
 
-	s.logger.Debug("Successfully fetched monthly topup status success", zap.Int("year", year), zap.Int("month", month))
+	s.cache.SetCachedTopupCache(ctx, topup)
 
-	so := s.mapping.ToTopupResponsesMonthStatusSuccess(records)
+	logSuccess("Successfully fetched topup", zap.Int("topup_id", topupID))
 
-	return so, nil
+	return topup, nil
 }
 
-func (s *topupService) FindYearlyTopupStatusSuccess(year int) ([]*response.TopupResponseYearStatusSuccess, *response.ErrorResponse) {
-	s.logger.Debug("Fetching yearly topup status success", zap.Int("year", year))
+func (s *topupService) FindByActive(ctx context.Context, req *requests.FindAllTopups) ([]*db.GetActiveTopupsRow, *int, error) {
+	const method = "FindByActive"
 
-	records, err := s.topupRepository.GetYearlyTopupStatusSuccess(year)
-	if err != nil {
-		s.logger.Error("failed to fetch yearly topup status success", zap.Error(err))
-
-		return nil, topup_errors.ErrFailedFindYearlyTopupStatusSuccess
-	}
-
-	s.logger.Debug("Successfully fetched yearly topup status success", zap.Int("year", year))
-
-	so := s.mapping.ToTopupResponsesYearStatusSuccess(records)
-
-	return so, nil
-}
-
-func (s *topupService) FindMonthTopupStatusFailed(req *requests.MonthTopupStatus) ([]*response.TopupResponseMonthStatusFailed, *response.ErrorResponse) {
-	year := req.Year
-	month := req.Month
-
-	s.logger.Debug("Fetching monthly topup status Failed", zap.Int("year", year), zap.Int("month", month))
-
-	records, err := s.topupRepository.GetMonthTopupStatusFailed(req)
-	if err != nil {
-		s.logger.Error("failed to fetch monthly topup status Failed", zap.Error(err))
-
-		return nil, topup_errors.ErrFailedFindMonthTopupStatusFailed
-	}
-
-	s.logger.Debug("Failedfully fetched monthly topup status Failed", zap.Int("year", year), zap.Int("month", month))
-
-	so := s.mapping.ToTopupResponsesMonthStatusFailed(records)
-
-	return so, nil
-}
-
-func (s *topupService) FindYearlyTopupStatusFailed(year int) ([]*response.TopupResponseYearStatusFailed, *response.ErrorResponse) {
-	s.logger.Debug("Fetching yearly topup status Failed", zap.Int("year", year))
-
-	records, err := s.topupRepository.GetYearlyTopupStatusFailed(year)
-	if err != nil {
-		s.logger.Error("failed to fetch yearly topup status Failed", zap.Error(err))
-
-		return nil, topup_errors.ErrFailedFindYearlyTopupStatusFailed
-	}
-
-	s.logger.Debug("Failedfully fetched yearly topup status Failed", zap.Int("year", year))
-
-	so := s.mapping.ToTopupResponsesYearStatusFailed(records)
-
-	return so, nil
-}
-
-func (s *topupService) FindMonthTopupStatusSuccessByCardNumber(req *requests.MonthTopupStatusCardNumber) ([]*response.TopupResponseMonthStatusSuccess, *response.ErrorResponse) {
-	card_number := req.CardNumber
-	year := req.Year
-	month := req.Month
-
-	s.logger.Debug("Fetching monthly topup status success", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
-
-	records, err := s.topupRepository.GetMonthTopupStatusSuccessByCardNumber(req)
-
-	if err != nil {
-		s.logger.Error("failed to fetch monthly topup status success", zap.Error(err))
-
-		return nil, topup_errors.ErrFailedFindMonthTopupStatusSuccessByCard
-	}
-
-	s.logger.Debug("Successfully fetched monthly topup status success", zap.Int("year", year), zap.Int("month", month))
-
-	so := s.mapping.ToTopupResponsesMonthStatusSuccess(records)
-
-	return so, nil
-}
-
-func (s *topupService) FindYearlyTopupStatusSuccessByCardNumber(req *requests.YearTopupStatusCardNumber) ([]*response.TopupResponseYearStatusSuccess, *response.ErrorResponse) {
-	card_number := req.CardNumber
-	year := req.Year
-
-	s.logger.Debug("Fetching yearly topup status success", zap.Int("year", year), zap.String("card_number", card_number))
-
-	records, err := s.topupRepository.GetYearlyTopupStatusSuccessByCardNumber(req)
-	if err != nil {
-		s.logger.Error("failed to fetch yearly topup status success", zap.Error(err))
-
-		return nil, topup_errors.ErrFailedFindYearlyTopupStatusSuccessByCard
-	}
-
-	s.logger.Debug("Successfully fetched yearly topup status success", zap.Int("year", year))
-
-	so := s.mapping.ToTopupResponsesYearStatusSuccess(records)
-
-	return so, nil
-}
-
-func (s *topupService) FindMonthTopupStatusFailedByCardNumber(req *requests.MonthTopupStatusCardNumber) ([]*response.TopupResponseMonthStatusFailed, *response.ErrorResponse) {
-	card_number := req.CardNumber
-	year := req.Year
-	month := req.Month
-
-	s.logger.Debug("Fetching monthly topup status Failed", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
-
-	records, err := s.topupRepository.GetMonthTopupStatusFailedByCardNumber(req)
-	if err != nil {
-		s.logger.Error("failed to fetch monthly topup status Failed", zap.Error(err))
-
-		return nil, topup_errors.ErrFailedFindMonthTopupStatusFailedByCard
-	}
-
-	s.logger.Debug("Failedfully fetched monthly topup status Failed", zap.Int("year", year), zap.Int("month", month))
-
-	so := s.mapping.ToTopupResponsesMonthStatusFailed(records)
-
-	return so, nil
-}
-
-func (s *topupService) FindYearlyTopupStatusFailedByCardNumber(req *requests.YearTopupStatusCardNumber) ([]*response.TopupResponseYearStatusFailed, *response.ErrorResponse) {
-	card_number := req.CardNumber
-	year := req.Year
-
-	s.logger.Debug("Fetching yearly topup status Failed", zap.Int("year", year), zap.String("card_number", card_number))
-
-	records, err := s.topupRepository.GetYearlyTopupStatusFailedByCardNumber(req)
-	if err != nil {
-		s.logger.Error("failed to fetch yearly topup status Failed", zap.Error(err))
-
-		return nil, topup_errors.ErrFailedFindYearlyTopupStatusFailedByCard
-	}
-
-	s.logger.Debug("Failedfully fetched yearly topup status Failed", zap.Int("year", year))
-
-	so := s.mapping.ToTopupResponsesYearStatusFailed(records)
-
-	return so, nil
-}
-
-func (s *topupService) FindMonthlyTopupMethods(year int) ([]*response.TopupMonthMethodResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching monthly topup methods", zap.Int("year", year))
-
-	records, err := s.topupRepository.GetMonthlyTopupMethods(year)
-	if err != nil {
-		s.logger.Error("Failed to fetch monthly topup methods", zap.Error(err), zap.Int("year", year))
-
-		return nil, topup_errors.ErrFailedFindMonthlyTopupMethods
-	}
-
-	responses := s.mapping.ToTopupMonthlyMethodResponses(records)
-
-	s.logger.Debug("Successfully fetched monthly topup methods", zap.Int("year", year))
-
-	return responses, nil
-}
-
-func (s *topupService) FindYearlyTopupMethods(year int) ([]*response.TopupYearlyMethodResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching yearly topup methods", zap.Int("year", year))
-
-	records, err := s.topupRepository.GetYearlyTopupMethods(year)
-	if err != nil {
-		s.logger.Error("Failed to fetch yearly topup methods", zap.Error(err), zap.Int("year", year))
-
-		return nil, topup_errors.ErrFailedFindYearlyTopupMethods
-	}
-
-	responses := s.mapping.ToTopupYearlyMethodResponses(records)
-
-	s.logger.Debug("Successfully fetched yearly topup methods", zap.Int("year", year))
-
-	return responses, nil
-}
-
-func (s *topupService) FindMonthlyTopupAmounts(year int) ([]*response.TopupMonthAmountResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching monthly topup amounts", zap.Int("year", year))
-
-	records, err := s.topupRepository.GetMonthlyTopupAmounts(year)
-	if err != nil {
-		s.logger.Error("Failed to fetch monthly topup amounts", zap.Error(err), zap.Int("year", year))
-
-		return nil, topup_errors.ErrFailedFindMonthlyTopupAmounts
-	}
-
-	responses := s.mapping.ToTopupMonthlyAmountResponses(records)
-
-	s.logger.Debug("Successfully fetched monthly topup amounts", zap.Int("year", year))
-
-	return responses, nil
-}
-
-func (s *topupService) FindYearlyTopupAmounts(year int) ([]*response.TopupYearlyAmountResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching yearly topup amounts", zap.Int("year", year))
-
-	records, err := s.topupRepository.GetYearlyTopupAmounts(year)
-	if err != nil {
-		s.logger.Error("Failed to fetch yearly topup amounts", zap.Error(err), zap.Int("year", year))
-
-		return nil, topup_errors.ErrFailedFindYearlyTopupAmounts
-	}
-
-	responses := s.mapping.ToTopupYearlyAmountResponses(records)
-
-	s.logger.Debug("Successfully fetched yearly topup amounts", zap.Int("year", year))
-
-	return responses, nil
-}
-
-func (s *topupService) FindMonthlyTopupMethodsByCardNumber(req *requests.YearMonthMethod) ([]*response.TopupMonthMethodResponse, *response.ErrorResponse) {
-	year := req.Year
-	cardNumber := req.CardNumber
-
-	s.logger.Debug("Fetching monthly topup methods by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
-
-	records, err := s.topupRepository.GetMonthlyTopupMethodsByCardNumber(req)
-	if err != nil {
-		s.logger.Error("Failed to fetch monthly topup methods by card number", zap.Error(err), zap.String("card_number", cardNumber), zap.Int("year", year))
-
-		return nil, topup_errors.ErrFailedFindMonthlyTopupMethodsByCard
-	}
-
-	responses := s.mapping.ToTopupMonthlyMethodResponses(records)
-
-	s.logger.Debug("Successfully fetched monthly topup methods by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
-
-	return responses, nil
-}
-
-func (s *topupService) FindYearlyTopupMethodsByCardNumber(req *requests.YearMonthMethod) ([]*response.TopupYearlyMethodResponse, *response.ErrorResponse) {
-	year := req.Year
-	cardNumber := req.CardNumber
-
-	s.logger.Debug("Fetching yearly topup methods by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
-
-	records, err := s.topupRepository.GetYearlyTopupMethodsByCardNumber(req)
-	if err != nil {
-		s.logger.Error("Failed to fetch yearly topup methods by card number", zap.Error(err), zap.String("card_number", cardNumber), zap.Int("year", year))
-
-		return nil, topup_errors.ErrFailedFindYearlyTopupMethodsByCard
-	}
-
-	responses := s.mapping.ToTopupYearlyMethodResponses(records)
-
-	s.logger.Debug("Successfully fetched yearly topup methods by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
-
-	return responses, nil
-}
-
-func (s *topupService) FindMonthlyTopupAmountsByCardNumber(req *requests.YearMonthMethod) ([]*response.TopupMonthAmountResponse, *response.ErrorResponse) {
-	year := req.Year
-	cardNumber := req.CardNumber
-
-	s.logger.Debug("Fetching monthly topup amounts by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
-
-	records, err := s.topupRepository.GetMonthlyTopupAmountsByCardNumber(req)
-	if err != nil {
-		s.logger.Error("Failed to fetch monthly topup amounts by card number", zap.Error(err), zap.String("card_number", cardNumber), zap.Int("year", year))
-
-		return nil, topup_errors.ErrFailedFindMonthlyTopupAmountsByCard
-	}
-
-	responses := s.mapping.ToTopupMonthlyAmountResponses(records)
-
-	s.logger.Debug("Successfully fetched monthly topup amounts by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
-
-	return responses, nil
-}
-
-func (s *topupService) FindYearlyTopupAmountsByCardNumber(req *requests.YearMonthMethod) ([]*response.TopupYearlyAmountResponse, *response.ErrorResponse) {
-	year := req.Year
-	cardNumber := req.CardNumber
-
-	s.logger.Debug("Fetching yearly topup amounts by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
-
-	records, err := s.topupRepository.GetYearlyTopupAmountsByCardNumber(req)
-	if err != nil {
-		s.logger.Error("Failed to fetch yearly topup amounts by card number", zap.Error(err), zap.String("card_number", cardNumber), zap.Int("year", year))
-
-		return nil, topup_errors.ErrFailedFindYearlyTopupAmountsByCard
-	}
-
-	responses := s.mapping.ToTopupYearlyAmountResponses(records)
-
-	s.logger.Debug("Successfully fetched yearly topup amounts by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
-
-	return responses, nil
-}
-
-func (s *topupService) FindByActive(req *requests.FindAllTopups) ([]*response.TopupResponseDeleteAt, *int, *response.ErrorResponse) {
 	page := req.Page
 	pageSize := req.PageSize
 	search := req.Search
-
-	s.logger.Debug("Fetching active topup",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
 
 	if page <= 0 {
 		page = 1
@@ -460,37 +222,59 @@ func (s *topupService) FindByActive(req *requests.FindAllTopups) ([]*response.To
 		pageSize = 10
 	}
 
-	topups, totalRecords, err := s.topupRepository.FindByActive(req)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("page", page),
+		attribute.Int("pageSize", pageSize),
+		attribute.String("search", search))
 
-	if err != nil {
-		s.logger.Error("Failed to fetch active topup",
-			zap.Error(err),
-			zap.Int("page", page),
-			zap.Int("pageSize", pageSize),
-			zap.String("search", search))
+	defer func() {
+		end(status)
+	}()
 
-		return nil, nil, topup_errors.ErrFailedFindActiveTopups
+	if data, total, found := s.cache.GetCachedTopupActiveCache(ctx, req); found {
+		logSuccess("Successfully retrieved all topup records from cache", zap.Int("totalRecords", *total), zap.Int("page", page), zap.Int("pageSize", pageSize))
+		return data, total, nil
 	}
 
-	so := s.mapping.ToTopupResponsesDeleteAt(topups)
+	topups, err := s.topupRepository.FindByActive(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandlerErrorPagination[[]*db.GetActiveTopupsRow](
+			s.logger,
+			topup_errors.ErrFailedFindActiveTopups,
+			method,
+			span,
 
-	s.logger.Debug("Successfully fetched active topup",
-		zap.Int("totalRecords", *totalRecords),
+			zap.Int("page", page),
+			zap.Int("pageSize", pageSize),
+			zap.String("search", search),
+		)
+	}
+
+	var totalCount int
+
+	if len(topups) > 0 {
+		totalCount = int(topups[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+
+	s.cache.SetCachedTopupActiveCache(ctx, req, topups, &totalCount)
+
+	logSuccess("Successfully fetched active topup",
+		zap.Int("totalRecords", totalCount),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
-	return so, totalRecords, nil
+	return topups, &totalCount, nil
 }
 
-func (s *topupService) FindByTrashed(req *requests.FindAllTopups) ([]*response.TopupResponseDeleteAt, *int, *response.ErrorResponse) {
+func (s *topupService) FindByTrashed(ctx context.Context, req *requests.FindAllTopups) ([]*db.GetTrashedTopupsRow, *int, error) {
+	const method = "FindByTrashed"
+
 	page := req.Page
 	pageSize := req.PageSize
 	search := req.Search
-
-	s.logger.Debug("Fetching trashed topup",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
 
 	if page <= 0 {
 		page = 1
@@ -499,352 +283,1107 @@ func (s *topupService) FindByTrashed(req *requests.FindAllTopups) ([]*response.T
 		pageSize = 10
 	}
 
-	topups, totalRecords, err := s.topupRepository.FindByTrashed(req)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("page", page),
+		attribute.Int("pageSize", pageSize),
+		attribute.String("search", search))
 
-	if err != nil {
-		s.logger.Error("Failed to fetch trashed topup",
-			zap.Error(err),
-			zap.Int("page", page),
-			zap.Int("pageSize", pageSize),
-			zap.String("search", search))
+	defer func() {
+		end(status)
+	}()
 
-		return nil, nil, topup_errors.ErrFailedFindTrashedTopups
+	if data, total, found := s.cache.GetCachedTopupTrashedCache(ctx, req); found {
+		logSuccess("Successfully retrieved all topup records from cache", zap.Int("totalRecords", *total), zap.Int("page", page), zap.Int("pageSize", pageSize))
+		return data, total, nil
 	}
 
-	so := s.mapping.ToTopupResponsesDeleteAt(topups)
+	topups, err := s.topupRepository.FindByTrashed(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandlerErrorPagination[[]*db.GetTrashedTopupsRow](
+			s.logger,
+			topup_errors.ErrFailedFindTrashedTopups,
+			method,
+			span,
 
-	s.logger.Debug("Successfully fetched trashed topup",
-		zap.Int("totalRecords", *totalRecords),
+			zap.Int("page", page),
+			zap.Int("pageSize", pageSize),
+			zap.String("search", search),
+		)
+	}
+
+	var totalCount int
+
+	if len(topups) > 0 {
+		totalCount = int(topups[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+
+	s.cache.SetCachedTopupTrashedCache(ctx, req, topups, &totalCount)
+
+	logSuccess("Successfully fetched trashed topup",
+		zap.Int("totalRecords", totalCount),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
-	return so, totalRecords, nil
+	return topups, &totalCount, nil
 }
 
-func (s *topupService) CreateTopup(request *requests.CreateTopupRequest) (*response.TopupResponse, *response.ErrorResponse) {
-	s.logger.Debug("Starting CreateTopup process",
-		zap.String("cardNumber", request.CardNumber),
-		zap.Float64("topupAmount", float64(request.TopupAmount)),
-	)
+func (s *topupService) FindMonthTopupStatusSuccess(ctx context.Context, req *requests.MonthTopupStatus) ([]*db.GetMonthTopupStatusSuccessRow, error) {
+	const method = "FindMonthTopupStatusSuccess"
 
-	card, err := s.cardRepository.FindCardByCardNumber(request.CardNumber)
-	if err != nil {
-		s.logger.Error("failed to find card by number", zap.Error(err))
-		return nil, card_errors.ErrCardNotFoundRes
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", req.Year),
+		attribute.Int("month", req.Month))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthTopupStatusSuccessCache(ctx, req); found {
+		logSuccess("Successfully fetched monthly topup status success from cache", zap.Int("year", req.Year), zap.Int("month", req.Month))
+		return data, nil
 	}
 
-	topup, err := s.topupRepository.CreateTopup(request)
+	s.logger.Debug("Cache miss for monthly topup status success, fetching from DB", zap.Int("year", req.Year), zap.Int("month", req.Month))
+
+	dbRows, err := s.topupRepository.GetMonthTopupStatusSuccess(ctx, req)
 	if err != nil {
-		s.logger.Error("failed to create topup", zap.Error(err))
-		return nil, topup_errors.ErrFailedCreateTopup
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthTopupStatusSuccessRow](
+			s.logger,
+			topup_errors.ErrFailedFindMonthTopupStatusSuccess,
+			method,
+			span,
+
+			zap.Int("year", req.Year),
+			zap.Int("month", req.Month),
+		)
 	}
 
-	saldo, err := s.saldoRepository.FindByCardNumber(request.CardNumber)
+	s.cache.SetMonthTopupStatusSuccessCache(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched monthly topup status success (from DB)", zap.Int("year", req.Year), zap.Int("month", req.Month))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindYearlyTopupStatusSuccess(ctx context.Context, year int) ([]*db.GetYearlyTopupStatusSuccessRow, error) {
+	const method = "FindYearlyTopupStatusSuccess"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTopupStatusSuccessCache(ctx, year); found {
+		logSuccess("Successfully fetched yearly topup status success from cache", zap.Int("year", year))
+		return data, nil
+	}
+
+	dbRows, err := s.topupRepository.GetYearlyTopupStatusSuccess(ctx, year)
 	if err != nil {
-		s.logger.Error("failed to find saldo by user id", zap.Error(err))
-		req := requests.UpdateTopupStatus{
-			TopupID: topup.ID,
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTopupStatusSuccessRow](
+			s.logger,
+			topup_errors.ErrFailedFindYearlyTopupStatusSuccess,
+			method,
+			span,
+
+			zap.Int("year", year),
+		)
+	}
+
+	s.cache.SetYearlyTopupStatusSuccessCache(ctx, year, dbRows)
+
+	logSuccess("Successfully fetched yearly topup status success (from DB)", zap.Int("year", year))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindMonthTopupStatusFailed(ctx context.Context, req *requests.MonthTopupStatus) ([]*db.GetMonthTopupStatusFailedRow, error) {
+	const method = "FindMonthTopupStatusFailed"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", req.Year),
+		attribute.Int("month", req.Month))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthTopupStatusFailedCache(ctx, req); found {
+		logSuccess("Successfully fetched monthly topup status Failed from cache", zap.Int("year", req.Year), zap.Int("month", req.Month))
+		return data, nil
+	}
+
+	dbRows, err := s.topupRepository.GetMonthTopupStatusFailed(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthTopupStatusFailedRow](
+			s.logger,
+			topup_errors.ErrFailedFindMonthTopupStatusFailed,
+			method,
+			span,
+
+			zap.Int("year", req.Year),
+			zap.Int("month", req.Month),
+		)
+	}
+
+	s.cache.SetMonthTopupStatusFailedCache(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched monthly topup status failed (from DB)", zap.Int("year", req.Year), zap.Int("month", req.Month))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindYearlyTopupStatusFailed(ctx context.Context, year int) ([]*db.GetYearlyTopupStatusFailedRow, error) {
+	const method = "FindYearlyTopupStatusFailed"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTopupStatusFailedCache(ctx, year); found {
+		logSuccess("Successfully fetched yearly topup status Failed from cache", zap.Int("year", year))
+		return data, nil
+	}
+
+	dbRows, err := s.topupRepository.GetYearlyTopupStatusFailed(ctx, year)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTopupStatusFailedRow](
+			s.logger,
+			topup_errors.ErrFailedFindYearlyTopupStatusFailed,
+			method,
+			span,
+
+			zap.Int("year", year),
+		)
+	}
+
+	s.cache.SetYearlyTopupStatusFailedCache(ctx, year, dbRows)
+
+	logSuccess("Successfully fetched yearly topup status failed (from DB)", zap.Int("year", year))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindMonthlyTopupMethods(ctx context.Context, year int) ([]*db.GetMonthlyTopupMethodsRow, error) {
+	const method = "FindMonthlyTopupMethods"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthlyTopupMethodsCache(ctx, year); found {
+		logSuccess("Successfully fetched monthly topup methods from cache", zap.Int("year", year))
+		return data, nil
+	}
+
+	dbRows, err := s.topupRepository.GetMonthlyTopupMethods(ctx, year)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyTopupMethodsRow](
+			s.logger,
+			topup_errors.ErrFailedFindMonthlyTopupMethods,
+			method,
+			span,
+
+			zap.Int("year", year),
+		)
+	}
+
+	s.cache.SetMonthlyTopupMethodsCache(ctx, year, dbRows)
+
+	logSuccess("Successfully fetched monthly topup methods (from DB)", zap.Int("year", year))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindYearlyTopupMethods(ctx context.Context, year int) ([]*db.GetYearlyTopupMethodsRow, error) {
+	const method = "FindYearlyTopupMethods"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTopupMethodsCache(ctx, year); found {
+		logSuccess("Successfully fetched yearly topup methods from cache", zap.Int("year", year))
+		return data, nil
+	}
+
+	s.logger.Debug("Cache miss for yearly topup methods, fetching from DB", zap.Int("year", year))
+
+	dbRows, err := s.topupRepository.GetYearlyTopupMethods(ctx, year)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTopupMethodsRow](
+			s.logger,
+			topup_errors.ErrFailedFindYearlyTopupMethods,
+			method,
+			span,
+
+			zap.Int("year", year),
+		)
+	}
+
+	s.cache.SetYearlyTopupMethodsCache(ctx, year, dbRows)
+
+	logSuccess("Successfully fetched yearly topup methods (from DB)", zap.Int("year", year))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindMonthlyTopupAmounts(ctx context.Context, year int) ([]*db.GetMonthlyTopupAmountsRow, error) {
+	const method = "FindMonthlyTopupAmounts"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthlyTopupAmountsCache(ctx, year); found {
+		logSuccess("Successfully fetched monthly topup amounts from cache", zap.Int("year", year))
+		return data, nil
+	}
+
+	dbRows, err := s.topupRepository.GetMonthlyTopupAmounts(ctx, year)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyTopupAmountsRow](
+			s.logger,
+			topup_errors.ErrFailedFindMonthlyTopupAmounts,
+			method,
+			span,
+
+			zap.Int("year", year),
+		)
+	}
+
+	s.cache.SetMonthlyTopupAmountsCache(ctx, year, dbRows)
+
+	logSuccess("Successfully fetched monthly topup amounts (from DB)", zap.Int("year", year))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindYearlyTopupAmounts(ctx context.Context, year int) ([]*db.GetYearlyTopupAmountsRow, error) {
+	const method = "FindYearlyTopupAmounts"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTopupAmountsCache(ctx, year); found {
+		logSuccess("Successfully fetched yearly topup amounts from cache", zap.Int("year", year))
+		return data, nil
+	}
+
+	dbRows, err := s.topupRepository.GetYearlyTopupAmounts(ctx, year)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTopupAmountsRow](
+			s.logger,
+			topup_errors.ErrFailedFindYearlyTopupAmounts,
+			method,
+			span,
+
+			zap.Int("year", year),
+		)
+	}
+
+	s.cache.SetYearlyTopupAmountsCache(ctx, year, dbRows)
+
+	logSuccess("Successfully fetched yearly topup amounts (from DB)", zap.Int("year", year))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindMonthTopupStatusSuccessByCardNumber(ctx context.Context, req *requests.MonthTopupStatusCardNumber) ([]*db.GetMonthTopupStatusSuccessCardNumberRow, error) {
+	const method = "FindMonthTopupStatusSuccessByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year),
+		attribute.Int("month", req.Month))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthTopupStatusSuccessByCardNumberCache(ctx, req); found {
+		logSuccess("Successfully fetched monthly topup status success", zap.Int("year", req.Year), zap.Int("month", req.Month), zap.String("card_number", req.CardNumber))
+		return data, nil
+	}
+
+	dbRows, err := s.topupRepository.GetMonthTopupStatusSuccessByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthTopupStatusSuccessCardNumberRow](
+			s.logger,
+			topup_errors.ErrFailedFindMonthTopupStatusSuccessByCard,
+			method,
+			span,
+
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+			zap.Int("month", req.Month),
+		)
+	}
+
+	s.cache.SetMonthTopupStatusSuccessByCardNumberCache(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched monthly topup status success by card number (from DB)",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("month", req.Month))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindYearlyTopupStatusSuccessByCardNumber(ctx context.Context, req *requests.YearTopupStatusCardNumber) ([]*db.GetYearlyTopupStatusSuccessCardNumberRow, error) {
+	const method = "FindYearlyTopupStatusSuccessByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTopupStatusSuccessByCardNumberCache(ctx, req); found {
+		logSuccess("Successfully fetched yearly topup status success", zap.Int("year", req.Year), zap.String("card_number", req.CardNumber))
+		return data, nil
+	}
+
+	dbRows, err := s.topupRepository.GetYearlyTopupStatusSuccessByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTopupStatusSuccessCardNumberRow](
+			s.logger,
+			topup_errors.ErrFailedFindYearlyTopupStatusSuccessByCard,
+			method,
+			span,
+
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.logger.Debug("Setting cache for yearly topup status success by card number",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	s.cache.SetYearlyTopupStatusSuccessByCardNumberCache(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched yearly topup status success by card number (from DB)",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindMonthTopupStatusFailedByCardNumber(ctx context.Context, req *requests.MonthTopupStatusCardNumber) ([]*db.GetMonthTopupStatusFailedCardNumberRow, error) {
+	const method = "FindMonthTopupStatusFailedByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year),
+		attribute.Int("month", req.Month))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthTopupStatusFailedByCardNumberCache(ctx, req); found {
+		logSuccess("Successfully fetched monthly topup status Failed", zap.Int("year", req.Year), zap.Int("month", req.Month), zap.String("card_number", req.CardNumber))
+		return data, nil
+	}
+
+	s.logger.Debug("Cache miss for monthly topup status failed by card number, fetching from DB",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("month", req.Month))
+
+	dbRows, err := s.topupRepository.GetMonthTopupStatusFailedByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthTopupStatusFailedCardNumberRow](
+			s.logger,
+			topup_errors.ErrFailedFindMonthTopupStatusFailedByCard,
+			method,
+			span,
+
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+			zap.Int("month", req.Month),
+		)
+	}
+
+	s.cache.SetMonthTopupStatusFailedByCardNumberCache(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched monthly topup status failed by card number (from DB)",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("month", req.Month))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindYearlyTopupStatusFailedByCardNumber(ctx context.Context, req *requests.YearTopupStatusCardNumber) ([]*db.GetYearlyTopupStatusFailedCardNumberRow, error) {
+	const method = "FindYearlyTopupStatusFailedByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTopupStatusFailedByCardNumberCache(ctx, req); found {
+		logSuccess("Successfully fetched yearly topup status Failed", zap.Int("year", req.Year), zap.String("card_number", req.CardNumber))
+		return data, nil
+	}
+
+	s.logger.Debug("Cache miss for yearly topup status failed by card number, fetching from DB",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	dbRows, err := s.topupRepository.GetYearlyTopupStatusFailedByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTopupStatusFailedCardNumberRow](
+			s.logger,
+			topup_errors.ErrFailedFindYearlyTopupStatusFailedByCard,
+			method,
+			span,
+
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetYearlyTopupStatusFailedByCardNumberCache(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched yearly topup status failed by card number (from DB)",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindMonthlyTopupMethodsByCardNumber(ctx context.Context, req *requests.YearMonthMethod) ([]*db.GetMonthlyTopupMethodsByCardNumberRow, error) {
+	const method = "FindMonthlyTopupMethodsByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthlyTopupMethodsByCardNumberCache(ctx, req); found {
+		logSuccess("Successfully fetched monthly topup methods by card number", zap.String("card_number", req.CardNumber), zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	s.logger.Debug("Cache miss for monthly topup methods by card number, fetching from DB",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	dbRows, err := s.topupRepository.GetMonthlyTopupMethodsByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyTopupMethodsByCardNumberRow](
+			s.logger,
+			topup_errors.ErrFailedFindMonthlyTopupMethodsByCard,
+			method,
+			span,
+
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetMonthlyTopupMethodsByCardNumberCache(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched monthly topup methods by card number (from DB)",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindYearlyTopupMethodsByCardNumber(ctx context.Context, req *requests.YearMonthMethod) ([]*db.GetYearlyTopupMethodsByCardNumberRow, error) {
+	const method = "FindYearlyTopupMethodsByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTopupMethodsByCardNumberCache(ctx, req); found {
+		logSuccess("Successfully fetched yearly topup methods by card number", zap.String("card_number", req.CardNumber), zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	s.logger.Debug("Cache miss for yearly topup methods by card number, fetching from DB",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	dbRows, err := s.topupRepository.GetYearlyTopupMethodsByCardNumber(ctx, req)
+
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTopupMethodsByCardNumberRow](
+			s.logger,
+			topup_errors.ErrFailedFindYearlyTopupMethodsByCard,
+			method,
+			span,
+
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.logger.Debug("Setting cache for yearly topup methods by card number",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	s.cache.SetYearlyTopupMethodsByCardNumberCache(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched yearly topup methods by card number (from DB)",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindMonthlyTopupAmountsByCardNumber(ctx context.Context, req *requests.YearMonthMethod) ([]*db.GetMonthlyTopupAmountsByCardNumberRow, error) {
+	const method = "FindMonthlyTopupAmountsByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthlyTopupAmountsByCardNumberCache(ctx, req); found {
+		logSuccess("Successfully fetched monthly topup amounts by card number", zap.String("card_number", req.CardNumber), zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	s.logger.Debug("Cache miss for monthly topup amounts by card number, fetching from DB",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	dbRows, err := s.topupRepository.GetMonthlyTopupAmountsByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyTopupAmountsByCardNumberRow](
+			s.logger,
+			topup_errors.ErrFailedFindMonthlyTopupAmountsByCard,
+			method,
+			span,
+
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetMonthlyTopupAmountsByCardNumberCache(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched monthly topup amounts by card number (from DB)",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	return dbRows, nil
+}
+
+func (s *topupService) FindYearlyTopupAmountsByCardNumber(ctx context.Context, req *requests.YearMonthMethod) ([]*db.GetYearlyTopupAmountsByCardNumberRow, error) {
+	const method = "FindYearlyTopupAmountsByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTopupAmountsByCardNumberCache(ctx, req); found {
+		logSuccess("Successfully fetched yearly topup amounts by card number", zap.String("card_number", req.CardNumber), zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	dbRows, err := s.topupRepository.GetYearlyTopupAmountsByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTopupAmountsByCardNumberRow](
+			s.logger,
+			topup_errors.ErrFailedFindYearlyTopupAmountsByCard,
+			method,
+			span,
+
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.logger.Debug("Setting cache for yearly topup amounts by card number",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	s.cache.SetYearlyTopupAmountsByCardNumberCache(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched yearly topup amounts by card number (from DB)",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	return dbRows, nil
+}
+
+func (s *topupService) CreateTopup(ctx context.Context, request *requests.CreateTopupRequest) (*db.CreateTopupRow, error) {
+	const method = "CreateTopup"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", request.CardNumber),
+		attribute.Float64("topup_amount", float64(request.TopupAmount)))
+
+	defer func() {
+		end(status)
+	}()
+
+	card, err := s.cardRepository.FindCardByCardNumber(ctx, request.CardNumber)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*db.CreateTopupRow](
+			s.logger,
+			card_errors.ErrCardNotFoundRes,
+			method,
+			span,
+
+			zap.String("card_number", request.CardNumber),
+		)
+	}
+
+	topup, err := s.topupRepository.CreateTopup(ctx, request)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*db.CreateTopupRow](
+			s.logger,
+			topup_errors.ErrFailedCreateTopup,
+			method,
+			span,
+		)
+	}
+
+	markTopupAsFailed := func(primaryErr error) error {
+		s.logger.Error("Attempting to mark topup as failed due to an error", zap.Int("topup_id", int(topup.TopupID)), zap.Error(primaryErr))
+		if _, statusErr := s.topupRepository.UpdateTopupStatus(ctx, &requests.UpdateTopupStatus{
+			TopupID: int(topup.TopupID),
 			Status:  "failed",
+		}); statusErr != nil {
+			s.logger.Error("CRITICAL: Failed to update topup status to 'failed' after another error", zap.NamedError("primary_error", primaryErr), zap.NamedError("status_update_error", statusErr))
 		}
-		s.topupRepository.UpdateTopupStatus(&req)
-		return nil, saldo_errors.ErrFailedSaldoNotFound
+		return primaryErr
 	}
 
-	newBalance := saldo.TotalBalance + request.TopupAmount
-	_, err = s.saldoRepository.UpdateSaldoBalance(&requests.UpdateSaldoBalance{
+	saldo, err := s.saldoRepository.FindByCardNumber(ctx, request.CardNumber)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*db.CreateTopupRow](
+			s.logger,
+			markTopupAsFailed(saldo_errors.ErrFailedSaldoNotFound),
+			method,
+			span,
+
+			zap.String("card_number", request.CardNumber),
+		)
+	}
+
+	newBalance := int(saldo.TotalBalance) + request.TopupAmount
+	_, err = s.saldoRepository.UpdateSaldoBalance(ctx, &requests.UpdateSaldoBalance{
 		CardNumber:   request.CardNumber,
 		TotalBalance: newBalance,
 	})
 	if err != nil {
-		s.logger.Error("failed to update saldo balance", zap.Error(err))
-		req := requests.UpdateTopupStatus{
-			TopupID: topup.ID,
-			Status:  "failed",
-		}
-		s.topupRepository.UpdateTopupStatus(&req)
-		return nil, topup_errors.ErrFailedUpdateTopup
+		status = "error"
+		return errorhandler.HandleError[*db.CreateTopupRow](
+			s.logger,
+			markTopupAsFailed(topup_errors.ErrFailedUpdateTopup),
+			method,
+			span,
+
+			zap.String("card_number", request.CardNumber),
+		)
 	}
 
-	expireDate, err := time.Parse("2006-01-02", card.ExpireDate)
-	if err != nil {
-		s.logger.Error("failed to parse expire date", zap.Error(err))
-		req := requests.UpdateTopupStatus{
-			TopupID: topup.ID,
-			Status:  "failed",
-		}
-		s.topupRepository.UpdateTopupStatus(&req)
-		return nil, topup_errors.ErrFailedUpdateTopup
+	if !card.ExpireDate.Valid {
+		status = "error"
+		return errorhandler.HandleError[*db.CreateTopupRow](
+			s.logger,
+			markTopupAsFailed(topup_errors.ErrFailedUpdateTopup),
+			method,
+			span,
+			zap.String("reason", "expire_date is NULL"),
+		)
 	}
 
-	_, err = s.cardRepository.UpdateCard(&requests.UpdateCardRequest{
-		CardID:       card.ID,
-		UserID:       card.UserID,
+	expireDate := card.ExpireDate.Time
+
+	_, err = s.cardRepository.UpdateCard(ctx, &requests.UpdateCardRequest{
+		CardID:       int(card.CardID),
+		UserID:       int(card.UserID),
 		CardType:     card.CardType,
 		ExpireDate:   expireDate,
-		CVV:          card.CVV,
+		CVV:          card.Cvv,
 		CardProvider: card.CardProvider,
 	})
 	if err != nil {
-		s.logger.Error("failed to update card expire date", zap.Error(err))
-		req := requests.UpdateTopupStatus{
-			TopupID: topup.ID,
-			Status:  "failed",
-		}
-		s.topupRepository.UpdateTopupStatus(&req)
-		return nil, card_errors.ErrFailedUpdateCard
+		status = "error"
+		return errorhandler.HandleError[*db.CreateTopupRow](
+			s.logger,
+			markTopupAsFailed(card_errors.ErrFailedUpdateCard),
+			method,
+			span,
+
+			zap.Int("card_id", int(card.CardID)),
+		)
 	}
 
-	req := requests.UpdateTopupStatus{
-		TopupID: topup.ID,
+	_, err = s.topupRepository.UpdateTopupStatus(ctx, &requests.UpdateTopupStatus{
+		TopupID: int(topup.TopupID),
 		Status:  "success",
-	}
-
-	_, err = s.topupRepository.UpdateTopupStatus(&req)
+	})
 	if err != nil {
-		s.logger.Error("failed to update topup status", zap.Error(err))
-		return nil, topup_errors.ErrFailedUpdateTopup
+		status = "error"
+		return errorhandler.HandleError[*db.CreateTopupRow](
+			s.logger,
+			topup_errors.ErrFailedUpdateTopup,
+			method,
+			span,
+
+			zap.Int("topup_id", int(topup.TopupID)),
+		)
 	}
 
-	so := s.mapping.ToTopupResponse(topup)
-
-	s.logger.Debug("CreateTopup process completed",
+	logSuccess("CreateTopup process completed",
 		zap.String("cardNumber", request.CardNumber),
 		zap.Float64("topupAmount", float64(request.TopupAmount)),
 		zap.Float64("newBalance", float64(newBalance)),
 	)
 
-	return so, nil
+	return topup, nil
 }
 
-func (s *topupService) UpdateTopup(request *requests.UpdateTopupRequest) (*response.TopupResponse, *response.ErrorResponse) {
-	s.logger.Debug("Starting UpdateTopup process",
-		zap.String("cardNumber", request.CardNumber),
-		zap.Int("topupID", *request.TopupID),
-		zap.Float64("newTopupAmount", float64(request.TopupAmount)),
-	)
+func (s *topupService) UpdateTopup(ctx context.Context, request *requests.UpdateTopupRequest) (*db.UpdateTopupRow, error) {
+	const method = "UpdateTopup"
 
-	_, err := s.cardRepository.FindCardByCardNumber(request.CardNumber)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", request.CardNumber),
+		attribute.Int("topup_id", *request.TopupID),
+		attribute.Float64("new_topup_amount", float64(request.TopupAmount)))
+
+	defer func() {
+		end(status)
+	}()
+
+	markTopupAsFailed := func(primaryErr error) error {
+		if _, statusErr := s.topupRepository.UpdateTopupStatus(ctx, &requests.UpdateTopupStatus{
+			TopupID: *request.TopupID,
+			Status:  "failed",
+		}); statusErr != nil {
+			s.logger.Error("CRITICAL: Failed to update topup status to 'failed' after another error", zap.NamedError("primary_error", primaryErr), zap.NamedError("status_update_error", statusErr))
+		}
+		return primaryErr
+	}
+
+	_, err := s.cardRepository.FindCardByCardNumber(ctx, request.CardNumber)
 	if err != nil {
-		s.logger.Error("failed to find card by number", zap.Error(err))
+		status = "error"
+		return errorhandler.HandleError[*db.UpdateTopupRow](
+			s.logger,
+			markTopupAsFailed(card_errors.ErrCardNotFoundRes),
+			method,
+			span,
 
-		req := requests.UpdateTopupStatus{
-			TopupID: *request.TopupID,
-			Status:  "failed",
-		}
-
-		s.topupRepository.UpdateTopupStatus(&req)
-
-		return nil, card_errors.ErrCardNotFoundRes
+			zap.String("card_number", request.CardNumber),
+		)
 	}
 
-	existingTopup, err := s.topupRepository.FindById(*request.TopupID)
-	if err != nil || existingTopup == nil {
-		s.logger.Error("Failed to find topup by ID", zap.Error(err))
-
-		req := requests.UpdateTopupStatus{
-			TopupID: *request.TopupID,
-			Status:  "failed",
-		}
-
-		s.topupRepository.UpdateTopupStatus(&req)
-		return nil, topup_errors.ErrTopupNotFoundRes
-	}
-
-	topupDifference := request.TopupAmount - existingTopup.TopupAmount
-
-	_, err = s.topupRepository.UpdateTopup(request)
+	existingTopup, err := s.topupRepository.FindById(ctx, *request.TopupID)
 	if err != nil {
-		s.logger.Error("Failed to update topup amount", zap.Error(err))
+		status = "error"
+		return errorhandler.HandleError[*db.UpdateTopupRow](
+			s.logger,
+			markTopupAsFailed(topup_errors.ErrTopupNotFoundRes),
+			method,
+			span,
 
-		req := requests.UpdateTopupStatus{
-			TopupID: *request.TopupID,
-			Status:  "failed",
-		}
-
-		s.topupRepository.UpdateTopupStatus(&req)
-		return nil, topup_errors.ErrFailedUpdateTopup
+			zap.Int("topup_id", *request.TopupID),
+		)
 	}
 
-	currentSaldo, err := s.saldoRepository.FindByCardNumber(request.CardNumber)
+	topupDifference := request.TopupAmount - int(existingTopup.TopupAmount)
+
+	updated, err := s.topupRepository.UpdateTopup(ctx, request)
 	if err != nil {
-		s.logger.Error("Failed to retrieve current saldo", zap.Error(err))
+		status = "error"
+		return errorhandler.HandleError[*db.UpdateTopupRow](
+			s.logger,
+			markTopupAsFailed(topup_errors.ErrFailedUpdateTopup),
+			method,
+			span,
 
-		req := requests.UpdateTopupStatus{
-			TopupID: *request.TopupID,
-			Status:  "failed",
-		}
-
-		s.topupRepository.UpdateTopupStatus(&req)
-
-		return nil, saldo_errors.ErrFailedSaldoNotFound
+			zap.Int("topup_id", *request.TopupID),
+		)
 	}
 
-	if currentSaldo == nil {
-		s.logger.Error("No saldo found for card number", zap.String("card_number", request.CardNumber))
+	currentSaldo, err := s.saldoRepository.FindByCardNumber(ctx, request.CardNumber)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*db.UpdateTopupRow](
+			s.logger,
+			markTopupAsFailed(saldo_errors.ErrFailedSaldoNotFound),
+			method,
+			span,
 
-		req := requests.UpdateTopupStatus{
-			TopupID: *request.TopupID,
-			Status:  "failed",
-		}
-
-		s.topupRepository.UpdateTopupStatus(&req)
-
-		return nil, card_errors.ErrCardNotFoundRes
+			zap.String("card_number", request.CardNumber),
+		)
 	}
 
-	newBalance := currentSaldo.TotalBalance + topupDifference
-	_, err = s.saldoRepository.UpdateSaldoBalance(&requests.UpdateSaldoBalance{
+	newBalance := int(currentSaldo.TotalBalance) + topupDifference
+
+	_, err = s.saldoRepository.UpdateSaldoBalance(ctx, &requests.UpdateSaldoBalance{
 		CardNumber:   request.CardNumber,
 		TotalBalance: newBalance,
 	})
 	if err != nil {
-		s.logger.Error("Failed to update saldo balance", zap.Error(err))
-
-		_, rollbackErr := s.topupRepository.UpdateTopupAmount(&requests.UpdateTopupAmount{
+		status = "error"
+		s.logger.Warn("Attempting to rollback topup amount due to saldo update failure", zap.Int("topup_id", *request.TopupID))
+		var rollbackErr error
+		if _, rollbackErr = s.topupRepository.UpdateTopupAmount(ctx, &requests.UpdateTopupAmount{
 			TopupID:     *request.TopupID,
-			TopupAmount: existingTopup.TopupAmount,
-		})
-		if rollbackErr != nil {
-			s.logger.Error("Failed to rollback topup update", zap.Error(rollbackErr))
+			TopupAmount: int(existingTopup.TopupAmount),
+		}); rollbackErr != nil {
+			s.logger.Error("CRITICAL: Failed to rollback topup update", zap.NamedError("primary_error", err), zap.NamedError("rollback_error", rollbackErr))
 		}
 
-		req := requests.UpdateTopupStatus{
-			TopupID: *request.TopupID,
-			Status:  "failed",
-		}
+		return errorhandler.HandleError[*db.UpdateTopupRow](
+			s.logger,
+			markTopupAsFailed(saldo_errors.ErrFailedUpdateSaldo),
+			method,
+			span,
 
-		s.topupRepository.UpdateTopupStatus(&req)
-		return nil, saldo_errors.ErrFailedUpdateSaldo
+			zap.Int("topup_id", *request.TopupID),
+		)
 	}
 
-	updatedTopup, err := s.topupRepository.FindById(*request.TopupID)
-	if err != nil || updatedTopup == nil {
-		s.logger.Error("Failed to find updated topup by ID", zap.Error(err))
+	_, err = s.topupRepository.FindById(ctx, *request.TopupID)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*db.UpdateTopupRow](
+			s.logger,
+			markTopupAsFailed(topup_errors.ErrTopupNotFoundRes),
+			method,
+			span,
 
-		req := requests.UpdateTopupStatus{
-			TopupID: *request.TopupID,
-			Status:  "failed",
-		}
-
-		s.topupRepository.UpdateTopupStatus(&req)
-		return nil, topup_errors.ErrTopupNotFoundRes
+			zap.Int("topup_id", *request.TopupID),
+		)
 	}
 
-	req := requests.UpdateTopupStatus{
+	_, err = s.topupRepository.UpdateTopupStatus(ctx, &requests.UpdateTopupStatus{
 		TopupID: *request.TopupID,
 		Status:  "success",
-	}
-
-	_, err = s.topupRepository.UpdateTopupStatus(&req)
+	})
 	if err != nil {
-		s.logger.Error("Failed to update topup status", zap.Error(err))
-		return nil, topup_errors.ErrFailedUpdateTopup
+		status = "error"
+		return errorhandler.HandleError[*db.UpdateTopupRow](
+			s.logger,
+			topup_errors.ErrFailedUpdateTopup,
+			method,
+			span,
+
+			zap.Int("topup_id", *request.TopupID),
+		)
 	}
 
-	so := s.mapping.ToTopupResponse(updatedTopup)
-
-	s.logger.Debug("UpdateTopup process completed",
+	logSuccess("UpdateTopup process completed",
 		zap.String("cardNumber", request.CardNumber),
 		zap.Int("topupID", *request.TopupID),
 		zap.Float64("newTopupAmount", float64(request.TopupAmount)),
 		zap.Float64("newBalance", float64(newBalance)),
 	)
 
-	return so, nil
+	return updated, nil
 }
 
-func (s *topupService) TrashedTopup(topup_id int) (*response.TopupResponseDeleteAt, *response.ErrorResponse) {
-	s.logger.Debug("Starting TrashedTopup process",
-		zap.Int("topup_id", topup_id),
-	)
+func (s *topupService) TrashedTopup(ctx context.Context, topup_id int) (*db.Topup, error) {
+	const method = "TrashedTopup"
 
-	res, err := s.topupRepository.TrashedTopup(topup_id)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("topup_id", topup_id))
 
+	defer func() {
+		end(status)
+	}()
+
+	s.logger.Debug("Starting TrashedTopup process", zap.Int("topup_id", topup_id))
+
+	res, err := s.topupRepository.TrashedTopup(ctx, topup_id)
 	if err != nil {
-		s.logger.Error("Failed to move topup to trash",
+		status = "error"
+		return errorhandler.HandleError[*db.Topup](
+			s.logger,
+			topup_errors.ErrFailedTrashTopup,
+			method,
+			span,
+
 			zap.Int("topup_id", topup_id),
-			zap.Error(err))
-
-		return nil, topup_errors.ErrFailedTrashTopup
+		)
 	}
 
-	so := s.mapping.ToTopupResponseDeleteAt(res)
+	logSuccess("TrashedTopup process completed", zap.Int("topup_id", topup_id))
 
-	s.logger.Debug("TrashedTopup process completed",
-		zap.Int("topup_id", topup_id),
-	)
-
-	return so, nil
+	return res, nil
 }
 
-func (s *topupService) RestoreTopup(topup_id int) (*response.TopupResponseDeleteAt, *response.ErrorResponse) {
-	s.logger.Debug("Starting RestoreTopup process",
-		zap.Int("topup_id", topup_id),
-	)
+func (s *topupService) RestoreTopup(ctx context.Context, topup_id int) (*db.Topup, error) {
+	const method = "RestoreTopup"
 
-	res, err := s.topupRepository.RestoreTopup(topup_id)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("topup_id", topup_id))
 
+	defer func() {
+		end(status)
+	}()
+
+	s.logger.Debug("Starting RestoreTopup process", zap.Int("topup_id", topup_id))
+
+	res, err := s.topupRepository.RestoreTopup(ctx, topup_id)
 	if err != nil {
-		s.logger.Error("Failed to restore topup from trash",
+		status = "error"
+		return errorhandler.HandleError[*db.Topup](
+			s.logger,
+			topup_errors.ErrFailedRestoreTopup,
+			method,
+			span,
+
 			zap.Int("topup_id", topup_id),
-			zap.Error(err))
-
-		return nil, topup_errors.ErrFailedRestoreTopup
+		)
 	}
 
-	so := s.mapping.ToTopupResponseDeleteAt(res)
+	logSuccess("RestoreTopup process completed", zap.Int("topup_id", topup_id))
 
-	s.logger.Debug("RestoreTopup process completed",
-		zap.Int("topup_id", topup_id),
-	)
-
-	return so, nil
+	return res, nil
 }
 
-func (s *topupService) DeleteTopupPermanent(topup_id int) (bool, *response.ErrorResponse) {
-	s.logger.Debug("Starting DeleteTopupPermanent process",
-		zap.Int("topup_id", topup_id),
-	)
+func (s *topupService) DeleteTopupPermanent(ctx context.Context, topup_id int) (bool, error) {
+	const method = "DeleteTopupPermanent"
 
-	_, err := s.topupRepository.DeleteTopupPermanent(topup_id)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("topup_id", topup_id))
 
+	defer func() {
+		end(status)
+	}()
+
+	s.logger.Debug("Starting DeleteTopupPermanent process", zap.Int("topup_id", topup_id))
+
+	_, err := s.topupRepository.DeleteTopupPermanent(ctx, topup_id)
 	if err != nil {
-		s.logger.Error("Failed to delete topup permanently", zap.Error(err))
+		status = "error"
+		return errorhandler.HandleError[bool](
+			s.logger,
+			topup_errors.ErrFailedDeleteTopup,
+			method,
+			span,
 
-		return false, topup_errors.ErrFailedDeleteTopup
+			zap.Int("topup_id", topup_id),
+		)
 	}
 
-	s.logger.Debug("DeleteTopupPermanent process completed",
-		zap.Int("topup_id", topup_id),
-	)
+	logSuccess("DeleteTopupPermanent process completed", zap.Int("topup_id", topup_id))
 
 	return true, nil
 }
 
-func (s *topupService) RestoreAllTopup() (bool, *response.ErrorResponse) {
+func (s *topupService) RestoreAllTopup(ctx context.Context) (bool, error) {
+	const method = "RestoreAllTopup"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method)
+
+	defer func() {
+		end(status)
+	}()
+
 	s.logger.Debug("Restoring all topups")
 
-	_, err := s.topupRepository.RestoreAllTopup()
-
+	_, err := s.topupRepository.RestoreAllTopup(ctx)
 	if err != nil {
-		s.logger.Error("Failed to restore all topups", zap.Error(err))
-		return false, topup_errors.ErrFailedRestoreAllTopups
+		status = "error"
+		return errorhandler.HandleError[bool](
+			s.logger,
+			topup_errors.ErrFailedRestoreAllTopups,
+			method,
+			span,
+		)
 	}
 
-	s.logger.Debug("Successfully restored all topups")
+	logSuccess("Successfully restored all topups")
 	return true, nil
 }
 
-func (s *topupService) DeleteAllTopupPermanent() (bool, *response.ErrorResponse) {
+func (s *topupService) DeleteAllTopupPermanent(ctx context.Context) (bool, error) {
+	const method = "DeleteAllTopupPermanent"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method)
+
+	defer func() {
+		end(status)
+	}()
+
 	s.logger.Debug("Permanently deleting all topups")
 
-	_, err := s.topupRepository.DeleteAllTopupPermanent()
-
+	_, err := s.topupRepository.DeleteAllTopupPermanent(ctx)
 	if err != nil {
-		s.logger.Error("Failed to permanently delete all topups", zap.Error(err))
-		return false, topup_errors.ErrFailedDeleteAllTopups
+		status = "error"
+		return errorhandler.HandleError[bool](
+			s.logger,
+			topup_errors.ErrFailedDeleteAllTopups,
+			method,
+			span,
+		)
 	}
 
-	s.logger.Debug("Successfully deleted all topups permanently")
+	logSuccess("Successfully deleted all topups permanently")
 	return true, nil
 }

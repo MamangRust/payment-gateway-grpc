@@ -1,9 +1,7 @@
 package repository
 
 import (
-	"MamangRust/paymentgatewaygrpc/internal/domain/record"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	recordmapper "MamangRust/paymentgatewaygrpc/internal/mapper/record"
 	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/topup_errors"
 	"context"
@@ -11,20 +9,16 @@ import (
 )
 
 type topupRepository struct {
-	db      *db.Queries
-	ctx     context.Context
-	mapping recordmapper.TopupRecordMapping
+	db *db.Queries
 }
 
-func NewTopupRepository(db *db.Queries, ctx context.Context, mapping recordmapper.TopupRecordMapping) *topupRepository {
+func NewTopupRepository(db *db.Queries) TopupRepository {
 	return &topupRepository{
-		db:      db,
-		ctx:     ctx,
-		mapping: mapping,
+		db: db,
 	}
 }
 
-func (r *topupRepository) FindAllTopups(req *requests.FindAllTopups) ([]*record.TopupRecord, *int, error) {
+func (r *topupRepository) FindAllTopups(ctx context.Context, req *requests.FindAllTopups) ([]*db.GetTopupsRow, error) {
 	offset := (req.Page - 1) * req.PageSize
 
 	reqDb := db.GetTopupsParams{
@@ -33,23 +27,16 @@ func (r *topupRepository) FindAllTopups(req *requests.FindAllTopups) ([]*record.
 		Offset:  int32(offset),
 	}
 
-	res, err := r.db.GetTopups(r.ctx, reqDb)
+	res, err := r.db.GetTopups(ctx, reqDb)
 
 	if err != nil {
-		return nil, nil, topup_errors.ErrFindAllTopupsFailed
+		return nil, topup_errors.ErrFindAllTopupsFailed
 	}
 
-	var totalCount int
-	if len(res) > 0 {
-		totalCount = int(res[0].TotalCount)
-	} else {
-		totalCount = 0
-	}
-
-	return r.mapping.ToTopupRecordsAll(res), &totalCount, nil
+	return res, nil
 }
 
-func (r *topupRepository) FindByActive(req *requests.FindAllTopups) ([]*record.TopupRecord, *int, error) {
+func (r *topupRepository) FindByActive(ctx context.Context, req *requests.FindAllTopups) ([]*db.GetActiveTopupsRow, error) {
 	offset := (req.Page - 1) * req.PageSize
 
 	reqDb := db.GetActiveTopupsParams{
@@ -58,23 +45,16 @@ func (r *topupRepository) FindByActive(req *requests.FindAllTopups) ([]*record.T
 		Offset:  int32(offset),
 	}
 
-	res, err := r.db.GetActiveTopups(r.ctx, reqDb)
+	res, err := r.db.GetActiveTopups(ctx, reqDb)
 
 	if err != nil {
-		return nil, nil, topup_errors.ErrFindTopupsByActiveFailed
+		return nil, topup_errors.ErrFindTopupsByActiveFailed
 	}
 
-	var totalCount int
-	if len(res) > 0 {
-		totalCount = int(res[0].TotalCount)
-	} else {
-		totalCount = 0
-	}
-
-	return r.mapping.ToTopupRecordsActive(res), &totalCount, nil
+	return res, nil
 }
 
-func (r *topupRepository) FindByTrashed(req *requests.FindAllTopups) ([]*record.TopupRecord, *int, error) {
+func (r *topupRepository) FindByTrashed(ctx context.Context, req *requests.FindAllTopups) ([]*db.GetTrashedTopupsRow, error) {
 	offset := (req.Page - 1) * req.PageSize
 
 	reqDb := db.GetTrashedTopupsParams{
@@ -83,23 +63,16 @@ func (r *topupRepository) FindByTrashed(req *requests.FindAllTopups) ([]*record.
 		Offset:  int32(offset),
 	}
 
-	res, err := r.db.GetTrashedTopups(r.ctx, reqDb)
+	res, err := r.db.GetTrashedTopups(ctx, reqDb)
 
 	if err != nil {
-		return nil, nil, topup_errors.ErrFindTopupsByTrashedFailed
+		return nil, topup_errors.ErrFindTopupsByTrashedFailed
 	}
 
-	var totalCount int
-	if len(res) > 0 {
-		totalCount = int(res[0].TotalCount)
-	} else {
-		totalCount = 0
-	}
-
-	return r.mapping.ToTopupRecordsTrashed(res), &totalCount, nil
+	return res, nil
 }
 
-func (r *topupRepository) FindAllTopupByCardNumber(req *requests.FindAllTopupsByCardNumber) ([]*record.TopupRecord, *int, error) {
+func (r *topupRepository) FindAllTopupByCardNumber(ctx context.Context, req *requests.FindAllTopupsByCardNumber) ([]*db.GetTopupsByCardNumberRow, error) {
 	offset := (req.Page - 1) * req.PageSize
 
 	reqDb := db.GetTopupsByCardNumberParams{
@@ -109,38 +82,31 @@ func (r *topupRepository) FindAllTopupByCardNumber(req *requests.FindAllTopupsBy
 		Offset:     int32(offset),
 	}
 
-	res, err := r.db.GetTopupsByCardNumber(r.ctx, reqDb)
+	res, err := r.db.GetTopupsByCardNumber(ctx, reqDb)
 
 	if err != nil {
-		return nil, nil, topup_errors.ErrFindTopupsByCardNumberFailed
+		return nil, topup_errors.ErrFindTopupsByCardNumberFailed
 	}
 
-	var totalCount int
-	if len(res) > 0 {
-		totalCount = int(res[0].TotalCount)
-	} else {
-		totalCount = 0
-	}
-
-	return r.mapping.ToTopupByCardNumberRecords(res), &totalCount, nil
+	return res, nil
 }
 
-func (r *topupRepository) FindById(topup_id int) (*record.TopupRecord, error) {
-	res, err := r.db.GetTopupByID(r.ctx, int32(topup_id))
+func (r *topupRepository) FindById(ctx context.Context, topup_id int) (*db.GetTopupByIDRow, error) {
+	res, err := r.db.GetTopupByID(ctx, int32(topup_id))
 	if err != nil {
 		return nil, topup_errors.ErrFindTopupByIdFailed
 	}
-	return r.mapping.ToTopupRecord(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) GetMonthTopupStatusSuccess(req *requests.MonthTopupStatus) ([]*record.TopupRecordMonthStatusSuccess, error) {
+func (r *topupRepository) GetMonthTopupStatusSuccess(ctx context.Context, req *requests.MonthTopupStatus) ([]*db.GetMonthTopupStatusSuccessRow, error) {
 	currentDate := time.Date(req.Year, time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
 	prevDate := currentDate.AddDate(0, -1, 0)
 
 	lastDayCurrentMonth := currentDate.AddDate(0, 1, -1)
 	lastDayPrevMonth := prevDate.AddDate(0, 1, -1)
 
-	res, err := r.db.GetMonthTopupStatusSuccess(r.ctx, db.GetMonthTopupStatusSuccessParams{
+	res, err := r.db.GetMonthTopupStatusSuccess(ctx, db.GetMonthTopupStatusSuccessParams{
 		Column1: currentDate,
 		Column2: lastDayCurrentMonth,
 		Column3: prevDate,
@@ -151,30 +117,27 @@ func (r *topupRepository) GetMonthTopupStatusSuccess(req *requests.MonthTopupSta
 		return nil, topup_errors.ErrGetMonthTopupStatusSuccessFailed
 	}
 
-	so := r.mapping.ToTopupRecordsMonthStatusSuccess(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *topupRepository) GetYearlyTopupStatusSuccess(year int) ([]*record.TopupRecordYearStatusSuccess, error) {
-	res, err := r.db.GetYearlyTopupStatusSuccess(r.ctx, int32(year))
+func (r *topupRepository) GetYearlyTopupStatusSuccess(ctx context.Context, year int) ([]*db.GetYearlyTopupStatusSuccessRow, error) {
+	res, err := r.db.GetYearlyTopupStatusSuccess(ctx, int32(year))
 
 	if err != nil {
 		return nil, topup_errors.ErrGetYearlyTopupStatusSuccessFailed
 	}
-	so := r.mapping.ToTopupRecordsYearStatusSuccess(res)
 
-	return so, nil
+	return res, nil
 }
 
-func (r *topupRepository) GetMonthTopupStatusFailed(req *requests.MonthTopupStatus) ([]*record.TopupRecordMonthStatusFailed, error) {
+func (r *topupRepository) GetMonthTopupStatusFailed(ctx context.Context, req *requests.MonthTopupStatus) ([]*db.GetMonthTopupStatusFailedRow, error) {
 	currentDate := time.Date(req.Year, time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
 	prevDate := currentDate.AddDate(0, -1, 0)
 
 	lastDayCurrentMonth := currentDate.AddDate(0, 1, -1)
 	lastDayPrevMonth := prevDate.AddDate(0, 1, -1)
 
-	res, err := r.db.GetMonthTopupStatusFailed(r.ctx, db.GetMonthTopupStatusFailedParams{
+	res, err := r.db.GetMonthTopupStatusFailed(ctx, db.GetMonthTopupStatusFailedParams{
 		Column1: currentDate,
 		Column2: lastDayCurrentMonth,
 		Column3: prevDate,
@@ -185,31 +148,27 @@ func (r *topupRepository) GetMonthTopupStatusFailed(req *requests.MonthTopupStat
 		return nil, topup_errors.ErrGetMonthTopupStatusFailedFailed
 	}
 
-	so := r.mapping.ToTopupRecordsMonthStatusFailed(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *topupRepository) GetYearlyTopupStatusFailed(year int) ([]*record.TopupRecordYearStatusFailed, error) {
-	res, err := r.db.GetYearlyTopupStatusFailed(r.ctx, int32(year))
+func (r *topupRepository) GetYearlyTopupStatusFailed(ctx context.Context, year int) ([]*db.GetYearlyTopupStatusFailedRow, error) {
+	res, err := r.db.GetYearlyTopupStatusFailed(ctx, int32(year))
 
 	if err != nil {
 		return nil, topup_errors.ErrGetYearlyTopupStatusFailedFailed
 	}
 
-	so := r.mapping.ToTopupRecordsYearStatusFailed(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *topupRepository) GetMonthTopupStatusSuccessByCardNumber(req *requests.MonthTopupStatusCardNumber) ([]*record.TopupRecordMonthStatusSuccess, error) {
+func (r *topupRepository) GetMonthTopupStatusSuccessByCardNumber(ctx context.Context, req *requests.MonthTopupStatusCardNumber) ([]*db.GetMonthTopupStatusSuccessCardNumberRow, error) {
 	currentDate := time.Date(req.Year, time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
 	prevDate := currentDate.AddDate(0, -1, 0)
 
 	lastDayCurrentMonth := currentDate.AddDate(0, 1, -1)
 	lastDayPrevMonth := prevDate.AddDate(0, 1, -1)
 
-	res, err := r.db.GetMonthTopupStatusSuccessCardNumber(r.ctx, db.GetMonthTopupStatusSuccessCardNumberParams{
+	res, err := r.db.GetMonthTopupStatusSuccessCardNumber(ctx, db.GetMonthTopupStatusSuccessCardNumberParams{
 		CardNumber: req.CardNumber,
 		Column2:    currentDate,
 		Column3:    lastDayCurrentMonth,
@@ -221,13 +180,11 @@ func (r *topupRepository) GetMonthTopupStatusSuccessByCardNumber(req *requests.M
 		return nil, topup_errors.ErrGetMonthTopupStatusSuccessByCardFailed
 	}
 
-	so := r.mapping.ToTopupRecordsMonthStatusSuccessByCardNumber(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *topupRepository) GetYearlyTopupStatusSuccessByCardNumber(req *requests.YearTopupStatusCardNumber) ([]*record.TopupRecordYearStatusSuccess, error) {
-	res, err := r.db.GetYearlyTopupStatusSuccessCardNumber(r.ctx, db.GetYearlyTopupStatusSuccessCardNumberParams{
+func (r *topupRepository) GetYearlyTopupStatusSuccessByCardNumber(ctx context.Context, req *requests.YearTopupStatusCardNumber) ([]*db.GetYearlyTopupStatusSuccessCardNumberRow, error) {
+	res, err := r.db.GetYearlyTopupStatusSuccessCardNumber(ctx, db.GetYearlyTopupStatusSuccessCardNumberParams{
 		CardNumber: req.CardNumber,
 		Column2:    int32(req.Year),
 	})
@@ -236,12 +193,10 @@ func (r *topupRepository) GetYearlyTopupStatusSuccessByCardNumber(req *requests.
 		return nil, topup_errors.ErrGetYearlyTopupStatusSuccessByCardFailed
 	}
 
-	so := r.mapping.ToTopupRecordsYearStatusSuccessByCardNumber(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *topupRepository) GetMonthTopupStatusFailedByCardNumber(req *requests.MonthTopupStatusCardNumber) ([]*record.TopupRecordMonthStatusFailed, error) {
+func (r *topupRepository) GetMonthTopupStatusFailedByCardNumber(ctx context.Context, req *requests.MonthTopupStatusCardNumber) ([]*db.GetMonthTopupStatusFailedCardNumberRow, error) {
 	cardNumber := req.CardNumber
 	year := req.Year
 	month := req.Month
@@ -252,7 +207,7 @@ func (r *topupRepository) GetMonthTopupStatusFailedByCardNumber(req *requests.Mo
 	lastDayCurrentMonth := currentDate.AddDate(0, 1, -1)
 	lastDayPrevMonth := prevDate.AddDate(0, 1, -1)
 
-	res, err := r.db.GetMonthTopupStatusFailedCardNumber(r.ctx, db.GetMonthTopupStatusFailedCardNumberParams{
+	res, err := r.db.GetMonthTopupStatusFailedCardNumber(ctx, db.GetMonthTopupStatusFailedCardNumberParams{
 		CardNumber: cardNumber,
 		Column2:    currentDate,
 		Column3:    lastDayCurrentMonth,
@@ -264,80 +219,73 @@ func (r *topupRepository) GetMonthTopupStatusFailedByCardNumber(req *requests.Mo
 		return nil, topup_errors.ErrGetMonthTopupStatusFailedByCardFailed
 	}
 
-	so := r.mapping.ToTopupRecordsMonthStatusFailedByCardNumber(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *topupRepository) GetYearlyTopupStatusFailedByCardNumber(req *requests.YearTopupStatusCardNumber) ([]*record.TopupRecordYearStatusFailed, error) {
-	cardNumber := req.CardNumber
-	year := req.Year
-
-	res, err := r.db.GetYearlyTopupStatusFailedCardNumber(r.ctx, db.GetYearlyTopupStatusFailedCardNumberParams{
-		CardNumber: cardNumber,
-		Column2:    int32(year),
+func (r *topupRepository) GetYearlyTopupStatusFailedByCardNumber(ctx context.Context, req *requests.YearTopupStatusCardNumber) ([]*db.GetYearlyTopupStatusFailedCardNumberRow, error) {
+	res, err := r.db.GetYearlyTopupStatusFailedCardNumber(ctx, db.GetYearlyTopupStatusFailedCardNumberParams{
+		CardNumber: req.CardNumber,
+		Column2:    int32(req.Year),
 	})
 
 	if err != nil {
-		return nil, topup_errors.ErrGetYearlyTopupStatusFailedByCardFailed
+		return nil, topup_errors.ErrGetYearlyTopupStatusSuccessByCardFailed
 	}
 
-	so := r.mapping.ToTopupRecordsYearStatusFailedByCardNumber(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *topupRepository) GetMonthlyTopupMethods(year int) ([]*record.TopupMonthMethod, error) {
+func (r *topupRepository) GetMonthlyTopupMethods(ctx context.Context, year int) ([]*db.GetMonthlyTopupMethodsRow, error) {
 	yearStart := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	res, err := r.db.GetMonthlyTopupMethods(r.ctx, yearStart)
+	res, err := r.db.GetMonthlyTopupMethods(ctx, yearStart)
 
 	if err != nil {
 		return nil, topup_errors.ErrGetMonthlyTopupMethodsFailed
 	}
 
-	return r.mapping.ToTopupMonthlyMethods(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) GetYearlyTopupMethods(year int) ([]*record.TopupYearlyMethod, error) {
-	res, err := r.db.GetYearlyTopupMethods(r.ctx, year)
+func (r *topupRepository) GetYearlyTopupMethods(ctx context.Context, year int) ([]*db.GetYearlyTopupMethodsRow, error) {
+	res, err := r.db.GetYearlyTopupMethods(ctx, year)
 
 	if err != nil {
 		return nil, topup_errors.ErrGetYearlyTopupMethodsFailed
 	}
 
-	return r.mapping.ToTopupYearlyMethods(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) GetMonthlyTopupAmounts(year int) ([]*record.TopupMonthAmount, error) {
+func (r *topupRepository) GetMonthlyTopupAmounts(ctx context.Context, year int) ([]*db.GetMonthlyTopupAmountsRow, error) {
 	yearStart := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	res, err := r.db.GetMonthlyTopupAmounts(r.ctx, yearStart)
+	res, err := r.db.GetMonthlyTopupAmounts(ctx, yearStart)
 
 	if err != nil {
 		return nil, topup_errors.ErrGetMonthlyTopupAmountsFailed
 	}
 
-	return r.mapping.ToTopupMonthlyAmounts(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) GetYearlyTopupAmounts(year int) ([]*record.TopupYearlyAmount, error) {
-	res, err := r.db.GetYearlyTopupAmounts(r.ctx, year)
+func (r *topupRepository) GetYearlyTopupAmounts(ctx context.Context, year int) ([]*db.GetYearlyTopupAmountsRow, error) {
+	res, err := r.db.GetYearlyTopupAmounts(ctx, year)
 
 	if err != nil {
 		return nil, topup_errors.ErrGetYearlyTopupAmountsFailed
 	}
 
-	return r.mapping.ToTopupYearlyAmounts(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) GetMonthlyTopupMethodsByCardNumber(req *requests.YearMonthMethod) ([]*record.TopupMonthMethod, error) {
+func (r *topupRepository) GetMonthlyTopupMethodsByCardNumber(ctx context.Context, req *requests.YearMonthMethod) ([]*db.GetMonthlyTopupMethodsByCardNumberRow, error) {
 	year := req.Year
 	cardNumber := req.CardNumber
 
 	yearStart := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	res, err := r.db.GetMonthlyTopupMethodsByCardNumber(r.ctx, db.GetMonthlyTopupMethodsByCardNumberParams{
+	res, err := r.db.GetMonthlyTopupMethodsByCardNumber(ctx, db.GetMonthlyTopupMethodsByCardNumberParams{
 		CardNumber: cardNumber,
 		Column2:    yearStart,
 	})
@@ -346,14 +294,14 @@ func (r *topupRepository) GetMonthlyTopupMethodsByCardNumber(req *requests.YearM
 		return nil, topup_errors.ErrGetMonthlyTopupMethodsByCardFailed
 	}
 
-	return r.mapping.ToTopupMonthlyMethodsByCardNumber(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) GetYearlyTopupMethodsByCardNumber(req *requests.YearMonthMethod) ([]*record.TopupYearlyMethod, error) {
+func (r *topupRepository) GetYearlyTopupMethodsByCardNumber(ctx context.Context, req *requests.YearMonthMethod) ([]*db.GetYearlyTopupMethodsByCardNumberRow, error) {
 	year := req.Year
 	cardNumber := req.CardNumber
 
-	res, err := r.db.GetYearlyTopupMethodsByCardNumber(r.ctx, db.GetYearlyTopupMethodsByCardNumberParams{
+	res, err := r.db.GetYearlyTopupMethodsByCardNumber(ctx, db.GetYearlyTopupMethodsByCardNumberParams{
 		CardNumber: cardNumber,
 		Column2:    year,
 	})
@@ -362,16 +310,16 @@ func (r *topupRepository) GetYearlyTopupMethodsByCardNumber(req *requests.YearMo
 		return nil, topup_errors.ErrGetYearlyTopupMethodsByCardFailed
 	}
 
-	return r.mapping.ToTopupYearlyMethodsByCardNumber(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) GetMonthlyTopupAmountsByCardNumber(req *requests.YearMonthMethod) ([]*record.TopupMonthAmount, error) {
+func (r *topupRepository) GetMonthlyTopupAmountsByCardNumber(ctx context.Context, req *requests.YearMonthMethod) ([]*db.GetMonthlyTopupAmountsByCardNumberRow, error) {
 	year := req.Year
 	cardNumber := req.CardNumber
 
 	yearStart := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	res, err := r.db.GetMonthlyTopupAmountsByCardNumber(r.ctx, db.GetMonthlyTopupAmountsByCardNumberParams{
+	res, err := r.db.GetMonthlyTopupAmountsByCardNumber(ctx, db.GetMonthlyTopupAmountsByCardNumberParams{
 		CardNumber: cardNumber,
 		Column2:    yearStart,
 	})
@@ -380,14 +328,14 @@ func (r *topupRepository) GetMonthlyTopupAmountsByCardNumber(req *requests.YearM
 		return nil, topup_errors.ErrGetMonthlyTopupAmountsByCardFailed
 	}
 
-	return r.mapping.ToTopupMonthlyAmountsByCardNumber(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) GetYearlyTopupAmountsByCardNumber(req *requests.YearMonthMethod) ([]*record.TopupYearlyAmount, error) {
+func (r *topupRepository) GetYearlyTopupAmountsByCardNumber(ctx context.Context, req *requests.YearMonthMethod) ([]*db.GetYearlyTopupAmountsByCardNumberRow, error) {
 	year := req.Year
 	cardNumber := req.CardNumber
 
-	res, err := r.db.GetYearlyTopupAmountsByCardNumber(r.ctx, db.GetYearlyTopupAmountsByCardNumberParams{
+	res, err := r.db.GetYearlyTopupAmountsByCardNumber(ctx, db.GetYearlyTopupAmountsByCardNumberParams{
 		CardNumber: cardNumber,
 		Column2:    year,
 	})
@@ -396,26 +344,26 @@ func (r *topupRepository) GetYearlyTopupAmountsByCardNumber(req *requests.YearMo
 		return nil, topup_errors.ErrGetYearlyTopupAmountsByCardFailed
 	}
 
-	return r.mapping.ToTopupYearlyAmountsByCardNumber(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) CreateTopup(request *requests.CreateTopupRequest) (*record.TopupRecord, error) {
+func (r *topupRepository) CreateTopup(ctx context.Context, request *requests.CreateTopupRequest) (*db.CreateTopupRow, error) {
 	req := db.CreateTopupParams{
 		CardNumber:  request.CardNumber,
 		TopupAmount: int32(request.TopupAmount),
 		TopupMethod: request.TopupMethod,
 	}
 
-	res, err := r.db.CreateTopup(r.ctx, req)
+	res, err := r.db.CreateTopup(ctx, req)
 
 	if err != nil {
 		return nil, topup_errors.ErrCreateTopupFailed
 	}
 
-	return r.mapping.ToTopupRecord(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) UpdateTopup(request *requests.UpdateTopupRequest) (*record.TopupRecord, error) {
+func (r *topupRepository) UpdateTopup(ctx context.Context, request *requests.UpdateTopupRequest) (*db.UpdateTopupRow, error) {
 	req := db.UpdateTopupParams{
 		TopupID:     int32(*request.TopupID),
 		CardNumber:  request.CardNumber,
@@ -423,71 +371,71 @@ func (r *topupRepository) UpdateTopup(request *requests.UpdateTopupRequest) (*re
 		TopupMethod: request.TopupMethod,
 	}
 
-	res, err := r.db.UpdateTopup(r.ctx, req)
+	res, err := r.db.UpdateTopup(ctx, req)
 
 	if err != nil {
 		return nil, topup_errors.ErrUpdateTopupFailed
 	}
 
-	return r.mapping.ToTopupRecord(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) UpdateTopupAmount(request *requests.UpdateTopupAmount) (*record.TopupRecord, error) {
+func (r *topupRepository) UpdateTopupAmount(ctx context.Context, request *requests.UpdateTopupAmount) (*db.UpdateTopupAmountRow, error) {
 	req := db.UpdateTopupAmountParams{
 		TopupID:     int32(request.TopupID),
 		TopupAmount: int32(request.TopupAmount),
 	}
 
-	res, err := r.db.UpdateTopupAmount(r.ctx, req)
+	res, err := r.db.UpdateTopupAmount(ctx, req)
 
 	if err != nil {
 		return nil, topup_errors.ErrUpdateTopupAmountFailed
 	}
 
-	return r.mapping.ToTopupRecord(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) UpdateTopupStatus(request *requests.UpdateTopupStatus) (*record.TopupRecord, error) {
+func (r *topupRepository) UpdateTopupStatus(ctx context.Context, request *requests.UpdateTopupStatus) (*db.UpdateTopupStatusRow, error) {
 	req := db.UpdateTopupStatusParams{
 		TopupID: int32(request.TopupID),
 		Status:  request.Status,
 	}
 
-	res, err := r.db.UpdateTopupStatus(r.ctx, req)
+	res, err := r.db.UpdateTopupStatus(ctx, req)
 
 	if err != nil {
 		return nil, topup_errors.ErrUpdateTopupStatusFailed
 	}
 
-	return r.mapping.ToTopupRecord(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) TrashedTopup(topup_id int) (*record.TopupRecord, error) {
-	res, err := r.db.TrashTopup(r.ctx, int32(topup_id))
+func (r *topupRepository) TrashedTopup(ctx context.Context, topup_id int) (*db.Topup, error) {
+	res, err := r.db.TrashTopup(ctx, int32(topup_id))
 	if err != nil {
 		return nil, topup_errors.ErrTrashedTopupFailed
 	}
-	return r.mapping.ToTopupRecord(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) RestoreTopup(topup_id int) (*record.TopupRecord, error) {
-	res, err := r.db.RestoreTopup(r.ctx, int32(topup_id))
+func (r *topupRepository) RestoreTopup(ctx context.Context, topup_id int) (*db.Topup, error) {
+	res, err := r.db.RestoreTopup(ctx, int32(topup_id))
 	if err != nil {
 		return nil, topup_errors.ErrRestoreTopupFailed
 	}
-	return r.mapping.ToTopupRecord(res), nil
+	return res, nil
 }
 
-func (r *topupRepository) DeleteTopupPermanent(topup_id int) (bool, error) {
-	err := r.db.DeleteTopupPermanently(r.ctx, int32(topup_id))
+func (r *topupRepository) DeleteTopupPermanent(ctx context.Context, topup_id int) (bool, error) {
+	err := r.db.DeleteTopupPermanently(ctx, int32(topup_id))
 	if err != nil {
 		return false, topup_errors.ErrDeleteTopupPermanentFailed
 	}
 	return true, nil
 }
 
-func (r *topupRepository) RestoreAllTopup() (bool, error) {
-	err := r.db.RestoreAllTopups(r.ctx)
+func (r *topupRepository) RestoreAllTopup(ctx context.Context) (bool, error) {
+	err := r.db.RestoreAllTopups(ctx)
 
 	if err != nil {
 		return false, topup_errors.ErrRestoreAllTopupFailed
@@ -496,8 +444,8 @@ func (r *topupRepository) RestoreAllTopup() (bool, error) {
 	return true, nil
 }
 
-func (r *topupRepository) DeleteAllTopupPermanent() (bool, error) {
-	err := r.db.DeleteAllPermanentTopups(r.ctx)
+func (r *topupRepository) DeleteAllTopupPermanent(ctx context.Context) (bool, error) {
+	err := r.db.DeleteAllPermanentTopups(ctx)
 
 	if err != nil {
 		return false, topup_errors.ErrDeleteAllTopupPermanentFailed

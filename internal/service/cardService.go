@@ -1,15 +1,19 @@
 package service
 
 import (
+	card_cache "MamangRust/paymentgatewaygrpc/internal/cache/card"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/service"
+	"MamangRust/paymentgatewaygrpc/internal/errorhandler"
 	"MamangRust/paymentgatewaygrpc/internal/repository"
+	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/card_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/user_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
-	"net/http"
+	"MamangRust/paymentgatewaygrpc/pkg/observability"
+	"context"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
 
@@ -17,33 +21,33 @@ type cardService struct {
 	cardRepository repository.CardRepository
 	userRepository repository.UserRepository
 	logger         logger.LoggerInterface
-	mapping        responseservice.CardResponseMapper
+	observability  observability.TraceLoggerObservability
+	cache          card_cache.CardMencache
 }
 
-func NewCardService(
-	cardRepository repository.CardRepository,
-	userRepository repository.UserRepository,
-	logger logger.LoggerInterface,
-	mapper responseservice.CardResponseMapper,
+type CardServiceDeps struct {
+	CardRepo      repository.CardRepository
+	UserRepo      repository.UserRepository
+	Logger        logger.LoggerInterface
+	Observability observability.TraceLoggerObservability
+	cache         card_cache.CardMencache
+}
 
-) *cardService {
+func NewCardService(deps CardServiceDeps) CardService {
 	return &cardService{
-		cardRepository: cardRepository,
-		userRepository: userRepository,
-		logger:         logger,
-		mapping:        mapper,
+		cardRepository: deps.CardRepo,
+		userRepository: deps.UserRepo,
+		logger:         deps.Logger,
+		observability:  deps.Observability,
+		cache:          deps.cache,
 	}
 }
 
-func (s *cardService) FindAll(req *requests.FindAllCards) ([]*response.CardResponse, *int, *response.ErrorResponse) {
+func (s *cardService) FindAll(ctx context.Context, req *requests.FindAllCards) ([]*db.GetCardsRow, *int, error) {
+	const method = "FindAll"
+
 	page := req.Page
 	pageSize := req.PageSize
-	search := req.Search
-
-	s.logger.Debug("Fetching card records",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
 
 	if page <= 0 {
 		page = 1
@@ -52,37 +56,59 @@ func (s *cardService) FindAll(req *requests.FindAllCards) ([]*response.CardRespo
 		pageSize = 10
 	}
 
-	cards, totalRecords, err := s.cardRepository.FindAllCards(req)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("page", page),
+		attribute.Int("pageSize", pageSize),
+		attribute.String("search", req.Search))
 
+	defer func() {
+		end(status)
+	}()
+
+	if data, total, found := s.cache.GetFindAllCache(ctx, req); found {
+		logSuccess("Successfully fetched card records from cache", zap.Int("totalRecords", *total), zap.Int("page", page), zap.Int("pageSize", pageSize))
+		return data, total, nil
+	}
+
+	cards, err := s.cardRepository.FindAllCards(ctx, req)
 	if err != nil {
-		s.logger.Error("Failed to fetch card",
-			zap.Error(err),
+		status = "error"
+		return errorhandler.HandlerErrorPagination[[]*db.GetCardsRow](
+			s.logger,
+			card_errors.ErrFailedFindAllCards,
+			method,
+			span,
 			zap.Int("page", req.Page),
 			zap.Int("pageSize", req.PageSize),
-			zap.String("search", req.Search))
-
-		return nil, nil, card_errors.ErrFailedFindAllCards
+			zap.String("search", req.Search),
+		)
 	}
 
-	responseData := s.mapping.ToCardsResponse(cards)
+	var totalCount int
 
-	s.logger.Debug("Successfully fetched card records",
-		zap.Int("totalRecords", *totalRecords),
+	if len(cards) > 0 {
+		totalCount = int(cards[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+
+	s.cache.SetFindAllCache(ctx, req, cards, &totalCount)
+
+	logSuccess("Successfully fetched card records",
+		zap.Int("totalRecords", totalCount),
+
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
-	return responseData, totalRecords, nil
+	return cards, &totalCount, nil
 }
 
-func (s *cardService) FindByActive(req *requests.FindAllCards) ([]*response.CardResponseDeleteAt, *int, *response.ErrorResponse) {
+func (s *cardService) FindByActive(ctx context.Context, req *requests.FindAllCards) ([]*db.GetActiveCardsWithCountRow, *int, error) {
+	const method = "FindByActive"
+
 	page := req.Page
 	pageSize := req.PageSize
 	search := req.Search
-
-	s.logger.Debug("Fetching active card records",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
 
 	if page <= 0 {
 		page = 1
@@ -91,37 +117,59 @@ func (s *cardService) FindByActive(req *requests.FindAllCards) ([]*response.Card
 		pageSize = 10
 	}
 
-	res, totalRecords, err := s.cardRepository.FindByActive(req)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("page", page),
+		attribute.Int("pageSize", pageSize),
+		attribute.String("search", search))
 
-	if err != nil {
-		s.logger.Error("Failed to fetch active card records",
-			zap.Error(err),
-			zap.Int("page", page),
-			zap.Int("pageSize", pageSize),
-			zap.String("search", search))
+	defer func() {
+		end(status)
+	}()
 
-		return nil, nil, card_errors.ErrFailedFindActiveCards
+	if data, total, found := s.cache.GetByActiveCache(ctx, req); found {
+		logSuccess("Successfully fetched active card records from cache", zap.Int("totalRecords", *total), zap.Int("page", page), zap.Int("pageSize", pageSize))
+		return data, total, nil
 	}
 
-	responseData := s.mapping.ToCardsResponseDeleteAt(res)
+	res, err := s.cardRepository.FindByActive(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandlerErrorPagination[[]*db.GetActiveCardsWithCountRow](
+			s.logger,
+			card_errors.ErrFailedFindActiveCards,
+			method,
+			span,
 
-	s.logger.Debug("Successfully fetched active card records",
-		zap.Int("totalRecords", *totalRecords),
+			zap.Int("page", page),
+			zap.Int("pageSize", pageSize),
+			zap.String("search", search),
+		)
+	}
+
+	var totalCount int
+
+	if len(res) > 0 {
+		totalCount = int(res[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+
+	s.cache.SetByActiveCache(ctx, req, res, &totalCount)
+
+	logSuccess("Successfully fetched active card records",
+		zap.Int("totalRecords", totalCount),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
-	return responseData, totalRecords, nil
+	return res, &totalCount, nil
 }
 
-func (s *cardService) FindByTrashed(req *requests.FindAllCards) ([]*response.CardResponseDeleteAt, *int, *response.ErrorResponse) {
+func (s *cardService) FindByTrashed(ctx context.Context, req *requests.FindAllCards) ([]*db.GetTrashedCardsWithCountRow, *int, error) {
+	const method = "FindByTrashed"
+
 	page := req.Page
 	pageSize := req.PageSize
 	search := req.Search
-
-	s.logger.Debug("Fetching trashed card records",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
 
 	if page <= 0 {
 		page = 1
@@ -130,1034 +178,1507 @@ func (s *cardService) FindByTrashed(req *requests.FindAllCards) ([]*response.Car
 		pageSize = 10
 	}
 
-	res, totalRecords, err := s.cardRepository.FindByTrashed(req)
-	if err != nil {
-		s.logger.Error("Failed to fetch trashed card records",
-			zap.Error(err),
-			zap.Int("page", page),
-			zap.Int("pageSize", pageSize),
-			zap.String("search", search))
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("page", page),
+		attribute.Int("pageSize", pageSize),
+		attribute.String("search", search))
 
-		return nil, nil, card_errors.ErrFailedFindTrashedCards
+	defer func() {
+		end(status)
+	}()
+
+	if data, total, found := s.cache.GetByTrashedCache(ctx, req); found {
+		logSuccess("Successfully fetched trashed card records from cache", zap.Int("totalRecords", *total), zap.Int("page", page), zap.Int("pageSize", pageSize))
+		return data, total, nil
 	}
 
-	responseData := s.mapping.ToCardsResponseDeleteAt(res)
+	res, err := s.cardRepository.FindByTrashed(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandlerErrorPagination[[]*db.GetTrashedCardsWithCountRow](
+			s.logger,
+			card_errors.ErrFailedFindTrashedCards,
+			method,
+			span,
 
-	s.logger.Debug("Successfully fetched trashed card records",
-		zap.Int("totalRecords", *totalRecords),
+			zap.Int("page", page),
+			zap.Int("pageSize", pageSize),
+			zap.String("search", search),
+		)
+	}
+
+	var totalCount int
+
+	if len(res) > 0 {
+		totalCount = int(res[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+
+	s.cache.SetByTrashedCache(ctx, req, res, &totalCount)
+
+	logSuccess("Successfully fetched trashed card records",
+		zap.Int("totalRecords", totalCount),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
-	return responseData, totalRecords, nil
+	return res, &totalCount, nil
 }
 
-func (s *cardService) FindById(card_id int) (*response.CardResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching card by ID", zap.Int("card_id", card_id))
+func (s *cardService) FindById(ctx context.Context, card_id int) (*db.GetCardByIDRow, error) {
+	const method = "FindById"
 
-	res, err := s.cardRepository.FindById(card_id)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("card_id", card_id))
 
-	if err != nil {
-		s.logger.Error("Failed to retrieve Card details",
-			zap.Error(err),
-			zap.Int("card_id", card_id))
+	defer func() {
+		end(status)
+	}()
 
-		return nil, card_errors.ErrFailedFindById
+	if data, found := s.cache.GetByIdCache(ctx, card_id); found {
+		logSuccess("Successfully fetched card from cache", zap.Int("card.id", card_id))
+		return data, nil
 	}
 
-	so := s.mapping.ToCardResponse(res)
+	res, err := s.cardRepository.FindById(ctx, card_id)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*db.GetCardByIDRow](
+			s.logger,
+			card_errors.ErrFailedFindById,
+			method,
+			span,
 
-	s.logger.Debug("Successfully fetched card", zap.Int("card_id", card_id))
+			zap.Int("card_id", card_id),
+		)
+	}
 
-	return so, nil
+	s.cache.SetByIdCache(ctx, card_id, res)
+
+	logSuccess("Successfully fetched card", zap.Int("card_id", card_id))
+
+	return res, nil
 }
 
-func (s *cardService) FindByUserID(user_id int) (*response.CardResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching card by user ID", zap.Int("user_id", user_id))
+func (s *cardService) FindByUserID(ctx context.Context, user_id int) (*db.GetCardByUserIDRow, error) {
+	const method = "FindByUserID"
 
-	res, err := s.cardRepository.FindCardByUserId(user_id)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("user_id", user_id))
 
-	if err != nil {
-		s.logger.Error("Failed to retrieve Card details by user",
-			zap.Error(err),
-			zap.Int("user_id", user_id))
+	defer func() {
+		end(status)
+	}()
 
-		return nil, card_errors.ErrFailedFindByUserID
+	if data, found := s.cache.GetByUserIDCache(ctx, user_id); found {
+		logSuccess("Successfully fetched card records by user ID from cache", zap.Int("user.id", user_id))
+		return data, nil
 	}
 
-	so := s.mapping.ToCardResponse(res)
+	res, err := s.cardRepository.FindCardByUserId(ctx, user_id)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*db.GetCardByUserIDRow](
+			s.logger,
+			card_errors.ErrFailedFindByUserID,
+			method,
+			span,
 
-	s.logger.Debug("Successfully fetched card records by user ID", zap.Int("user_id", user_id))
+			zap.Int("user_id", user_id),
+		)
+	}
 
-	return so, nil
+	s.cache.SetByUserIDCache(ctx, user_id, res)
+
+	logSuccess("Successfully fetched card records by user ID", zap.Int("user_id", user_id))
+
+	return res, nil
 }
 
-func (s *cardService) DashboardCard() (*response.DashboardCard, *response.ErrorResponse) {
-	s.logger.Debug("Starting DashboardCard service")
+func (s *cardService) DashboardCard(ctx context.Context) (*response.DashboardCard, error) {
+	const method = "DashboardCard"
 
-	totalBalance, err := s.cardRepository.GetTotalBalances()
-	if err != nil {
-		s.logger.Error("Failed to retrieve total balance",
-			zap.Error(err),
-		)
-		return nil, card_errors.ErrFailedFindTotalBalances
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method)
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetDashboardCardCache(ctx); found {
+		s.logger.Debug("DashboardCard cache hit")
+		return data, nil
 	}
 
-	totalTopup, err := s.cardRepository.GetTotalTopAmount()
+	totalBalance, err := s.cardRepository.GetTotalBalances(ctx)
 	if err != nil {
-		s.logger.Error("Failed to retrieve total top-up amount",
-			zap.Error(err),
+		status = "error"
+		return errorhandler.HandleError[*response.DashboardCard](
+			s.logger,
+			card_errors.ErrFailedFindTotalBalances,
+			method,
+			span,
 		)
-		return nil, card_errors.ErrFailedFindTotalTopAmount
 	}
 
-	totalWithdraw, err := s.cardRepository.GetTotalWithdrawAmount()
+	totalTopup, err := s.cardRepository.GetTotalTopAmount(ctx)
 	if err != nil {
-		s.logger.Error("Failed to retrieve total withdrawal amount",
-			zap.Error(err),
+		status = "error"
+		return errorhandler.HandleError[*response.DashboardCard](
+			s.logger,
+			card_errors.ErrFailedFindTotalTopAmount,
+			method,
+			span,
 		)
-		return nil, card_errors.ErrFailedFindTotalWithdrawAmount
 	}
 
-	totalTransaction, err := s.cardRepository.GetTotalTransactionAmount()
+	totalWithdraw, err := s.cardRepository.GetTotalWithdrawAmount(ctx)
 	if err != nil {
-		s.logger.Error("Failed to retrieve total transaction amount",
-			zap.Error(err),
+		status = "error"
+		return errorhandler.HandleError[*response.DashboardCard](
+			s.logger,
+			card_errors.ErrFailedFindTotalWithdrawAmount,
+			method,
+			span,
 		)
-		return nil, card_errors.ErrFailedFindTotalTransactionAmount
 	}
 
-	totalTransfer, err := s.cardRepository.GetTotalTransferAmount()
+	totalTransaction, err := s.cardRepository.GetTotalTransactionAmount(ctx)
 	if err != nil {
-		s.logger.Error("Failed to retrieve total transfer amount",
-			zap.Error(err),
+		status = "error"
+		return errorhandler.HandleError[*response.DashboardCard](
+			s.logger,
+			card_errors.ErrFailedFindTotalTransactionAmount,
+			method,
+			span,
 		)
-		return nil, card_errors.ErrFailedFindTotalTransferAmount
 	}
 
-	s.logger.Debug("Completed DashboardCard service",
-		zap.Int("total_balance", int(*totalBalance)),
-		zap.Int("total_topup", int(*totalTopup)),
-		zap.Int("total_withdraw", int(*totalWithdraw)),
-		zap.Int("total_transaction", int(*totalTransaction)),
-		zap.Int("total_transfer", int(*totalTransfer)),
-	)
+	totalTransfer, err := s.cardRepository.GetTotalTransferAmount(ctx)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*response.DashboardCard](
+			s.logger,
+			card_errors.ErrFailedFindTotalTransferAmount,
+			method,
+			span,
+		)
+	}
 
-	return &response.DashboardCard{
+	result := &response.DashboardCard{
 		TotalBalance:     totalBalance,
 		TotalTopup:       totalTopup,
 		TotalWithdraw:    totalWithdraw,
 		TotalTransaction: totalTransaction,
 		TotalTransfer:    totalTransfer,
-	}, nil
+	}
+
+	s.cache.SetDashboardCardCache(ctx, result)
+
+	logSuccess("Completed DashboardCard service",
+		zap.Int64("total_balance", *totalBalance),
+		zap.Int64("total_topup", *totalTopup),
+		zap.Int64("total_withdraw", *totalWithdraw),
+		zap.Int64("total_transaction", *totalTransaction),
+		zap.Int64("total_transfer", *totalTransfer),
+	)
+
+	return result, nil
 }
 
-func (s *cardService) DashboardCardCardNumber(cardNumber string) (*response.DashboardCardCardNumber, *response.ErrorResponse) {
-	s.logger.Debug("Starting DashboardCardCardNumber service",
-		zap.String("card_number", cardNumber),
-	)
+func (s *cardService) DashboardCardCardNumber(ctx context.Context, cardNumber string) (*response.DashboardCardCardNumber, error) {
+	const method = "DashboardCardCardNumber"
 
-	totalBalance, err := s.cardRepository.GetTotalBalanceByCardNumber(cardNumber)
-	if err != nil {
-		s.logger.Error("Failed to retrieve total balance for card",
-			zap.String("card_number", cardNumber),
-			zap.Error(err),
-		)
-		return nil, card_errors.ErrFailedFindTotalBalanceByCard
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", cardNumber))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetDashboardCardCardNumberCache(ctx, cardNumber); found {
+		s.logger.Debug("DashboardCardCardNumber cache hit", zap.String("card_number", cardNumber))
+		return data, nil
 	}
 
-	totalTopup, err := s.cardRepository.GetTotalTopupAmountByCardNumber(cardNumber)
+	totalBalance, err := s.cardRepository.GetTotalBalanceByCardNumber(ctx, cardNumber)
+
 	if err != nil {
-		s.logger.Error("Failed to retrieve total top-up amount for card",
+		status = "error"
+		return errorhandler.HandleError[*response.DashboardCardCardNumber](
+			s.logger,
+			card_errors.ErrFailedFindTotalBalanceByCard,
+			method,
+			span,
 			zap.String("card_number", cardNumber),
-			zap.Error(err),
 		)
-		return nil, card_errors.ErrFailedFindTotalTopupAmountByCard
 	}
 
-	totalWithdraw, err := s.cardRepository.GetTotalWithdrawAmountByCardNumber(cardNumber)
+	totalTopup, err := s.cardRepository.GetTotalTopupAmountByCardNumber(ctx, cardNumber)
 	if err != nil {
-		s.logger.Error("Failed to retrieve total withdrawal amount for card",
+		status = "error"
+		return errorhandler.HandleError[*response.DashboardCardCardNumber](
+			s.logger,
+			card_errors.ErrFailedFindTotalTopupAmountByCard,
+			method,
+			span,
 			zap.String("card_number", cardNumber),
-			zap.Error(err),
 		)
-		return nil, card_errors.ErrFailedFindTotalWithdrawAmountByCard
 	}
 
-	totalTransaction, err := s.cardRepository.GetTotalTransactionAmountByCardNumber(cardNumber)
+	totalWithdraw, err := s.cardRepository.GetTotalWithdrawAmountByCardNumber(ctx, cardNumber)
 	if err != nil {
-		s.logger.Error("Failed to retrieve total transaction amount for card",
+		status = "error"
+		return errorhandler.HandleError[*response.DashboardCardCardNumber](
+			s.logger,
+			card_errors.ErrFailedFindTotalWithdrawAmountByCard,
+			method,
+			span,
 			zap.String("card_number", cardNumber),
-			zap.Error(err),
 		)
-		return nil, card_errors.ErrFailedFindTotalTransactionAmountByCard
 	}
 
-	totalTransferSent, err := s.cardRepository.GetTotalTransferAmountBySender(cardNumber)
+	totalTransaction, err := s.cardRepository.GetTotalTransactionAmountByCardNumber(ctx, cardNumber)
 	if err != nil {
-		s.logger.Error("Failed to retrieve total transfer amount sent by card",
+		status = "error"
+		return errorhandler.HandleError[*response.DashboardCardCardNumber](
+			s.logger,
+			card_errors.ErrFailedFindTotalTransactionAmountByCard,
+			method,
+			span,
 			zap.String("card_number", cardNumber),
-			zap.Error(err),
 		)
-		return nil, card_errors.ErrFailedFindTotalTransferAmountBySender
 	}
 
-	totalTransferReceived, err := s.cardRepository.GetTotalTransferAmountByReceiver(cardNumber)
+	totalTransferSent, err := s.cardRepository.GetTotalTransferAmountBySender(ctx, cardNumber)
 	if err != nil {
-		s.logger.Error("Failed to retrieve total transfer amount received by card",
+		status = "error"
+		return errorhandler.HandleError[*response.DashboardCardCardNumber](
+			s.logger,
+			card_errors.ErrFailedFindTotalTransferAmountBySender,
+			method,
+			span,
 			zap.String("card_number", cardNumber),
-			zap.Error(err),
 		)
-		return nil, card_errors.ErrFailedFindTotalTransferAmountByReceiver
 	}
 
-	s.logger.Debug("Completed DashboardCardCardNumber service",
-		zap.String("card_number", cardNumber),
-		zap.Int("total_balance", int(*totalBalance)),
-		zap.Int("total_topup", int(*totalTopup)),
-		zap.Int("total_withdraw", int(*totalWithdraw)),
-		zap.Int("total_transaction", int(*totalTransaction)),
-		zap.Int("total_transfer_sent", int(*totalTransferSent)),
-		zap.Int("total_transfer_received", int(*totalTransferReceived)),
-	)
+	totalTransferReceived, err := s.cardRepository.GetTotalTransferAmountByReceiver(ctx, cardNumber)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*response.DashboardCardCardNumber](
+			s.logger,
+			card_errors.ErrFailedFindTotalTransferAmountByReceiver,
+			method,
+			span,
+			zap.String("card_number", cardNumber),
+		)
+	}
 
-	return &response.DashboardCardCardNumber{
+	result := &response.DashboardCardCardNumber{
 		TotalBalance:          totalBalance,
 		TotalTopup:            totalTopup,
 		TotalWithdraw:         totalWithdraw,
 		TotalTransaction:      totalTransaction,
 		TotalTransferSend:     totalTransferSent,
 		TotalTransferReceiver: totalTransferReceived,
-	}, nil
-}
-func (s *cardService) FindMonthlyBalance(year int) ([]*response.CardResponseMonthBalance, *response.ErrorResponse) {
-	s.logger.Debug("FindMonthlyBalance called", zap.Int("year", year))
-
-	res, err := s.cardRepository.GetMonthlyBalance(year)
-	if err != nil {
-		s.logger.Error("Failed to retrieve monthly balance",
-			zap.Int("year", year),
-			zap.Error(err),
-		)
-
-		return nil, card_errors.ErrFailedFindMonthlyBalance
 	}
 
-	so := s.mapping.ToGetMonthlyBalances(res)
+	s.cache.SetDashboardCardCardNumberCache(ctx, cardNumber, result)
 
-	s.logger.Debug("Monthly balance retrieved successfully",
-		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
-	)
-
-	return so, nil
-}
-
-func (s *cardService) FindYearlyBalance(year int) ([]*response.CardResponseYearlyBalance, *response.ErrorResponse) {
-	s.logger.Debug("FindYearlyBalance called", zap.Int("year", year))
-
-	res, err := s.cardRepository.GetYearlyBalance(year)
-	if err != nil {
-		s.logger.Error("Failed to retrieve yearly balance",
-			zap.Int("year", year),
-			zap.Error(err),
-		)
-
-		return nil, card_errors.ErrFailedFindYearlyBalance
-	}
-
-	so := s.mapping.ToGetYearlyBalances(res)
-
-	s.logger.Debug("Yearly balance retrieved successfully",
-		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
-	)
-
-	return so, nil
-}
-
-func (s *cardService) FindMonthlyTopupAmount(year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
-	s.logger.Debug("FindMonthlyTopupAmount called", zap.Int("year", year))
-
-	res, err := s.cardRepository.GetMonthlyTopupAmount(year)
-
-	if err != nil {
-		s.logger.Error("Failed to retrieve monthly topup amount",
-			zap.Int("year", year),
-			zap.Error(err),
-		)
-
-		return nil, card_errors.ErrFailedFindMonthlyTopupAmount
-	}
-
-	so := s.mapping.ToGetMonthlyAmounts(res)
-
-	s.logger.Debug("Monthly topup amount retrieved successfully",
-		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
-	)
-
-	return so, nil
-}
-
-func (s *cardService) FindYearlyTopupAmount(year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
-	s.logger.Debug("FindYearlyTopupAmount called", zap.Int("year", year))
-
-	res, err := s.cardRepository.GetYearlyTopupAmount(year)
-
-	if err != nil {
-		s.logger.Error("Failed to retrieve yearly topup amount",
-			zap.Int("year", year),
-			zap.Error(err),
-		)
-
-		return nil, card_errors.ErrFailedFindYearlyTopupAmount
-	}
-
-	so := s.mapping.ToGetYearlyAmounts(res)
-
-	s.logger.Debug("Yearly topup amount retrieved successfully",
-		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
-	)
-
-	return so, nil
-}
-
-func (s *cardService) FindMonthlyWithdrawAmount(year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
-	s.logger.Debug("FindMonthlyWithdrawAmount called", zap.Int("year", year))
-
-	res, err := s.cardRepository.GetMonthlyWithdrawAmount(year)
-
-	if err != nil {
-		s.logger.Error("Failed to retrieve monthly withdraw amount",
-			zap.Int("year", year),
-			zap.Error(err),
-		)
-
-		return nil, card_errors.ErrFailedFindMonthlyWithdrawAmount
-	}
-
-	so := s.mapping.ToGetMonthlyAmounts(res)
-
-	s.logger.Debug("Monthly withdraw amount retrieved successfully",
-		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
-	)
-
-	return so, nil
-}
-
-func (s *cardService) FindYearlyWithdrawAmount(year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
-	s.logger.Debug("FindYearlyWithdrawAmount called", zap.Int("year", year))
-
-	if year <= 0 {
-		return nil, &response.ErrorResponse{
-			Status:  "invalid_request",
-			Message: "Year must be a positive number",
-			Code:    http.StatusBadRequest,
-		}
-	}
-
-	res, err := s.cardRepository.GetYearlyWithdrawAmount(year)
-
-	if err != nil {
-		s.logger.Error("Failed to retrieve yearly withdraw amount",
-			zap.Int("year", year),
-			zap.Error(err),
-		)
-
-		return nil, card_errors.ErrFailedFindYearlyWithdrawAmount
-	}
-
-	so := s.mapping.ToGetYearlyAmounts(res)
-
-	s.logger.Debug("Yearly withdraw amount retrieved successfully",
-		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
-	)
-
-	return so, nil
-}
-
-func (s *cardService) FindMonthlyTransactionAmount(year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
-	s.logger.Debug("FindMonthlyTransactionAmount called", zap.Int("year", year))
-
-	if year <= 0 {
-		return nil, &response.ErrorResponse{
-			Status:  "invalid_request",
-			Message: "Year must be a positive number",
-			Code:    http.StatusBadRequest,
-		}
-	}
-
-	res, err := s.cardRepository.GetMonthlyTransactionAmount(year)
-
-	if err != nil {
-		s.logger.Error("Failed to retrieve monthly transaction amount",
-			zap.Int("year", year),
-			zap.Error(err),
-		)
-
-		return nil, card_errors.ErrFailedFindMonthlyTransactionAmount
-	}
-
-	so := s.mapping.ToGetMonthlyAmounts(res)
-
-	s.logger.Debug("Monthly transaction amount retrieved successfully",
-		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
-	)
-
-	return so, nil
-}
-
-func (s *cardService) FindYearlyTransactionAmount(year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
-	s.logger.Debug("FindYearlyTransactionAmount called", zap.Int("year", year))
-
-	res, err := s.cardRepository.GetYearlyTransactionAmount(year)
-
-	if err != nil {
-		s.logger.Error("Failed to retrieve yearly transaction amount",
-			zap.Int("year", year),
-			zap.Error(err),
-		)
-
-		return nil, card_errors.ErrFailedFindYearlyTransactionAmount
-	}
-
-	so := s.mapping.ToGetYearlyAmounts(res)
-
-	s.logger.Debug("Yearly transaction amount retrieved successfully",
-		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
-	)
-
-	return so, nil
-}
-
-func (s *cardService) FindMonthlyTransferAmountSender(year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
-	s.logger.Debug("FindMonthlyTransferAmountSender called", zap.Int("year", year))
-
-	res, err := s.cardRepository.GetMonthlyTransferAmountSender(year)
-	if err != nil {
-		s.logger.Error("Failed to retrieve monthly transfer sender amount",
-			zap.Int("year", year),
-			zap.Error(err),
-		)
-
-		return nil, card_errors.ErrFailedFindMonthlyTransferAmountSender
-	}
-
-	so := s.mapping.ToGetMonthlyAmounts(res)
-
-	s.logger.Debug("Monthly transfer sender amount retrieved successfully",
-		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
-	)
-
-	return so, nil
-}
-
-func (s *cardService) FindYearlyTransferAmountSender(year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
-	s.logger.Debug("FindYearlyTransferAmountSender called", zap.Int("year", year))
-
-	res, err := s.cardRepository.GetYearlyTransferAmountSender(year)
-
-	if err != nil {
-		s.logger.Error("Failed to retrieve yearly transfer sender amount",
-			zap.Int("year", year),
-			zap.Error(err),
-		)
-
-		return nil, card_errors.ErrFailedFindYearlyTransferAmountSender
-	}
-
-	so := s.mapping.ToGetYearlyAmounts(res)
-
-	s.logger.Debug("Yearly transfer sender amount retrieved successfully",
-		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
-	)
-
-	return so, nil
-}
-
-func (s *cardService) FindMonthlyTransferAmountReceiver(year int) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
-	s.logger.Debug("FindMonthlyTransferAmountReceiver called", zap.Int("year", year))
-
-	res, err := s.cardRepository.GetMonthlyTransferAmountReceiver(year)
-
-	if err != nil {
-		s.logger.Error("Failed to retrieve monthly transfer receiver amount",
-			zap.Int("year", year),
-			zap.Error(err),
-		)
-
-		return nil, card_errors.ErrFailedFindMonthlyTransferAmountReceiver
-	}
-
-	so := s.mapping.ToGetMonthlyAmounts(res)
-
-	s.logger.Debug("Monthly transfer receiver amount retrieved successfully",
-		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
-	)
-
-	return so, nil
-}
-
-func (s *cardService) FindYearlyTransferAmountReceiver(year int) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
-	s.logger.Debug("FindYearlyTransferAmountReceiver called", zap.Int("year", year))
-
-	res, err := s.cardRepository.GetYearlyTransferAmountReceiver(year)
-
-	if err != nil {
-		s.logger.Error("Failed to retrieve yearly transfer receiver amount",
-			zap.Int("year", year),
-			zap.Error(err),
-		)
-
-		return nil, card_errors.ErrFailedFindYearlyTransferAmountReceiver
-	}
-
-	so := s.mapping.ToGetYearlyAmounts(res)
-
-	s.logger.Debug("Yearly transfer receiver amount retrieved successfully",
-		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
-	)
-
-	return so, nil
-}
-
-func (s *cardService) FindMonthlyBalanceByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseMonthBalance, *response.ErrorResponse) {
-	year := req.Year
-
-	s.logger.Debug("FindMonthlyBalance called", zap.Int("year", year))
-
-	res, err := s.cardRepository.GetMonthlyBalancesByCardNumber(req)
-
-	if err != nil {
-		s.logger.Error("Failed to retrieve monthly balance",
-			zap.Int("year", year),
-			zap.Error(err),
-		)
-
-		return nil, card_errors.ErrFailedFindMonthlyBalanceByCard
-	}
-
-	so := s.mapping.ToGetMonthlyBalances(res)
-
-	s.logger.Debug("Monthly balance retrieved successfully",
-		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
-	)
-
-	return so, nil
-}
-
-func (s *cardService) FindYearlyBalanceByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseYearlyBalance, *response.ErrorResponse) {
-	year := req.Year
-
-	s.logger.Debug("FindYearlyBalance called", zap.Int("year", year))
-
-	res, err := s.cardRepository.GetYearlyBalanceByCardNumber(req)
-
-	if err != nil {
-		s.logger.Error("Failed to retrieve yearly balance",
-			zap.Int("year", year),
-			zap.Error(err),
-		)
-
-		return nil, card_errors.ErrFailedFindYearlyBalanceByCard
-	}
-
-	so := s.mapping.ToGetYearlyBalances(res)
-
-	s.logger.Debug("Yearly balance retrieved successfully",
-		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
-	)
-
-	return so, nil
-}
-
-func (s *cardService) FindMonthlyTopupAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
-	cardNumber := req.CardNumber
-	year := req.Year
-
-	s.logger.Debug("FindMonthlyTopupAmountByCardNumber called",
+	logSuccess("Completed DashboardCardCardNumber service",
 		zap.String("card_number", cardNumber),
-		zap.Int("year", year),
+		zap.Int64("total_balance", *totalBalance),
+		zap.Int64("total_topup", *totalTopup),
+		zap.Int64("total_withdraw", *totalWithdraw),
+		zap.Int64("total_transaction", *totalTransaction),
+		zap.Int64("total_transfer_sent", *totalTransferSent),
+		zap.Int64("total_transfer_received", *totalTransferReceived),
 	)
 
-	res, err := s.cardRepository.GetMonthlyTopupAmountByCardNumber(req)
+	return result, nil
+}
 
+func (s *cardService) FindMonthlyBalance(ctx context.Context, year int) ([]*db.GetMonthlyBalancesRow, error) {
+	const method = "FindMonthlyBalance"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthlyBalanceCache(ctx, year); found {
+		logSuccess("Monthly balance cache hit", zap.Int("year", year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetMonthlyBalance(ctx, year)
 	if err != nil {
-		s.logger.Error("Failed to retrieve monthly topup amount by card number",
-			zap.String("card_number", cardNumber),
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyBalancesRow](
+			s.logger,
+			card_errors.ErrFailedFindMonthlyBalance,
+			method,
+			span,
 			zap.Int("year", year),
-			zap.Error(err),
 		)
-
-		return nil, card_errors.ErrFailedFindMonthlyTopupAmountByCard
 	}
 
-	so := s.mapping.ToGetMonthlyAmounts(res)
+	s.cache.SetMonthlyBalanceCache(ctx, year, res)
 
-	s.logger.Debug("Monthly topup amount by card number retrieved successfully",
-		zap.String("card_number", cardNumber),
+	logSuccess("Monthly balance retrieved successfully",
 		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
+		zap.Int("result_count", len(res)),
 	)
 
-	return so, nil
+	return res, nil
 }
 
-func (s *cardService) FindYearlyTopupAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
-	cardNumber := req.CardNumber
-	year := req.Year
+func (s *cardService) FindYearlyBalance(ctx context.Context, year int) ([]*db.GetYearlyBalancesRow, error) {
+	const method = "FindYearlyBalance"
 
-	s.logger.Debug("FindYearlyTopupAmountByCardNumber called",
-		zap.String("card_number", cardNumber),
-		zap.Int("year", year),
-	)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
 
-	res, err := s.cardRepository.GetYearlyTopupAmountByCardNumber(req)
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyBalanceCache(ctx, year); found {
+		logSuccess("Yearly balance cache hit", zap.Int("year", year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetYearlyBalance(ctx, year)
 	if err != nil {
-		s.logger.Error("Failed to retrieve yearly topup amount by card number",
-			zap.String("card_number", cardNumber),
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyBalancesRow](
+			s.logger,
+			card_errors.ErrFailedFindYearlyBalance,
+			method,
+			span,
 			zap.Int("year", year),
-			zap.Error(err),
 		)
-
-		return nil, card_errors.ErrFailedFindYearlyTopupAmountByCard
 	}
 
-	so := s.mapping.ToGetYearlyAmounts(res)
+	s.cache.SetYearlyBalanceCache(ctx, year, res)
 
-	s.logger.Debug("Yearly topup amount by card number retrieved successfully",
-		zap.String("card_number", cardNumber),
+	logSuccess("Yearly balance retrieved successfully",
 		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
+		zap.Int("result_count", len(res)),
 	)
 
-	return so, nil
+	return res, nil
 }
 
-func (s *cardService) FindMonthlyWithdrawAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
-	cardNumber := req.CardNumber
-	year := req.Year
+func (s *cardService) FindMonthlyTopupAmount(ctx context.Context, year int) ([]*db.GetMonthlyTopupAmountRow, error) {
+	const method = "FindMonthlyTopupAmount"
 
-	s.logger.Debug("FindMonthlyWithdrawAmountByCardNumber called",
-		zap.String("card_number", cardNumber),
-		zap.Int("year", year),
-	)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
 
-	res, err := s.cardRepository.GetMonthlyWithdrawAmountByCardNumber(req)
+	defer func() {
+		end(status)
+	}()
 
+	if data, found := s.cache.GetMonthlyTopupCache(ctx, year); found {
+		logSuccess("Monthly topup amount cache hit", zap.Int("year", year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetMonthlyTopupAmount(ctx, year)
 	if err != nil {
-		s.logger.Error("Failed to retrieve monthly withdraw amount by card number",
-			zap.String("card_number", cardNumber),
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyTopupAmountRow](
+			s.logger,
+			card_errors.ErrFailedFindMonthlyTopupAmount,
+			method,
+			span,
 			zap.Int("year", year),
-			zap.Error(err),
 		)
-
-		return nil, card_errors.ErrFailedFindMonthlyWithdrawAmountByCard
 	}
 
-	so := s.mapping.ToGetMonthlyAmounts(res)
+	s.cache.SetMonthlyTopupCache(ctx, year, res)
 
-	s.logger.Debug("Monthly withdraw amount by card number retrieved successfully",
-		zap.String("card_number", cardNumber),
+	logSuccess("Monthly topup amount retrieved successfully",
 		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
+		zap.Int("result_count", len(res)),
 	)
 
-	return so, nil
+	return res, nil
 }
 
-func (s *cardService) FindYearlyWithdrawAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
-	cardNumber := req.CardNumber
-	year := req.Year
+func (s *cardService) FindYearlyTopupAmount(ctx context.Context, year int) ([]*db.GetYearlyTopupAmountRow, error) {
+	const method = "FindYearlyTopupAmount"
 
-	s.logger.Debug("FindYearlyWithdrawAmountByCardNumber called",
-		zap.String("card_number", cardNumber),
-		zap.Int("year", year),
-	)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
 
-	res, err := s.cardRepository.GetYearlyWithdrawAmountByCardNumber(req)
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTopupCache(ctx, year); found {
+		logSuccess("Yearly topup amount cache hit", zap.Int("year", year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetYearlyTopupAmount(ctx, year)
 	if err != nil {
-		s.logger.Error("Failed to retrieve yearly withdraw amount by card number",
-			zap.String("card_number", cardNumber),
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTopupAmountRow](
+			s.logger,
+			card_errors.ErrFailedFindYearlyTopupAmount,
+			method,
+			span,
 			zap.Int("year", year),
-			zap.Error(err),
 		)
-
-		return nil, card_errors.ErrFailedFindYearlyWithdrawAmountByCard
 	}
 
-	so := s.mapping.ToGetYearlyAmounts(res)
+	s.cache.SetYearlyTopupCache(ctx, year, res)
 
-	s.logger.Debug("Yearly withdraw amount by card number retrieved successfully",
-		zap.String("card_number", cardNumber),
+	logSuccess("Yearly topup amount retrieved successfully",
 		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
+		zap.Int("result_count", len(res)),
 	)
 
-	return so, nil
+	return res, nil
 }
 
-func (s *cardService) FindMonthlyTransactionAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
-	cardNumber := req.CardNumber
-	year := req.Year
+func (s *cardService) FindMonthlyWithdrawAmount(ctx context.Context, year int) ([]*db.GetMonthlyWithdrawAmountRow, error) {
+	const method = "FindMonthlyWithdrawAmount"
 
-	s.logger.Debug("FindMonthlyTransactionAmountByCardNumber called",
-		zap.String("card_number", cardNumber),
-		zap.Int("year", year),
-	)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
 
-	res, err := s.cardRepository.GetMonthlyTransactionAmountByCardNumber(req)
+	defer func() {
+		end(status)
+	}()
 
+	if data, found := s.cache.GetMonthlyWithdrawCache(ctx, year); found {
+		logSuccess("Monthly withdraw amount cache hit", zap.Int("year", year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetMonthlyWithdrawAmount(ctx, year)
 	if err != nil {
-		s.logger.Error("Failed to retrieve monthly transaction amount by card number",
-			zap.String("card_number", cardNumber),
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyWithdrawAmountRow](
+			s.logger,
+			card_errors.ErrFailedFindMonthlyWithdrawAmount,
+			method,
+			span,
 			zap.Int("year", year),
-			zap.Error(err),
 		)
-
-		return nil, card_errors.ErrFailedFindMonthlyTransactionAmountByCard
 	}
 
-	so := s.mapping.ToGetMonthlyAmounts(res)
+	s.cache.SetMonthlyWithdrawCache(ctx, year, res)
 
-	s.logger.Debug("Monthly transaction amount by card number retrieved successfully",
-		zap.String("card_number", cardNumber),
+	logSuccess("Monthly withdraw amount retrieved successfully",
 		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
+		zap.Int("result_count", len(res)),
 	)
 
-	return so, nil
+	return res, nil
 }
 
-func (s *cardService) FindYearlyTransactionAmountByCardNumber(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
-	cardNumber := req.CardNumber
-	year := req.Year
+func (s *cardService) FindYearlyWithdrawAmount(ctx context.Context, year int) ([]*db.GetYearlyWithdrawAmountRow, error) {
+	const method = "FindYearlyWithdrawAmount"
 
-	s.logger.Debug("FindYearlyTransactionAmountByCardNumber called",
-		zap.String("card_number", cardNumber),
-		zap.Int("year", year),
-	)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
 
-	res, err := s.cardRepository.GetYearlyTransactionAmountByCardNumber(req)
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyWithdrawCache(ctx, year); found {
+		logSuccess("Yearly withdraw amount cache hit", zap.Int("year", year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetYearlyWithdrawAmount(ctx, year)
 	if err != nil {
-		s.logger.Error("Failed to retrieve yearly transaction amount by card number",
-			zap.String("card_number", cardNumber),
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyWithdrawAmountRow](
+			s.logger,
+			card_errors.ErrFailedFindYearlyWithdrawAmount,
+			method,
+			span,
 			zap.Int("year", year),
-			zap.Error(err),
 		)
-
-		return nil, card_errors.ErrFailedFindYearlyTransactionAmountByCard
 	}
 
-	so := s.mapping.ToGetYearlyAmounts(res)
+	s.cache.SetYearlyWithdrawCache(ctx, year, res)
 
-	s.logger.Debug("Yearly transaction amount by card number retrieved successfully",
-		zap.String("card_number", cardNumber),
+	logSuccess("Yearly withdraw amount retrieved successfully",
 		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
+		zap.Int("result_count", len(res)),
 	)
 
-	return so, nil
+	return res, nil
 }
 
-func (s *cardService) FindMonthlyTransferAmountBySender(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
-	cardNumber := req.CardNumber
-	year := req.Year
+func (s *cardService) FindMonthlyTransactionAmount(ctx context.Context, year int) ([]*db.GetMonthlyTransactionAmountRow, error) {
+	const method = "FindMonthlyTransactionAmount"
 
-	s.logger.Debug("FindMonthlyTransferAmountBySender called",
-		zap.String("card_number", cardNumber),
-		zap.Int("year", year),
-	)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
 
-	res, err := s.cardRepository.GetMonthlyTransferAmountBySender(req)
+	defer func() {
+		end(status)
+	}()
 
+	if data, found := s.cache.GetMonthlyTransactionCache(ctx, year); found {
+		logSuccess("Monthly transaction amount cache hit", zap.Int("year", year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetMonthlyTransactionAmount(ctx, year)
 	if err != nil {
-		s.logger.Error("Failed to retrieve monthly transfer sender amount by card number",
-			zap.String("card_number", cardNumber),
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyTransactionAmountRow](
+			s.logger,
+			card_errors.ErrFailedFindMonthlyTransactionAmount,
+			method,
+			span,
 			zap.Int("year", year),
-			zap.Error(err),
 		)
-
-		return nil, card_errors.ErrFailedFindMonthlyTransferAmountBySender
 	}
 
-	so := s.mapping.ToGetMonthlyAmounts(res)
+	s.cache.SetMonthlyTransactionCache(ctx, year, res)
 
-	s.logger.Debug("Monthly transfer sender amount by card number retrieved successfully",
-		zap.String("card_number", cardNumber),
+	logSuccess("Monthly transaction amount retrieved successfully",
 		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
+		zap.Int("result_count", len(res)),
 	)
 
-	return so, nil
+	return res, nil
 }
 
-func (s *cardService) FindYearlyTransferAmountBySender(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
-	cardNumber := req.CardNumber
-	year := req.Year
+func (s *cardService) FindYearlyTransactionAmount(ctx context.Context, year int) ([]*db.GetYearlyTransactionAmountRow, error) {
+	const method = "FindYearlyTransactionAmount"
 
-	s.logger.Debug("FindYearlyTransferAmountBySender called",
-		zap.String("card_number", cardNumber),
-		zap.Int("year", year),
-	)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
 
-	res, err := s.cardRepository.GetYearlyTransferAmountBySender(req)
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTransactionCache(ctx, year); found {
+		logSuccess("Yearly transaction amount cache hit", zap.Int("year", year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetYearlyTransactionAmount(ctx, year)
 	if err != nil {
-		s.logger.Error("Failed to retrieve yearly transfer sender amount by card number",
-			zap.String("card_number", cardNumber),
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTransactionAmountRow](
+			s.logger,
+			card_errors.ErrFailedFindYearlyTransactionAmount,
+			method,
+			span,
 			zap.Int("year", year),
-			zap.Error(err),
 		)
-
-		return nil, card_errors.ErrFailedFindYearlyTransferAmountBySender
 	}
 
-	so := s.mapping.ToGetYearlyAmounts(res)
+	s.cache.SetYearlyTransactionCache(ctx, year, res)
 
-	s.logger.Debug("Yearly transfer sender amount by card number retrieved successfully",
-		zap.String("card_number", cardNumber),
+	logSuccess("Yearly transaction amount retrieved successfully",
 		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
+		zap.Int("result_count", len(res)),
 	)
 
-	return so, nil
+	return res, nil
 }
 
-func (s *cardService) FindMonthlyTransferAmountByReceiver(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseMonthAmount, *response.ErrorResponse) {
-	cardNumber := req.CardNumber
-	year := req.Year
+func (s *cardService) FindMonthlyTransferAmountSender(ctx context.Context, year int) ([]*db.GetMonthlyTransferAmountSenderRow, error) {
+	const method = "FindMonthlyTransferAmountSender"
 
-	s.logger.Debug("FindMonthlyTransferAmountByReceiver called",
-		zap.String("card_number", cardNumber),
-		zap.Int("year", year),
-	)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
 
-	res, err := s.cardRepository.GetMonthlyTransferAmountByReceiver(req)
+	defer func() {
+		end(status)
+	}()
 
+	if data, found := s.cache.GetMonthlyTransferSenderCache(ctx, year); found {
+		logSuccess("Monthly transfer sender amount cache hit", zap.Int("year", year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetMonthlyTransferAmountSender(ctx, year)
 	if err != nil {
-		s.logger.Error("Failed to retrieve monthly transfer receiver amount by card number",
-			zap.String("card_number", cardNumber),
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyTransferAmountSenderRow](
+			s.logger,
+			card_errors.ErrFailedFindMonthlyTransferAmountSender,
+			method,
+			span,
 			zap.Int("year", year),
-			zap.Error(err),
 		)
-
-		return nil, card_errors.ErrFailedFindMonthlyTransferAmountByReceiver
 	}
 
-	so := s.mapping.ToGetMonthlyAmounts(res)
+	s.cache.SetMonthlyTransferSenderCache(ctx, year, res)
 
-	s.logger.Debug("Monthly transfer receiver amount by card number retrieved successfully",
-		zap.String("card_number", cardNumber),
+	logSuccess("Monthly transfer sender amount retrieved successfully",
 		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
+		zap.Int("result_count", len(res)),
 	)
 
-	return so, nil
+	return res, nil
 }
 
-func (s *cardService) FindYearlyTransferAmountByReceiver(req *requests.MonthYearCardNumberCard) ([]*response.CardResponseYearAmount, *response.ErrorResponse) {
-	cardNumber := req.CardNumber
-	year := req.Year
+func (s *cardService) FindYearlyTransferAmountSender(ctx context.Context, year int) ([]*db.GetYearlyTransferAmountSenderRow, error) {
+	const method = "FindYearlyTransferAmountSender"
 
-	s.logger.Debug("FindYearlyTransferAmountByReceiver called",
-		zap.String("card_number", cardNumber),
-		zap.Int("year", year),
-	)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
 
-	res, err := s.cardRepository.GetYearlyTransferAmountByReceiver(req)
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTransferSenderCache(ctx, year); found {
+		logSuccess("Yearly transfer sender amount cache hit", zap.Int("year", year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetYearlyTransferAmountSender(ctx, year)
 	if err != nil {
-		s.logger.Error("Failed to retrieve yearly transfer receiver amount by card number",
-			zap.String("card_number", cardNumber),
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTransferAmountSenderRow](
+			s.logger,
+			card_errors.ErrFailedFindYearlyTransferAmountSender,
+			method,
+			span,
 			zap.Int("year", year),
-			zap.Error(err),
 		)
-
-		return nil, card_errors.ErrFailedFindYearlyTransferAmountByReceiver
 	}
 
-	so := s.mapping.ToGetYearlyAmounts(res)
+	s.cache.SetYearlyTransferSenderCache(ctx, year, res)
 
-	s.logger.Debug("Yearly transfer receiver amount by card number retrieved successfully",
-		zap.String("card_number", cardNumber),
+	logSuccess("Yearly transfer sender amount retrieved successfully",
 		zap.Int("year", year),
-		zap.Int("result_count", len(so)),
+		zap.Int("result_count", len(res)),
 	)
 
-	return so, nil
+	return res, nil
 }
 
-func (s *cardService) FindByCardNumber(card_number string) (*response.CardResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching card record by card number", zap.String("card_number", card_number))
+func (s *cardService) FindMonthlyTransferAmountReceiver(ctx context.Context, year int) ([]*db.GetMonthlyTransferAmountReceiverRow, error) {
+	const method = "FindMonthlyTransferAmountReceiver"
 
-	res, err := s.cardRepository.FindCardByCardNumber(card_number)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
 
-	if err != nil {
-		s.logger.Error("Failed to retrieve find card",
-			zap.Error(err),
-			zap.String("card_number", card_number))
+	defer func() {
+		end(status)
+	}()
 
-		return nil, card_errors.ErrCardNotFoundRes
+	if data, found := s.cache.GetMonthlyTransferReceiverCache(ctx, year); found {
+		logSuccess("Monthly transfer receiver amount cache hit", zap.Int("year", year))
+		return data, nil
 	}
 
-	so := s.mapping.ToCardResponse(res)
+	res, err := s.cardRepository.GetMonthlyTransferAmountReceiver(ctx, year)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyTransferAmountReceiverRow](
+			s.logger,
+			card_errors.ErrFailedFindMonthlyTransferAmountReceiver,
+			method,
+			span,
+			zap.Int("year", year),
+		)
+	}
 
-	s.logger.Debug("Successfully fetched card record by card number", zap.String("card_number", card_number))
+	s.cache.SetMonthlyTransferReceiverCache(ctx, year, res)
 
-	return so, nil
+	logSuccess("Monthly transfer receiver amount retrieved successfully",
+		zap.Int("year", year),
+		zap.Int("result_count", len(res)),
+	)
+
+	return res, nil
 }
 
-func (s *cardService) CreateCard(request *requests.CreateCardRequest) (*response.CardResponse, *response.ErrorResponse) {
-	s.logger.Debug("Creating new card", zap.Any("request", request))
+func (s *cardService) FindYearlyTransferAmountReceiver(ctx context.Context, year int) ([]*db.GetYearlyTransferAmountReceiverRow, error) {
+	const method = "FindYearlyTransferAmountReceiver"
 
-	_, err := s.userRepository.FindById(request.UserID)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
 
-	if err != nil {
-		s.logger.Error("Failed to retrieve find user",
-			zap.Error(err),
-			zap.Int("user_id", request.UserID))
+	defer func() {
+		end(status)
+	}()
 
-		return nil, user_errors.ErrUserNotFoundRes
+	if data, found := s.cache.GetYearlyTransferReceiverCache(ctx, year); found {
+		logSuccess("Yearly transfer receiver amount cache hit", zap.Int("year", year))
+		return data, nil
 	}
 
-	res, err := s.cardRepository.CreateCard(request)
-
+	res, err := s.cardRepository.GetYearlyTransferAmountReceiver(ctx, year)
 	if err != nil {
-		s.logger.Error("Failed to create card", zap.Error(err))
-		return nil, card_errors.ErrFailedCreateCard
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTransferAmountReceiverRow](
+			s.logger,
+			card_errors.ErrFailedFindYearlyTransferAmountReceiver,
+			method,
+			span,
+			zap.Int("year", year),
+		)
 	}
 
-	so := s.mapping.ToCardResponse(res)
+	s.cache.SetYearlyTransferReceiverCache(ctx, year, res)
 
-	s.logger.Debug("Successfully created new card", zap.Int("card_id", so.ID))
+	logSuccess("Yearly transfer receiver amount retrieved successfully",
+		zap.Int("year", year),
+		zap.Int("result_count", len(res)),
+	)
 
-	return so, nil
+	return res, nil
 }
 
-func (s *cardService) UpdateCard(request *requests.UpdateCardRequest) (*response.CardResponse, *response.ErrorResponse) {
+func (s *cardService) FindMonthlyBalancesByCardNumber(ctx context.Context, req *requests.MonthYearCardNumberCard) ([]*db.GetMonthlyBalancesByCardNumberRow, error) {
+	const method = "FindMonthlyBalancesByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", req.Year),
+		attribute.String("card_number", req.CardNumber))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthlyBalanceByNumberCache(ctx, req); found {
+		logSuccess("Cache hit for monthly balance card", zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetMonthlyBalancesByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyBalancesByCardNumberRow](
+			s.logger,
+			card_errors.ErrFailedFindMonthlyBalanceByCard,
+			method,
+			span,
+			zap.Int("year", req.Year),
+			zap.String("card_number", req.CardNumber),
+		)
+	}
+
+	s.cache.SetMonthlyBalanceByNumberCache(ctx, req, res)
+
+	logSuccess("Monthly balance retrieved successfully",
+		zap.Int("year", req.Year),
+		zap.String("card_number", req.CardNumber),
+		zap.Int("result_count", len(res)),
+	)
+
+	return res, nil
+}
+
+func (s *cardService) FindYearlyBalanceByCardNumber(ctx context.Context, req *requests.MonthYearCardNumberCard) ([]*db.GetYearlyBalancesByCardNumberRow, error) {
+	const method = "FindYearlyBalanceByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", req.Year),
+		attribute.String("card_number", req.CardNumber))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyBalanceByNumberCache(ctx, req); found {
+		logSuccess("Cache hit for yearly balance card", zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetYearlyBalanceByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyBalancesByCardNumberRow](
+			s.logger,
+			card_errors.ErrFailedFindYearlyBalanceByCard,
+			method,
+			span,
+			zap.Int("year", req.Year),
+			zap.String("card_number", req.CardNumber),
+		)
+	}
+
+	s.cache.SetYearlyBalanceByNumberCache(ctx, req, res)
+
+	logSuccess("Yearly balance retrieved successfully",
+		zap.Int("year", req.Year),
+		zap.String("card_number", req.CardNumber),
+		zap.Int("result_count", len(res)),
+	)
+
+	return res, nil
+}
+
+func (s *cardService) FindMonthlyTopupAmountByCardNumber(ctx context.Context, req *requests.MonthYearCardNumberCard) ([]*db.GetMonthlyTopupAmountByCardNumberRow, error) {
+	const method = "FindMonthlyTopupAmountByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthlyTopupByNumberCache(ctx, req); found {
+		logSuccess("Cache hit for monthly topup amount card", zap.String("card_number", req.CardNumber), zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetMonthlyTopupAmountByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyTopupAmountByCardNumberRow](
+			s.logger,
+			card_errors.ErrFailedFindMonthlyTopupAmountByCard,
+			method,
+			span,
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetMonthlyTopupByNumberCache(ctx, req, res)
+
+	logSuccess("Monthly topup amount by card number retrieved successfully",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("result_count", len(res)),
+	)
+
+	return res, nil
+}
+
+func (s *cardService) FindYearlyTopupAmountByCardNumber(ctx context.Context, req *requests.MonthYearCardNumberCard) ([]*db.GetYearlyTopupAmountByCardNumberRow, error) {
+	const method = "FindYearlyTopupAmountByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTopupByNumberCache(ctx, req); found {
+		logSuccess("Cache hit for yearly topup amount card", zap.String("card_number", req.CardNumber), zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetYearlyTopupAmountByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTopupAmountByCardNumberRow](
+			s.logger,
+			card_errors.ErrFailedFindYearlyTopupAmountByCard,
+			method,
+			span,
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetYearlyTopupByNumberCache(ctx, req, res)
+
+	logSuccess("Yearly topup amount by card number retrieved successfully",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("result_count", len(res)),
+	)
+
+	return res, nil
+}
+
+func (s *cardService) FindMonthlyWithdrawAmountByCardNumber(ctx context.Context, req *requests.MonthYearCardNumberCard) ([]*db.GetMonthlyWithdrawAmountByCardNumberRow, error) {
+	const method = "FindMonthlyWithdrawAmountByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthlyWithdrawByNumberCache(ctx, req); found {
+		logSuccess("Cache hit for monthly withdraw amount card", zap.String("card_number", req.CardNumber), zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetMonthlyWithdrawAmountByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyWithdrawAmountByCardNumberRow](
+			s.logger,
+			card_errors.ErrFailedFindMonthlyWithdrawAmountByCard,
+			method,
+			span,
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetMonthlyWithdrawByNumberCache(ctx, req, res)
+
+	logSuccess("Monthly withdraw amount by card number retrieved successfully",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("result_count", len(res)),
+	)
+
+	return res, nil
+}
+
+func (s *cardService) FindYearlyWithdrawAmountByCardNumber(ctx context.Context, req *requests.MonthYearCardNumberCard) ([]*db.GetYearlyWithdrawAmountByCardNumberRow, error) {
+	const method = "FindYearlyWithdrawAmountByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyWithdrawByNumberCache(ctx, req); found {
+		logSuccess("Cache hit for yearly withdraw amount card", zap.String("card_number", req.CardNumber), zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetYearlyWithdrawAmountByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyWithdrawAmountByCardNumberRow](
+			s.logger,
+			card_errors.ErrFailedFindYearlyWithdrawAmountByCard,
+			method,
+			span,
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetYearlyWithdrawByNumberCache(ctx, req, res)
+
+	logSuccess("Yearly withdraw amount by card number retrieved successfully",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("result_count", len(res)),
+	)
+
+	return res, nil
+}
+
+func (s *cardService) FindMonthlyTransactionAmountByCardNumber(ctx context.Context, req *requests.MonthYearCardNumberCard) ([]*db.GetMonthlyTransactionAmountByCardNumberRow, error) {
+	const method = "FindMonthlyTransactionAmountByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthlyTransactionByNumberCache(ctx, req); found {
+		logSuccess("Cache hit for monthly transaction amount card", zap.String("card_number", req.CardNumber), zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetMonthlyTransactionAmountByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyTransactionAmountByCardNumberRow](
+			s.logger,
+			card_errors.ErrFailedFindMonthlyTransactionAmountByCard,
+			method,
+			span,
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetMonthlyTransactionByNumberCache(ctx, req, res)
+
+	logSuccess("Monthly transaction amount by card number retrieved successfully",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("result_count", len(res)),
+	)
+
+	return res, nil
+}
+
+func (s *cardService) FindYearlyTransactionAmountByCardNumber(ctx context.Context, req *requests.MonthYearCardNumberCard) ([]*db.GetYearlyTransactionAmountByCardNumberRow, error) {
+	const method = "FindYearlyTransactionAmountByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTransactionByNumberCache(ctx, req); found {
+		logSuccess("Cache hit for yearly transaction amount card", zap.String("card_number", req.CardNumber), zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetYearlyTransactionAmountByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTransactionAmountByCardNumberRow](
+			s.logger,
+			card_errors.ErrFailedFindYearlyTransactionAmountByCard,
+			method,
+			span,
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetYearlyTransactionByNumberCache(ctx, req, res)
+
+	logSuccess("Yearly transaction amount by card number retrieved successfully",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("result_count", len(res)),
+	)
+
+	return res, nil
+}
+
+func (s *cardService) FindMonthlyTransferAmountBySender(ctx context.Context, req *requests.MonthYearCardNumberCard) ([]*db.GetMonthlyTransferAmountBySenderRow, error) {
+	const method = "FindMonthlyTransferAmountBySender"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthlyTransferBySenderCache(ctx, req); found {
+		logSuccess("Cache hit for monthly transfer sender amount card", zap.String("card_number", req.CardNumber), zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetMonthlyTransferAmountBySender(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyTransferAmountBySenderRow](
+			s.logger,
+			card_errors.ErrFailedFindMonthlyTransferAmountBySender,
+			method,
+			span,
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetMonthlyTransferBySenderCache(ctx, req, res)
+
+	logSuccess("Monthly transfer sender amount by card number retrieved successfully",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("result_count", len(res)),
+	)
+
+	return res, nil
+}
+
+func (s *cardService) FindYearlyTransferAmountBySender(ctx context.Context, req *requests.MonthYearCardNumberCard) ([]*db.GetYearlyTransferAmountBySenderRow, error) {
+	const method = "FindYearlyTransferAmountBySender"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTransferBySenderCache(ctx, req); found {
+		logSuccess("Cache hit for yearly transfer sender amount card", zap.String("card_number", req.CardNumber), zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetYearlyTransferAmountBySender(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTransferAmountBySenderRow](
+			s.logger,
+			card_errors.ErrFailedFindYearlyTransferAmountBySender,
+			method,
+			span,
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetYearlyTransferBySenderCache(ctx, req, res)
+
+	logSuccess("Yearly transfer sender amount by card number retrieved successfully",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("result_count", len(res)),
+	)
+
+	return res, nil
+}
+
+func (s *cardService) FindMonthlyTransferAmountByReceiver(ctx context.Context, req *requests.MonthYearCardNumberCard) ([]*db.GetMonthlyTransferAmountByReceiverRow, error) {
+	const method = "FindMonthlyTransferAmountByReceiver"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetMonthlyTransferByReceiverCache(ctx, req); found {
+		logSuccess("Cache hit for monthly transfer receiver amount card", zap.String("card_number", req.CardNumber), zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetMonthlyTransferAmountByReceiver(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyTransferAmountByReceiverRow](
+			s.logger,
+			card_errors.ErrFailedFindMonthlyTransferAmountByReceiver,
+			method,
+			span,
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetMonthlyTransferByReceiverCache(ctx, req, res)
+
+	logSuccess("Monthly transfer receiver amount by card number retrieved successfully",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("result_count", len(res)),
+	)
+
+	return res, nil
+}
+
+func (s *cardService) FindYearlyTransferAmountByReceiver(ctx context.Context, req *requests.MonthYearCardNumberCard) ([]*db.GetYearlyTransferAmountByReceiverRow, error) {
+	const method = "FindYearlyTransferAmountByReceiver"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetYearlyTransferByReceiverCache(ctx, req); found {
+		logSuccess("Cache hit for yearly transfer receiver amount card", zap.String("card_number", req.CardNumber), zap.Int("year", req.Year))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.GetYearlyTransferAmountByReceiver(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTransferAmountByReceiverRow](
+			s.logger,
+			card_errors.ErrFailedFindYearlyTransferAmountByReceiver,
+			method,
+			span,
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetYearlyTransferByReceiverCache(ctx, req, res)
+
+	logSuccess("Yearly transfer receiver amount by card number retrieved successfully",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("result_count", len(res)),
+	)
+
+	return res, nil
+}
+
+func (s *cardService) FindByCardNumber(ctx context.Context, card_number string) (*db.GetCardByCardNumberRow, error) {
+	const method = "FindByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", card_number))
+
+	defer func() {
+		end(status)
+	}()
+
+	if data, found := s.cache.GetByCardNumberCache(ctx, card_number); found {
+		logSuccess("Successfully fetched card record by card number from cache", zap.String("card_number", card_number))
+		return data, nil
+	}
+
+	res, err := s.cardRepository.FindCardByCardNumber(ctx, card_number)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*db.GetCardByCardNumberRow](
+			s.logger,
+			card_errors.ErrCardNotFoundRes,
+			method,
+			span,
+			zap.String("card_number", card_number),
+		)
+	}
+
+	s.cache.SetByCardNumberCache(ctx, card_number, res)
+
+	logSuccess("Successfully fetched card record by card number", zap.String("card_number", card_number))
+
+	return res, nil
+}
+
+func (s *cardService) CreateCard(ctx context.Context, request *requests.CreateCardRequest) (*db.CreateCardRow, error) {
+	const method = "CreateCard"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("user_id", request.UserID))
+
+	defer func() {
+		end(status)
+	}()
+
+	_, err := s.userRepository.FindById(ctx, request.UserID)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*db.CreateCardRow](
+			s.logger,
+			user_errors.ErrUserNotFoundRes,
+			method,
+			span,
+
+			zap.Int("user_id", request.UserID),
+		)
+	}
+
+	res, err := s.cardRepository.CreateCard(ctx, request)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*db.CreateCardRow](
+			s.logger,
+			card_errors.ErrFailedCreateCard,
+			method,
+			span,
+		)
+	}
+
+	logSuccess("Successfully created new card", zap.Int("card_id", int(res.CardID)))
+
+	return res, nil
+}
+
+func (s *cardService) UpdateCard(ctx context.Context, request *requests.UpdateCardRequest) (*db.UpdateCardRow, error) {
+	const method = "UpdateCard"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("card_id", request.CardID),
+		attribute.Int("user_id", request.UserID))
+
+	defer func() {
+		end(status)
+	}()
+
 	s.logger.Debug("Updating card", zap.Int("card_id", request.CardID), zap.Any("request", request))
 
-	_, err := s.userRepository.FindById(request.UserID)
-
+	_, err := s.userRepository.FindById(ctx, request.UserID)
 	if err != nil {
-		s.logger.Error("Failed to retrieve find user",
-			zap.Error(err),
-			zap.Int("user_id", request.UserID))
+		status = "error"
+		return errorhandler.HandleError[*db.UpdateCardRow](
+			s.logger,
+			user_errors.ErrUserNotFoundRes,
+			method,
+			span,
 
-		return nil, user_errors.ErrUserNotFoundRes
+			zap.Int("user_id", request.UserID),
+		)
 	}
 
-	res, err := s.cardRepository.UpdateCard(request)
+	res, err := s.cardRepository.UpdateCard(ctx, request)
 
 	if err != nil {
-		s.logger.Error("Failed to update card", zap.Error(err), zap.Int("cardID", request.CardID))
+		status = "error"
+		return errorhandler.HandleError[*db.UpdateCardRow](
+			s.logger,
+			card_errors.ErrFailedUpdateCard,
+			method,
+			span,
 
-		return nil, card_errors.ErrFailedUpdateCard
+			zap.Int("cardID", request.CardID),
+		)
 	}
 
-	so := s.mapping.ToCardResponse(res)
+	s.cache.DeleteCardCommandCache(ctx, request.CardID)
 
-	s.logger.Debug("Successfully updated card", zap.Int("cardID", so.ID))
+	logSuccess("Successfully updated card", zap.Int("cardID", int(res.CardID)))
 
-	return so, nil
+	return res, nil
 }
 
-func (s *cardService) TrashedCard(card_id int) (*response.CardResponseDeleteAt, *response.ErrorResponse) {
-	s.logger.Debug("Trashing card", zap.Int("card_id", card_id))
+func (s *cardService) TrashedCard(ctx context.Context, card_id int) (*db.Card, error) {
+	const method = "TrashedCard"
 
-	res, err := s.cardRepository.TrashedCard(card_id)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("card_id", card_id))
 
+	defer func() {
+		end(status)
+	}()
+
+	res, err := s.cardRepository.TrashedCard(ctx, card_id)
 	if err != nil {
-		s.logger.Error("Failed to move card to trash",
-			zap.Error(err),
-			zap.Int("card_id", card_id))
+		status = "error"
+		return errorhandler.HandleError[*db.Card](
+			s.logger,
+			card_errors.ErrFailedTrashCard,
+			method,
+			span,
 
-		return nil, card_errors.ErrFailedTrashCard
+			zap.Int("card_id", card_id),
+		)
 	}
 
-	so := s.mapping.ToCardResponseDeleteAt(res)
+	s.cache.DeleteCardCommandCache(ctx, card_id)
 
-	s.logger.Debug("Successfully trashed card", zap.Int("card_id", so.ID))
+	logSuccess("Successfully trashed card", zap.Int("card_id", int(res.CardID)))
 
-	return so, nil
+	return res, nil
 }
 
-func (s *cardService) RestoreCard(card_id int) (*response.CardResponseDeleteAt, *response.ErrorResponse) {
+func (s *cardService) RestoreCard(ctx context.Context, card_id int) (*db.Card, error) {
+	const method = "RestoreCard"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("card_id", card_id))
+
+	defer func() {
+		end(status)
+	}()
+
 	s.logger.Debug("Restoring card", zap.Int("card_id", card_id))
 
-	res, err := s.cardRepository.RestoreCard(card_id)
-
+	res, err := s.cardRepository.RestoreCard(ctx, card_id)
 	if err != nil {
-		s.logger.Error("Failed to restore cashier from trash",
-			zap.Error(err),
-			zap.Int("card_id", card_id))
+		status = "error"
+		return errorhandler.HandleError[*db.Card](
+			s.logger,
+			card_errors.ErrFailedRestoreCard,
+			method,
+			span,
 
-		return nil, card_errors.ErrFailedRestoreCard
+			zap.Int("card_id", card_id),
+		)
 	}
 
-	so := s.mapping.ToCardResponseDeleteAt(res)
+	s.cache.DeleteCardCommandCache(ctx, card_id)
 
-	s.logger.Debug("Successfully restored card", zap.Int("card_id", so.ID))
+	logSuccess("Successfully restored card", zap.Int("card_id", int(res.CardID)))
 
-	return so, nil
+	return res, nil
 }
 
-func (s *cardService) DeleteCardPermanent(card_id int) (bool, *response.ErrorResponse) {
-	s.logger.Debug("Permanently deleting card", zap.Int("card_id", card_id))
+func (s *cardService) DeleteCardPermanent(ctx context.Context, card_id int) (bool, error) {
+	const method = "DeleteCardPermanent"
 
-	_, err := s.cardRepository.DeleteCardPermanent(card_id)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("card_id", card_id))
 
+	defer func() {
+		end(status)
+	}()
+
+	_, err := s.cardRepository.DeleteCardPermanent(ctx, card_id)
 	if err != nil {
-		s.logger.Error("Failed to permanently delete card",
-			zap.Error(err),
-			zap.Int("card_id", card_id))
+		status = "error"
+		return errorhandler.HandleError[bool](
+			s.logger,
+			card_errors.ErrFailedDeleteCard,
+			method,
+			span,
 
-		return false, card_errors.ErrFailedDeleteCard
+			zap.Int("card_id", card_id),
+		)
 	}
 
-	s.logger.Debug("Successfully deleted card permanently", zap.Int("card_id", card_id))
+	s.cache.DeleteCardCommandCache(ctx, card_id)
+
+	logSuccess("Successfully deleted card permanently", zap.Int("card_id", card_id))
 
 	return true, nil
 }
 
-func (s *cardService) RestoreAllCard() (bool, *response.ErrorResponse) {
-	s.logger.Debug("Restoring all cards")
+func (s *cardService) RestoreAllCard(ctx context.Context) (bool, error) {
+	const method = "RestoreAllCard"
 
-	_, err := s.cardRepository.RestoreAllCard()
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method)
 
+	defer func() {
+		end(status)
+	}()
+
+	_, err := s.cardRepository.RestoreAllCard(ctx)
 	if err != nil {
-		s.logger.Error("Failed to restore all trashed cards",
-			zap.Error(err))
-
-		return false, card_errors.ErrFailedRestoreAllCards
+		status = "error"
+		return errorhandler.HandleError[bool](
+			s.logger,
+			card_errors.ErrFailedRestoreAllCards,
+			method,
+			span,
+		)
 	}
 
-	s.logger.Debug("Successfully restored all cards")
+	logSuccess("Successfully restored all cards")
+
 	return true, nil
 }
 
-func (s *cardService) DeleteAllCardPermanent() (bool, *response.ErrorResponse) {
-	s.logger.Debug("Permanently deleting all cards")
+func (s *cardService) DeleteAllCardPermanent(ctx context.Context) (bool, error) {
+	const method = "DeleteAllCardPermanent"
 
-	_, err := s.cardRepository.DeleteAllCardPermanent()
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method)
 
+	defer func() {
+		end(status)
+	}()
+
+	_, err := s.cardRepository.DeleteAllCardPermanent(ctx)
 	if err != nil {
-		s.logger.Error("Failed to permanently delete all trashed card",
-			zap.Error(err))
-		return false, card_errors.ErrFailedDeleteAllCards
+		status = "error"
+		return errorhandler.HandleError[bool](
+			s.logger,
+			card_errors.ErrFailedDeleteAllCards,
+			method,
+			span,
+		)
 	}
 
-	s.logger.Debug("Successfully deleted all cards permanently")
+	logSuccess("Successfully deleted all cards permanently")
 
 	return true, nil
 }

@@ -1,9 +1,9 @@
 package refreshtoken_errors
 
 import (
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
+	"MamangRust/paymentgatewaygrpc/pkg/errors"
 
 	"google.golang.org/grpc/codes"
 )
 
-var ErrGrpcRefreshToken = response.NewGrpcError("error", "refresh token failed", int(codes.Unauthenticated))
+var ErrGrpcRefreshToken = errors.NewGrpcError("refresh token failed", int(codes.Unauthenticated))

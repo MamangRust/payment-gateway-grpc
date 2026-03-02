@@ -1,47 +1,57 @@
 package api
 
 import (
+	role_cache "MamangRust/paymentgatewaygrpc/internal/cache/api/role"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api"
+	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
-	"MamangRust/paymentgatewaygrpc/pkg/errors/role_errors"
+	"MamangRust/paymentgatewaygrpc/pkg/errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
+	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type RoleHandleApi struct {
-	role    pb.RoleServiceClient
-	logger  logger.LoggerInterface
-	mapping apimapper.RoleResponseMapper
+type roleHandleApi struct {
+	role       pb.RoleServiceClient
+	logger     logger.LoggerInterface
+	mapping    apimapper.RoleResponseMapper
+	apiHandler errors.ApiHandler
+	cache      role_cache.RoleMencache
 }
 
-func NewHandlerRole(role pb.RoleServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.RoleResponseMapper) *RoleHandleApi {
-	roleHandler := &RoleHandleApi{
-		role:    role,
-		logger:  logger,
-		mapping: mapping,
+func NewHandlerRole(role pb.RoleServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.RoleResponseMapper, apiHandler errors.ApiHandler, cache role_cache.RoleMencache) *roleHandleApi {
+	roleHandler := &roleHandleApi{
+		role:       role,
+		logger:     logger,
+		mapping:    mapping,
+		apiHandler: apiHandler,
+		cache:      cache,
 	}
 
 	routerRole := router.Group("/api/role")
 
-	routerRole.GET("", roleHandler.FindAll)
-	routerRole.GET("/:id", roleHandler.FindById)
-	routerRole.GET("/active", roleHandler.FindByActive)
-	routerRole.GET("/trashed", roleHandler.FindByTrashed)
-	routerRole.GET("/user/:user_id", roleHandler.FindByUserId)
-	routerRole.POST("", roleHandler.Create)
-	routerRole.POST("/:id", roleHandler.Update)
-	routerRole.DELETE("/:id", roleHandler.Trashed)
-	routerRole.PUT("/restore/:id", roleHandler.Restore)
-	routerRole.DELETE("/permanent/:id", roleHandler.DeletePermanent)
+	routerRole.GET("", apiHandler.Handle("find-all-roles", roleHandler.FindAll))
+	routerRole.GET("/:id", apiHandler.Handle("find-role-by-id", roleHandler.FindById))
+	routerRole.GET("/active", apiHandler.Handle("find-active-roles", roleHandler.FindByActive))
+	routerRole.GET("/trashed", apiHandler.Handle("find-trashed-roles", roleHandler.FindByTrashed))
+	routerRole.GET("/user/:user_id", apiHandler.Handle("find-roles-by-user-id", roleHandler.FindByUserId))
 
-	routerRole.POST("/restore/all", roleHandler.RestoreAll)
-	routerRole.POST("/permanent/all", roleHandler.DeleteAllPermanent)
+	routerRole.POST("", apiHandler.Handle("create-role", roleHandler.Create))
+	routerRole.POST("/:id", apiHandler.Handle("update-role", roleHandler.Update))
+
+	routerRole.DELETE("/:id", apiHandler.Handle("trash-role", roleHandler.Trashed))
+	routerRole.PUT("/restore/:id", apiHandler.Handle("restore-role", roleHandler.Restore))
+	routerRole.DELETE("/permanent/:id", apiHandler.Handle("delete-role-permanent", roleHandler.DeletePermanent))
+
+	routerRole.POST("/restore/all", apiHandler.Handle("restore-all-roles", roleHandler.RestoreAll))
+	routerRole.POST("/permanent/all", apiHandler.Handle("delete-all-roles-permanent", roleHandler.DeleteAllPermanent))
 
 	return roleHandler
 }
@@ -60,7 +70,7 @@ func NewHandlerRole(role pb.RoleServiceClient, router *echo.Echo, logger logger.
 // @Failure 400 {object} response.ErrorResponse "Invalid query parameters"
 // @Failure 500 {object} response.ErrorResponse "Failed to fetch roles"
 // @Router /api/role [get]
-func (h *RoleHandleApi) FindAll(c echo.Context) error {
+func (h *roleHandleApi) FindAll(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -75,21 +85,33 @@ func (h *RoleHandleApi) FindAll(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllRoleRequest{
+	req := &requests.FindAllRoles{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedRoles(ctx, req)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	grpcReq := &pb.FindAllRoleRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.role.FindAllRole(ctx, req)
+	res, err := h.role.FindAllRole(ctx, grpcReq)
 	if err != nil {
-		h.logger.Debug("Failed to fetch role records", zap.Error(err))
-		return role_errors.ErrApiFailedFindAll(c)
+		return h.handleGrpcError(err, "FindAll")
 	}
 
-	so := h.mapping.ToApiResponsePaginationRole(res)
+	apiResponse := h.mapping.ToApiResponsePaginationRole(res)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedRoles(ctx, req, apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindById godoc.
@@ -104,13 +126,18 @@ func (h *RoleHandleApi) FindAll(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid role ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to fetch role"
 // @Router /api/role/{id} [get]
-func (h *RoleHandleApi) FindById(c echo.Context) error {
+func (h *roleHandleApi) FindById(c echo.Context) error {
 	roleID, err := strconv.Atoi(c.Param("id"))
 	if err != nil || roleID <= 0 {
-		return role_errors.ErrApiRoleInvalidId(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetCachedRoleById(ctx, roleID)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	req := &pb.FindByIdRoleRequest{
 		RoleId: int32(roleID),
@@ -118,13 +145,14 @@ func (h *RoleHandleApi) FindById(c echo.Context) error {
 
 	res, err := h.role.FindByIdRole(ctx, req)
 	if err != nil {
-		h.logger.Debug("Failed to fetch role", zap.Error(err))
-		return role_errors.ErrApiRoleNotFound(c)
+		return h.handleGrpcError(err, "FindById")
 	}
 
-	so := h.mapping.ToApiResponseRole(res)
+	apiResponse := h.mapping.ToApiResponseRole(res)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedRoleById(ctx, roleID, apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindByActive godoc.
@@ -141,7 +169,7 @@ func (h *RoleHandleApi) FindById(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid query parameters"
 // @Failure 500 {object} response.ErrorResponse "Failed to fetch active roles"
 // @Router /api/role/active [get]
-func (h *RoleHandleApi) FindByActive(c echo.Context) error {
+func (h *roleHandleApi) FindByActive(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -156,21 +184,33 @@ func (h *RoleHandleApi) FindByActive(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllRoleRequest{
+	req := &requests.FindAllRoles{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedRoleActive(ctx, req)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	grpcReq := &pb.FindAllRoleRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.role.FindByActive(ctx, req)
+	res, err := h.role.FindByActive(ctx, grpcReq)
 	if err != nil {
-		h.logger.Debug("Failed to fetch active roles", zap.Error(err))
-		return role_errors.ErrApiFailedFindActive(c)
+		return h.handleGrpcError(err, "FindByActive")
 	}
 
-	so := h.mapping.ToApiResponsePaginationRoleDeleteAt(res)
+	apiResponse := h.mapping.ToApiResponsePaginationRoleDeleteAt(res)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedRoleActive(ctx, req, apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindByTrashed godoc.
@@ -187,7 +227,7 @@ func (h *RoleHandleApi) FindByActive(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid query parameters"
 // @Failure 500 {object} response.ErrorResponse "Failed to fetch trashed roles"
 // @Router /api/role/trashed [get]
-func (h *RoleHandleApi) FindByTrashed(c echo.Context) error {
+func (h *roleHandleApi) FindByTrashed(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -202,21 +242,33 @@ func (h *RoleHandleApi) FindByTrashed(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllRoleRequest{
+	req := &requests.FindAllRoles{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedRoleTrashed(ctx, req)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	grpcReq := &pb.FindAllRoleRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.role.FindByTrashed(ctx, req)
+	res, err := h.role.FindByTrashed(ctx, grpcReq)
 	if err != nil {
-		h.logger.Debug("Failed to fetch trashed roles", zap.Error(err))
-		return role_errors.ErrApiFailedFindTrashed(c)
+		return h.handleGrpcError(err, "FindByTrashed")
 	}
 
-	so := h.mapping.ToApiResponsePaginationRoleDeleteAt(res)
+	apiResponse := h.mapping.ToApiResponsePaginationRoleDeleteAt(res)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedRoleTrashed(ctx, req, apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindByUserId godoc.
@@ -231,13 +283,18 @@ func (h *RoleHandleApi) FindByTrashed(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid user ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to fetch role by user ID"
 // @Router /api/role/user/{user_id} [get]
-func (h *RoleHandleApi) FindByUserId(c echo.Context) error {
+func (h *roleHandleApi) FindByUserId(c echo.Context) error {
 	userID, err := strconv.Atoi(c.Param("user_id"))
 	if err != nil || userID <= 0 {
-		return role_errors.ErrApiRoleInvalidId(c)
+		return errors.NewBadRequestError("user_id is required")
 	}
 
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetCachedRoleByUserId(ctx, userID)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	req := &pb.FindByIdUserRoleRequest{
 		UserId: int32(userID),
@@ -245,13 +302,14 @@ func (h *RoleHandleApi) FindByUserId(c echo.Context) error {
 
 	res, err := h.role.FindByUserId(ctx, req)
 	if err != nil {
-		h.logger.Debug("Failed to fetch role by user ID", zap.Error(err))
-		return role_errors.ErrApiRoleNotFound(c)
+		return h.handleGrpcError(err, "FindByUserId")
 	}
 
-	so := h.mapping.ToApiResponsesRole(res)
+	apiResponse := h.mapping.ToApiResponsesRole(res)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedRoleByUserId(ctx, userID, apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // Create godoc.
@@ -265,29 +323,28 @@ func (h *RoleHandleApi) FindByUserId(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseRole "Created role data"
 // @Failure 400 {object} response.ErrorResponse "Invalid request body"
 // @Failure 500 {object} response.ErrorResponse "Failed to create role"
-// @Router /api/role [post]
-func (h *RoleHandleApi) Create(c echo.Context) error {
-	var req requests.CreateRoleRequest
+// @Router /api/role/create [post]
+func (h *roleHandleApi) Create(c echo.Context) error {
+	var body requests.CreateRoleRequest
 
-	if err := c.Bind(&req); err != nil {
-		return role_errors.ErrApiBindCreateRole(c)
+	if err := c.Bind(&body); err != nil {
+		return errors.NewBadRequestError("Invalid request format").WithInternal(err)
 	}
 
-	if err := req.Validate(); err != nil {
-		return role_errors.ErrApiValidateCreateRole(c)
+	if err := body.Validate(); err != nil {
+		validations := h.parseValidationErrors(err)
+		return errors.NewValidationError(validations)
 	}
 
 	reqPb := &pb.CreateRoleRequest{
-		Name: req.Name,
+		Name: body.Name,
 	}
 
 	ctx := c.Request().Context()
 
 	res, err := h.role.CreateRole(ctx, reqPb)
-
 	if err != nil {
-		h.logger.Debug("Failed to create role", zap.Error(err))
-		return role_errors.ErrApiFailedCreateRole(c)
+		return h.handleGrpcError(err, "Create")
 	}
 
 	so := h.mapping.ToApiResponseRole(res)
@@ -307,33 +364,34 @@ func (h *RoleHandleApi) Create(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseRole "Updated role data"
 // @Failure 400 {object} response.ErrorResponse "Invalid role ID or request body"
 // @Failure 500 {object} response.ErrorResponse "Failed to update role"
-// @Router /api/role/{id} [post]
-func (h *RoleHandleApi) Update(c echo.Context) error {
+// @Router /api/role/update/{id} [post]
+func (h *roleHandleApi) Update(c echo.Context) error {
 	roleID, err := strconv.Atoi(c.Param("id"))
 	if err != nil || roleID <= 0 {
-		return role_errors.ErrInvalidRoleId(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
-	var req requests.UpdateRoleRequest
-	if err := c.Bind(&req); err != nil {
-		return role_errors.ErrApiBindUpdateRole(c)
+	var body requests.UpdateRoleRequest
+
+	if err := c.Bind(&body); err != nil {
+		return errors.NewBadRequestError("Invalid request format").WithInternal(err)
 	}
 
-	if err := req.Validate(); err != nil {
-		return role_errors.ErrApiValidateUpdateRole(c)
+	if err := body.Validate(); err != nil {
+		validations := h.parseValidationErrors(err)
+		return errors.NewValidationError(validations)
 	}
 
 	reqPb := &pb.UpdateRoleRequest{
 		Id:   int32(roleID),
-		Name: req.Name,
+		Name: body.Name,
 	}
 
 	ctx := c.Request().Context()
 
 	res, err := h.role.UpdateRole(ctx, reqPb)
 	if err != nil {
-		h.logger.Debug("Failed to update role", zap.Error(err))
-		return role_errors.ErrApiFailedUpdateRole(c)
+		return h.handleGrpcError(err, "Update")
 	}
 
 	so := h.mapping.ToApiResponseRole(res)
@@ -352,11 +410,11 @@ func (h *RoleHandleApi) Update(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseRole "Soft-deleted role data"
 // @Failure 400 {object} response.ErrorResponse "Invalid role ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to soft-delete role"
-// @Router /api/role/{id} [delete]
-func (h *RoleHandleApi) Trashed(c echo.Context) error {
+// @Router /api/role/trashed/{id} [post]
+func (h *roleHandleApi) Trashed(c echo.Context) error {
 	roleID, err := strconv.Atoi(c.Param("id"))
 	if err != nil || roleID <= 0 {
-		return role_errors.ErrInvalidRoleId(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -367,8 +425,7 @@ func (h *RoleHandleApi) Trashed(c echo.Context) error {
 
 	res, err := h.role.TrashedRole(ctx, req)
 	if err != nil {
-		h.logger.Debug("Failed to trash role", zap.Error(err))
-		return role_errors.ErrApiFailedTrashedRole(c)
+		return h.handleGrpcError(err, "Trashed")
 	}
 
 	so := h.mapping.ToApiResponseRoleDeleteAt(res)
@@ -387,11 +444,11 @@ func (h *RoleHandleApi) Trashed(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseRole "Restored role data"
 // @Failure 400 {object} response.ErrorResponse "Invalid role ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore role"
-// @Router /api/role/restore/{id} [put]
-func (h *RoleHandleApi) Restore(c echo.Context) error {
+// @Router /api/role/restore/{id} [post]
+func (h *roleHandleApi) Restore(c echo.Context) error {
 	roleID, err := strconv.Atoi(c.Param("id"))
 	if err != nil || roleID <= 0 {
-		return role_errors.ErrInvalidRoleId(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -402,8 +459,7 @@ func (h *RoleHandleApi) Restore(c echo.Context) error {
 
 	res, err := h.role.RestoreRole(ctx, req)
 	if err != nil {
-		h.logger.Debug("Failed to restore role", zap.Error(err))
-		return role_errors.ErrApiFailedRestoreRole(c)
+		return h.handleGrpcError(err, "Restore")
 	}
 
 	so := h.mapping.ToApiResponseRoleDeleteAt(res)
@@ -423,10 +479,10 @@ func (h *RoleHandleApi) Restore(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid role ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete role permanently"
 // @Router /api/role/permanent/{id} [delete]
-func (h *RoleHandleApi) DeletePermanent(c echo.Context) error {
+func (h *roleHandleApi) DeletePermanent(c echo.Context) error {
 	roleID, err := strconv.Atoi(c.Param("id"))
 	if err != nil || roleID <= 0 {
-		return role_errors.ErrInvalidRoleId(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -437,8 +493,7 @@ func (h *RoleHandleApi) DeletePermanent(c echo.Context) error {
 
 	res, err := h.role.DeleteRolePermanent(ctx, req)
 	if err != nil {
-		h.logger.Debug("Failed to delete role permanently", zap.Error(err))
-		return role_errors.ErrApiFailedDeletePermanent(c)
+		return h.handleGrpcError(err, "DeleteRole")
 	}
 
 	so := h.mapping.ToApiResponseRoleDelete(res)
@@ -456,13 +511,12 @@ func (h *RoleHandleApi) DeletePermanent(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseRoleAll "Restored roles data"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore all roles"
 // @Router /api/role/restore/all [post]
-func (h *RoleHandleApi) RestoreAll(c echo.Context) error {
+func (h *roleHandleApi) RestoreAll(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.role.RestoreAllRole(ctx, &emptypb.Empty{})
 	if err != nil {
-		h.logger.Debug("Failed to restore all roles", zap.Error(err))
-		return role_errors.ErrApiFailedRestoreAll(c)
+		return h.handleGrpcError(err, "RestoreAll")
 	}
 
 	so := h.mapping.ToApiResponseRoleAll(res)
@@ -479,17 +533,94 @@ func (h *RoleHandleApi) RestoreAll(c echo.Context) error {
 // @Produce json
 // @Success 200 {object} response.ApiResponseRoleAll "Permanently deleted roles data"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete all roles permanently"
-// @Router /api/role/permanent/all [post]
-func (h *RoleHandleApi) DeleteAllPermanent(c echo.Context) error {
+// @Router /api/role/permanent/all [delete]
+func (h *roleHandleApi) DeleteAllPermanent(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.role.DeleteAllRolePermanent(ctx, &emptypb.Empty{})
 	if err != nil {
-		h.logger.Debug("Failed to delete all roles permanently", zap.Error(err))
-		return role_errors.ErrApiFailedDeleteAll(c)
+		return h.handleGrpcError(err, "DeleteAll")
 	}
 
 	so := h.mapping.ToApiResponseRoleAll(res)
 
 	return c.JSON(http.StatusOK, so)
+}
+
+func (h *roleHandleApi) handleGrpcError(err error, operation string) *errors.AppError {
+	st, ok := status.FromError(err)
+	if !ok {
+		return errors.NewInternalError(err).WithMessage("Failed to " + operation)
+	}
+
+	switch st.Code() {
+	case codes.NotFound:
+		return errors.NewNotFoundError("Role").WithInternal(err)
+
+	case codes.AlreadyExists:
+		return errors.NewConflictError("Role already exists").WithInternal(err)
+
+	case codes.InvalidArgument:
+		return errors.NewBadRequestError(st.Message()).WithInternal(err)
+
+	case codes.PermissionDenied:
+		return errors.ErrForbidden.WithInternal(err)
+
+	case codes.Unauthenticated:
+		return errors.ErrUnauthorized.WithInternal(err)
+
+	case codes.ResourceExhausted:
+		return errors.ErrTooManyRequests.WithInternal(err)
+
+	case codes.Unavailable:
+		return errors.NewServiceUnavailableError("Shipping Address service").WithInternal(err)
+
+	case codes.DeadlineExceeded:
+		return errors.ErrTimeout.WithInternal(err)
+
+	default:
+		return errors.NewInternalError(err).WithMessage("Failed to " + operation)
+	}
+}
+
+func (h *roleHandleApi) parseValidationErrors(err error) []errors.ValidationError {
+	var validationErrs []errors.ValidationError
+
+	if ve, ok := err.(validator.ValidationErrors); ok {
+		for _, fe := range ve {
+			validationErrs = append(validationErrs, errors.ValidationError{
+				Field:   fe.Field(),
+				Message: h.getValidationMessage(fe),
+			})
+		}
+		return validationErrs
+	}
+
+	return []errors.ValidationError{
+		{
+			Field:   "general",
+			Message: err.Error(),
+		},
+	}
+}
+
+func (h *roleHandleApi) getValidationMessage(fe validator.FieldError) string {
+	switch fe.Tag() {
+	case "required":
+		return "This field is required"
+	case "email":
+		return "Invalid email format"
+	case "min":
+		return fmt.Sprintf("Must be at least %s", fe.Param())
+	case "max":
+		return fmt.Sprintf("Must be at most %s", fe.Param())
+	case "gte":
+		return fmt.Sprintf("Must be greater than or equal to %s", fe.Param())
+	case "lte":
+		return fmt.Sprintf("Must be less than or equal to %s", fe.Param())
+	case "oneof":
+		return fmt.Sprintf("Must be one of: %s", fe.Param())
+	default:
+		return fmt.Sprintf("Validation failed on '%s' tag", fe.Tag())
+	}
 }

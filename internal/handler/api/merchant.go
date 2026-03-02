@@ -1,76 +1,84 @@
 package api
 
 import (
+	merchant_cache "MamangRust/paymentgatewaygrpc/internal/cache/api/merchant"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api"
+	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
-	"MamangRust/paymentgatewaygrpc/pkg/errors/merchant_errors"
+	"MamangRust/paymentgatewaygrpc/pkg/errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
+	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type MerchantHandleApi struct {
-	merchant pb.MerchantServiceClient
-	logger   logger.LoggerInterface
-	mapping  apimapper.MerchantResponseMapper
+type merchantHandleApi struct {
+	merchant   pb.MerchantServiceClient
+	logger     logger.LoggerInterface
+	apiHandler errors.ApiHandler
+	mapping    apimapper.MerchantResponseMapper
+	cache      merchant_cache.MerchantMencache
 }
 
-func NewHandlerMerchant(merchant pb.MerchantServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.MerchantResponseMapper) *MerchantHandleApi {
-	merchantHandler := &MerchantHandleApi{
-		merchant: merchant,
-		mapping:  mapping,
-		logger:   logger,
+func NewHandlerMerchant(merchant pb.MerchantServiceClient, router *echo.Echo, logger logger.LoggerInterface, apiHandler errors.ApiHandler, mapping apimapper.MerchantResponseMapper, cache merchant_cache.MerchantMencache) *merchantHandleApi {
+	merchantHandler := &merchantHandleApi{
+		merchant:   merchant,
+		logger:     logger,
+		apiHandler: apiHandler,
+		mapping:    mapping,
+		cache:      cache,
 	}
 
 	routerMerchant := router.Group("/api/merchants")
 
-	routerMerchant.GET("", merchantHandler.FindAll)
-	routerMerchant.GET("/:id", merchantHandler.FindById)
+	routerMerchant.GET("", apiHandler.Handle("find-all-merchants", merchantHandler.FindAll))
+	routerMerchant.GET("/:id", apiHandler.Handle("find-merchant-by-id", merchantHandler.FindById))
+	routerMerchant.GET("/api-key", apiHandler.Handle("find-merchant-by-apikey", merchantHandler.FindByApiKey))
+	routerMerchant.GET("/merchant-user", apiHandler.Handle("find-merchant-by-user-id", merchantHandler.FindByMerchantUserId))
+	routerMerchant.GET("/active", apiHandler.Handle("find-active-merchants", merchantHandler.FindByActive))
+	routerMerchant.GET("/trashed", apiHandler.Handle("find-trashed-merchants", merchantHandler.FindByTrashed))
 
-	routerMerchant.GET("/transactions", merchantHandler.FindAllTransactions)
-	routerMerchant.GET("/transactions/:merchant_id", merchantHandler.FindAllTransactionByMerchant)
-	routerMerchant.GET("/transactions/api-key/:api_key", merchantHandler.FindAllTransactionByApikey)
+	routerMerchant.GET("/transactions", apiHandler.Handle("find-all-transactions", merchantHandler.FindAllTransactions))
+	routerMerchant.GET("/transactions/:merchant_id", apiHandler.Handle("find-all-transactions-by-merchant", merchantHandler.FindAllTransactionByMerchant))
+	routerMerchant.GET("/transactions/api-key/:api_key", apiHandler.Handle("find-all-transactions-by-apikey", merchantHandler.FindAllTransactionByApikey))
 
-	routerMerchant.GET("/monthly-payment-methods", merchantHandler.FindMonthlyPaymentMethodsMerchant)
-	routerMerchant.GET("/yearly-payment-methods", merchantHandler.FindYearlyPaymentMethodMerchant)
-	routerMerchant.GET("/monthly-amount", merchantHandler.FindMonthlyAmountMerchant)
-	routerMerchant.GET("/yearly-amount", merchantHandler.FindYearlyAmountMerchant)
-	routerMerchant.GET("/monthly-total-amount", merchantHandler.FindMonthlyTotalAmountMerchant)
-	routerMerchant.GET("/yearly-total-amount", merchantHandler.FindYearlyTotalAmountMerchant)
+	routerMerchant.GET("/monthly-payment-methods", apiHandler.Handle("find-monthly-payment-methods", merchantHandler.FindMonthlyPaymentMethodsMerchant))
+	routerMerchant.GET("/yearly-payment-methods", apiHandler.Handle("find-yearly-payment-methods", merchantHandler.FindYearlyPaymentMethodMerchant))
+	routerMerchant.GET("/monthly-amount", apiHandler.Handle("find-monthly-amount", merchantHandler.FindMonthlyAmountMerchant))
+	routerMerchant.GET("/yearly-amount", apiHandler.Handle("find-yearly-amount", merchantHandler.FindYearlyAmountMerchant))
+	routerMerchant.GET("/monthly-total-amount", apiHandler.Handle("find-monthly-total-amount", merchantHandler.FindMonthlyTotalAmountMerchant))
+	routerMerchant.GET("/yearly-total-amount", apiHandler.Handle("find-yearly-total-amount", merchantHandler.FindYearlyTotalAmountMerchant))
 
-	routerMerchant.GET("/monthly-payment-methods-by-merchant", merchantHandler.FindMonthlyPaymentMethodByMerchants)
-	routerMerchant.GET("/yearly-payment-methods-by-merchant", merchantHandler.FindYearlyPaymentMethodByMerchants)
-	routerMerchant.GET("/monthly-amount-by-merchant", merchantHandler.FindMonthlyAmountByMerchants)
-	routerMerchant.GET("/yearly-amount-by-merchant", merchantHandler.FindYearlyAmountByMerchants)
-	routerMerchant.GET("/monthly-totalamount-by-merchant", merchantHandler.FindMonthlyAmountByMerchants)
-	routerMerchant.GET("/yearly-totalamount-by-merchant", merchantHandler.FindYearlyAmountByMerchants)
+	routerMerchant.GET("/monthly-payment-methods-by-merchant", apiHandler.Handle("find-monthly-payment-methods-by-merchant", merchantHandler.FindMonthlyPaymentMethodByMerchants))
+	routerMerchant.GET("/yearly-payment-methods-by-merchant", apiHandler.Handle("find-yearly-payment-methods-by-merchant", merchantHandler.FindYearlyPaymentMethodByMerchants))
+	routerMerchant.GET("/monthly-amount-by-merchant", apiHandler.Handle("find-monthly-amount-by-merchant", merchantHandler.FindMonthlyAmountByMerchants))
+	routerMerchant.GET("/yearly-amount-by-merchant", apiHandler.Handle("find-yearly-amount-by-merchant", merchantHandler.FindYearlyAmountByMerchants))
+	routerMerchant.GET("/monthly-totalamount-by-merchant", apiHandler.Handle("find-monthly-total-amount-by-merchant", merchantHandler.FindMonthlyTotalAmountByMerchants))
+	routerMerchant.GET("/yearly-totalamount-by-merchant", apiHandler.Handle("find-yearly-total-amount-by-merchant", merchantHandler.FindYearlyTotalAmountByMerchants))
 
-	routerMerchant.GET("/monthly-payment-methods-by-apikey", merchantHandler.FindMonthlyPaymentMethodByApikeys)
-	routerMerchant.GET("/yearly-payment-methods-by-apikey", merchantHandler.FindYearlyPaymentMethodByApikeys)
-	routerMerchant.GET("/monthly-amount-by-apikey", merchantHandler.FindMonthlyAmountByApikeys)
-	routerMerchant.GET("/yearly-amount-by-apikey", merchantHandler.FindYearlyAmountByApikeys)
-	routerMerchant.GET("/monthly-totalamount-by-apikey", merchantHandler.FindMonthlyAmountByApikeys)
-	routerMerchant.GET("/yearly-totalamount-by-apikey", merchantHandler.FindYearlyAmountByApikeys)
+	routerMerchant.GET("/monthly-payment-methods-by-apikey", apiHandler.Handle("find-monthly-payment-methods-by-apikey", merchantHandler.FindMonthlyPaymentMethodByApikeys))
+	routerMerchant.GET("/yearly-payment-methods-by-apikey", apiHandler.Handle("find-yearly-payment-methods-by-apikey", merchantHandler.FindYearlyPaymentMethodByApikeys))
+	routerMerchant.GET("/monthly-amount-by-apikey", apiHandler.Handle("find-monthly-amount-by-apikey", merchantHandler.FindMonthlyAmountByApikeys))
+	routerMerchant.GET("/yearly-amount-by-apikey", apiHandler.Handle("find-yearly-amount-by-apikey", merchantHandler.FindYearlyAmountByApikeys))
+	routerMerchant.GET("/monthly-totalamount-by-apikey", apiHandler.Handle("find-monthly-total-amount-by-apikey", merchantHandler.FindMonthlyTotalAmountByApikeys))
+	routerMerchant.GET("/yearly-totalamount-by-apikey", apiHandler.Handle("find-yearly-total-amount-by-apikey", merchantHandler.FindYearlyTotalAmountByApikeys))
 
-	routerMerchant.GET("/api-key", merchantHandler.FindByApiKey)
-	routerMerchant.GET("/merchant-user", merchantHandler.FindByMerchantUserId)
-	routerMerchant.GET("/active", merchantHandler.FindByActive)
-	routerMerchant.GET("/trashed", merchantHandler.FindByTrashed)
+	routerMerchant.POST("/create", apiHandler.Handle("create-merchant", merchantHandler.Create))
+	routerMerchant.POST("/updates/:id", apiHandler.Handle("update-merchant", merchantHandler.Update))
 
-	routerMerchant.POST("/create", merchantHandler.Create)
-	routerMerchant.POST("/updates/:id", merchantHandler.Update)
+	routerMerchant.POST("/trashed/:id", apiHandler.Handle("trash-merchant", merchantHandler.TrashedMerchant))
+	routerMerchant.POST("/restore/:id", apiHandler.Handle("restore-merchant", merchantHandler.RestoreMerchant))
+	routerMerchant.DELETE("/permanent/:id", apiHandler.Handle("delete-merchant-permanent", merchantHandler.Delete))
 
-	routerMerchant.POST("/trashed/:id", merchantHandler.TrashedMerchant)
-	routerMerchant.POST("/restore/:id", merchantHandler.RestoreMerchant)
-	routerMerchant.DELETE("/permanent/:id", merchantHandler.Delete)
-
-	routerMerchant.POST("/restore/all", merchantHandler.RestoreAllMerchant)
-	routerMerchant.POST("/permanent/all", merchantHandler.DeleteAllMerchantPermanent)
+	routerMerchant.POST("/restore/all", apiHandler.Handle("restore-all-merchants", merchantHandler.RestoreAllMerchant))
+	routerMerchant.POST("/permanent/all", apiHandler.Handle("delete-all-merchants-permanent", merchantHandler.DeleteAllMerchantPermanent))
 
 	return merchantHandler
 }
@@ -88,7 +96,7 @@ func NewHandlerMerchant(merchant pb.MerchantServiceClient, router *echo.Echo, lo
 // @Success 200 {object} response.ApiResponsePaginationMerchant "List of merchants"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve merchant data"
 // @Router /api/merchants [get]
-func (h *MerchantHandleApi) FindAll(c echo.Context) error {
+func (h *merchantHandleApi) FindAll(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -100,26 +108,35 @@ func (h *MerchantHandleApi) FindAll(c echo.Context) error {
 	}
 
 	search := c.QueryParam("search")
-
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllMerchantRequest{
+	reqCache := &requests.FindAllMerchants{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedMerchants(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindAllMerchantRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.merchant.FindAllMerchant(ctx, req)
-
+	res, err := h.merchant.FindAllMerchant(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to retrieve merchant data", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindAllMerchants(c)
+		return h.handleGrpcError(err, "FindAllMerchant")
 	}
 
-	so := h.mapping.ToApiResponsesMerchant(res)
+	apiResponse := h.mapping.ToApiResponsesMerchant(res)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedMerchants(ctx, reqCache, apiResponse)
 
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindAllTransactions godoc
@@ -135,7 +152,7 @@ func (h *MerchantHandleApi) FindAll(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsePaginationTransaction "List of transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/merchants/transaction [get]
-func (h *MerchantHandleApi) FindAllTransactions(c echo.Context) error {
+func (h *merchantHandleApi) FindAllTransactions(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -150,6 +167,17 @@ func (h *MerchantHandleApi) FindAllTransactions(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
+	cacheReq := &requests.FindAllMerchantTransactions{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCacheAllMerchantTransactions(ctx, cacheReq)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
 	req := &pb.FindAllMerchantRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
@@ -160,10 +188,12 @@ func (h *MerchantHandleApi) FindAllTransactions(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve transaction data", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindAllTransactions(c)
+		return err
 	}
 
 	so := h.mapping.ToApiResponseMerchantsTransactionResponse(res)
+
+	h.cache.SetCacheAllMerchantTransactions(ctx, cacheReq, so)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -182,10 +212,10 @@ func (h *MerchantHandleApi) FindAllTransactions(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsePaginationTransaction "List of transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/merchants/transactions/:merchant_id [get]
-func (h *MerchantHandleApi) FindAllTransactionByMerchant(c echo.Context) error {
+func (h *merchantHandleApi) FindAllTransactionByMerchant(c echo.Context) error {
 	merchantID, err := strconv.Atoi(c.Param("merchant_id"))
 	if err != nil || merchantID <= 0 {
-		return merchant_errors.ErrApiInvalidMerchantID(c)
+		return err
 	}
 
 	page, err := strconv.Atoi(c.QueryParam("page"))
@@ -202,6 +232,18 @@ func (h *MerchantHandleApi) FindAllTransactionByMerchant(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
+	cacheReq := &requests.FindAllMerchantTransactionsById{
+		MerchantID: merchantID,
+		Page:       page,
+		PageSize:   pageSize,
+		Search:     search,
+	}
+
+	cachedData, found := h.cache.GetCacheMerchantTransactions(ctx, cacheReq)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
 	req := &pb.FindAllMerchantTransaction{
 		MerchantId: int32(merchantID),
 		Page:       int32(page),
@@ -213,10 +255,12 @@ func (h *MerchantHandleApi) FindAllTransactionByMerchant(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve transaction data", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindAllTransactionByMerchant(c)
+		return err
 	}
 
 	so := h.mapping.ToApiResponseMerchantsTransactionResponse(res)
+
+	h.cache.SetCacheMerchantTransactions(ctx, cacheReq, so)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -233,29 +277,33 @@ func (h *MerchantHandleApi) FindAllTransactionByMerchant(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve merchant data"
 // @Router /api/merchants/{id} [get]
-func (h *MerchantHandleApi) FindById(c echo.Context) error {
+func (h *merchantHandleApi) FindById(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
-
 	if err != nil {
-		return merchant_errors.ErrApiInvalidMerchantID(c)
+		return errors.NewBadRequestError("id is required and must be an integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindByIdMerchantRequest{
+	cachedData, found := h.cache.GetCachedMerchant(ctx, id)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindByIdMerchantRequest{
 		MerchantId: int32(id),
 	}
 
-	res, err := h.merchant.FindByIdMerchant(ctx, req)
-
+	res, err := h.merchant.FindByIdMerchant(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to retrieve merchant data", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindByIdMerchant(c)
+		return h.handleGrpcError(err, "FindByIdMerchant")
 	}
 
-	so := h.mapping.ToApiResponseMerchant(res)
+	apiResponse := h.mapping.ToApiResponseMerchant(res)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedMerchant(ctx, apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyPaymentMethodsMerchant godoc
@@ -270,27 +318,33 @@ func (h *MerchantHandleApi) FindById(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly payment methods"
 // @Router /api/merchants/monthly-payment-methods [get]
-func (h *MerchantHandleApi) FindMonthlyPaymentMethodsMerchant(c echo.Context) error {
+func (h *merchantHandleApi) FindMonthlyPaymentMethodsMerchant(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetMonthlyPaymentMethodsMerchantCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
 	req := &pb.FindYearMerchant{
 		Year: int32(year),
 	}
 
 	res, err := h.merchant.FindMonthlyPaymentMethodsMerchant(ctx, req)
 	if err != nil {
-		h.logger.Debug("Failed to find monthly payment methods for merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindMonthlyPaymentMethodsMerchant(c)
+		return h.handleGrpcError(err, "FindMonthlyPaymentMethodsMerchant")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyPaymentMethods(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyPaymentMethods(res)
+	h.cache.SetMonthlyPaymentMethodsMerchantCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyPaymentMethodMerchant godoc.
@@ -305,27 +359,33 @@ func (h *MerchantHandleApi) FindMonthlyPaymentMethodsMerchant(c echo.Context) er
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly payment methods"
 // @Router /api/merchants/monthly-amount [get]
-func (h *MerchantHandleApi) FindYearlyPaymentMethodMerchant(c echo.Context) error {
+func (h *merchantHandleApi) FindYearlyPaymentMethodMerchant(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetYearlyPaymentMethodMerchantCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
 	req := &pb.FindYearMerchant{
 		Year: int32(year),
 	}
 
 	res, err := h.merchant.FindYearlyPaymentMethodMerchant(ctx, req)
 	if err != nil {
-		h.logger.Debug("Failed to find yearly payment methods for merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindYearlyPaymentMethodMerchant(c)
+		return h.handleGrpcError(err, "FindYearlyPaymentMethodMerchant")
 	}
 
-	so := h.mapping.ToApiResponseYearlyPaymentMethods(res)
+	apiResponse := h.mapping.ToApiResponseYearlyPaymentMethods(res)
+	h.cache.SetYearlyPaymentMethodMerchantCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyAmountMerchant godoc
@@ -340,27 +400,33 @@ func (h *MerchantHandleApi) FindYearlyPaymentMethodMerchant(c echo.Context) erro
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
 // @Router /api/merchants/monthly-amount [get]
-func (h *MerchantHandleApi) FindMonthlyAmountMerchant(c echo.Context) error {
+func (h *merchantHandleApi) FindMonthlyAmountMerchant(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetMonthlyAmountMerchantCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
 	req := &pb.FindYearMerchant{
 		Year: int32(year),
 	}
 
 	res, err := h.merchant.FindMonthlyAmountMerchant(ctx, req)
 	if err != nil {
-		h.logger.Debug("Failed to find monthly amount for merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindMonthlyAmountMerchant(c)
+		return h.handleGrpcError(err, "FindMonthlyAmountMerchant")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyAmounts(res)
+	h.cache.SetMonthlyAmountMerchantCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyAmountMerchant godoc.
@@ -375,27 +441,33 @@ func (h *MerchantHandleApi) FindMonthlyAmountMerchant(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
 // @Router /api/merchants/yearly-amount [get]
-func (h *MerchantHandleApi) FindYearlyAmountMerchant(c echo.Context) error {
+func (h *merchantHandleApi) FindYearlyAmountMerchant(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetYearlyAmountMerchantCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
 	req := &pb.FindYearMerchant{
 		Year: int32(year),
 	}
 
 	res, err := h.merchant.FindYearlyAmountMerchant(ctx, req)
 	if err != nil {
-		h.logger.Debug("Failed to find yearly amount for merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindYearlyAmountMerchant(c)
+		return h.handleGrpcError(err, "FindYearlyAmountMerchant")
 	}
 
-	so := h.mapping.ToApiResponseYearlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyAmounts(res)
+	h.cache.SetYearlyAmountMerchantCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyAmountMerchant godoc
@@ -410,27 +482,33 @@ func (h *MerchantHandleApi) FindYearlyAmountMerchant(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
 // @Router /api/merchants/monthly-total-amount [get]
-func (h *MerchantHandleApi) FindMonthlyTotalAmountMerchant(c echo.Context) error {
+func (h *merchantHandleApi) FindMonthlyTotalAmountMerchant(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetMonthlyTotalAmountMerchantCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
 	req := &pb.FindYearMerchant{
 		Year: int32(year),
 	}
 
 	res, err := h.merchant.FindMonthlyTotalAmountMerchant(ctx, req)
 	if err != nil {
-		h.logger.Debug("Failed to find monthly amount for merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindMonthlyTotalAmountMerchant(c)
+		return h.handleGrpcError(err, "FindMonthlyTotalAmountMerchant")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyTotalAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyTotalAmounts(res)
+	h.cache.SetMonthlyTotalAmountMerchantCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyAmountMerchant godoc.
@@ -445,27 +523,33 @@ func (h *MerchantHandleApi) FindMonthlyTotalAmountMerchant(c echo.Context) error
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
 // @Router /api/merchants/yearly-total-amount [get]
-func (h *MerchantHandleApi) FindYearlyTotalAmountMerchant(c echo.Context) error {
+func (h *merchantHandleApi) FindYearlyTotalAmountMerchant(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetYearlyTotalAmountMerchantCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
 	req := &pb.FindYearMerchant{
 		Year: int32(year),
 	}
 
 	res, err := h.merchant.FindYearlyTotalAmountMerchant(ctx, req)
 	if err != nil {
-		h.logger.Debug("Failed to find yearly amount for merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindYearlyTotalAmountMerchant(c)
+		return h.handleGrpcError(err, "FindYearlyTotalAmountMerchant")
 	}
 
-	so := h.mapping.ToApiResponseYearlyTotalAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyTotalAmounts(res)
+	h.cache.SetYearlyTotalAmountMerchantCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyPaymentMethodByMerchants godoc.
@@ -481,35 +565,46 @@ func (h *MerchantHandleApi) FindYearlyTotalAmountMerchant(c echo.Context) error 
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly payment methods"
 // @Router /api/merchants/monthly-payment-methods-by-merchant [get]
-func (h *MerchantHandleApi) FindMonthlyPaymentMethodByMerchants(c echo.Context) error {
+func (h *merchantHandleApi) FindMonthlyPaymentMethodByMerchants(c echo.Context) error {
 	merchantIDStr := c.QueryParam("merchant_id")
 	yearStr := c.QueryParam("year")
 
 	merchantID, err := strconv.Atoi(merchantIDStr)
 	if err != nil || merchantID <= 0 {
-		return merchant_errors.ErrApiInvalidMerchantID(c)
+		return errors.NewBadRequestError("merchant_id is required and must be a positive integer")
 	}
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
-	req := &pb.FindYearMerchantById{
+
+	reqCache := &requests.MonthYearPaymentMethodMerchant{
+		MerchantID: merchantID,
+		Year:       year,
+	}
+
+	cachedData, found := h.cache.GetMonthlyPaymentMethodByMerchantsCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearMerchantById{
 		MerchantId: int32(merchantID),
 		Year:       int32(year),
 	}
 
-	res, err := h.merchant.FindMonthlyPaymentMethodByMerchants(ctx, req)
+	res, err := h.merchant.FindMonthlyPaymentMethodByMerchants(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to find monthly payment methods by merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindMonthlyPaymentMethodByMerchants(c)
+		return h.handleGrpcError(err, "FindMonthlyPaymentMethodByMerchants")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyPaymentMethods(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyPaymentMethods(res)
+	h.cache.SetMonthlyPaymentMethodByMerchantsCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyPaymentMethodByMerchants godoc.
@@ -525,35 +620,46 @@ func (h *MerchantHandleApi) FindMonthlyPaymentMethodByMerchants(c echo.Context) 
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly payment methods"
 // @Router /api/merchants/yearly-payment-methods-by-merchant [get]
-func (h *MerchantHandleApi) FindYearlyPaymentMethodByMerchants(c echo.Context) error {
+func (h *merchantHandleApi) FindYearlyPaymentMethodByMerchants(c echo.Context) error {
 	merchantIDStr := c.QueryParam("merchant_id")
 	yearStr := c.QueryParam("year")
 
 	merchantID, err := strconv.Atoi(merchantIDStr)
 	if err != nil || merchantID <= 0 {
-		return merchant_errors.ErrApiInvalidMerchantID(c)
+		return errors.NewBadRequestError("merchant_id is required and must be a positive integer")
 	}
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
-	req := &pb.FindYearMerchantById{
+
+	reqCache := &requests.MonthYearPaymentMethodMerchant{
+		MerchantID: merchantID,
+		Year:       year,
+	}
+
+	cachedData, found := h.cache.GetYearlyPaymentMethodByMerchantsCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearMerchantById{
 		MerchantId: int32(merchantID),
 		Year:       int32(year),
 	}
 
-	res, err := h.merchant.FindYearlyPaymentMethodByMerchants(ctx, req)
+	res, err := h.merchant.FindYearlyPaymentMethodByMerchants(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to find yearly payment methods by merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindYearlyPaymentMethodByMerchants(c)
+		return h.handleGrpcError(err, "FindYearlyPaymentMethodByMerchants")
 	}
 
-	so := h.mapping.ToApiResponseYearlyPaymentMethods(res)
+	apiResponse := h.mapping.ToApiResponseYearlyPaymentMethods(res)
+	h.cache.SetYearlyPaymentMethodByMerchantsCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyAmountByMerchants godoc.
@@ -569,35 +675,46 @@ func (h *MerchantHandleApi) FindYearlyPaymentMethodByMerchants(c echo.Context) e
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
 // @Router /api/merchants/monthly-amount-by-merchant [get]
-func (h *MerchantHandleApi) FindMonthlyAmountByMerchants(c echo.Context) error {
+func (h *merchantHandleApi) FindMonthlyAmountByMerchants(c echo.Context) error {
 	merchantIDStr := c.QueryParam("merchant_id")
 	yearStr := c.QueryParam("year")
 
 	merchantID, err := strconv.Atoi(merchantIDStr)
 	if err != nil || merchantID <= 0 {
-		return merchant_errors.ErrApiInvalidMerchantID(c)
+		return errors.NewBadRequestError("merchant_id is required and must be a positive integer")
 	}
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
-	req := &pb.FindYearMerchantById{
+
+	reqCache := &requests.MonthYearAmountMerchant{
+		MerchantID: merchantID,
+		Year:       year,
+	}
+
+	cachedData, found := h.cache.GetMonthlyAmountByMerchantsCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearMerchantById{
 		MerchantId: int32(merchantID),
 		Year:       int32(year),
 	}
 
-	res, err := h.merchant.FindMonthlyAmountByMerchants(ctx, req)
+	res, err := h.merchant.FindMonthlyAmountByMerchants(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to find monthly amount by merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindMonthlyAmountByMerchants(c)
+		return h.handleGrpcError(err, "FindMonthlyAmountByMerchants")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyAmounts(res)
+	h.cache.SetMonthlyAmountByMerchantsCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyAmountByMerchants godoc.
@@ -613,39 +730,46 @@ func (h *MerchantHandleApi) FindMonthlyAmountByMerchants(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
 // @Router /api/merchants/yearly-amount-by-merchant [get]
-func (h *MerchantHandleApi) FindYearlyAmountByMerchants(c echo.Context) error {
+func (h *merchantHandleApi) FindYearlyAmountByMerchants(c echo.Context) error {
 	merchantIDStr := c.QueryParam("merchant_id")
 	yearStr := c.QueryParam("year")
 
 	merchantID, err := strconv.Atoi(merchantIDStr)
-
 	if err != nil || merchantID <= 0 {
-		return merchant_errors.ErrApiInvalidMerchantID(c)
+		return errors.NewBadRequestError("merchant_id is required and must be a positive integer")
 	}
 
 	year, err := strconv.Atoi(yearStr)
-
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearMerchantById{
+	reqCache := &requests.MonthYearAmountMerchant{
+		MerchantID: merchantID,
+		Year:       year,
+	}
+
+	cachedData, found := h.cache.GetYearlyAmountByMerchantsCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearMerchantById{
 		MerchantId: int32(merchantID),
 		Year:       int32(year),
 	}
 
-	res, err := h.merchant.FindYearlyAmountByMerchants(ctx, req)
-
+	res, err := h.merchant.FindYearlyAmountByMerchants(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to find yearly amount by merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindYearlyAmountByMerchants(c)
+		return h.handleGrpcError(err, "FindYearlyAmountByMerchants")
 	}
 
-	so := h.mapping.ToApiResponseYearlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyAmounts(res)
+	h.cache.SetYearlyAmountByMerchantsCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyAmountByMerchants godoc.
@@ -661,35 +785,46 @@ func (h *MerchantHandleApi) FindYearlyAmountByMerchants(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
 // @Router /api/merchants/monthly-totalamount-by-merchant [get]
-func (h *MerchantHandleApi) FindMonthlyTotalAmountByMerchants(c echo.Context) error {
+func (h *merchantHandleApi) FindMonthlyTotalAmountByMerchants(c echo.Context) error {
 	merchantIDStr := c.QueryParam("merchant_id")
 	yearStr := c.QueryParam("year")
 
 	merchantID, err := strconv.Atoi(merchantIDStr)
 	if err != nil || merchantID <= 0 {
-		return merchant_errors.ErrApiInvalidMerchantID(c)
+		return errors.NewBadRequestError("merchant_id is required and must be a positive integer")
 	}
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
-	req := &pb.FindYearMerchantById{
+
+	reqCache := &requests.MonthYearTotalAmountMerchant{
+		MerchantID: merchantID,
+		Year:       year,
+	}
+
+	cachedData, found := h.cache.GetMonthlyTotalAmountByMerchantsCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearMerchantById{
 		MerchantId: int32(merchantID),
 		Year:       int32(year),
 	}
 
-	res, err := h.merchant.FindMonthlyTotalAmountByMerchants(ctx, req)
+	res, err := h.merchant.FindMonthlyTotalAmountByMerchants(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to find monthly amount by merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindMonthlyTotalAmountMerchant(c)
+		return h.handleGrpcError(err, "FindMonthlyTotalAmountByMerchants")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyTotalAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyTotalAmounts(res)
+	h.cache.SetMonthlyTotalAmountByMerchantsCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyAmountByMerchants godoc.
@@ -705,35 +840,46 @@ func (h *MerchantHandleApi) FindMonthlyTotalAmountByMerchants(c echo.Context) er
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
 // @Router /api/merchants/yearly-totalamount-by-merchant [get]
-func (h *MerchantHandleApi) FindYearlyTotalAmountByMerchants(c echo.Context) error {
+func (h *merchantHandleApi) FindYearlyTotalAmountByMerchants(c echo.Context) error {
 	merchantIDStr := c.QueryParam("merchant_id")
 	yearStr := c.QueryParam("year")
 
 	merchantID, err := strconv.Atoi(merchantIDStr)
 	if err != nil || merchantID <= 0 {
-		return merchant_errors.ErrApiInvalidMerchantID(c)
+		return errors.NewBadRequestError("merchant_id is required and must be a positive integer")
 	}
 
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
-	req := &pb.FindYearMerchantById{
+
+	reqCache := &requests.MonthYearTotalAmountMerchant{
+		MerchantID: merchantID,
+		Year:       year,
+	}
+
+	cachedData, found := h.cache.GetYearlyTotalAmountByMerchantsCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearMerchantById{
 		MerchantId: int32(merchantID),
 		Year:       int32(year),
 	}
 
-	res, err := h.merchant.FindYearlyTotalAmountByMerchants(ctx, req)
+	res, err := h.merchant.FindYearlyTotalAmountByMerchants(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to find yearly amount by merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindYearlyTotalAmountMerchant(c)
+		return h.handleGrpcError(err, "FindYearlyTotalAmountByMerchants")
 	}
 
-	so := h.mapping.ToApiResponseYearlyTotalAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyTotalAmounts(res)
+	h.cache.SetYearlyTotalAmountByMerchantsCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindAllTransactionByApikey godoc
@@ -750,7 +896,7 @@ func (h *MerchantHandleApi) FindYearlyTotalAmountByMerchants(c echo.Context) err
 // @Success 200 {object} response.ApiResponsePaginationTransaction "List of transactions"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve transaction data"
 // @Router /api/merchants/transactions/api-key/:api_key [get]
-func (h *MerchantHandleApi) FindAllTransactionByApikey(c echo.Context) error {
+func (h *merchantHandleApi) FindAllTransactionByApikey(c echo.Context) error {
 	api_key := c.Param("api_key")
 
 	page, err := strconv.Atoi(c.QueryParam("page"))
@@ -767,6 +913,18 @@ func (h *MerchantHandleApi) FindAllTransactionByApikey(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
+	cacheReq := &requests.FindAllMerchantTransactionsByApiKey{
+		ApiKey:   api_key,
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCacheMerchantTransactionApikey(ctx, cacheReq)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
 	req := &pb.FindAllMerchantApikey{
 		ApiKey:   api_key,
 		Page:     int32(page),
@@ -778,10 +936,12 @@ func (h *MerchantHandleApi) FindAllTransactionByApikey(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to retrieve transaction data", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindAllTransactionByApikey(c)
+		return err
 	}
 
 	so := h.mapping.ToApiResponseMerchantsTransactionResponse(res)
+
+	h.cache.SetCacheMerchantTransactionApikey(ctx, cacheReq, so)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -799,30 +959,45 @@ func (h *MerchantHandleApi) FindAllTransactionByApikey(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly payment methods"
 // @Router /api/merchants/monthly-payment-methods-by-apikey [get]
-func (h *MerchantHandleApi) FindMonthlyPaymentMethodByApikeys(c echo.Context) error {
+func (h *merchantHandleApi) FindMonthlyPaymentMethodByApikeys(c echo.Context) error {
 	api_key := c.QueryParam("api_key")
 	yearStr := c.QueryParam("year")
 
+	if api_key == "" {
+		return errors.NewBadRequestError("api_key is required")
+	}
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
-	req := &pb.FindYearMerchantByApikey{
+
+	reqCache := &requests.MonthYearPaymentMethodApiKey{
+		Apikey: api_key,
+		Year:   year,
+	}
+
+	cachedData, found := h.cache.GetMonthlyPaymentMethodByApikeysCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearMerchantByApikey{
 		ApiKey: api_key,
 		Year:   int32(year),
 	}
 
-	res, err := h.merchant.FindMonthlyPaymentMethodByApikey(ctx, req)
+	res, err := h.merchant.FindMonthlyPaymentMethodByApikey(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to find monthly payment methods by merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindMonthlyPaymentMethodsMerchant(c)
+		return h.handleGrpcError(err, "FindMonthlyPaymentMethodByApikey")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyPaymentMethods(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyPaymentMethods(res)
+	h.cache.SetMonthlyPaymentMethodByApikeysCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyPaymentMethodByApikeys godoc.
@@ -838,30 +1013,45 @@ func (h *MerchantHandleApi) FindMonthlyPaymentMethodByApikeys(c echo.Context) er
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly payment methods"
 // @Router /api/merchants/yearly-payment-methods-by-apikey [get]
-func (h *MerchantHandleApi) FindYearlyPaymentMethodByApikeys(c echo.Context) error {
+func (h *merchantHandleApi) FindYearlyPaymentMethodByApikeys(c echo.Context) error {
 	api_key := c.QueryParam("api_key")
 	yearStr := c.QueryParam("year")
 
+	if api_key == "" {
+		return errors.NewBadRequestError("api_key is required")
+	}
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
-	req := &pb.FindYearMerchantByApikey{
+
+	reqCache := &requests.MonthYearPaymentMethodApiKey{
+		Apikey: api_key,
+		Year:   year,
+	}
+
+	cachedData, found := h.cache.GetYearlyPaymentMethodByApikeysCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearMerchantByApikey{
 		ApiKey: api_key,
 		Year:   int32(year),
 	}
 
-	res, err := h.merchant.FindYearlyPaymentMethodByApikey(ctx, req)
+	res, err := h.merchant.FindYearlyPaymentMethodByApikey(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to find yearly payment methods by merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindYearlyPaymentMethodMerchant(c)
+		return h.handleGrpcError(err, "FindYearlyPaymentMethodByApikey")
 	}
 
-	so := h.mapping.ToApiResponseYearlyPaymentMethods(res)
+	apiResponse := h.mapping.ToApiResponseYearlyPaymentMethods(res)
+	h.cache.SetYearlyPaymentMethodByApikeysCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyAmountByApikeys godoc.
@@ -877,30 +1067,45 @@ func (h *MerchantHandleApi) FindYearlyPaymentMethodByApikeys(c echo.Context) err
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
 // @Router /api/merchants/monthly-amount-by-apikey [get]
-func (h *MerchantHandleApi) FindMonthlyAmountByApikeys(c echo.Context) error {
+func (h *merchantHandleApi) FindMonthlyAmountByApikeys(c echo.Context) error {
 	api_key := c.QueryParam("api_key")
 	yearStr := c.QueryParam("year")
 
+	if api_key == "" {
+		return errors.NewBadRequestError("api_key is required")
+	}
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
-	req := &pb.FindYearMerchantByApikey{
+
+	reqCache := &requests.MonthYearAmountApiKey{
+		Apikey: api_key,
+		Year:   year,
+	}
+
+	cachedData, found := h.cache.GetMonthlyAmountByApikeysCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearMerchantByApikey{
 		ApiKey: api_key,
 		Year:   int32(year),
 	}
 
-	res, err := h.merchant.FindMonthlyAmountByApikey(ctx, req)
+	res, err := h.merchant.FindMonthlyAmountByApikey(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to find monthly amount by merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindMonthlyAmountMerchant(c)
+		return h.handleGrpcError(err, "FindMonthlyAmountByApikey")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyAmounts(res)
+	h.cache.SetMonthlyAmountByApikeysCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyAmountByApikeys godoc.
@@ -916,30 +1121,45 @@ func (h *MerchantHandleApi) FindMonthlyAmountByApikeys(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
 // @Router /api/merchants/yearly-amount-by-apikey [get]
-func (h *MerchantHandleApi) FindYearlyAmountByApikeys(c echo.Context) error {
+func (h *merchantHandleApi) FindYearlyAmountByApikeys(c echo.Context) error {
 	api_key := c.QueryParam("api_key")
 	yearStr := c.QueryParam("year")
 
+	if api_key == "" {
+		return errors.NewBadRequestError("api_key is required")
+	}
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
-	req := &pb.FindYearMerchantByApikey{
+
+	reqCache := &requests.MonthYearAmountApiKey{
+		Apikey: api_key,
+		Year:   year,
+	}
+
+	cachedData, found := h.cache.GetYearlyAmountByApikeysCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearMerchantByApikey{
 		ApiKey: api_key,
 		Year:   int32(year),
 	}
 
-	res, err := h.merchant.FindYearlyAmountByApikey(ctx, req)
+	res, err := h.merchant.FindYearlyAmountByApikey(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to find yearly amount by merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindYearlyAmountMerchant(c)
+		return h.handleGrpcError(err, "FindYearlyAmountByApikey")
 	}
 
-	so := h.mapping.ToApiResponseYearlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyAmounts(res)
+	h.cache.SetYearlyAmountByApikeysCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyAmountByApikeys godoc.
@@ -955,30 +1175,45 @@ func (h *MerchantHandleApi) FindYearlyAmountByApikeys(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly transaction amounts"
 // @Router /api/merchants/monthly-totalamount-by-apikey [get]
-func (h *MerchantHandleApi) FindMonthlyTotalAmountByApikeys(c echo.Context) error {
+func (h *merchantHandleApi) FindMonthlyTotalAmountByApikeys(c echo.Context) error {
 	api_key := c.QueryParam("api_key")
 	yearStr := c.QueryParam("year")
 
+	if api_key == "" {
+		return errors.NewBadRequestError("api_key is required")
+	}
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
-	req := &pb.FindYearMerchantByApikey{
+
+	reqCache := &requests.MonthYearTotalAmountApiKey{
+		Apikey: api_key,
+		Year:   year,
+	}
+
+	cachedData, found := h.cache.GetMonthlyTotalAmountByApikeysCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearMerchantByApikey{
 		ApiKey: api_key,
 		Year:   int32(year),
 	}
 
-	res, err := h.merchant.FindMonthlyTotalAmountByApikey(ctx, req)
+	res, err := h.merchant.FindMonthlyTotalAmountByApikey(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to find monthly amount by merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindMonthlyTotalAmountMerchant(c)
+		return h.handleGrpcError(err, "FindMonthlyTotalAmountByApikey")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyTotalAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyTotalAmounts(res)
+	h.cache.SetMonthlyTotalAmountByApikeysCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyAmountByApikeys godoc.
@@ -994,33 +1229,46 @@ func (h *MerchantHandleApi) FindMonthlyTotalAmountByApikeys(c echo.Context) erro
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID or year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly transaction amounts"
 // @Router /api/merchants/yearly-totalamount-by-apikey [get]
-func (h *MerchantHandleApi) FindYearlyTotalAmountByApikeys(c echo.Context) error {
+func (h *merchantHandleApi) FindYearlyTotalAmountByApikeys(c echo.Context) error {
 	api_key := c.QueryParam("api_key")
 	yearStr := c.QueryParam("year")
 
+	if api_key == "" {
+		return errors.NewBadRequestError("api_key is required")
+	}
+
 	year, err := strconv.Atoi(yearStr)
 	if err != nil || year <= 0 {
-		return merchant_errors.ErrApiInvalidYear(c)
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
-	req := &pb.FindYearMerchantByApikey{
+
+	reqCache := &requests.MonthYearTotalAmountApiKey{
+		Apikey: api_key,
+		Year:   year,
+	}
+
+	cachedData, found := h.cache.GetYearlyTotalAmountByApikeysCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearMerchantByApikey{
 		ApiKey: api_key,
 		Year:   int32(year),
 	}
 
-	res, err := h.merchant.FindYearlyTotalAmountByApikey(ctx, req)
+	res, err := h.merchant.FindYearlyTotalAmountByApikey(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to find yearly amount by merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindYearlyTotalAmountMerchant(c)
+		return h.handleGrpcError(err, "FindYearlyTotalAmountByApikey")
 	}
 
-	so := h.mapping.ToApiResponseYearlyTotalAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyTotalAmounts(res)
+	h.cache.SetYearlyTotalAmountByApikeysCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
-
-//
 
 // FindByApiKey godoc
 // @Summary Find a merchant by API key
@@ -1033,29 +1281,33 @@ func (h *MerchantHandleApi) FindYearlyTotalAmountByApikeys(c echo.Context) error
 // @Success 200 {object} response.ApiResponseMerchant "Merchant data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve merchant data"
 // @Router /api/merchants/api-key [get]
-func (h *MerchantHandleApi) FindByApiKey(c echo.Context) error {
+func (h *merchantHandleApi) FindByApiKey(c echo.Context) error {
 	apiKey := c.QueryParam("api_key")
-
 	if apiKey == "" {
-		return merchant_errors.ErrApiInvalidApiKey(c)
+		return errors.NewBadRequestError("api_key is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindByApiKeyRequest{
+	cachedData, found := h.cache.GetCachedMerchantByApiKey(ctx, apiKey)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindByApiKeyRequest{
 		ApiKey: apiKey,
 	}
 
-	res, err := h.merchant.FindByApiKey(ctx, req)
-
+	res, err := h.merchant.FindByApiKey(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to retrieve merchant data", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindByApiKeyMerchant(c)
+		return h.handleGrpcError(err, "FindByApiKey")
 	}
 
-	so := h.mapping.ToApiResponseMerchant(res)
+	apiResponse := h.mapping.ToApiResponseMerchant(res)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedMerchantByApiKey(ctx, apiKey, apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindByMerchantUserId godoc.
@@ -1070,29 +1322,33 @@ func (h *MerchantHandleApi) FindByApiKey(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid merchant ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve merchant data"
 // @Router /api/merchants/merchant-user [get]
-func (h *MerchantHandleApi) FindByMerchantUserId(c echo.Context) error {
-	id, ok := c.Get("user_id").(int32)
-
+func (h *merchantHandleApi) FindByMerchantUserId(c echo.Context) error {
+	userId, ok := c.Get("user_id").(int32)
 	if !ok {
-		return merchant_errors.ErrApiInvalidUserID(c)
+		return errors.NewBadRequestError("user_id is required and must be valid")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindByMerchantUserIdRequest{
-		UserId: id,
+	cachedData, found := h.cache.GetCachedMerchantsByUserId(ctx, int(userId))
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
 	}
 
-	res, err := h.merchant.FindByMerchantUserId(ctx, req)
+	reqGrpc := &pb.FindByMerchantUserIdRequest{
+		UserId: userId,
+	}
 
+	res, err := h.merchant.FindByMerchantUserId(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to retrieve merchant data", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindByUserId(c)
+		return h.handleGrpcError(err, "FindByMerchantUserId")
 	}
 
-	so := h.mapping.ToApiResponseMerchants(res)
+	apiResponse := h.mapping.ToApiResponseMerchants(res)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedMerchantsByUserId(ctx, int(userId), apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindByActive godoc
@@ -1108,7 +1364,7 @@ func (h *MerchantHandleApi) FindByMerchantUserId(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsesMerchant "List of active merchants"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve merchant data"
 // @Router /api/merchants/active [get]
-func (h *MerchantHandleApi) FindByActive(c echo.Context) error {
+func (h *merchantHandleApi) FindByActive(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -1120,25 +1376,35 @@ func (h *MerchantHandleApi) FindByActive(c echo.Context) error {
 	}
 
 	search := c.QueryParam("search")
-
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllMerchantRequest{
+	reqCache := &requests.FindAllMerchants{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedMerchantActive(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindAllMerchantRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.merchant.FindByActive(ctx, req)
-
+	res, err := h.merchant.FindByActive(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to retrieve merchant data", zap.Error(err))
-		return merchant_errors.ErrApiFailedFindAllMerchantsActive(c)
+		return h.handleGrpcError(err, "FindByActive")
 	}
 
-	so := h.mapping.ToApiResponsesMerchantDeleteAt(res)
+	apiResponse := h.mapping.ToApiResponsesMerchantDeleteAt(res)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedMerchantActive(ctx, reqCache, apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindByTrashed godoc
@@ -1154,7 +1420,7 @@ func (h *MerchantHandleApi) FindByActive(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsesMerchant "List of trashed merchants"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve merchant data"
 // @Router /api/merchants/trashed [get]
-func (h *MerchantHandleApi) FindByTrashed(c echo.Context) error {
+func (h *merchantHandleApi) FindByTrashed(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -1166,26 +1432,35 @@ func (h *MerchantHandleApi) FindByTrashed(c echo.Context) error {
 	}
 
 	search := c.QueryParam("search")
-
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllMerchantRequest{
+	reqCache := &requests.FindAllMerchants{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedMerchantTrashed(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindAllMerchantRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.merchant.FindByTrashed(ctx, req)
-
+	res, err := h.merchant.FindByTrashed(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to retrieve merchant data", zap.Error(err))
-
-		return merchant_errors.ErrApiFailedFindAllMerchantsTrashed(c)
+		return h.handleGrpcError(err, "FindByTrashed")
 	}
 
-	so := h.mapping.ToApiResponsesMerchantDeleteAt(res)
+	apiResponse := h.mapping.ToApiResponsesMerchantDeleteAt(res)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedMerchantTrashed(ctx, reqCache, apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // Create godoc
@@ -1200,17 +1475,16 @@ func (h *MerchantHandleApi) FindByTrashed(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to create merchant"
 // @Router /api/merchants/create [post]
-func (h *MerchantHandleApi) Create(c echo.Context) error {
+func (h *merchantHandleApi) Create(c echo.Context) error {
 	var body requests.CreateMerchantRequest
 
 	if err := c.Bind(&body); err != nil {
-		h.logger.Debug("Bad Request", zap.Error(err))
-		return merchant_errors.ErrApiBindCreateMerchant(c)
+		return errors.NewBadRequestError("Invalid request")
 	}
 
 	if err := body.Validate(); err != nil {
-		h.logger.Debug("Validation Error", zap.Error(err))
-		return merchant_errors.ErrApiValidateCreateMerchant(c)
+		validations := h.parseValidationErrors(err)
+		return errors.NewValidationError(validations)
 	}
 
 	ctx := c.Request().Context()
@@ -1223,8 +1497,7 @@ func (h *MerchantHandleApi) Create(c echo.Context) error {
 	res, err := h.merchant.CreateMerchant(ctx, req)
 
 	if err != nil {
-		h.logger.Debug("Failed to create merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedCreateMerchant(c)
+		return h.handleGrpcError(err, "Create")
 	}
 
 	so := h.mapping.ToApiResponseMerchant(res)
@@ -1244,23 +1517,22 @@ func (h *MerchantHandleApi) Create(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to update merchant"
 // @Router /api/merchants/update/{id} [post]
-func (h *MerchantHandleApi) Update(c echo.Context) error {
+func (h *merchantHandleApi) Update(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		return merchant_errors.ErrApiInvalidMerchantID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	var body requests.UpdateMerchantRequest
 
 	if err := c.Bind(&body); err != nil {
-		h.logger.Debug("Bad Request", zap.Error(err))
-		return merchant_errors.ErrApiBindUpdateMerchant(c)
+		return errors.NewBadRequestError("Invalid request")
 	}
 
 	if err := body.Validate(); err != nil {
-		h.logger.Debug("Validation Error", zap.Error(err))
-		return merchant_errors.ErrApiValidateUpdateMerchant(c)
+		validations := h.parseValidationErrors(err)
+		return errors.NewValidationError(validations)
 	}
 
 	ctx := c.Request().Context()
@@ -1274,8 +1546,7 @@ func (h *MerchantHandleApi) Update(c echo.Context) error {
 	res, err := h.merchant.UpdateMerchant(ctx, req)
 
 	if err != nil {
-		h.logger.Debug("Failed to update merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedUpdateMerchant(c)
+		return h.handleGrpcError(err, "Update")
 	}
 
 	so := h.mapping.ToApiResponseMerchant(res)
@@ -1295,15 +1566,13 @@ func (h *MerchantHandleApi) Update(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to trashed merchant"
 // @Router /api/merchants/trashed/{id} [post]
-func (h *MerchantHandleApi) TrashedMerchant(c echo.Context) error {
+func (h *merchantHandleApi) TrashedMerchant(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
-		h.logger.Debug("Bad Request", zap.Error(err))
-
-		return merchant_errors.ErrApiInvalidMerchantID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -1313,9 +1582,7 @@ func (h *MerchantHandleApi) TrashedMerchant(c echo.Context) error {
 	})
 
 	if err != nil {
-		h.logger.Debug("Failed to trashed merchant", zap.Error(err))
-
-		return merchant_errors.ErrApiFailedTrashMerchant(c)
+		return h.handleGrpcError(err, "Trashed")
 	}
 
 	so := h.mapping.ToApiResponseMerchantDeleteAt(res)
@@ -1335,15 +1602,13 @@ func (h *MerchantHandleApi) TrashedMerchant(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore merchant"
 // @Router /api/merchants/restore/{id} [post]
-func (h *MerchantHandleApi) RestoreMerchant(c echo.Context) error {
+func (h *merchantHandleApi) RestoreMerchant(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
-		h.logger.Debug("Bad Request", zap.Error(err))
-
-		return merchant_errors.ErrApiInvalidMerchantID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -1353,9 +1618,7 @@ func (h *MerchantHandleApi) RestoreMerchant(c echo.Context) error {
 	})
 
 	if err != nil {
-		h.logger.Debug("Failed to restore merchant", zap.Error(err))
-
-		return merchant_errors.ErrApiFailedRestoreMerchant(c)
+		return h.handleGrpcError(err, "Restore")
 	}
 
 	so := h.mapping.ToApiResponseMerchantDeleteAt(res)
@@ -1375,13 +1638,13 @@ func (h *MerchantHandleApi) RestoreMerchant(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete merchant"
 // @Router /api/merchants/{id} [delete]
-func (h *MerchantHandleApi) Delete(c echo.Context) error {
+func (h *merchantHandleApi) Delete(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
-		return merchant_errors.ErrApiInvalidMerchantID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -1391,9 +1654,7 @@ func (h *MerchantHandleApi) Delete(c echo.Context) error {
 	})
 
 	if err != nil {
-		h.logger.Debug("Failed to delete merchant", zap.Error(err))
-
-		return merchant_errors.ErrApiFailedDeleteMerchantPermanent(c)
+		return h.handleGrpcError(err, "DeletePermanent")
 	}
 
 	so := h.mapping.ToApiResponseMerchantDelete(res)
@@ -1411,14 +1672,13 @@ func (h *MerchantHandleApi) Delete(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseMerchantAll "Successfully restored all merchant records"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore all merchant records"
 // @Router /api/merchants/restore/all [post]
-func (h *MerchantHandleApi) RestoreAllMerchant(c echo.Context) error {
+func (h *merchantHandleApi) RestoreAllMerchant(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.merchant.RestoreAllMerchant(ctx, &emptypb.Empty{})
 
 	if err != nil {
-		h.logger.Error("Failed to restore all merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedRestoreAllMerchant(c)
+		return h.handleGrpcError(err, "RestoreAll")
 	}
 
 	h.logger.Debug("Successfully restored all merchant")
@@ -1438,14 +1698,13 @@ func (h *MerchantHandleApi) RestoreAllMerchant(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseMerchantAll "Successfully deleted all merchant records permanently"
 // @Failure 500 {object} response.ErrorResponse "Failed to permanently delete all merchant records"
 // @Router /api/merchants/permanent/all [post]
-func (h *MerchantHandleApi) DeleteAllMerchantPermanent(c echo.Context) error {
+func (h *merchantHandleApi) DeleteAllMerchantPermanent(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.merchant.DeleteAllMerchantPermanent(ctx, &emptypb.Empty{})
 
 	if err != nil {
-		h.logger.Error("Failed to permanently delete all merchant", zap.Error(err))
-		return merchant_errors.ErrApiFailedDeleteAllMerchantPermanent(c)
+		return h.handleGrpcError(err, "DeleteAll")
 	}
 
 	h.logger.Debug("Successfully deleted all merchant permanently")
@@ -1453,4 +1712,82 @@ func (h *MerchantHandleApi) DeleteAllMerchantPermanent(c echo.Context) error {
 	so := h.mapping.ToApiResponseMerchantAll(res)
 
 	return c.JSON(http.StatusOK, so)
+}
+
+func (h *merchantHandleApi) handleGrpcError(err error, operation string) *errors.AppError {
+	st, ok := status.FromError(err)
+	if !ok {
+		return errors.NewInternalError(err).WithMessage("Failed to " + operation)
+	}
+
+	switch st.Code() {
+	case codes.NotFound:
+		return errors.NewNotFoundError("Merchant").WithInternal(err)
+
+	case codes.AlreadyExists:
+		return errors.NewConflictError("Merchant already exists").WithInternal(err)
+
+	case codes.InvalidArgument:
+		return errors.NewBadRequestError(st.Message()).WithInternal(err)
+
+	case codes.PermissionDenied:
+		return errors.ErrForbidden.WithInternal(err)
+
+	case codes.Unauthenticated:
+		return errors.ErrUnauthorized.WithInternal(err)
+
+	case codes.ResourceExhausted:
+		return errors.ErrTooManyRequests.WithInternal(err)
+
+	case codes.Unavailable:
+		return errors.NewServiceUnavailableError("Merchant service").WithInternal(err)
+
+	case codes.DeadlineExceeded:
+		return errors.ErrTimeout.WithInternal(err)
+
+	default:
+		return errors.NewInternalError(err).WithMessage("Failed to " + operation)
+	}
+}
+
+func (h *merchantHandleApi) parseValidationErrors(err error) []errors.ValidationError {
+	var validationErrs []errors.ValidationError
+
+	if ve, ok := err.(validator.ValidationErrors); ok {
+		for _, fe := range ve {
+			validationErrs = append(validationErrs, errors.ValidationError{
+				Field:   fe.Field(),
+				Message: h.getValidationMessage(fe),
+			})
+		}
+		return validationErrs
+	}
+
+	return []errors.ValidationError{
+		{
+			Field:   "general",
+			Message: err.Error(),
+		},
+	}
+}
+
+func (h *merchantHandleApi) getValidationMessage(fe validator.FieldError) string {
+	switch fe.Tag() {
+	case "required":
+		return "This field is required"
+	case "email":
+		return "Invalid email format"
+	case "min":
+		return fmt.Sprintf("Must be at least %s", fe.Param())
+	case "max":
+		return fmt.Sprintf("Must be at most %s", fe.Param())
+	case "gte":
+		return fmt.Sprintf("Must be greater than or equal to %s", fe.Param())
+	case "lte":
+		return fmt.Sprintf("Must be less than or equal to %s", fe.Param())
+	case "oneof":
+		return fmt.Sprintf("Must be one of: %s", fe.Param())
+	default:
+		return fmt.Sprintf("Validation failed on '%s' tag", fe.Tag())
+	}
 }

@@ -2,27 +2,25 @@ package gapi
 
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	protomapper "MamangRust/paymentgatewaygrpc/internal/mapper/proto"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
 	"MamangRust/paymentgatewaygrpc/internal/service"
+	"MamangRust/paymentgatewaygrpc/pkg/errors"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/saldo_errors"
 	"context"
 	"math"
 
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type saldoHandleGrpc struct {
 	pb.UnimplementedSaldoServiceServer
 	saldoService service.SaldoService
-	mapping      protomapper.SaldoProtoMapper
 }
 
-func NewSaldoHandleGrpc(saldo service.SaldoService, mapping protomapper.SaldoProtoMapper) *saldoHandleGrpc {
+func NewSaldoHandleGrpc(saldo service.SaldoService) *saldoHandleGrpc {
 	return &saldoHandleGrpc{
 		saldoService: saldo,
-		mapping:      mapping,
 	}
 }
 
@@ -44,14 +42,25 @@ func (s *saldoHandleGrpc) FindAllSaldo(ctx context.Context, req *pb.FindAllSaldo
 		Search:   search,
 	}
 
-	res, totalRecords, err := s.saldoService.FindAll(&reqService)
-
+	res, totalRecords, err := s.saldoService.FindAll(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoSaldos := make([]*pb.SaldoResponse, len(res))
+	for i, saldo := range res {
+		protoSaldos[i] = &pb.SaldoResponse{
+			SaldoId:        int32(saldo.SaldoID),
+			CardNumber:     saldo.CardNumber,
+			TotalBalance:   saldo.TotalBalance,
+			WithdrawTime:   saldo.WithdrawTime.Time.Format("2006-01-02 15:04:05"),
+			WithdrawAmount: *saldo.WithdrawAmount,
+			CreatedAt:      saldo.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt:      saldo.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+		}
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
-
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
@@ -59,127 +68,68 @@ func (s *saldoHandleGrpc) FindAllSaldo(ctx context.Context, req *pb.FindAllSaldo
 		TotalRecords: int32(*totalRecords),
 	}
 
-	so := s.mapping.ToProtoResponsePaginationSaldo(paginationMeta, "success", "Successfully fetched saldo record", res)
-
-	return so, nil
+	return &pb.ApiResponsePaginationSaldo{
+		Status:     "success",
+		Message:    "Successfully fetched saldo record",
+		Data:       protoSaldos,
+		Pagination: paginationMeta,
+	}, nil
 }
 
 func (s *saldoHandleGrpc) FindByIdSaldo(ctx context.Context, req *pb.FindByIdSaldoRequest) (*pb.ApiResponseSaldo, error) {
 	id := int(req.GetSaldoId())
-
 	if id == 0 {
 		return nil, saldo_errors.ErrGrpcSaldoInvalidID
 	}
 
-	saldo, err := s.saldoService.FindById(id)
-
+	saldo, err := s.saldoService.FindById(ctx, id)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseSaldo("success", "Successfully fetched saldo record", saldo)
-
-	return so, nil
-}
-
-func (s *saldoHandleGrpc) FindMonthlyTotalSaldoBalance(ctx context.Context, req *pb.FindMonthlySaldoTotalBalance) (*pb.ApiResponseMonthTotalSaldo, error) {
-	year := int(req.GetYear())
-	month := int(req.GetMonth())
-
-	if year <= 0 {
-		return nil, saldo_errors.ErrGrpcSaldoInvalidYear
+	protoSaldo := &pb.SaldoResponse{
+		SaldoId:        int32(saldo.SaldoID),
+		CardNumber:     saldo.CardNumber,
+		TotalBalance:   saldo.TotalBalance,
+		WithdrawTime:   saldo.WithdrawTime.Time.Format("2006-01-02 15:04:05"),
+		WithdrawAmount: *saldo.WithdrawAmount,
+		CreatedAt:      saldo.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt:      saldo.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
 	}
 
-	if month <= 0 {
-		return nil, saldo_errors.ErrGrpcSaldoInvalidMonth
-	}
-
-	reqService := requests.MonthTotalSaldoBalance{
-		Year:  year,
-		Month: month,
-	}
-
-	res, err := s.saldoService.FindMonthlyTotalSaldoBalance(&reqService)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseMonthTotalSaldo("success", "Successfully fetched monthly total saldo balance", res)
-
-	return so, nil
-}
-
-func (s *saldoHandleGrpc) FindYearTotalSaldoBalance(ctx context.Context, req *pb.FindYearlySaldo) (*pb.ApiResponseYearTotalSaldo, error) {
-	year := int(req.GetYear())
-
-	if year <= 0 {
-		return nil, saldo_errors.ErrGrpcSaldoInvalidYear
-	}
-
-	res, err := s.saldoService.FindYearTotalSaldoBalance(year)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseYearTotalSaldo("success", "Successfully fetched yearly total saldo balance", res)
-
-	return so, nil
-}
-
-func (s *saldoHandleGrpc) FindMonthlySaldoBalances(ctx context.Context, req *pb.FindYearlySaldo) (*pb.ApiResponseMonthSaldoBalances, error) {
-	year := int(req.GetYear())
-
-	if year <= 0 {
-		return nil, saldo_errors.ErrGrpcSaldoInvalidYear
-	}
-
-	res, err := s.saldoService.FindMonthlySaldoBalances(year)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseMonthSaldoBalances("success", "Successfully fetched monthly saldo balances", res)
-
-	return so, nil
-}
-
-func (s *saldoHandleGrpc) FindYearlySaldoBalances(ctx context.Context, req *pb.FindYearlySaldo) (*pb.ApiResponseYearSaldoBalances, error) {
-	year := int(req.GetYear())
-
-	if year <= 0 {
-		return nil, saldo_errors.ErrGrpcSaldoInvalidYear
-	}
-
-	res, err := s.saldoService.FindYearlySaldoBalances(year)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseYearSaldoBalances("success", "Successfully fetched yearly saldo balances", res)
-
-	return so, nil
+	return &pb.ApiResponseSaldo{
+		Status:  "success",
+		Message: "Successfully fetched saldo record",
+		Data:    protoSaldo,
+	}, nil
 }
 
 func (s *saldoHandleGrpc) FindByCardNumber(ctx context.Context, req *pb.FindByCardNumberRequest) (*pb.ApiResponseSaldo, error) {
 	cardNumber := req.GetCardNumber()
-
 	if cardNumber == "" {
 		return nil, saldo_errors.ErrGrpcSaldoInvalidCardNumber
 	}
 
-	saldo, err := s.saldoService.FindByCardNumber(cardNumber)
-
+	saldo, err := s.saldoService.FindByCardNumber(ctx, cardNumber)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseSaldo("success", "Successfully fetched saldo record", saldo)
+	protoSaldo := &pb.SaldoResponse{
+		SaldoId:        int32(saldo.SaldoID),
+		CardNumber:     saldo.CardNumber,
+		TotalBalance:   saldo.TotalBalance,
+		WithdrawTime:   saldo.WithdrawTime.Time.Format("2006-01-02 15:04:05"),
+		WithdrawAmount: *saldo.WithdrawAmount,
+		CreatedAt:      saldo.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt:      saldo.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+	}
 
-	return so, nil
+	return &pb.ApiResponseSaldo{
+		Status:  "success",
+		Message: "Successfully fetched saldo record",
+		Data:    protoSaldo,
+	}, nil
 }
 
 func (s *saldoHandleGrpc) FindByActive(ctx context.Context, req *pb.FindAllSaldoRequest) (*pb.ApiResponsePaginationSaldoDeleteAt, error) {
@@ -200,23 +150,39 @@ func (s *saldoHandleGrpc) FindByActive(ctx context.Context, req *pb.FindAllSaldo
 		Search:   search,
 	}
 
-	res, totalRecords, err := s.saldoService.FindByActive(&reqService)
-
+	res, totalRecords, err := s.saldoService.FindByActive(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoSaldos := make([]*pb.SaldoResponseDeleteAt, len(res))
+	for i, saldo := range res {
+		protoSaldos[i] = &pb.SaldoResponseDeleteAt{
+			SaldoId:        int32(saldo.SaldoID),
+			CardNumber:     saldo.CardNumber,
+			TotalBalance:   saldo.TotalBalance,
+			WithdrawTime:   saldo.WithdrawTime.Time.Format("2006-01-02 15:04:05"),
+			WithdrawAmount: *saldo.WithdrawAmount,
+			CreatedAt:      saldo.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt:      saldo.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+			DeletedAt:      wrapperspb.String(saldo.DeletedAt.Time.Format("2006-01-02 15:04:05")),
+		}
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
-
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
 		TotalPages:   int32(totalPages),
 		TotalRecords: int32(*totalRecords),
 	}
-	so := s.mapping.ToProtoResponsePaginationSaldoDeleteAt(paginationMeta, "success", "Successfully fetched saldo record", res)
 
-	return so, nil
+	return &pb.ApiResponsePaginationSaldoDeleteAt{
+		Status:     "success",
+		Message:    "Successfully fetched saldo record",
+		Data:       protoSaldos,
+		Pagination: paginationMeta,
+	}, nil
 }
 
 func (s *saldoHandleGrpc) FindByTrashed(ctx context.Context, req *pb.FindAllSaldoRequest) (*pb.ApiResponsePaginationSaldoDeleteAt, error) {
@@ -237,23 +203,157 @@ func (s *saldoHandleGrpc) FindByTrashed(ctx context.Context, req *pb.FindAllSald
 		Search:   search,
 	}
 
-	res, totalRecords, err := s.saldoService.FindByTrashed(&reqService)
-
+	res, totalRecords, err := s.saldoService.FindByTrashed(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoSaldos := make([]*pb.SaldoResponseDeleteAt, len(res))
+	for i, saldo := range res {
+		protoSaldos[i] = &pb.SaldoResponseDeleteAt{
+			SaldoId:        int32(saldo.SaldoID),
+			CardNumber:     saldo.CardNumber,
+			TotalBalance:   saldo.TotalBalance,
+			WithdrawTime:   saldo.WithdrawTime.Time.Format("2006-01-02 15:04:05"),
+			WithdrawAmount: *saldo.WithdrawAmount,
+			CreatedAt:      saldo.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt:      saldo.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+			DeletedAt:      wrapperspb.String(saldo.DeletedAt.Time.Format("2006-01-02 15:04:05")),
+		}
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
-
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
 		TotalPages:   int32(totalPages),
 		TotalRecords: int32(*totalRecords),
 	}
-	so := s.mapping.ToProtoResponsePaginationSaldoDeleteAt(paginationMeta, "success", "Successfully fetched saldo record", res)
 
-	return so, nil
+	return &pb.ApiResponsePaginationSaldoDeleteAt{
+		Status:     "success",
+		Message:    "Successfully fetched saldo record",
+		Data:       protoSaldos,
+		Pagination: paginationMeta,
+	}, nil
+}
+
+func (s *saldoHandleGrpc) FindMonthlyTotalSaldoBalance(ctx context.Context, req *pb.FindMonthlySaldoTotalBalance) (*pb.ApiResponseMonthTotalSaldo, error) {
+	year := int(req.GetYear())
+	month := int(req.GetMonth())
+
+	if year <= 0 {
+		return nil, saldo_errors.ErrGrpcSaldoInvalidYear
+	}
+	if month <= 0 {
+		return nil, saldo_errors.ErrGrpcSaldoInvalidMonth
+	}
+
+	reqService := requests.MonthTotalSaldoBalance{
+		Year:  year,
+		Month: month,
+	}
+
+	res, err := s.saldoService.FindMonthlyTotalSaldoBalance(ctx, &reqService)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoData := make([]*pb.SaldoMonthTotalBalanceResponse, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.SaldoMonthTotalBalanceResponse{
+			Month:        item.Month,
+			Year:         item.Year,
+			TotalBalance: int32(item.TotalBalance),
+		}
+	}
+
+	return &pb.ApiResponseMonthTotalSaldo{
+		Status:  "success",
+		Message: "Successfully fetched monthly total saldo balance",
+		Data:    protoData,
+	}, nil
+}
+
+func (s *saldoHandleGrpc) FindYearTotalSaldoBalance(ctx context.Context, req *pb.FindYearlySaldo) (*pb.ApiResponseYearTotalSaldo, error) {
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, saldo_errors.ErrGrpcSaldoInvalidYear
+	}
+
+	res, err := s.saldoService.FindYearTotalSaldoBalance(ctx, year)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoData := make([]*pb.SaldoYearTotalBalanceResponse, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.SaldoYearTotalBalanceResponse{
+			Year:         item.Year,
+			TotalBalance: int32(item.TotalBalance),
+		}
+	}
+
+	return &pb.ApiResponseYearTotalSaldo{
+		Status:  "success",
+		Message: "Successfully fetched yearly total saldo balance",
+		Data:    protoData,
+	}, nil
+}
+
+func (s *saldoHandleGrpc) FindMonthlySaldoBalances(ctx context.Context, req *pb.FindYearlySaldo) (*pb.ApiResponseMonthSaldoBalances, error) {
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, saldo_errors.ErrGrpcSaldoInvalidYear
+	}
+
+	res, err := s.saldoService.FindMonthlySaldoBalances(ctx, year)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoData := make([]*pb.SaldoMonthBalanceResponse, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.SaldoMonthBalanceResponse{
+			Month:        item.Month,
+			TotalBalance: int32(item.TotalBalance),
+		}
+	}
+
+	return &pb.ApiResponseMonthSaldoBalances{
+		Status:  "success",
+		Message: "Successfully fetched monthly saldo balances",
+		Data:    protoData,
+	}, nil
+}
+
+func (s *saldoHandleGrpc) FindYearlySaldoBalances(ctx context.Context, req *pb.FindYearlySaldo) (*pb.ApiResponseYearSaldoBalances, error) {
+	year := int(req.GetYear())
+
+	if year <= 0 {
+		return nil, saldo_errors.ErrGrpcSaldoInvalidYear
+	}
+
+	res, err := s.saldoService.FindYearlySaldoBalances(ctx, year)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoData := make([]*pb.SaldoYearBalanceResponse, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.SaldoYearBalanceResponse{
+			Year:         item.Year.Int.String(),
+			TotalBalance: int32(item.TotalBalance),
+		}
+	}
+
+	return &pb.ApiResponseYearSaldoBalances{
+		Status:  "success",
+		Message: "Successfully fetched yearly saldo balances",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *saldoHandleGrpc) CreateSaldo(ctx context.Context, req *pb.CreateSaldoRequest) (*pb.ApiResponseSaldo, error) {
@@ -266,16 +366,26 @@ func (s *saldoHandleGrpc) CreateSaldo(ctx context.Context, req *pb.CreateSaldoRe
 		return nil, saldo_errors.ErrGrpcValidateCreateSaldo
 	}
 
-	saldo, err := s.saldoService.CreateSaldo(&request)
-
+	saldo, err := s.saldoService.CreateSaldo(ctx, &request)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseSaldo("success", "Successfully created saldo record", saldo)
+	protoSaldo := &pb.SaldoResponse{
+		SaldoId:        int32(saldo.SaldoID),
+		CardNumber:     saldo.CardNumber,
+		TotalBalance:   int32(saldo.TotalBalance),
+		WithdrawTime:   saldo.WithdrawTime.Time.Format("2006-01-02 15:04:05"),
+		WithdrawAmount: int32(*saldo.WithdrawAmount),
+		CreatedAt:      saldo.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt:      saldo.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+	}
 
-	return so, nil
-
+	return &pb.ApiResponseSaldo{
+		Status:  "success",
+		Message: "Successfully created saldo record",
+		Data:    protoSaldo,
+	}, nil
 }
 
 func (s *saldoHandleGrpc) UpdateSaldo(ctx context.Context, req *pb.UpdateSaldoRequest) (*pb.ApiResponseSaldo, error) {
@@ -295,15 +405,26 @@ func (s *saldoHandleGrpc) UpdateSaldo(ctx context.Context, req *pb.UpdateSaldoRe
 		return nil, saldo_errors.ErrGrpcValidateUpdateSaldo
 	}
 
-	saldo, err := s.saldoService.UpdateSaldo(&request)
-
+	saldo, err := s.saldoService.UpdateSaldo(ctx, &request)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseSaldo("success", "Successfully updated saldo record", saldo)
+	protoSaldo := &pb.SaldoResponse{
+		SaldoId:        int32(saldo.SaldoID),
+		CardNumber:     saldo.CardNumber,
+		TotalBalance:   int32(saldo.TotalBalance),
+		WithdrawTime:   saldo.WithdrawTime.Time.Format("2006-01-02 15:04:05"),
+		WithdrawAmount: int32(*saldo.WithdrawAmount),
+		CreatedAt:      saldo.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt:      saldo.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+	}
 
-	return so, nil
+	return &pb.ApiResponseSaldo{
+		Status:  "success",
+		Message: "Successfully updated saldo record",
+		Data:    protoSaldo,
+	}, nil
 }
 
 func (s *saldoHandleGrpc) TrashedSaldo(ctx context.Context, req *pb.FindByIdSaldoRequest) (*pb.ApiResponseSaldoDeleteAt, error) {
@@ -313,15 +434,27 @@ func (s *saldoHandleGrpc) TrashedSaldo(ctx context.Context, req *pb.FindByIdSald
 		return nil, saldo_errors.ErrGrpcSaldoInvalidID
 	}
 
-	saldo, err := s.saldoService.TrashSaldo(id)
-
+	saldo, err := s.saldoService.TrashSaldo(ctx, id)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseSaldoDeleteAt("success", "Successfully trashed saldo record", saldo)
+	protoSaldo := &pb.SaldoResponseDeleteAt{
+		SaldoId:        int32(saldo.SaldoID),
+		CardNumber:     saldo.CardNumber,
+		TotalBalance:   int32(saldo.TotalBalance),
+		WithdrawTime:   saldo.WithdrawTime.Time.Format("2006-01-02 15:04:05"),
+		WithdrawAmount: int32(*saldo.WithdrawAmount),
+		CreatedAt:      saldo.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt:      saldo.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+		DeletedAt:      wrapperspb.String(saldo.DeletedAt.Time.Format("2006-01-02 15:04:05")),
+	}
 
-	return so, nil
+	return &pb.ApiResponseSaldoDeleteAt{
+		Status:  "success",
+		Message: "Successfully trashed saldo record",
+		Data:    protoSaldo,
+	}, nil
 }
 
 func (s *saldoHandleGrpc) RestoreSaldo(ctx context.Context, req *pb.FindByIdSaldoRequest) (*pb.ApiResponseSaldoDeleteAt, error) {
@@ -331,15 +464,27 @@ func (s *saldoHandleGrpc) RestoreSaldo(ctx context.Context, req *pb.FindByIdSald
 		return nil, saldo_errors.ErrGrpcSaldoInvalidID
 	}
 
-	saldo, err := s.saldoService.RestoreSaldo(id)
-
+	saldo, err := s.saldoService.RestoreSaldo(ctx, id)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseSaldoDeleteAt("success", "Successfully restored saldo record", saldo)
+	protoSaldo := &pb.SaldoResponseDeleteAt{
+		SaldoId:        int32(saldo.SaldoID),
+		CardNumber:     saldo.CardNumber,
+		TotalBalance:   int32(saldo.TotalBalance),
+		WithdrawTime:   saldo.WithdrawTime.Time.Format("2006-01-02 15:04:05"),
+		WithdrawAmount: int32(*saldo.WithdrawAmount),
+		CreatedAt:      saldo.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt:      saldo.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+		DeletedAt:      wrapperspb.String(saldo.DeletedAt.Time.Format("2006-01-02 15:04:05")),
+	}
 
-	return so, nil
+	return &pb.ApiResponseSaldoDeleteAt{
+		Status:  "success",
+		Message: "Successfully restored saldo record",
+		Data:    protoSaldo,
+	}, nil
 }
 
 func (s *saldoHandleGrpc) DeleteSaldo(ctx context.Context, req *pb.FindByIdSaldoRequest) (*pb.ApiResponseSaldoDelete, error) {
@@ -349,37 +494,37 @@ func (s *saldoHandleGrpc) DeleteSaldo(ctx context.Context, req *pb.FindByIdSaldo
 		return nil, saldo_errors.ErrGrpcSaldoInvalidID
 	}
 
-	_, err := s.saldoService.DeleteSaldoPermanent(id)
-
+	_, err := s.saldoService.DeleteSaldoPermanent(ctx, id)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseSaldoDelete("success", "Successfully deleted saldo record")
-
-	return so, nil
+	return &pb.ApiResponseSaldoDelete{
+		Status:  "success",
+		Message: "Successfully deleted saldo record",
+	}, nil
 }
 
 func (s *saldoHandleGrpc) RestoreAllSaldo(ctx context.Context, _ *emptypb.Empty) (*pb.ApiResponseSaldoAll, error) {
-	_, err := s.saldoService.RestoreAllSaldo()
-
+	_, err := s.saldoService.RestoreAllSaldo(ctx)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseSaldoAll("success", "Successfully restore all saldo")
-
-	return so, nil
+	return &pb.ApiResponseSaldoAll{
+		Status:  "success",
+		Message: "Successfully restore all saldo",
+	}, nil
 }
 
 func (s *saldoHandleGrpc) DeleteAllSaldoPermanent(ctx context.Context, _ *emptypb.Empty) (*pb.ApiResponseSaldoAll, error) {
-	_, err := s.saldoService.DeleteAllSaldoPermanent()
-
+	_, err := s.saldoService.DeleteAllSaldoPermanent(ctx)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseSaldoAll("success", "delete saldo permanent")
-
-	return so, nil
+	return &pb.ApiResponseSaldoAll{
+		Status:  "success",
+		Message: "delete saldo permanent",
+	}, nil
 }

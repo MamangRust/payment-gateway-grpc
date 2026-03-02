@@ -2,25 +2,24 @@ package gapi
 
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	protomapper "MamangRust/paymentgatewaygrpc/internal/mapper/proto"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
 	"MamangRust/paymentgatewaygrpc/internal/service"
+	"MamangRust/paymentgatewaygrpc/pkg/errors"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/merchant_errors"
 	"context"
 	"math"
 
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type merchantHandleGrpc struct {
 	pb.UnimplementedMerchantServiceServer
 	merchantService service.MerchantService
-	mapping         protomapper.MerchantProtoMapper
 }
 
-func NewMerchantHandleGrpc(merchantService service.MerchantService, mapping protomapper.MerchantProtoMapper) MerchantHandleGrpc {
-	return &merchantHandleGrpc{merchantService: merchantService, mapping: mapping}
+func NewMerchantHandleGrpc(merchantService service.MerchantService) MerchantHandleGrpc {
+	return &merchantHandleGrpc{merchantService: merchantService}
 }
 
 func (s *merchantHandleGrpc) FindAllMerchant(ctx context.Context, req *pb.FindAllMerchantRequest) (*pb.ApiResponsePaginationMerchant, error) {
@@ -41,23 +40,66 @@ func (s *merchantHandleGrpc) FindAllMerchant(ctx context.Context, req *pb.FindAl
 		Search:   search,
 	}
 
-	merchants, totalRecords, err := s.merchantService.FindAll(&reqService)
-
+	merchants, totalRecords, err := s.merchantService.FindAll(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoMerchants := make([]*pb.MerchantResponse, len(merchants))
+	for i, merchant := range merchants {
+		protoMerchants[i] = &pb.MerchantResponse{
+			Id:        int32(merchant.MerchantID),
+			Name:      merchant.Name,
+			ApiKey:    merchant.ApiKey,
+			Status:    merchant.Status,
+			UserId:    int32(merchant.UserID),
+			CreatedAt: merchant.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt: merchant.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+		}
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
-
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
 		TotalPages:   int32(totalPages),
 		TotalRecords: int32(*totalRecords),
 	}
-	so := s.mapping.ToProtoResponsePaginationMerchant(paginationMeta, "success", "Successfully fetched merchant record", merchants)
 
-	return so, nil
+	return &pb.ApiResponsePaginationMerchant{
+		Status:     "success",
+		Message:    "Successfully fetched merchant record",
+		Data:       protoMerchants,
+		Pagination: paginationMeta,
+	}, nil
+}
+
+func (s *merchantHandleGrpc) FindByIdMerchant(ctx context.Context, req *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchant, error) {
+	id := int(req.GetMerchantId())
+	if id == 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidID
+	}
+
+	merchant, err := s.merchantService.FindById(ctx, id)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoMerchant := &pb.MerchantResponse{
+		Id:        int32(merchant.MerchantID),
+		Name:      merchant.Name,
+		ApiKey:    merchant.ApiKey,
+		Status:    merchant.Status,
+		UserId:    int32(merchant.UserID),
+		CreatedAt: merchant.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt: merchant.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+	}
+
+	return &pb.ApiResponseMerchant{
+		Status:  "success",
+		Message: "Successfully fetched merchant record",
+		Data:    protoMerchant,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) FindAllTransactionMerchant(ctx context.Context, req *pb.FindAllMerchantRequest) (*pb.ApiResponsePaginationMerchantTransaction, error) {
@@ -78,149 +120,41 @@ func (s *merchantHandleGrpc) FindAllTransactionMerchant(ctx context.Context, req
 		Search:   search,
 	}
 
-	merchants, totalRecords, err := s.merchantService.FindAllTransactions(&reqService)
-
+	transactions, totalRecords, err := s.merchantService.FindAllTransactions(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoTransactions := make([]*pb.MerchantTransactionResponse, len(transactions))
+	for i, txn := range transactions {
+		protoTransactions[i] = &pb.MerchantTransactionResponse{
+			Id:              int32(txn.TransactionID),
+			CardNumber:      txn.CardNumber,
+			Amount:          int32(txn.Amount),
+			PaymentMethod:   txn.PaymentMethod,
+			MerchantId:      int32(txn.MerchantID),
+			MerchantName:    txn.MerchantName,
+			TransactionTime: txn.TransactionTime.Format("2006-01-02 15:04:05"),
+			CreatedAt:       txn.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt:       txn.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+			DeletedAt:       wrapperspb.String(txn.DeletedAt.Time.Format("2006-01-02 15:04:05")),
+		}
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
-
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
 		TotalPages:   int32(totalPages),
 		TotalRecords: int32(*totalRecords),
 	}
-	so := s.mapping.ToProtoResponsePaginationMerchantTransaction(paginationMeta, "success", "Successfully fetched merchant record", merchants)
 
-	return so, nil
-}
-
-func (s *merchantHandleGrpc) FindByIdMerchant(ctx context.Context, req *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchant, error) {
-	id := int(req.GetMerchantId())
-
-	if id == 0 {
-		return nil, merchant_errors.ErrGrpcFailedFindByIdMerchant
-	}
-
-	merchant, err := s.merchantService.FindById(id)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseMerchant("success", "Successfully fetched merchant record", merchant)
-
-	return so, nil
-}
-
-func (s *merchantHandleGrpc) FindMonthlyPaymentMethodsMerchant(ctx context.Context, req *pb.FindYearMerchant) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
-	year := int(req.GetYear())
-
-	if year <= 0 {
-		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
-	}
-
-	res, err := s.merchantService.FindMonthlyPaymentMethodsMerchant(year)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseMonthlyPaymentMethods("success", "Successfully fetched monthly payment methods for merchant", res)
-
-	return so, nil
-}
-
-func (s *merchantHandleGrpc) FindYearlyPaymentMethodMerchant(ctx context.Context, req *pb.FindYearMerchant) (*pb.ApiResponseMerchantYearlyPaymentMethod, error) {
-	year := int(req.GetYear())
-
-	if year <= 0 {
-		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
-	}
-
-	res, err := s.merchantService.FindYearlyPaymentMethodMerchant(year)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseYearlyPaymentMethods("success", "Successfully fetched yearly payment methods for merchant", res)
-
-	return so, nil
-}
-
-func (s *merchantHandleGrpc) FindMonthlyAmountMerchant(ctx context.Context, req *pb.FindYearMerchant) (*pb.ApiResponseMerchantMonthlyAmount, error) {
-	year := int(req.GetYear())
-
-	if year <= 0 {
-		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
-	}
-
-	res, err := s.merchantService.FindMonthlyAmountMerchant(year)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Successfully fetched monthly amount for merchant", res)
-
-	return so, nil
-}
-
-func (s *merchantHandleGrpc) FindYearlyAmountMerchant(ctx context.Context, req *pb.FindYearMerchant) (*pb.ApiResponseMerchantYearlyAmount, error) {
-	year := int(req.GetYear())
-
-	if year <= 0 {
-		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
-	}
-
-	res, err := s.merchantService.FindYearlyAmountMerchant(year)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Successfully fetched yearly amount for merchant", res)
-
-	return so, nil
-}
-
-func (s *merchantHandleGrpc) FindMonthlyTotalAmountMerchant(ctx context.Context, req *pb.FindYearMerchant) (*pb.ApiResponseMerchantMonthlyTotalAmount, error) {
-	year := int(req.GetYear())
-
-	if year <= 0 {
-		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
-	}
-
-	res, err := s.merchantService.FindMonthlyTotalAmountMerchant(year)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseMonthlyTotalAmounts("success", "Successfully fetched monthly amount for merchant", res)
-
-	return so, nil
-}
-
-func (s *merchantHandleGrpc) FindYearlyTotalAmountMerchant(ctx context.Context, req *pb.FindYearMerchant) (*pb.ApiResponseMerchantYearlyTotalAmount, error) {
-	year := int(req.GetYear())
-
-	if year <= 0 {
-		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
-	}
-
-	res, err := s.merchantService.FindYearlyTotalAmountMerchant(year)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseYearlyTotalAmounts("success", "Successfully fetched yearly amount for merchant", res)
-
-	return so, nil
+	return &pb.ApiResponsePaginationMerchantTransaction{
+		Status:     "success",
+		Message:    "Successfully fetched merchant record",
+		Data:       protoTransactions,
+		Pagination: paginationMeta,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) FindAllTransactionByMerchant(ctx context.Context, req *pb.FindAllMerchantTransaction) (*pb.ApiResponsePaginationMerchantTransaction, error) {
@@ -243,14 +177,28 @@ func (s *merchantHandleGrpc) FindAllTransactionByMerchant(ctx context.Context, r
 		MerchantID: merchant_id,
 	}
 
-	merchants, totalRecords, err := s.merchantService.FindAllTransactionsByMerchant(&reqService)
-
+	transactions, totalRecords, err := s.merchantService.FindAllTransactionsByMerchant(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoTransactions := make([]*pb.MerchantTransactionResponse, len(transactions))
+	for i, txn := range transactions {
+		protoTransactions[i] = &pb.MerchantTransactionResponse{
+			Id:              int32(txn.TransactionID),
+			CardNumber:      txn.CardNumber,
+			Amount:          int32(txn.Amount),
+			PaymentMethod:   txn.PaymentMethod,
+			MerchantId:      int32(txn.MerchantID),
+			MerchantName:    txn.MerchantName,
+			TransactionTime: txn.TransactionTime.Format("2006-01-02 15:04:05"),
+			CreatedAt:       txn.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt:       txn.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+			DeletedAt:       wrapperspb.String(txn.DeletedAt.Time.Format("2006-01-02 15:04:05")),
+		}
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
-
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
@@ -258,120 +206,12 @@ func (s *merchantHandleGrpc) FindAllTransactionByMerchant(ctx context.Context, r
 		TotalRecords: int32(*totalRecords),
 	}
 
-	so := s.mapping.ToProtoResponsePaginationMerchantTransaction(paginationMeta, "success", "Successfully fetched merchant record", merchants)
-
-	return so, nil
-}
-
-func (s *merchantHandleGrpc) FindMonthlyPaymentMethodByMerchants(ctx context.Context, req *pb.FindYearMerchantById) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
-	merchantId := req.GetMerchantId()
-	year := req.GetYear()
-
-	if year <= 0 {
-		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
-	}
-
-	if merchantId <= 0 {
-		return nil, merchant_errors.ErrGrpcMerchantInvalidID
-	}
-
-	reqService := requests.MonthYearPaymentMethodMerchant{
-		MerchantID: int(req.MerchantId),
-		Year:       int(year),
-	}
-
-	res, err := s.merchantService.FindMonthlyPaymentMethodByMerchants(&reqService)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseMonthlyPaymentMethods("success", "Successfully fetched monthly payment methods by merchant", res)
-
-	return so, nil
-}
-
-func (s *merchantHandleGrpc) FindYearlyPaymentMethodByMerchants(ctx context.Context, req *pb.FindYearMerchantById) (*pb.ApiResponseMerchantYearlyPaymentMethod, error) {
-	merchantId := req.GetMerchantId()
-	year := req.GetYear()
-
-	if year <= 0 {
-		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
-	}
-
-	if merchantId <= 0 {
-		return nil, merchant_errors.ErrGrpcMerchantInvalidID
-	}
-
-	reqService := requests.MonthYearPaymentMethodMerchant{
-		MerchantID: int(req.MerchantId),
-		Year:       int(year),
-	}
-
-	res, err := s.merchantService.FindYearlyPaymentMethodByMerchants(&reqService)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseYearlyPaymentMethods("success", "Successfully fetched yearly payment methods by merchant", res)
-
-	return so, nil
-}
-
-func (s *merchantHandleGrpc) FindMonthlyAmountByMerchants(ctx context.Context, req *pb.FindYearMerchantById) (*pb.ApiResponseMerchantMonthlyAmount, error) {
-	merchantId := req.GetMerchantId()
-	year := req.GetYear()
-
-	if year <= 0 {
-		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
-	}
-
-	if merchantId <= 0 {
-		return nil, merchant_errors.ErrGrpcMerchantInvalidID
-	}
-
-	reqService := requests.MonthYearAmountMerchant{
-		MerchantID: int(req.MerchantId),
-		Year:       int(year),
-	}
-
-	res, err := s.merchantService.FindMonthlyAmountByMerchants(&reqService)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Successfully fetched monthly amount by merchant", res)
-
-	return so, nil
-}
-
-func (s *merchantHandleGrpc) FindYearlyAmountByMerchants(ctx context.Context, req *pb.FindYearMerchantById) (*pb.ApiResponseMerchantYearlyAmount, error) {
-	merchantId := req.GetMerchantId()
-	year := req.GetYear()
-
-	if year <= 0 {
-		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
-	}
-
-	if merchantId <= 0 {
-		return nil, merchant_errors.ErrGrpcMerchantInvalidID
-	}
-
-	reqService := requests.MonthYearAmountMerchant{
-		MerchantID: int(req.MerchantId),
-		Year:       int(year),
-	}
-	res, err := s.merchantService.FindYearlyAmountByMerchants(&reqService)
-
-	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
-	}
-
-	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Successfully fetched yearly amount by merchant", res)
-
-	return so, nil
+	return &pb.ApiResponsePaginationMerchantTransaction{
+		Status:     "success",
+		Message:    "Successfully fetched merchant record",
+		Data:       protoTransactions,
+		Pagination: paginationMeta,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) FindAllTransactionByApikey(ctx context.Context, req *pb.FindAllMerchantApikey) (*pb.ApiResponsePaginationMerchantTransaction, error) {
@@ -394,13 +234,28 @@ func (s *merchantHandleGrpc) FindAllTransactionByApikey(ctx context.Context, req
 		Search:   search,
 	}
 
-	merchants, totalRecords, err := s.merchantService.FindAllTransactionsByApikey(&reqService)
+	transactions, totalRecords, err := s.merchantService.FindAllTransactionsByApikey(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoTransactions := make([]*pb.MerchantTransactionResponse, len(transactions))
+	for i, txn := range transactions {
+		protoTransactions[i] = &pb.MerchantTransactionResponse{
+			Id:              int32(txn.TransactionID),
+			CardNumber:      txn.CardNumber,
+			Amount:          int32(txn.Amount),
+			PaymentMethod:   txn.PaymentMethod,
+			MerchantId:      int32(txn.MerchantID),
+			MerchantName:    txn.MerchantName,
+			TransactionTime: txn.TransactionTime.Format("2006-01-02 15:04:05"),
+			CreatedAt:       txn.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt:       txn.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+			DeletedAt:       wrapperspb.String(txn.DeletedAt.Time.Format("2006-01-02 15:04:05")),
+		}
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
-
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
@@ -408,9 +263,324 @@ func (s *merchantHandleGrpc) FindAllTransactionByApikey(ctx context.Context, req
 		TotalRecords: int32(*totalRecords),
 	}
 
-	so := s.mapping.ToProtoResponsePaginationMerchantTransaction(paginationMeta, "success", "Successfully fetched merchant record", merchants)
+	return &pb.ApiResponsePaginationMerchantTransaction{
+		Status:     "success",
+		Message:    "Successfully fetched merchant record",
+		Data:       protoTransactions,
+		Pagination: paginationMeta,
+	}, nil
+}
 
-	return so, nil
+func (s *merchantHandleGrpc) FindMonthlyPaymentMethodsMerchant(ctx context.Context, req *pb.FindYearMerchant) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
+	year := int(req.GetYear())
+	if year <= 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
+	}
+
+	res, err := s.merchantService.FindMonthlyPaymentMethodsMerchant(ctx, year)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoData := make([]*pb.MerchantResponseMonthlyPaymentMethod, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.MerchantResponseMonthlyPaymentMethod{
+			Month:         item.Month,
+			PaymentMethod: item.PaymentMethod,
+			TotalAmount:   int64(item.TotalAmount),
+		}
+	}
+
+	return &pb.ApiResponseMerchantMonthlyPaymentMethod{
+		Status:  "success",
+		Message: "Successfully fetched monthly payment methods for merchant",
+		Data:    protoData,
+	}, nil
+}
+
+func (s *merchantHandleGrpc) FindYearlyPaymentMethodMerchant(ctx context.Context, req *pb.FindYearMerchant) (*pb.ApiResponseMerchantYearlyPaymentMethod, error) {
+	year := int(req.GetYear())
+	if year <= 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
+	}
+
+	res, err := s.merchantService.FindYearlyPaymentMethodMerchant(ctx, year)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoData := make([]*pb.MerchantResponseYearlyPaymentMethod, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.MerchantResponseYearlyPaymentMethod{
+			Year:          item.Year.Int.String(),
+			PaymentMethod: item.PaymentMethod,
+			TotalAmount:   item.TotalAmount,
+		}
+	}
+
+	return &pb.ApiResponseMerchantYearlyPaymentMethod{
+		Status:  "success",
+		Message: "Successfully fetched yearly payment methods for merchant",
+		Data:    protoData,
+	}, nil
+}
+
+func (s *merchantHandleGrpc) FindMonthlyAmountMerchant(ctx context.Context, req *pb.FindYearMerchant) (*pb.ApiResponseMerchantMonthlyAmount, error) {
+	year := int(req.GetYear())
+	if year <= 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
+	}
+
+	res, err := s.merchantService.FindMonthlyAmountMerchant(ctx, year)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoData := make([]*pb.MerchantResponseMonthlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.MerchantResponseMonthlyAmount{
+			Month:       item.Month,
+			TotalAmount: int64(item.TotalAmount),
+		}
+	}
+
+	return &pb.ApiResponseMerchantMonthlyAmount{
+		Status:  "success",
+		Message: "Successfully fetched monthly amount for merchant",
+		Data:    protoData,
+	}, nil
+}
+
+func (s *merchantHandleGrpc) FindYearlyAmountMerchant(ctx context.Context, req *pb.FindYearMerchant) (*pb.ApiResponseMerchantYearlyAmount, error) {
+	year := int(req.GetYear())
+	if year <= 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
+	}
+
+	res, err := s.merchantService.FindYearlyAmountMerchant(ctx, year)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoData := make([]*pb.MerchantResponseYearlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.MerchantResponseYearlyAmount{
+			Year:        item.Year.Int.String(),
+			TotalAmount: item.TotalAmount,
+		}
+	}
+
+	return &pb.ApiResponseMerchantYearlyAmount{
+		Status:  "success",
+		Message: "Successfully fetched yearly amount for merchant",
+		Data:    protoData,
+	}, nil
+}
+
+func (s *merchantHandleGrpc) FindMonthlyTotalAmountMerchant(ctx context.Context, req *pb.FindYearMerchant) (*pb.ApiResponseMerchantMonthlyTotalAmount, error) {
+	year := int(req.GetYear())
+	if year <= 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
+	}
+
+	res, err := s.merchantService.FindMonthlyTotalAmountMerchant(ctx, year)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoData := make([]*pb.MerchantResponseMonthlyTotalAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.MerchantResponseMonthlyTotalAmount{
+			Month:       item.Month,
+			Year:        item.Year,
+			TotalAmount: int64(item.TotalAmount),
+		}
+	}
+
+	return &pb.ApiResponseMerchantMonthlyTotalAmount{
+		Status:  "success",
+		Message: "Successfully fetched monthly amount for merchant",
+		Data:    protoData,
+	}, nil
+}
+
+func (s *merchantHandleGrpc) FindYearlyTotalAmountMerchant(ctx context.Context, req *pb.FindYearMerchant) (*pb.ApiResponseMerchantYearlyTotalAmount, error) {
+	year := int(req.GetYear())
+	if year <= 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
+	}
+
+	res, err := s.merchantService.FindYearlyTotalAmountMerchant(ctx, year)
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoData := make([]*pb.MerchantResponseYearlyTotalAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.MerchantResponseYearlyTotalAmount{
+			Year:        item.Year,
+			TotalAmount: int64(item.TotalAmount),
+		}
+	}
+
+	return &pb.ApiResponseMerchantYearlyTotalAmount{
+		Status:  "success",
+		Message: "Successfully fetched yearly amount for merchant",
+		Data:    protoData,
+	}, nil
+}
+
+func (s *merchantHandleGrpc) FindMonthlyPaymentMethodByMerchants(ctx context.Context, req *pb.FindYearMerchantById) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
+	merchantId := req.GetMerchantId()
+	year := req.GetYear()
+
+	if year <= 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
+	}
+
+	if merchantId <= 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidID
+	}
+
+	reqService := requests.MonthYearPaymentMethodMerchant{
+		MerchantID: int(req.MerchantId),
+		Year:       int(year),
+	}
+
+	res, err := s.merchantService.FindMonthlyPaymentMethodByMerchants(ctx, &reqService)
+
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoData := make([]*pb.MerchantResponseMonthlyPaymentMethod, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.MerchantResponseMonthlyPaymentMethod{
+			Month:         item.Month,
+			PaymentMethod: item.PaymentMethod,
+			TotalAmount:   int64(item.TotalAmount),
+		}
+	}
+
+	return &pb.ApiResponseMerchantMonthlyPaymentMethod{
+		Status:  "success",
+		Message: "Successfully fetched monthly payment methods by merchant",
+		Data:    protoData,
+	}, nil
+}
+
+func (s *merchantHandleGrpc) FindYearlyPaymentMethodByMerchants(ctx context.Context, req *pb.FindYearMerchantById) (*pb.ApiResponseMerchantYearlyPaymentMethod, error) {
+	merchantId := req.GetMerchantId()
+	year := req.GetYear()
+
+	if year <= 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
+	}
+
+	if merchantId <= 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidID
+	}
+
+	reqService := requests.MonthYearPaymentMethodMerchant{
+		MerchantID: int(req.MerchantId),
+		Year:       int(year),
+	}
+
+	res, err := s.merchantService.FindYearlyPaymentMethodByMerchants(ctx, &reqService)
+
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoData := make([]*pb.MerchantResponseYearlyPaymentMethod, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.MerchantResponseYearlyPaymentMethod{
+			Year:          item.Year.Int.String(),
+			PaymentMethod: item.PaymentMethod,
+			TotalAmount:   item.TotalAmount,
+		}
+	}
+
+	return &pb.ApiResponseMerchantYearlyPaymentMethod{
+		Status:  "success",
+		Message: "Successfully fetched yearly payment methods by merchant",
+		Data:    protoData,
+	}, nil
+}
+
+func (s *merchantHandleGrpc) FindMonthlyAmountByMerchants(ctx context.Context, req *pb.FindYearMerchantById) (*pb.ApiResponseMerchantMonthlyAmount, error) {
+	merchantId := req.GetMerchantId()
+	year := req.GetYear()
+
+	if year <= 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
+	}
+
+	if merchantId <= 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidID
+	}
+
+	reqService := requests.MonthYearAmountMerchant{
+		MerchantID: int(req.MerchantId),
+		Year:       int(year),
+	}
+
+	res, err := s.merchantService.FindMonthlyAmountByMerchants(ctx, &reqService)
+
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoData := make([]*pb.MerchantResponseMonthlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.MerchantResponseMonthlyAmount{
+			Month:       item.Month,
+			TotalAmount: int64(item.TotalAmount),
+		}
+	}
+
+	return &pb.ApiResponseMerchantMonthlyAmount{
+		Status:  "success",
+		Message: "Successfully fetched monthly amount by merchant",
+		Data:    protoData,
+	}, nil
+}
+
+func (s *merchantHandleGrpc) FindYearlyAmountByMerchants(ctx context.Context, req *pb.FindYearMerchantById) (*pb.ApiResponseMerchantYearlyAmount, error) {
+	merchantId := req.GetMerchantId()
+	year := req.GetYear()
+
+	if year <= 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidYear
+	}
+
+	if merchantId <= 0 {
+		return nil, merchant_errors.ErrGrpcMerchantInvalidID
+	}
+
+	reqService := requests.MonthYearAmountMerchant{
+		MerchantID: int(req.MerchantId),
+		Year:       int(year),
+	}
+	res, err := s.merchantService.FindYearlyAmountByMerchants(ctx, &reqService)
+
+	if err != nil {
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoData := make([]*pb.MerchantResponseYearlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.MerchantResponseYearlyAmount{
+			Year:        item.Year.Int.String(),
+			TotalAmount: item.TotalAmount,
+		}
+	}
+
+	return &pb.ApiResponseMerchantYearlyAmount{
+		Status:  "success",
+		Message: "Successfully fetched yearly amount by merchant",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) FindMonthlyPaymentMethodByApikey(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantMonthlyPaymentMethod, error) {
@@ -430,15 +600,26 @@ func (s *merchantHandleGrpc) FindMonthlyPaymentMethodByApikey(ctx context.Contex
 		Apikey: api_key,
 	}
 
-	res, err := s.merchantService.FindMonthlyPaymentMethodByApikeys(&reqService)
+	res, err := s.merchantService.FindMonthlyPaymentMethodByApikey(ctx, &reqService)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMonthlyPaymentMethods("success", "Successfully fetched monthly payment methods by merchant", res)
+	protoData := make([]*pb.MerchantResponseMonthlyPaymentMethod, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.MerchantResponseMonthlyPaymentMethod{
+			Month:         item.Month,
+			PaymentMethod: item.PaymentMethod,
+			TotalAmount:   int64(item.TotalAmount),
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMerchantMonthlyPaymentMethod{
+		Status:  "success",
+		Message: "Successfully fetched monthly payment methods by merchant",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) FindYearlyPaymentMethodByApikey(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantYearlyPaymentMethod, error) {
@@ -458,15 +639,26 @@ func (s *merchantHandleGrpc) FindYearlyPaymentMethodByApikey(ctx context.Context
 		Apikey: api_key,
 	}
 
-	res, err := s.merchantService.FindYearlyPaymentMethodByApikeys(&reqService)
+	res, err := s.merchantService.FindYearlyPaymentMethodByApikey(ctx, &reqService)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseYearlyPaymentMethods("success", "Successfully fetched yearly payment methods by merchant", res)
+	protoData := make([]*pb.MerchantResponseYearlyPaymentMethod, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.MerchantResponseYearlyPaymentMethod{
+			Year:          item.Year.Int.String(),
+			PaymentMethod: item.PaymentMethod,
+			TotalAmount:   item.TotalAmount,
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMerchantYearlyPaymentMethod{
+		Status:  "success",
+		Message: "Successfully fetched yearly payment methods by merchant",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) FindMonthlyAmountByApikey(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantMonthlyAmount, error) {
@@ -486,14 +678,24 @@ func (s *merchantHandleGrpc) FindMonthlyAmountByApikey(ctx context.Context, req 
 		Year:   int(year),
 	}
 
-	res, err := s.merchantService.FindMonthlyAmountByApikeys(&reqService)
+	res, err := s.merchantService.FindMonthlyAmountByApikey(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Successfully fetched monthly amount by merchant", res)
+	protoData := make([]*pb.MerchantResponseMonthlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.MerchantResponseMonthlyAmount{
+			Month:       item.Month,
+			TotalAmount: int64(item.TotalAmount),
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMerchantMonthlyAmount{
+		Status:  "success",
+		Message: "Successfully fetched monthly amount by merchant",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) FindYearlyAmountByApikey(ctx context.Context, req *pb.FindYearMerchantByApikey) (*pb.ApiResponseMerchantYearlyAmount, error) {
@@ -513,15 +715,25 @@ func (s *merchantHandleGrpc) FindYearlyAmountByApikey(ctx context.Context, req *
 		Year:   int(year),
 	}
 
-	res, err := s.merchantService.FindYearlyAmountByApikeys(&reqService)
+	res, err := s.merchantService.FindYearlyAmountByApikey(ctx, &reqService)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Successfully fetched yearly amount by merchant", res)
+	protoData := make([]*pb.MerchantResponseYearlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.MerchantResponseYearlyAmount{
+			Year:        item.Year.Int.String(),
+			TotalAmount: item.TotalAmount,
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMerchantYearlyAmount{
+		Status:  "success",
+		Message: "Successfully fetched yearly amount by merchant",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) FindByApiKey(ctx context.Context, req *pb.FindByApiKeyRequest) (*pb.ApiResponseMerchant, error) {
@@ -531,15 +743,27 @@ func (s *merchantHandleGrpc) FindByApiKey(ctx context.Context, req *pb.FindByApi
 		return nil, merchant_errors.ErrGrpcMerchantInvalidApiKey
 	}
 
-	merchant, err := s.merchantService.FindByApiKey(api_key)
+	merchant, err := s.merchantService.FindByApiKey(ctx, api_key)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMerchant("success", "Successfully fetched merchant record", merchant)
+	protoMerchant := &pb.MerchantResponse{
+		Id:        int32(merchant.MerchantID),
+		Name:      merchant.Name,
+		ApiKey:    merchant.ApiKey,
+		Status:    merchant.Status,
+		UserId:    int32(merchant.UserID),
+		CreatedAt: merchant.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt: merchant.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+	}
 
-	return so, nil
+	return &pb.ApiResponseMerchant{
+		Status:  "success",
+		Message: "Successfully fetched merchant record",
+		Data:    protoMerchant,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) FindByMerchantUserId(ctx context.Context, req *pb.FindByMerchantUserIdRequest) (*pb.ApiResponsesMerchant, error) {
@@ -549,15 +773,31 @@ func (s *merchantHandleGrpc) FindByMerchantUserId(ctx context.Context, req *pb.F
 		return nil, merchant_errors.ErrGrpcMerchantInvalidUserID
 	}
 
-	res, err := s.merchantService.FindByMerchantUserId(int(user_id))
+	res, err := s.merchantService.FindByMerchantUserId(ctx, int(user_id))
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMerchants("success", "Successfully fetched merchant record", res)
+	protoMerchant := make([]*pb.MerchantResponse, 0, len(res))
 
-	return so, nil
+	for _, merchant := range res {
+		protoMerchant = append(protoMerchant, &pb.MerchantResponse{
+			Id:        int32(merchant.MerchantID),
+			Name:      merchant.Name,
+			ApiKey:    merchant.ApiKey,
+			Status:    merchant.Status,
+			UserId:    int32(merchant.UserID),
+			CreatedAt: merchant.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt: merchant.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	return &pb.ApiResponsesMerchant{
+		Status:  "success",
+		Message: "Successfully fetched merchant record",
+		Data:    protoMerchant,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) FindByActive(ctx context.Context, req *pb.FindAllMerchantRequest) (*pb.ApiResponsePaginationMerchantDeleteAt, error) {
@@ -578,14 +818,27 @@ func (s *merchantHandleGrpc) FindByActive(ctx context.Context, req *pb.FindAllMe
 		Search:   search,
 	}
 
-	res, totalRecords, err := s.merchantService.FindByActive(&reqService)
+	res, totalRecords, err := s.merchantService.FindByActive(ctx, &reqService)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoMerchants := make([]*pb.MerchantResponseDeleteAt, len(res))
+	for i, merchant := range res {
+		protoMerchants[i] = &pb.MerchantResponseDeleteAt{
+			Id:        int32(merchant.MerchantID),
+			Name:      merchant.Name,
+			ApiKey:    merchant.ApiKey,
+			Status:    merchant.Status,
+			UserId:    int32(merchant.UserID),
+			CreatedAt: merchant.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt: merchant.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+			DeletedAt: &wrapperspb.StringValue{Value: merchant.DeletedAt.Time.Format("2006-01-02 15:04:05")},
+		}
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
-
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
@@ -593,9 +846,12 @@ func (s *merchantHandleGrpc) FindByActive(ctx context.Context, req *pb.FindAllMe
 		TotalRecords: int32(*totalRecords),
 	}
 
-	so := s.mapping.ToProtoResponsePaginationMerchantDeleteAt(paginationMeta, "success", "Successfully fetched merchant record", res)
-
-	return so, nil
+	return &pb.ApiResponsePaginationMerchantDeleteAt{
+		Status:     "success",
+		Message:    "Successfully fetched merchant record",
+		Data:       protoMerchants,
+		Pagination: paginationMeta,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) FindByTrashed(ctx context.Context, req *pb.FindAllMerchantRequest) (*pb.ApiResponsePaginationMerchantDeleteAt, error) {
@@ -616,14 +872,27 @@ func (s *merchantHandleGrpc) FindByTrashed(ctx context.Context, req *pb.FindAllM
 		Search:   search,
 	}
 
-	res, totalRecords, err := s.merchantService.FindByTrashed(&reqService)
+	res, totalRecords, err := s.merchantService.FindByTrashed(ctx, &reqService)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoMerchants := make([]*pb.MerchantResponseDeleteAt, len(res))
+	for i, merchant := range res {
+		protoMerchants[i] = &pb.MerchantResponseDeleteAt{
+			Id:        int32(merchant.MerchantID),
+			Name:      merchant.Name,
+			ApiKey:    merchant.ApiKey,
+			Status:    merchant.Status,
+			UserId:    int32(merchant.UserID),
+			CreatedAt: merchant.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt: merchant.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+			DeletedAt: &wrapperspb.StringValue{Value: merchant.DeletedAt.Time.Format("2006-01-02 15:04:05")},
+		}
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
-
 	paginationMeta := &pb.PaginationMeta{
 		CurrentPage:  int32(page),
 		PageSize:     int32(pageSize),
@@ -631,9 +900,12 @@ func (s *merchantHandleGrpc) FindByTrashed(ctx context.Context, req *pb.FindAllM
 		TotalRecords: int32(*totalRecords),
 	}
 
-	so := s.mapping.ToProtoResponsePaginationMerchantDeleteAt(paginationMeta, "success", "Successfully fetched merchant record", res)
-
-	return so, nil
+	return &pb.ApiResponsePaginationMerchantDeleteAt{
+		Status:     "success",
+		Message:    "Successfully fetched merchant record",
+		Data:       protoMerchants,
+		Pagination: paginationMeta,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) CreateMerchant(ctx context.Context, req *pb.CreateMerchantRequest) (*pb.ApiResponseMerchant, error) {
@@ -646,16 +918,27 @@ func (s *merchantHandleGrpc) CreateMerchant(ctx context.Context, req *pb.CreateM
 		return nil, merchant_errors.ErrGrpcValidateCreateMerchant
 	}
 
-	merchant, err := s.merchantService.CreateMerchant(&request)
+	merchant, err := s.merchantService.CreateMerchant(ctx, &request)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMerchant("success", "Successfully created merchant", merchant)
+	protoMerchant := &pb.MerchantResponse{
+		Id:        int32(merchant.MerchantID),
+		Name:      merchant.Name,
+		ApiKey:    merchant.ApiKey,
+		Status:    merchant.Status,
+		UserId:    int32(merchant.UserID),
+		CreatedAt: merchant.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt: merchant.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+	}
 
-	return so, nil
-
+	return &pb.ApiResponseMerchant{
+		Status:  "success",
+		Message: "Successfully created merchant",
+		Data:    protoMerchant,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) UpdateMerchant(ctx context.Context, req *pb.UpdateMerchantRequest) (*pb.ApiResponseMerchant, error) {
@@ -676,15 +959,27 @@ func (s *merchantHandleGrpc) UpdateMerchant(ctx context.Context, req *pb.UpdateM
 		return nil, merchant_errors.ErrGrpcValidateUpdateMerchant
 	}
 
-	merchant, err := s.merchantService.UpdateMerchant(&request)
+	merchant, err := s.merchantService.UpdateMerchant(ctx, &request)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMerchant("success", "Successfully updated merchant", merchant)
+	protoMerchant := &pb.MerchantResponse{
+		Id:        int32(merchant.MerchantID),
+		Name:      merchant.Name,
+		ApiKey:    merchant.ApiKey,
+		Status:    merchant.Status,
+		UserId:    int32(merchant.UserID),
+		CreatedAt: merchant.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt: merchant.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+	}
 
-	return so, nil
+	return &pb.ApiResponseMerchant{
+		Status:  "success",
+		Message: "Successfully updated merchant",
+		Data:    protoMerchant,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) TrashedMerchant(ctx context.Context, req *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchantDeleteAt, error) {
@@ -694,15 +989,28 @@ func (s *merchantHandleGrpc) TrashedMerchant(ctx context.Context, req *pb.FindBy
 		return nil, merchant_errors.ErrGrpcMerchantInvalidID
 	}
 
-	merchant, err := s.merchantService.TrashedMerchant(id)
+	merchant, err := s.merchantService.TrashedMerchant(ctx, id)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMerchantDeleteAt("success", "Successfully trashed merchant", merchant)
+	protoMerchant := &pb.MerchantResponseDeleteAt{
+		Id:        int32(merchant.MerchantID),
+		Name:      merchant.Name,
+		ApiKey:    merchant.ApiKey,
+		Status:    merchant.Status,
+		UserId:    int32(merchant.UserID),
+		CreatedAt: merchant.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt: merchant.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+		DeletedAt: wrapperspb.String(merchant.DeletedAt.Time.Format("2006-01-02 15:04:05")),
+	}
 
-	return so, nil
+	return &pb.ApiResponseMerchantDeleteAt{
+		Status:  "success",
+		Message: "Successfully trashed merchant",
+		Data:    protoMerchant,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) RestoreMerchant(ctx context.Context, req *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchantDeleteAt, error) {
@@ -712,15 +1020,28 @@ func (s *merchantHandleGrpc) RestoreMerchant(ctx context.Context, req *pb.FindBy
 		return nil, merchant_errors.ErrGrpcMerchantInvalidID
 	}
 
-	merchant, err := s.merchantService.RestoreMerchant(id)
+	merchant, err := s.merchantService.RestoreMerchant(ctx, id)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMerchantDeleteAt("success", "Successfully restored merchant", merchant)
+	protoMerchant := &pb.MerchantResponseDeleteAt{
+		Id:        int32(merchant.MerchantID),
+		Name:      merchant.Name,
+		ApiKey:    merchant.ApiKey,
+		Status:    merchant.Status,
+		UserId:    int32(merchant.UserID),
+		CreatedAt: merchant.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt: merchant.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+		DeletedAt: wrapperspb.String(merchant.DeletedAt.Time.Format("2006-01-02 15:04:05")),
+	}
 
-	return so, nil
+	return &pb.ApiResponseMerchantDeleteAt{
+		Status:  "success",
+		Message: "Successfully restored merchant",
+		Data:    protoMerchant,
+	}, nil
 }
 
 func (s *merchantHandleGrpc) DeleteMerchantPermanent(ctx context.Context, req *pb.FindByIdMerchantRequest) (*pb.ApiResponseMerchantDelete, error) {
@@ -730,37 +1051,40 @@ func (s *merchantHandleGrpc) DeleteMerchantPermanent(ctx context.Context, req *p
 		return nil, merchant_errors.ErrGrpcMerchantInvalidID
 	}
 
-	_, err := s.merchantService.DeleteMerchantPermanent(id)
+	_, err := s.merchantService.DeleteMerchantPermanent(ctx, id)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMerchantDelete("success", "Successfully deleted merchant")
-
-	return so, nil
+	return &pb.ApiResponseMerchantDelete{
+		Status:  "success",
+		Message: "Successfully deleted merchant",
+	}, nil
 }
 
 func (s *merchantHandleGrpc) RestoreAllMerchant(ctx context.Context, _ *emptypb.Empty) (*pb.ApiResponseMerchantAll, error) {
-	_, err := s.merchantService.RestoreAllMerchant()
+	_, err := s.merchantService.RestoreAllMerchant(ctx)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMerchantAll("success", "Successfully restore all merchant")
-
-	return so, nil
+	return &pb.ApiResponseMerchantAll{
+		Status:  "success",
+		Message: "Successfully restore all merchant",
+	}, nil
 }
 
 func (s *merchantHandleGrpc) DeleteAllMerchantPermanent(ctx context.Context, _ *emptypb.Empty) (*pb.ApiResponseMerchantAll, error) {
-	_, err := s.merchantService.DeleteAllMerchantPermanent()
+	_, err := s.merchantService.DeleteAllMerchantPermanent(ctx)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMerchantAll("success", "Successfully delete all merchant")
-
-	return so, nil
+	return &pb.ApiResponseMerchantAll{
+		Status:  "success",
+		Message: "Successfully delete all merchant",
+	}, nil
 }

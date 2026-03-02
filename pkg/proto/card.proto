@@ -219,11 +219,11 @@ message FindByCardNumberRequest {
 
 service CardService {
     rpc FindAllCard (FindAllCardRequest) returns (ApiResponsePaginationCard) {}
-    rpc FindByIdCard (FindByIdCardRequest) returns (ApiResponseCard) {}
-    rpc FindByUserIdCard (FindByUserIdCardRequest) returns (ApiResponseCard);
     rpc FindByActiveCard (FindAllCardRequest) returns (ApiResponsePaginationCardDeleteAt){}
     rpc FindByTrashedCard (FindAllCardRequest) returns (ApiResponsePaginationCardDeleteAt){}
     rpc FindByCardNumber (FindByCardNumberRequest) returns (ApiResponseCard){}
+    rpc FindByIdCard (FindByIdCardRequest) returns (ApiResponseCard) {}
+    rpc FindByUserIdCard (FindByUserIdCardRequest) returns (ApiResponseCard);
 
 
     rpc DashboardCard(google.protobuf.Empty)returns (ApiResponseDashboardCard){}

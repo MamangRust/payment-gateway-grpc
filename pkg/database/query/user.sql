@@ -14,15 +14,27 @@
 --   - The total count includes the entire dataset, not limited by pagination.
 -- name: GetUsersWithPagination :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
+    user_id,
+    firstname,
+    lastname,
+    email,
+    password,
+    created_at,
+    updated_at,
+    COUNT(*) OVER () AS total_count
 FROM users
-WHERE deleted_at IS NULL
-  AND ($1::TEXT IS NULL OR firstname ILIKE '%' || $1 || '%' OR lastname ILIKE '%' || $1 || '%' OR email ILIKE '%' || $1 || '%')
+WHERE
+    deleted_at IS NULL
+    AND (
+        $1::TEXT IS NULL
+        OR firstname ILIKE '%' || $1 || '%'
+        OR lastname ILIKE '%' || $1 || '%'
+        OR email ILIKE '%' || $1 || '%'
+    )
 ORDER BY created_at DESC
-LIMIT $2 OFFSET $3;
-
-
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetActiveUsersWithPagination: Get Active Users with Pagination and Total Count
 -- name: GetActiveUsersWithPagination :many
@@ -41,14 +53,28 @@ LIMIT $2 OFFSET $3;
 --   - The total count of active users is calculated, including those that are not currently on the current page.
 -- name: GetActiveUsersWithPagination :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
+    user_id,
+    firstname,
+    lastname,
+    email,
+    password,
+    created_at,
+    updated_at,
+    deleted_at,
+    COUNT(*) OVER () AS total_count
 FROM users
-WHERE deleted_at IS NULL
-  AND ($1::TEXT IS NULL OR firstname ILIKE '%' || $1 || '%' OR lastname ILIKE '%' || $1 || '%' OR email ILIKE '%' || $1 || '%')
+WHERE
+    deleted_at IS NOT NULL
+    AND (
+        $1::TEXT IS NULL
+        OR firstname ILIKE '%' || $1 || '%'
+        OR lastname ILIKE '%' || $1 || '%'
+        OR email ILIKE '%' || $1 || '%'
+    )
 ORDER BY created_at DESC
-LIMIT $2 OFFSET $3;
-
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetTrashedUsersWithPagination: Get Trashed Users with Pagination and Total Count
 -- name: GetTrashedUsersWithPagination :many
@@ -67,15 +93,28 @@ LIMIT $2 OFFSET $3;
 --   - The total count of trashed users is calculated, including those that are not currently on the current page.
 -- name: GetTrashedUsersWithPagination :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
+    user_id,
+    firstname,
+    lastname,
+    email,
+    password,
+    created_at,
+    updated_at,
+    deleted_at,
+    COUNT(*) OVER () AS total_count
 FROM users
-WHERE deleted_at IS NOT NULL
-  AND ($1::TEXT IS NULL OR firstname ILIKE '%' || $1 || '%' OR lastname ILIKE '%' || $1 || '%' OR email ILIKE '%' || $1 || '%')
+WHERE
+    deleted_at IS NOT NULL
+    AND (
+        $1::TEXT IS NULL
+        OR firstname ILIKE '%' || $1 || '%'
+        OR lastname ILIKE '%' || $1 || '%'
+        OR email ILIKE '%' || $1 || '%'
+    )
 ORDER BY created_at DESC
-LIMIT $2 OFFSET $3;
-
-
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetUserByID: Retrieve a user by their ID
 -- name: GetUserByID :one
@@ -88,8 +127,18 @@ LIMIT $2 OFFSET $3;
 --   - Filters the users table to find a user based on their `user_id`.
 --   - Ensures the user is active by checking that `deleted_at` is NULL.
 -- name: GetUserByID :one
-SELECT * FROM users WHERE user_id = $1 AND deleted_at IS NULL;
-
+SELECT
+    user_id,
+    firstname,
+    lastname,
+    email,
+    password,
+    created_at,
+    updated_at
+FROM users
+WHERE
+    user_id = $1
+    AND deleted_at IS NULL;
 
 -- GetUserByEmail: Retrieve a user by their email
 -- name: GetUserByEmail :one
@@ -102,7 +151,18 @@ SELECT * FROM users WHERE user_id = $1 AND deleted_at IS NULL;
 --   - Filters the users table by email to find a user.
 --   - Ensures that the `deleted_at` field is NULL, so only active users are returned.
 -- name: GetUserByEmail :one
-SELECT * FROM users WHERE email = $1 AND deleted_at IS NULL;
+SELECT user_id, email
+FROM users
+WHERE
+    email = $1
+    AND deleted_at IS NULL;
+
+-- name: GetUserByEmailWithPassword :one
+SELECT user_id, email, password
+FROM users
+WHERE
+    email = $1
+    AND deleted_at IS NULL;
 
 -- SearchUsersByEmail: Search users by email with case-insensitive matching
 -- name: SearchUsersByEmail :many
@@ -140,8 +200,6 @@ WHERE
     user_id = $1
     AND deleted_at IS NOT NULL;
 
-
-
 -- CreateUser: Insert a new user into the users table
 -- name: CreateUser :one
 -- Purpose: Add a new user to the system.
@@ -171,9 +229,15 @@ VALUES (
         $4,
         current_timestamp,
         current_timestamp
-    ) RETURNING *;
-
-
+    )
+RETURNING
+    user_id,
+    firstname,
+    lastname,
+    email,
+    password,
+    created_at,
+    updated_at;
 
 -- UpdateUser: Modifies user account information
 -- Purpose: Update user profile details
@@ -200,9 +264,14 @@ SET
 WHERE
     user_id = $1
     AND deleted_at IS NULL
-    RETURNING *;
-
-
+RETURNING
+    user_id,
+    firstname,
+    lastname,
+    email,
+    password,
+    created_at,
+    updated_at;
 
 -- TrashUser: Soft-deletes a user account
 -- Purpose: Deactivate user without permanent deletion
@@ -221,7 +290,15 @@ SET
 WHERE
     user_id = $1
     AND deleted_at IS NULL
-    RETURNING *;
+RETURNING
+    user_id,
+    firstname,
+    lastname,
+    email,
+    password,
+    created_at,
+    updated_at,
+    deleted_at;
 
 -- RestoreUser: Recovers a soft-deleted user
 -- Purpose: Reactivate a previously deactivated user
@@ -240,8 +317,15 @@ SET
 WHERE
     user_id = $1
     AND deleted_at IS NOT NULL
-    RETURNING *;
-
+RETURNING
+    user_id,
+    firstname,
+    lastname,
+    email,
+    password,
+    created_at,
+    updated_at,
+    deleted_at;
 
 -- DeleteUserPermanently: Permanently delete a trashed user from the system
 -- name: DeleteUserPermanently :exec
@@ -253,7 +337,6 @@ WHERE
 --   - Only deletes users who have been trashed (`deleted_at IS NOT NULL`).
 -- name: DeleteUserPermanently :exec
 DELETE FROM users WHERE user_id = $1 AND deleted_at IS NOT NULL;
-
 
 -- RestoreAllUsers: Restore all trashed users
 -- name: RestoreAllUsers :exec
@@ -267,14 +350,10 @@ SET
 WHERE
     deleted_at IS NOT NULL;
 
-
 -- DeleteAllPermanentUsers: Permanently delete all trashed users
 -- name: DeleteAllPermanentUsers :exec
 -- Purpose: Permanently delete all trashed user records from the database.
 -- Business Logic:
 --   - Deletes all users who have been trashed (soft-deleted), i.e., where `deleted_at` is not NULL.
 -- name: DeleteAllPermanentUsers :exec
-DELETE FROM users
-WHERE
-    deleted_at IS NOT NULL;
-
+DELETE FROM users WHERE deleted_at IS NOT NULL;

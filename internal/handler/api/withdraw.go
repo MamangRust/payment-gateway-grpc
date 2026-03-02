@@ -1,66 +1,74 @@
 package api
 
 import (
+	withdraw_cache "MamangRust/paymentgatewaygrpc/internal/cache/api/withdraw"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api"
+	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
-	"MamangRust/paymentgatewaygrpc/pkg/errors/withdraw_errors"
+	"MamangRust/paymentgatewaygrpc/pkg/errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
+	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type WithdrawHandleApi struct {
-	client  pb.WithdrawServiceClient
-	logger  logger.LoggerInterface
-	mapping apimapper.WithdrawResponseMapper
+type withdrawHandleApi struct {
+	client     pb.WithdrawServiceClient
+	logger     logger.LoggerInterface
+	mapping    apimapper.WithdrawResponseMapper
+	apihandler errors.ApiHandler
+	cache      withdraw_cache.WithdrawMencache
 }
 
-func NewHandlerWithdraw(client pb.WithdrawServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.WithdrawResponseMapper) *WithdrawHandleApi {
-	withdrawHandler := &WithdrawHandleApi{
-		client:  client,
-		logger:  logger,
-		mapping: mapping,
+func NewHandlerWithdraw(client pb.WithdrawServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.WithdrawResponseMapper, apiHandler errors.ApiHandler, cache withdraw_cache.WithdrawMencache) *withdrawHandleApi {
+	withdrawHandler := &withdrawHandleApi{
+		client:     client,
+		logger:     logger,
+		mapping:    mapping,
+		apihandler: apiHandler,
+		cache:      cache,
 	}
 	routerWithdraw := router.Group("/api/withdraws")
 
-	routerWithdraw.GET("", withdrawHandler.FindAll)
-	routerWithdraw.GET("/card-number/:card_number", withdrawHandler.FindAllByCardNumber)
+	routerWithdraw.GET("", apiHandler.Handle("find-all-withdraws", withdrawHandler.FindAll))
+	routerWithdraw.GET("/card-number/:card_number", apiHandler.Handle("find-all-withdraws-by-card-number", withdrawHandler.FindAllByCardNumber))
+	routerWithdraw.GET("/:id", apiHandler.Handle("find-withdraw-by-id", withdrawHandler.FindById))
+	routerWithdraw.GET("/active", apiHandler.Handle("find-active-withdraws", withdrawHandler.FindByActive))
+	routerWithdraw.GET("/trashed", apiHandler.Handle("find-trashed-withdraws", withdrawHandler.FindByTrashed))
 
-	routerWithdraw.GET("/:id", withdrawHandler.FindById)
+	routerWithdraw.GET("/monthly-success", apiHandler.Handle("find-monthly-withdraw-status-success", withdrawHandler.FindMonthlyWithdrawStatusSuccess))
+	routerWithdraw.GET("/yearly-success", apiHandler.Handle("find-yearly-withdraw-status-success", withdrawHandler.FindYearlyWithdrawStatusSuccess))
+	routerWithdraw.GET("/monthly-failed", apiHandler.Handle("find-monthly-withdraw-status-failed", withdrawHandler.FindMonthlyWithdrawStatusFailed))
+	routerWithdraw.GET("/yearly-failed", apiHandler.Handle("find-yearly-withdraw-status-failed", withdrawHandler.FindYearlyWithdrawStatusFailed))
 
-	routerWithdraw.GET("/monthly-success", withdrawHandler.FindMonthlyWithdrawStatusSuccess)
-	routerWithdraw.GET("/yearly-success", withdrawHandler.FindYearlyWithdrawStatusSuccess)
-	routerWithdraw.GET("/monthly-failed", withdrawHandler.FindMonthlyWithdrawStatusFailed)
-	routerWithdraw.GET("/yearly-failed", withdrawHandler.FindYearlyWithdrawStatusFailed)
+	routerWithdraw.GET("/monthly-success-by-card", apiHandler.Handle("find-monthly-withdraw-status-success-by-card", withdrawHandler.FindMonthlyWithdrawStatusSuccessByCardNumber))
+	routerWithdraw.GET("/yearly-success-by-card", apiHandler.Handle("find-yearly-withdraw-status-success-by-card", withdrawHandler.FindYearlyWithdrawStatusSuccessByCardNumber))
+	routerWithdraw.GET("/monthly-failed-by-card", apiHandler.Handle("find-monthly-withdraw-status-failed-by-card", withdrawHandler.FindMonthlyWithdrawStatusFailedByCardNumber))
+	routerWithdraw.GET("/yearly-failed-by-card", apiHandler.Handle("find-yearly-withdraw-status-failed-by-card", withdrawHandler.FindYearlyWithdrawStatusFailedByCardNumber))
 
-	routerWithdraw.GET("/monthly-success-by-card", withdrawHandler.FindMonthlyWithdrawStatusSuccessByCardNumber)
-	routerWithdraw.GET("/yearly-success-by-card", withdrawHandler.FindYearlyWithdrawStatusSuccessByCardNumber)
-	routerWithdraw.GET("/monthly-failed-by-card", withdrawHandler.FindMonthlyWithdrawStatusFailedByCardNumber)
-	routerWithdraw.GET("/yearly-failed-by-card", withdrawHandler.FindYearlyWithdrawStatusFailedByCardNumber)
+	routerWithdraw.GET("/monthly-amount", apiHandler.Handle("find-monthly-withdraw-amounts", withdrawHandler.FindMonthlyWithdraws))
+	routerWithdraw.GET("/yearly-amount", apiHandler.Handle("find-yearly-withdraw-amounts", withdrawHandler.FindYearlyWithdraws))
 
-	routerWithdraw.GET("/monthly-amount", withdrawHandler.FindMonthlyWithdraws)
-	routerWithdraw.GET("/yearly-amount", withdrawHandler.FindYearlyWithdraws)
+	routerWithdraw.GET("/monthly-amount-card", apiHandler.Handle("find-monthly-withdraw-amounts-by-card", withdrawHandler.FindMonthlyWithdrawsByCardNumber))
+	routerWithdraw.GET("/yearly-amount-card", apiHandler.Handle("find-yearly-withdraw-amounts-by-card", withdrawHandler.FindYearlyWithdrawsByCardNumber))
 
-	routerWithdraw.GET("/monthly-amount-card", withdrawHandler.FindMonthlyWithdrawsByCardNumber)
-	routerWithdraw.GET("/yearly-amount-card", withdrawHandler.FindYearlyWithdrawsByCardNumber)
+	routerWithdraw.POST("/create", apiHandler.Handle("create-withdraw", withdrawHandler.Create))
+	routerWithdraw.POST("/update/:id", apiHandler.Handle("update-withdraw", withdrawHandler.Update))
 
-	routerWithdraw.GET("/active", withdrawHandler.FindByActive)
-	routerWithdraw.GET("/trashed", withdrawHandler.FindByTrashed)
-	routerWithdraw.POST("/create", withdrawHandler.Create)
-	routerWithdraw.POST("/update/:id", withdrawHandler.Update)
+	routerWithdraw.POST("/trashed/:id", apiHandler.Handle("trash-withdraw", withdrawHandler.TrashWithdraw))
+	routerWithdraw.POST("/restore/:id", apiHandler.Handle("restore-withdraw", withdrawHandler.RestoreWithdraw))
+	routerWithdraw.DELETE("/permanent/:id", apiHandler.Handle("delete-withdraw-permanent", withdrawHandler.DeleteWithdrawPermanent))
 
-	routerWithdraw.POST("/trashed/:id", withdrawHandler.TrashWithdraw)
-	routerWithdraw.POST("/restore/:id", withdrawHandler.RestoreWithdraw)
-	routerWithdraw.DELETE("/permanent/:id", withdrawHandler.DeleteWithdrawPermanent)
-
-	routerWithdraw.POST("/restore/all", withdrawHandler.RestoreAllWithdraw)
-	routerWithdraw.POST("/permanent/all", withdrawHandler.DeleteAllWithdrawPermanent)
+	routerWithdraw.POST("/restore/all", apiHandler.Handle("restore-all-withdraws", withdrawHandler.RestoreAllWithdraw))
+	routerWithdraw.POST("/permanent/all", apiHandler.Handle("delete-all-withdraws-permanent", withdrawHandler.DeleteAllWithdrawPermanent))
 
 	return withdrawHandler
 }
@@ -77,7 +85,7 @@ func NewHandlerWithdraw(client pb.WithdrawServiceClient, router *echo.Echo, logg
 // @Success 200 {object} response.ApiResponsePaginationWithdraw "List of withdraw records"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve withdraw data"
 // @Router /api/withdraw [get]
-func (h *WithdrawHandleApi) FindAll(c echo.Context) error {
+func (h *withdrawHandleApi) FindAll(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -92,23 +100,32 @@ func (h *WithdrawHandleApi) FindAll(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllWithdrawRequest{
+	reqCache := &requests.FindAllWithdraws{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedWithdrawsCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindAllWithdrawRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.client.FindAllWithdraw(ctx, req)
-
+	res, err := h.client.FindAllWithdraw(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to retrieve withdraw data", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedFindAllWithdraw(c)
+		return h.handleGrpcError(err, "FindAll")
 	}
 
-	so := h.mapping.ToApiResponsePaginationWithdraw(res)
+	apiResponse := h.mapping.ToApiResponsePaginationWithdraw(res)
+	h.cache.SetCachedWithdrawsCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Summary Find all withdraw records by card number
@@ -124,10 +141,10 @@ func (h *WithdrawHandleApi) FindAll(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsePaginationWithdraw "List of withdraw records"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve withdraw data"
 // @Router /api/withdraw/card-number/{card_number} [get]
-func (h *WithdrawHandleApi) FindAllByCardNumber(c echo.Context) error {
+func (h *withdrawHandleApi) FindAllByCardNumber(c echo.Context) error {
 	cardNumber := c.Param("card_number")
 	if cardNumber == "" {
-		return withdraw_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("card_number is required")
 	}
 
 	page, err := strconv.Atoi(c.QueryParam("page"))
@@ -144,24 +161,34 @@ func (h *WithdrawHandleApi) FindAllByCardNumber(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllWithdrawByCardNumberRequest{
+	reqCache := &requests.FindAllWithdrawCardNumber{
+		CardNumber: cardNumber,
+		Page:       page,
+		PageSize:   pageSize,
+		Search:     search,
+	}
+
+	cachedData, found := h.cache.GetCachedWithdrawByCardCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindAllWithdrawByCardNumberRequest{
 		CardNumber: cardNumber,
 		Page:       int32(page),
 		PageSize:   int32(pageSize),
 		Search:     search,
 	}
 
-	res, err := h.client.FindAllWithdrawByCardNumber(ctx, req)
-
+	res, err := h.client.FindAllWithdrawByCardNumber(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to retrieve withdraw data", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedFindAllWithdrawByCardNumber(c)
+		return h.handleGrpcError(err, "FindAllByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponsePaginationWithdraw(res)
+	apiResponse := h.mapping.ToApiResponsePaginationWithdraw(res)
+	h.cache.SetCachedWithdrawByCardCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Summary Find a withdraw by ID
@@ -175,32 +202,32 @@ func (h *WithdrawHandleApi) FindAllByCardNumber(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve withdraw data"
 // @Router /api/withdraw/{id} [get]
-func (h *WithdrawHandleApi) FindById(c echo.Context) error {
+func (h *withdrawHandleApi) FindById(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
-
 	if err != nil {
-		h.logger.Debug("Invalid withdraw ID", zap.Error(err))
-
-		return withdraw_errors.ErrApiWithdrawInvalidID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindByIdWithdrawRequest{
+	cachedData, found := h.cache.GetCachedWithdrawCache(ctx, id)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindByIdWithdrawRequest{
 		WithdrawId: int32(id),
 	}
 
-	withdraw, err := h.client.FindByIdWithdraw(ctx, req)
-
+	withdraw, err := h.client.FindByIdWithdraw(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to retrieve withdraw data", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedFindByIdWithdraw(c)
+		return h.handleGrpcError(err, "FindById")
 	}
 
-	so := h.mapping.ToApiResponseWithdraw(withdraw)
+	apiResponse := h.mapping.ToApiResponseWithdraw(withdraw)
+	h.cache.SetCachedWithdrawCache(ctx, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyWithdrawStatusSuccess retrieves the monthly withdraw status for successful transactions.
@@ -216,36 +243,45 @@ func (h *WithdrawHandleApi) FindById(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly withdraw status for successful transactions"
 // @Router /api/withdraws/monthly-success [get]
-func (h *WithdrawHandleApi) FindMonthlyWithdrawStatusSuccess(c echo.Context) error {
+func (h *withdrawHandleApi) FindMonthlyWithdrawStatusSuccess(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		return withdraw_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	month, err := strconv.Atoi(monthStr)
-	if err != nil {
-		return withdraw_errors.ErrApiInvalidMonth(c)
+	if err != nil || month <= 0 || month > 12 {
+		return errors.NewBadRequestError("invalid month parameter")
 	}
 
 	ctx := c.Request().Context()
+
+	reqCache := &requests.MonthStatusWithdraw{
+		Year:  year,
+		Month: month,
+	}
+
+	cachedData, found := h.cache.GetCachedMonthWithdrawStatusSuccessCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	res, err := h.client.FindMonthlyWithdrawStatusSuccess(ctx, &pb.FindMonthlyWithdrawStatus{
 		Year:  int32(year),
 		Month: int32(month),
 	})
-
 	if err != nil {
-		h.logger.Debug("Failed to retrieve monthly Withdraw status success", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedFindMonthlyWithdrawStatusSuccess(c)
+		h.logger.Debug("Failed to retrieve monthly withdraw status success", zap.Error(err))
+		return h.handleGrpcError(err, "FindMonthlyWithdrawStatusSuccess")
 	}
 
-	so := h.mapping.ToApiResponseWithdrawMonthStatusSuccess(res)
+	apiResponse := h.mapping.ToApiResponseWithdrawMonthStatusSuccess(res)
+	h.cache.SetCachedMonthWithdrawStatusSuccessCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyWithdrawStatusSuccess retrieves the yearly withdraw status for successful transactions.
@@ -260,29 +296,33 @@ func (h *WithdrawHandleApi) FindMonthlyWithdrawStatusSuccess(c echo.Context) err
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly withdraw status for successful transactions"
 // @Router /api/withdraws/yearly-success [get]
-func (h *WithdrawHandleApi) FindYearlyWithdrawStatusSuccess(c echo.Context) error {
+func (h *withdrawHandleApi) FindYearlyWithdrawStatusSuccess(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		return withdraw_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	ctx := c.Request().Context()
 
+	cachedData, found := h.cache.GetCachedYearlyWithdrawStatusSuccessCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
 	res, err := h.client.FindYearlyWithdrawStatusSuccess(ctx, &pb.FindYearWithdrawStatus{
 		Year: int32(year),
 	})
-
 	if err != nil {
-		h.logger.Debug("Failed to retrieve yearly Withdraw status success", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedFindYearlyWithdrawStatusSuccess(c)
+		h.logger.Debug("Failed to retrieve yearly withdraw status success", zap.Error(err))
+		return h.handleGrpcError(err, "FindYearlyWithdrawStatusSuccess")
 	}
 
-	so := h.mapping.ToApiResponseWithdrawYearStatusSuccess(res)
+	apiResponse := h.mapping.ToApiResponseWithdrawYearStatusSuccess(res)
+	h.cache.SetCachedYearlyWithdrawStatusSuccessCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyWithdrawStatusFailed retrieves the monthly withdraw status for failed transactions.
@@ -298,36 +338,45 @@ func (h *WithdrawHandleApi) FindYearlyWithdrawStatusSuccess(c echo.Context) erro
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly withdraw status for failed transactions"
 // @Router /api/withdraws/monthly-failed [get]
-func (h *WithdrawHandleApi) FindMonthlyWithdrawStatusFailed(c echo.Context) error {
+func (h *withdrawHandleApi) FindMonthlyWithdrawStatusFailed(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		return withdraw_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	month, err := strconv.Atoi(monthStr)
-	if err != nil {
-		return withdraw_errors.ErrApiInvalidMonth(c)
+	if err != nil || month <= 0 || month > 12 {
+		return errors.NewBadRequestError("invalid month parameter")
 	}
 
 	ctx := c.Request().Context()
+
+	reqCache := &requests.MonthStatusWithdraw{
+		Year:  year,
+		Month: month,
+	}
+
+	cachedData, found := h.cache.GetCachedMonthWithdrawStatusFailedCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	res, err := h.client.FindMonthlyWithdrawStatusFailed(ctx, &pb.FindMonthlyWithdrawStatus{
 		Year:  int32(year),
 		Month: int32(month),
 	})
-
 	if err != nil {
-		h.logger.Debug("Failed to retrieve monthly Withdraw status Failed", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedFindMonthlyWithdrawStatusFailed(c)
+		h.logger.Debug("Failed to retrieve monthly withdraw status failed", zap.Error(err))
+		return h.handleGrpcError(err, "FindMonthlyWithdrawStatusFailed")
 	}
 
-	so := h.mapping.ToApiResponseWithdrawMonthStatusFailed(res)
+	apiResponse := h.mapping.ToApiResponseWithdrawMonthStatusFailed(res)
+	h.cache.SetCachedMonthWithdrawStatusFailedCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyWithdrawStatusFailed retrieves the yearly withdraw status for failed transactions.
@@ -342,29 +391,33 @@ func (h *WithdrawHandleApi) FindMonthlyWithdrawStatusFailed(c echo.Context) erro
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly withdraw status for failed transactions"
 // @Router /api/withdraws/yearly-failed [get]
-func (h *WithdrawHandleApi) FindYearlyWithdrawStatusFailed(c echo.Context) error {
+func (h *withdrawHandleApi) FindYearlyWithdrawStatusFailed(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		return withdraw_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	ctx := c.Request().Context()
 
+	cachedData, found := h.cache.GetCachedYearlyWithdrawStatusFailedCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
 	res, err := h.client.FindYearlyWithdrawStatusFailed(ctx, &pb.FindYearWithdrawStatus{
 		Year: int32(year),
 	})
-
 	if err != nil {
-		h.logger.Debug("Failed to retrieve yearly Withdraw status Failed", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedFindYearlyWithdrawStatusFailed(c)
+		h.logger.Debug("Failed to retrieve yearly withdraw status failed", zap.Error(err))
+		return h.handleGrpcError(err, "FindYearlyWithdrawStatusFailed")
 	}
 
-	so := h.mapping.ToApiResponseWithdrawYearStatusFailed(res)
+	apiResponse := h.mapping.ToApiResponseWithdrawYearStatusFailed(res)
+	h.cache.SetCachedYearlyWithdrawStatusFailedCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyWithdrawStatusSuccessByCardNumber retrieves the monthly withdraw status for successful transactions.
@@ -381,42 +434,52 @@ func (h *WithdrawHandleApi) FindYearlyWithdrawStatusFailed(c echo.Context) error
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly withdraw status for successful transactions"
 // @Router /api/withdraws/monthly-success-by-card [get]
-func (h *WithdrawHandleApi) FindMonthlyWithdrawStatusSuccessByCardNumber(c echo.Context) error {
+func (h *withdrawHandleApi) FindMonthlyWithdrawStatusSuccessByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 	cardNumber := c.QueryParam("card_number")
 
 	if cardNumber == "" {
-		return withdraw_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("invalid card_number parameter")
 	}
 
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		return withdraw_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	month, err := strconv.Atoi(monthStr)
-	if err != nil {
-		return withdraw_errors.ErrApiInvalidMonth(c)
+	if err != nil || month <= 0 || month > 12 {
+		return errors.NewBadRequestError("invalid month parameter")
 	}
 
 	ctx := c.Request().Context()
+
+	reqCache := &requests.MonthStatusWithdrawCardNumber{
+		CardNumber: cardNumber,
+		Year:       year,
+		Month:      month,
+	}
+
+	cachedData, found := h.cache.GetCachedMonthWithdrawStatusSuccessByCardNumber(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	res, err := h.client.FindMonthlyWithdrawStatusSuccessCardNumber(ctx, &pb.FindMonthlyWithdrawStatusCardNumber{
 		Year:       int32(year),
 		Month:      int32(month),
 		CardNumber: cardNumber,
 	})
-
 	if err != nil {
-		h.logger.Debug("Failed to retrieve monthly Withdraw status success", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedFindMonthlyWithdrawStatusSuccessCardNumber(c)
+		h.logger.Debug("Failed to retrieve monthly withdraw status success", zap.Error(err))
+		return h.handleGrpcError(err, "FindMonthlyWithdrawStatusSuccessByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseWithdrawMonthStatusSuccess(res)
+	apiResponse := h.mapping.ToApiResponseWithdrawMonthStatusSuccess(res)
+	h.cache.SetCachedMonthWithdrawStatusSuccessByCardNumber(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyWithdrawStatusSuccessByCardNumber retrieves the yearly withdraw status for successful transactions.
@@ -432,35 +495,44 @@ func (h *WithdrawHandleApi) FindMonthlyWithdrawStatusSuccessByCardNumber(c echo.
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly withdraw status for successful transactions"
 // @Router /api/withdraws/yearly-success-by-card-number [get]
-func (h *WithdrawHandleApi) FindYearlyWithdrawStatusSuccessByCardNumber(c echo.Context) error {
+func (h *withdrawHandleApi) FindYearlyWithdrawStatusSuccessByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-	card_number := c.QueryParam("card_number")
+	cardNumber := c.QueryParam("card_number")
 
-	if card_number == "" {
-		return withdraw_errors.ErrApiInvalidCardNumber(c)
+	if cardNumber == "" {
+		return errors.NewBadRequestError("invalid card_number parameter")
 	}
 
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		return withdraw_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	ctx := c.Request().Context()
 
-	res, err := h.client.FindYearlyWithdrawStatusSuccessCardNumber(ctx, &pb.FindYearWithdrawStatusCardNumber{
-		CardNumber: card_number,
-		Year:       int32(year),
-	})
-
-	if err != nil {
-		h.logger.Debug("Failed to retrieve yearly Withdraw status success", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedFindYearlyWithdrawStatusSuccessCardNumber(c)
+	reqCache := &requests.YearStatusWithdrawCardNumber{
+		CardNumber: cardNumber,
+		Year:       year,
 	}
 
-	so := h.mapping.ToApiResponseWithdrawYearStatusSuccess(res)
+	cachedData, found := h.cache.GetCachedYearlyWithdrawStatusSuccessByCardNumber(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
-	return c.JSON(http.StatusOK, so)
+	res, err := h.client.FindYearlyWithdrawStatusSuccessCardNumber(ctx, &pb.FindYearWithdrawStatusCardNumber{
+		CardNumber: cardNumber,
+		Year:       int32(year),
+	})
+	if err != nil {
+		h.logger.Debug("Failed to retrieve yearly withdraw status success", zap.Error(err))
+		return h.handleGrpcError(err, "FindYearlyWithdrawStatusSuccessByCardNumber")
+	}
+
+	apiResponse := h.mapping.ToApiResponseWithdrawYearStatusSuccess(res)
+	h.cache.SetCachedYearlyWithdrawStatusSuccessByCardNumber(ctx, reqCache, apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyWithdrawStatusFailedByCardNumber retrieves the monthly withdraw status for failed transactions.
@@ -477,42 +549,52 @@ func (h *WithdrawHandleApi) FindYearlyWithdrawStatusSuccessByCardNumber(c echo.C
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly withdraw status for failed transactions"
 // @Router /api/withdraws/monthly-failed-by-card [get]
-func (h *WithdrawHandleApi) FindMonthlyWithdrawStatusFailedByCardNumber(c echo.Context) error {
+func (h *withdrawHandleApi) FindMonthlyWithdrawStatusFailedByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
-	card_number := c.QueryParam("card_number")
+	cardNumber := c.QueryParam("card_number")
 
-	if card_number == "" {
-		return withdraw_errors.ErrApiInvalidCardNumber(c)
+	if cardNumber == "" {
+		return errors.NewBadRequestError("invalid card_number parameter")
 	}
 
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		return withdraw_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	month, err := strconv.Atoi(monthStr)
-	if err != nil {
-		return withdraw_errors.ErrApiInvalidMonth(c)
+	if err != nil || month <= 0 || month > 12 {
+		return errors.NewBadRequestError("invalid month parameter")
 	}
 
 	ctx := c.Request().Context()
 
+	reqCache := &requests.MonthStatusWithdrawCardNumber{
+		CardNumber: cardNumber,
+		Year:       year,
+		Month:      month,
+	}
+
+	cachedData, found := h.cache.GetCachedMonthWithdrawStatusFailedByCardNumber(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
 	res, err := h.client.FindMonthlyWithdrawStatusFailedCardNumber(ctx, &pb.FindMonthlyWithdrawStatusCardNumber{
 		Year:       int32(year),
 		Month:      int32(month),
-		CardNumber: card_number,
+		CardNumber: cardNumber,
 	})
-
 	if err != nil {
-		h.logger.Debug("Failed to retrieve monthly Withdraw status Failed", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedFindMonthlyWithdrawStatusFailedCardNumber(c)
+		h.logger.Debug("Failed to retrieve monthly withdraw status failed", zap.Error(err))
+		return h.handleGrpcError(err, "FindMonthlyWithdrawStatusFailedByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseWithdrawMonthStatusFailed(res)
+	apiResponse := h.mapping.ToApiResponseWithdrawMonthStatusFailed(res)
+	h.cache.SetCachedMonthWithdrawStatusFailedByCardNumber(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyWithdrawStatusFailedByCardNumber retrieves the yearly withdraw status for failed transactions.
@@ -528,35 +610,44 @@ func (h *WithdrawHandleApi) FindMonthlyWithdrawStatusFailedByCardNumber(c echo.C
 // @Failure 400 {object} response.ErrorResponse "Invalid year"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly withdraw status for failed transactions"
 // @Router /api/withdraws/yearly-failed-by-card [get]
-func (h *WithdrawHandleApi) FindYearlyWithdrawStatusFailedByCardNumber(c echo.Context) error {
+func (h *withdrawHandleApi) FindYearlyWithdrawStatusFailedByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	cardNumber := c.QueryParam("card_number")
 
 	if cardNumber == "" {
-		return withdraw_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("invalid card_number parameter")
 	}
 
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		return withdraw_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	ctx := c.Request().Context()
+
+	reqCache := &requests.YearStatusWithdrawCardNumber{
+		CardNumber: cardNumber,
+		Year:       year,
+	}
+
+	cachedData, found := h.cache.GetCachedYearlyWithdrawStatusFailedByCardNumber(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	res, err := h.client.FindYearlyWithdrawStatusFailedCardNumber(ctx, &pb.FindYearWithdrawStatusCardNumber{
 		CardNumber: cardNumber,
 		Year:       int32(year),
 	})
-
 	if err != nil {
-		h.logger.Debug("Failed to retrieve yearly Withdraw status Failed", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedFindYearlyWithdrawStatusFailedCardNumber(c)
+		h.logger.Debug("Failed to retrieve yearly withdraw status failed", zap.Error(err))
+		return h.handleGrpcError(err, "FindYearlyWithdrawStatusFailedByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseWithdrawYearStatusFailed(res)
+	apiResponse := h.mapping.ToApiResponseWithdrawYearStatusFailed(res)
+	h.cache.SetCachedYearlyWithdrawStatusFailedByCardNumber(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyWithdraws retrieves the monthly withdraws for a specific year.
@@ -571,27 +662,32 @@ func (h *WithdrawHandleApi) FindYearlyWithdrawStatusFailedByCardNumber(c echo.Co
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly withdraws"
 // @Router /api/withdraws/monthly [get]
-func (h *WithdrawHandleApi) FindMonthlyWithdraws(c echo.Context) error {
+func (h *withdrawHandleApi) FindMonthlyWithdraws(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return withdraw_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetCachedMonthlyWithdraws(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	res, err := h.client.FindMonthlyWithdraws(ctx, &pb.FindYearWithdrawStatus{
 		Year: int32(year),
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly withdraws", zap.Error(err))
-		return withdraw_errors.ErrApiFailedFindMonthlyWithdraws(c)
+		return h.handleGrpcError(err, "FindMonthlyWithdraws")
 	}
 
-	so := h.mapping.ToApiResponseWithdrawMonthAmount(res)
+	apiResponse := h.mapping.ToApiResponseWithdrawMonthAmount(res)
+	h.cache.SetCachedMonthlyWithdraws(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyWithdraws retrieves the yearly withdraws for a specific year.
@@ -606,27 +702,32 @@ func (h *WithdrawHandleApi) FindMonthlyWithdraws(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly withdraws"
 // @Router /api/withdraws/yearly [get]
-func (h *WithdrawHandleApi) FindYearlyWithdraws(c echo.Context) error {
+func (h *withdrawHandleApi) FindYearlyWithdraws(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return withdraw_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetCachedYearlyWithdraws(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	res, err := h.client.FindYearlyWithdraws(ctx, &pb.FindYearWithdrawStatus{
 		Year: int32(year),
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly withdraws", zap.Error(err))
-		return withdraw_errors.ErrApiFailedFindYearlyWithdraws(c)
+		return h.handleGrpcError(err, "FindYearlyWithdraws")
 	}
 
-	so := h.mapping.ToApiResponseWithdrawYearAmount(res)
+	apiResponse := h.mapping.ToApiResponseWithdrawYearAmount(res)
+	h.cache.SetCachedYearlyWithdraws(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyWithdrawsByCardNumber retrieves the monthly withdraws for a specific card number and year.
@@ -642,22 +743,30 @@ func (h *WithdrawHandleApi) FindYearlyWithdraws(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly withdraws by card number"
 // @Router /api/withdraws/monthly-by-card [get]
-func (h *WithdrawHandleApi) FindMonthlyWithdrawsByCardNumber(c echo.Context) error {
+func (h *withdrawHandleApi) FindMonthlyWithdrawsByCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 
 	if cardNumber == "" {
-		h.logger.Debug("Invalid card number parameter")
-		return withdraw_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("invalid card_number parameter")
 	}
 
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return withdraw_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	ctx := c.Request().Context()
+
+	reqCache := &requests.YearMonthCardNumber{
+		CardNumber: cardNumber,
+		Year:       year,
+	}
+
+	cachedData, found := h.cache.GetCachedMonthlyWithdrawsByCardNumber(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	res, err := h.client.FindMonthlyWithdrawsByCardNumber(ctx, &pb.FindYearWithdrawCardNumber{
 		CardNumber: cardNumber,
@@ -665,12 +774,13 @@ func (h *WithdrawHandleApi) FindMonthlyWithdrawsByCardNumber(c echo.Context) err
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly withdraws by card number", zap.Error(err))
-		return withdraw_errors.ErrApiFailedFindMonthlyWithdrawsByCardNumber(c)
+		return h.handleGrpcError(err, "FindMonthlyWithdrawsByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseWithdrawMonthAmount(res)
+	apiResponse := h.mapping.ToApiResponseWithdrawMonthAmount(res)
+	h.cache.SetCachedMonthlyWithdrawsByCardNumber(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyWithdrawsByCardNumber retrieves the yearly withdraws for a specific card number and year.
@@ -686,22 +796,30 @@ func (h *WithdrawHandleApi) FindMonthlyWithdrawsByCardNumber(c echo.Context) err
 // @Failure 400 {object} response.ErrorResponse "Invalid card number or year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly withdraws by card number"
 // @Router /api/withdraws/yearly-by-card [get]
-func (h *WithdrawHandleApi) FindYearlyWithdrawsByCardNumber(c echo.Context) error {
+func (h *withdrawHandleApi) FindYearlyWithdrawsByCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 	yearStr := c.QueryParam("year")
 
 	if cardNumber == "" {
-		h.logger.Debug("Invalid card number parameter")
-		return withdraw_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("invalid card_number parameter")
 	}
 
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return withdraw_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	ctx := c.Request().Context()
+
+	reqCache := &requests.YearMonthCardNumber{
+		CardNumber: cardNumber,
+		Year:       year,
+	}
+
+	cachedData, found := h.cache.GetCachedYearlyWithdrawsByCardNumber(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	res, err := h.client.FindYearlyWithdrawsByCardNumber(ctx, &pb.FindYearWithdrawCardNumber{
 		CardNumber: cardNumber,
@@ -709,12 +827,13 @@ func (h *WithdrawHandleApi) FindYearlyWithdrawsByCardNumber(c echo.Context) erro
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly withdraws by card number", zap.Error(err))
-		return withdraw_errors.ErrApiFailedFindYearlyWithdrawsByCardNumber(c)
+		return h.handleGrpcError(err, "FindYearlyWithdrawsByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseWithdrawYearAmount(res)
+	apiResponse := h.mapping.ToApiResponseWithdrawYearAmount(res)
+	h.cache.SetCachedYearlyWithdrawsByCardNumber(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Summary Find a withdraw by card number
@@ -728,7 +847,7 @@ func (h *WithdrawHandleApi) FindYearlyWithdrawsByCardNumber(c echo.Context) erro
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid card number"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve withdraw data"
 // @Router /api/withdraws/card/{card_number} [get]
-func (h *WithdrawHandleApi) FindByCardNumber(c echo.Context) error {
+func (h *withdrawHandleApi) FindByCardNumber(c echo.Context) error {
 	cardNumber := c.QueryParam("card_number")
 
 	ctx := c.Request().Context()
@@ -738,11 +857,9 @@ func (h *WithdrawHandleApi) FindByCardNumber(c echo.Context) error {
 	}
 
 	withdraw, err := h.client.FindByCardNumber(ctx, req)
-
 	if err != nil {
 		h.logger.Debug("Failed to retrieve withdraw data", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedFindByCardNumber(c)
+		return err
 	}
 
 	so := h.mapping.ToApiResponsesWithdraw(withdraw)
@@ -759,7 +876,7 @@ func (h *WithdrawHandleApi) FindByCardNumber(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsesWithdraw "List of withdraw data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve withdraw data"
 // @Router /api/withdraws/active [get]
-func (h *WithdrawHandleApi) FindByActive(c echo.Context) error {
+func (h *withdrawHandleApi) FindByActive(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -774,23 +891,33 @@ func (h *WithdrawHandleApi) FindByActive(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllWithdrawRequest{
+	reqCache := &requests.FindAllWithdraws{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedWithdrawActiveCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindAllWithdrawRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.client.FindByActive(ctx, req)
-
+	res, err := h.client.FindByActive(ctx, reqGrpc)
 	if err != nil {
 		h.logger.Debug("Failed to retrieve withdraw data", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedFindByActiveWithdraw(c)
+		return err
 	}
 
-	so := h.mapping.ToApiResponsePaginationWithdrawDeleteAt(res)
+	apiResponse := h.mapping.ToApiResponsePaginationWithdrawDeleteAt(res)
+	h.cache.SetCachedWithdrawActiveCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Summary Retrieve trashed withdraw data
@@ -802,7 +929,7 @@ func (h *WithdrawHandleApi) FindByActive(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsesWithdraw "List of trashed withdraw data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve withdraw data"
 // @Router /api/withdraws/trashed [get]
-func (h *WithdrawHandleApi) FindByTrashed(c echo.Context) error {
+func (h *withdrawHandleApi) FindByTrashed(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -817,23 +944,33 @@ func (h *WithdrawHandleApi) FindByTrashed(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllWithdrawRequest{
+	reqCache := &requests.FindAllWithdraws{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedWithdrawTrashedCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindAllWithdrawRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.client.FindByTrashed(ctx, req)
-
+	res, err := h.client.FindByTrashed(ctx, reqGrpc)
 	if err != nil {
 		h.logger.Debug("Failed to retrieve withdraw data", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedFindByTrashedWithdraw(c)
+		return err
 	}
 
-	so := h.mapping.ToApiResponsePaginationWithdrawDeleteAt(res)
+	apiResponse := h.mapping.ToApiResponsePaginationWithdrawDeleteAt(res)
+	h.cache.SetCachedWithdrawTrashedCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Summary Create a new withdraw
@@ -847,19 +984,16 @@ func (h *WithdrawHandleApi) FindByTrashed(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to create withdraw"
 // @Router /api/withdraws/create [post]
-func (h *WithdrawHandleApi) Create(c echo.Context) error {
+func (h *withdrawHandleApi) Create(c echo.Context) error {
 	var body requests.CreateWithdrawRequest
 
 	if err := c.Bind(&body); err != nil {
-		h.logger.Debug("Invalid request body", zap.Error(err))
-
-		return withdraw_errors.ErrApiBindCreateWithdraw(c)
+		return errors.NewBadRequestError("Invalid request")
 	}
 
 	if err := body.Validate(); err != nil {
-		h.logger.Debug("Validation Error: " + err.Error())
-
-		return withdraw_errors.ErrApiValidateCreateWithdraw(c)
+		validations := h.parseValidationErrors(err)
+		return errors.NewValidationError(validations)
 	}
 
 	ctx := c.Request().Context()
@@ -873,10 +1007,11 @@ func (h *WithdrawHandleApi) Create(c echo.Context) error {
 	if err != nil {
 		h.logger.Debug("Failed to create withdraw", zap.Error(err))
 
-		return withdraw_errors.ErrApiFailedCreateWithdraw(c)
+		return h.handleGrpcError(err, "Create")
 	}
 
 	so := h.mapping.ToApiResponseWithdraw(res)
+	h.cache.SetCachedWithdrawCache(ctx, so)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -893,27 +1028,22 @@ func (h *WithdrawHandleApi) Create(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to update withdraw"
 // @Router /api/withdraws/update/{id} [post]
-func (h *WithdrawHandleApi) Update(c echo.Context) error {
+func (h *withdrawHandleApi) Update(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		h.logger.Debug("Invalid withdraw ID", zap.Error(err))
-
-		return withdraw_errors.ErrApiWithdrawInvalidID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	var body requests.UpdateWithdrawRequest
 
 	if err := c.Bind(&body); err != nil {
-		h.logger.Debug("Invalid request body", zap.Error(err))
-
-		return withdraw_errors.ErrApiBindUpdateWithdraw(c)
+		return errors.NewBadRequestError("Invalid request")
 	}
 
 	if err := body.Validate(); err != nil {
-		h.logger.Debug("Validation Error: " + err.Error())
-
-		return withdraw_errors.ErrApiValidateUpdateWithdraw(c)
+		validations := h.parseValidationErrors(err)
+		return errors.NewValidationError(validations)
 	}
 
 	ctx := c.Request().Context()
@@ -926,12 +1056,13 @@ func (h *WithdrawHandleApi) Update(c echo.Context) error {
 	})
 
 	if err != nil {
-		h.logger.Debug("Failed to update withdraw", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedUpdateWithdraw(c)
+		return h.handleGrpcError(err, "Update")
 	}
 
 	so := h.mapping.ToApiResponseWithdraw(res)
+
+	h.cache.DeleteCachedWithdrawCache(ctx, id)
+	h.cache.SetCachedWithdrawCache(ctx, so)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -947,13 +1078,11 @@ func (h *WithdrawHandleApi) Update(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to trash withdraw"
 // @Router /api/withdraws/trashed/{id} [post]
-func (h *WithdrawHandleApi) TrashWithdraw(c echo.Context) error {
+func (h *withdrawHandleApi) TrashWithdraw(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		h.logger.Debug("Invalid withdraw ID", zap.Error(err))
-
-		return withdraw_errors.ErrApiWithdrawInvalidID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -963,12 +1092,12 @@ func (h *WithdrawHandleApi) TrashWithdraw(c echo.Context) error {
 	})
 
 	if err != nil {
-		h.logger.Debug("Failed to trash withdraw", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedTrashedWithdraw(c)
+		return h.handleGrpcError(err, "Trashed")
 	}
 
 	so := h.mapping.ToApiResponseWithdrawDeleteAt(res)
+
+	h.cache.DeleteCachedWithdrawCache(ctx, id)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -984,12 +1113,11 @@ func (h *WithdrawHandleApi) TrashWithdraw(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore withdraw"
 // @Router /api/withdraws/restore/{id} [post]
-func (h *WithdrawHandleApi) RestoreWithdraw(c echo.Context) error {
+func (h *withdrawHandleApi) RestoreWithdraw(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		h.logger.Debug("Invalid withdraw ID", zap.Error(err))
-		return withdraw_errors.ErrApiWithdrawInvalidID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -999,12 +1127,12 @@ func (h *WithdrawHandleApi) RestoreWithdraw(c echo.Context) error {
 	})
 
 	if err != nil {
-		h.logger.Debug("Failed to restore withdraw", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedRestoreWithdraw(c)
+		return h.handleGrpcError(err, "Restore")
 	}
 
 	so := h.mapping.ToApiResponseWithdrawDeleteAt(res)
+
+	h.cache.DeleteCachedWithdrawCache(ctx, id)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -1020,13 +1148,11 @@ func (h *WithdrawHandleApi) RestoreWithdraw(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete withdraw permanently:"
 // @Router /api/withdraws/permanent/{id} [delete]
-func (h *WithdrawHandleApi) DeleteWithdrawPermanent(c echo.Context) error {
+func (h *withdrawHandleApi) DeleteWithdrawPermanent(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		h.logger.Debug("Invalid withdraw ID", zap.Error(err))
-
-		return withdraw_errors.ErrApiWithdrawInvalidID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -1036,12 +1162,12 @@ func (h *WithdrawHandleApi) DeleteWithdrawPermanent(c echo.Context) error {
 	})
 
 	if err != nil {
-		h.logger.Debug("Failed to delete withdraw permanently", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedDeleteWithdrawPermanent(c)
+		return h.handleGrpcError(err, "DeleteWithdraw")
 	}
 
 	so := h.mapping.ToApiResponseWithdrawDelete(res)
+
+	h.cache.DeleteCachedWithdrawCache(ctx, id)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -1056,14 +1182,13 @@ func (h *WithdrawHandleApi) DeleteWithdrawPermanent(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore withdraw"
 // @Router /api/withdraws/restore/all [post]
-func (h *WithdrawHandleApi) RestoreAllWithdraw(c echo.Context) error {
+func (h *withdrawHandleApi) RestoreAllWithdraw(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.client.RestoreAllWithdraw(ctx, &emptypb.Empty{})
 
 	if err != nil {
-		h.logger.Error("Failed to restore all withdraw", zap.Error(err))
-		return withdraw_errors.ErrApiFailedRestoreAllWithdraw(c)
+		return h.handleGrpcError(err, "RestoreAll")
 	}
 
 	h.logger.Debug("Successfully restored all withdraw")
@@ -1083,15 +1208,13 @@ func (h *WithdrawHandleApi) RestoreAllWithdraw(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete withdraw permanently:"
 // @Router /api/withdraws/permanent/all [post]
-func (h *WithdrawHandleApi) DeleteAllWithdrawPermanent(c echo.Context) error {
+func (h *withdrawHandleApi) DeleteAllWithdrawPermanent(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.client.DeleteAllWithdrawPermanent(ctx, &emptypb.Empty{})
 
 	if err != nil {
-		h.logger.Error("Failed to permanently delete all withdraw", zap.Error(err))
-
-		return withdraw_errors.ErrApiFailedDeleteAllWithdrawPermanent(c)
+		return h.handleGrpcError(err, "DeleteAll")
 	}
 
 	h.logger.Debug("Successfully deleted all withdraw permanently")
@@ -1099,4 +1222,82 @@ func (h *WithdrawHandleApi) DeleteAllWithdrawPermanent(c echo.Context) error {
 	so := h.mapping.ToApiResponseWithdrawAll(res)
 
 	return c.JSON(http.StatusOK, so)
+}
+
+func (h *withdrawHandleApi) handleGrpcError(err error, operation string) *errors.AppError {
+	st, ok := status.FromError(err)
+	if !ok {
+		return errors.NewInternalError(err).WithMessage("Failed to " + operation)
+	}
+
+	switch st.Code() {
+	case codes.NotFound:
+		return errors.NewNotFoundError("Withdraw").WithInternal(err)
+
+	case codes.AlreadyExists:
+		return errors.NewConflictError("Withdraw already exists").WithInternal(err)
+
+	case codes.InvalidArgument:
+		return errors.NewBadRequestError(st.Message()).WithInternal(err)
+
+	case codes.PermissionDenied:
+		return errors.ErrForbidden.WithInternal(err)
+
+	case codes.Unauthenticated:
+		return errors.ErrUnauthorized.WithInternal(err)
+
+	case codes.ResourceExhausted:
+		return errors.ErrTooManyRequests.WithInternal(err)
+
+	case codes.Unavailable:
+		return errors.NewServiceUnavailableError("Withdraw service").WithInternal(err)
+
+	case codes.DeadlineExceeded:
+		return errors.ErrTimeout.WithInternal(err)
+
+	default:
+		return errors.NewInternalError(err).WithMessage("Failed to " + operation)
+	}
+}
+
+func (h *withdrawHandleApi) parseValidationErrors(err error) []errors.ValidationError {
+	var validationErrs []errors.ValidationError
+
+	if ve, ok := err.(validator.ValidationErrors); ok {
+		for _, fe := range ve {
+			validationErrs = append(validationErrs, errors.ValidationError{
+				Field:   fe.Field(),
+				Message: h.getValidationMessage(fe),
+			})
+		}
+		return validationErrs
+	}
+
+	return []errors.ValidationError{
+		{
+			Field:   "general",
+			Message: err.Error(),
+		},
+	}
+}
+
+func (h *withdrawHandleApi) getValidationMessage(fe validator.FieldError) string {
+	switch fe.Tag() {
+	case "required":
+		return "This field is required"
+	case "email":
+		return "Invalid email format"
+	case "min":
+		return fmt.Sprintf("Must be at least %s", fe.Param())
+	case "max":
+		return fmt.Sprintf("Must be at most %s", fe.Param())
+	case "gte":
+		return fmt.Sprintf("Must be greater than or equal to %s", fe.Param())
+	case "lte":
+		return fmt.Sprintf("Must be less than or equal to %s", fe.Param())
+	case "oneof":
+		return fmt.Sprintf("Must be one of: %s", fe.Param())
+	default:
+		return fmt.Sprintf("Validation failed on '%s' tag", fe.Tag())
+	}
 }

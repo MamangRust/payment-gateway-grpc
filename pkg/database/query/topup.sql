@@ -13,10 +13,17 @@
 --   - total_count is used for frontend pagination
 -- name: GetTopups :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
-FROM
-    topups
+    topup_id,
+    topup_no,
+    card_number,
+    topup_amount,
+    topup_method,
+    topup_time,
+    status,
+    created_at,
+    updated_at,
+    COUNT(*) OVER () AS total_count
+FROM topups
 WHERE
     deleted_at IS NULL
     AND (
@@ -26,10 +33,10 @@ WHERE
         OR topup_method ILIKE '%' || $1 || '%'
         OR status ILIKE '%' || $1 || '%'
     )
-ORDER BY
-    topup_time DESC
-LIMIT $2 OFFSET $3;
-
+ORDER BY topup_time DESC
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetActiveTopups: Retrieves paginated list of active (non-deleted) topups with search
 -- Purpose: Display only active topups for admin or user dashboards
@@ -46,10 +53,18 @@ LIMIT $2 OFFSET $3;
 --   - total_count is used for frontend pagination
 -- name: GetActiveTopups :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
-FROM
-    topups
+    topup_id,
+    topup_no,
+    card_number,
+    topup_amount,
+    topup_method,
+    topup_time,
+    status,
+    created_at,
+    updated_at,
+    deleted_at,
+    COUNT(*) OVER () AS total_count
+FROM topups
 WHERE
     deleted_at IS NULL
     AND (
@@ -58,10 +73,10 @@ WHERE
         OR topup_no::TEXT ILIKE '%' || $1 || '%'
         OR topup_method ILIKE '%' || $1 || '%'
     )
-ORDER BY
-    topup_time DESC
-LIMIT $2 OFFSET $3;
-
+ORDER BY topup_time DESC
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetTrashedTopups: Retrieves trashed (soft-deleted) topups with pagination and search
 -- Purpose: Allow recovery or permanent deletion of topups
@@ -77,10 +92,18 @@ LIMIT $2 OFFSET $3;
 --   - Results sorted by topup_time descending
 -- name: GetTrashedTopups :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
-FROM
-    topups
+    topup_id,
+    topup_no,
+    card_number,
+    topup_amount,
+    topup_method,
+    topup_time,
+    status,
+    created_at,
+    updated_at,
+    deleted_at,
+    COUNT(*) OVER () AS total_count
+FROM topups
 WHERE
     deleted_at IS NOT NULL
     AND (
@@ -89,11 +112,10 @@ WHERE
         OR topup_no::TEXT ILIKE '%' || $1 || '%'
         OR topup_method ILIKE '%' || $1 || '%'
     )
-ORDER BY
-    topup_time DESC
-LIMIT $2 OFFSET $3;
-
-
+ORDER BY topup_time DESC
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetTopupByID: Retrieves a specific topup by ID
 -- Purpose: Used to display details of a single topup transaction
@@ -104,10 +126,20 @@ LIMIT $2 OFFSET $3;
 -- Business Logic:
 --   - Only returns record if it is active (deleted_at IS NULL)
 -- name: GetTopupByID :one
-SELECT * FROM topups WHERE topup_id = $1 AND deleted_at IS NULL;
-
-
-
+SELECT
+    topup_id,
+    topup_no,
+    card_number,
+    topup_amount,
+    topup_method,
+    topup_time,
+    status,
+    created_at,
+    updated_at
+FROM topups
+WHERE
+    topup_id = $1
+    AND deleted_at IS NULL;
 
 -- GetMonthTopupStatusSuccess: Retrieves monthly success metrics for topups
 -- Purpose: Analyze successful topup trends across comparison periods
@@ -129,66 +161,103 @@ SELECT * FROM topups WHERE topup_id = $1 AND deleted_at IS NULL;
 --   - Orders by year and month (newest first)
 --   - Useful for identifying seasonal topup patterns
 -- name: GetMonthTopupStatusSuccess :many
-WITH monthly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.topup_time)::integer AS year,
-        EXTRACT(MONTH FROM t.topup_time)::integer AS month,
-        COUNT(*) AS total_success,
-        COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
-    FROM
-        topups t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'success'
-        AND (
-            (t.topup_time >= $1::timestamp AND t.topup_time <= $2::timestamp)
-            OR (t.topup_time >= $3::timestamp AND t.topup_time <= $4::timestamp)
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.topup_time),
-        EXTRACT(MONTH FROM t.topup_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-        total_success,
-        total_amount
-    FROM
-        monthly_data
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $1::timestamp)::text AS year,
-        TO_CHAR($1::timestamp, 'Mon') AS month,
-        0 AS total_success,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    monthly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            )::integer AS year,
+            EXTRACT(
+                MONTH
+                FROM t.topup_time
+            )::integer AS month,
+            COUNT(*) AS total_success,
+            COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
+        FROM topups t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'success'
+            AND (
+                (
+                    t.topup_time >= $1::timestamp
+                    AND t.topup_time <= $2::timestamp
+                )
+                OR (
+                    t.topup_time >= $3::timestamp
+                    AND t.topup_time <= $4::timestamp
+                )
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            ),
+            EXTRACT(
+                MONTH
+                FROM t.topup_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            TO_CHAR(
+                TO_DATE(month::text, 'MM'),
+                'Mon'
+            ) AS month,
+            total_success,
+            total_amount
         FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $1::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $1::timestamp)::integer
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $1::timestamp
+            )::text AS year,
+            TO_CHAR($1::timestamp, 'Mon') AS month,
+            0 AS total_success,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $1::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $1::timestamp
+                    )::integer
+            )
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $3::timestamp
+            )::text AS year,
+            TO_CHAR($3::timestamp, 'Mon') AS month,
+            0 AS total_success,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $3::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $3::timestamp
+                    )::integer
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
-        TO_CHAR($3::timestamp, 'Mon') AS month,
-        0 AS total_success,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC,
-    TO_DATE(month, 'Mon') DESC;
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC, TO_DATE(month, 'Mon') DESC;
 
 -- GetYearlyTopupStatusSuccess: Retrieves yearly success metrics for topups
 -- Purpose: Compare annual successful topup performance
@@ -205,59 +274,68 @@ ORDER BY
 --   - Orders by year (newest first)
 --   - Useful for year-over-year growth analysis
 -- name: GetYearlyTopupStatusSuccess :many
-WITH yearly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.topup_time)::integer AS year,
-        COUNT(*) AS total_success,
-        COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
-    FROM
-        topups t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'success'
-        AND (
-            EXTRACT(YEAR FROM t.topup_time) = $1::integer
-            OR EXTRACT(YEAR FROM t.topup_time) = $1::integer - 1
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.topup_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        total_success::integer,
-        total_amount::integer
-    FROM
-        yearly_data
-
-    UNION ALL
-
-    SELECT
-        $1::text AS year,
-        0::integer AS total_success,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    yearly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            )::integer AS year,
+            COUNT(*) AS total_success,
+            COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
+        FROM topups t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'success'
+            AND (
+                EXTRACT(
+                    YEAR
+                    FROM t.topup_time
+                ) = $1::integer
+                OR EXTRACT(
+                    YEAR
+                    FROM t.topup_time
+                ) = $1::integer - 1
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            total_success::integer,
+            total_amount::integer
         FROM yearly_data
-        WHERE year = $1::integer
+        UNION ALL
+        SELECT
+            $1::text AS year,
+            0::integer AS total_success,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer
+            )
+        UNION ALL
+        SELECT ($1::integer - 1)::text AS year,
+            0::integer AS total_success,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer - 1
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        ($1::integer - 1)::text AS year,
-        0::integer AS total_success,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM yearly_data
-        WHERE year = $1::integer - 1
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC;
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC;
 
 -- GetMonthTopupStatusFailed: Retrieves monthly failed metrics for topups
 -- Purpose: Analyze failedful topup trends across comparison periods
@@ -279,66 +357,103 @@ ORDER BY
 --   - Orders by year and month (newest first)
 --   - Useful for identifying seasonal topup patterns
 -- name: GetMonthTopupStatusFailed :many
-WITH monthly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.topup_time)::integer AS year,
-        EXTRACT(MONTH FROM t.topup_time)::integer AS month,
-        COUNT(*) AS total_failed,
-        COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
-    FROM
-        topups t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'failed'
-        AND (
-            (t.topup_time >= $1::timestamp AND t.topup_time <= $2::timestamp)
-            OR (t.topup_time >= $3::timestamp AND t.topup_time <= $4::timestamp)
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.topup_time),
-        EXTRACT(MONTH FROM t.topup_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-        total_failed,
-        total_amount
-    FROM
-        monthly_data
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $1::timestamp)::text AS year,
-        TO_CHAR($1::timestamp, 'Mon') AS month,
-        0 AS total_failed,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    monthly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            )::integer AS year,
+            EXTRACT(
+                MONTH
+                FROM t.topup_time
+            )::integer AS month,
+            COUNT(*) AS total_failed,
+            COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
+        FROM topups t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'failed'
+            AND (
+                (
+                    t.topup_time >= $1::timestamp
+                    AND t.topup_time <= $2::timestamp
+                )
+                OR (
+                    t.topup_time >= $3::timestamp
+                    AND t.topup_time <= $4::timestamp
+                )
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            ),
+            EXTRACT(
+                MONTH
+                FROM t.topup_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            TO_CHAR(
+                TO_DATE(month::text, 'MM'),
+                'Mon'
+            ) AS month,
+            total_failed,
+            total_amount
         FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $1::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $1::timestamp)::integer
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $1::timestamp
+            )::text AS year,
+            TO_CHAR($1::timestamp, 'Mon') AS month,
+            0 AS total_failed,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $1::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $1::timestamp
+                    )::integer
+            )
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $3::timestamp
+            )::text AS year,
+            TO_CHAR($3::timestamp, 'Mon') AS month,
+            0 AS total_failed,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $3::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $3::timestamp
+                    )::integer
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
-        TO_CHAR($3::timestamp, 'Mon') AS month,
-        0 AS total_failed,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC,
-    TO_DATE(month, 'Mon') DESC;
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC, TO_DATE(month, 'Mon') DESC;
 
 -- GetYearlyTopupStatusFailed: Retrieves yearly failed metrics for topups
 -- Purpose: Compare annual failedful topup performance
@@ -355,60 +470,68 @@ ORDER BY
 --   - Orders by year (newest first)
 --   - Useful for year-over-year growth analysis
 -- name: GetYearlyTopupStatusFailed :many
-WITH yearly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.topup_time)::integer AS year,
-        COUNT(*) AS total_failed,
-        COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
-    FROM
-        topups t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'failed'
-        AND (
-            EXTRACT(YEAR FROM t.topup_time) = $1::integer
-            OR EXTRACT(YEAR FROM t.topup_time) = $1::integer - 1
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.topup_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        total_failed::integer,
-        total_amount::integer
-    FROM
-        yearly_data
-
-    UNION ALL
-
-    SELECT
-        $1::text AS year,
-        0::integer AS total_failed,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    yearly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            )::integer AS year,
+            COUNT(*) AS total_failed,
+            COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
+        FROM topups t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'failed'
+            AND (
+                EXTRACT(
+                    YEAR
+                    FROM t.topup_time
+                ) = $1::integer
+                OR EXTRACT(
+                    YEAR
+                    FROM t.topup_time
+                ) = $1::integer - 1
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            total_failed::integer,
+            total_amount::integer
         FROM yearly_data
-        WHERE year = $1::integer
+        UNION ALL
+        SELECT
+            $1::text AS year,
+            0::integer AS total_failed,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer
+            )
+        UNION ALL
+        SELECT ($1::integer - 1)::text AS year,
+            0::integer AS total_failed,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer - 1
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        ($1::integer - 1)::text AS year,
-        0::integer AS total_failed,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM yearly_data
-        WHERE year = $1::integer - 1
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC;
-
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC;
 
 -- GetMonthTopupStatusSuccessCardNumber: Retrieves monthly success metrics for topups
 -- Purpose: Analyze successful topup trends across comparison periods
@@ -431,68 +554,104 @@ ORDER BY
 --   - Orders by year and month (newest first)
 --   - Useful for identifying seasonal topup patterns
 -- name: GetMonthTopupStatusSuccessCardNumber :many
-WITH monthly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.topup_time)::integer AS year,
-        EXTRACT(MONTH FROM t.topup_time)::integer AS month,
-        COUNT(*) AS total_success,
-        COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
-    FROM
-        topups t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'success'
-        AND t.card_number = $1
-        AND (
-            (t.topup_time >= $2::timestamp AND t.topup_time <= $3::timestamp)
-            OR (t.topup_time >= $4::timestamp AND t.topup_time <= $5::timestamp)
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.topup_time),
-        EXTRACT(MONTH FROM t.topup_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-        total_success,
-        total_amount
-    FROM
-        monthly_data
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $2::timestamp)::text AS year,
-        TO_CHAR($2::timestamp, 'Mon') AS month,
-        0 AS total_success,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    monthly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            )::integer AS year,
+            EXTRACT(
+                MONTH
+                FROM t.topup_time
+            )::integer AS month,
+            COUNT(*) AS total_success,
+            COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
+        FROM topups t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'success'
+            AND t.card_number = $1
+            AND (
+                (
+                    t.topup_time >= $2::timestamp
+                    AND t.topup_time <= $3::timestamp
+                )
+                OR (
+                    t.topup_time >= $4::timestamp
+                    AND t.topup_time <= $5::timestamp
+                )
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            ),
+            EXTRACT(
+                MONTH
+                FROM t.topup_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            TO_CHAR(
+                TO_DATE(month::text, 'MM'),
+                'Mon'
+            ) AS month,
+            total_success,
+            total_amount
         FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $2::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $2::timestamp)::integer
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $2::timestamp
+            )::text AS year,
+            TO_CHAR($2::timestamp, 'Mon') AS month,
+            0 AS total_success,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $2::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $2::timestamp
+                    )::integer
+            )
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $3::timestamp
+            )::text AS year,
+            TO_CHAR($3::timestamp, 'Mon') AS month,
+            0 AS total_success,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $3::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $3::timestamp
+                    )::integer
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
-        TO_CHAR($3::timestamp, 'Mon') AS month,
-        0 AS total_success,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC,
-    TO_DATE(month, 'Mon') DESC;
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC, TO_DATE(month, 'Mon') DESC;
 
 -- GetYearlyTopupStatusSuccess: Retrieves yearly success metrics for topups
 -- Purpose: Compare annual successful topup performance
@@ -510,60 +669,69 @@ ORDER BY
 --   - Orders by year (newest first)
 --   - Useful for year-over-year growth analysis
 -- name: GetYearlyTopupStatusSuccessCardNumber :many
-WITH yearly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.topup_time)::integer AS year,
-        COUNT(*) AS total_success,
-        COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
-    FROM
-        topups t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'success'
-        AND t.card_number = $1
+WITH
+    yearly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            )::integer AS year,
+            COUNT(*) AS total_success,
+            COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
+        FROM topups t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'success'
+            AND t.card_number = $1
             AND (
-                EXTRACT(YEAR FROM t.topup_time) = $2::integer
-                OR EXTRACT(YEAR FROM t.topup_time) = $2::integer - 1
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.topup_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        total_success::integer,
-        total_amount::integer
-    FROM
-        yearly_data
-
-    UNION ALL
-
-    SELECT
-        $2::text AS year,
-        0::integer AS total_success,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+                EXTRACT(
+                    YEAR
+                    FROM t.topup_time
+                ) = $2::integer
+                OR EXTRACT(
+                    YEAR
+                    FROM t.topup_time
+                ) = $2::integer - 1
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            total_success::integer,
+            total_amount::integer
         FROM yearly_data
-        WHERE year = $2::integer
+        UNION ALL
+        SELECT
+            $2::text AS year,
+            0::integer AS total_success,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $2::integer
+            )
+        UNION ALL
+        SELECT ($2::integer - 1)::text AS year,
+            0::integer AS total_success,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $2::integer - 1
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        ($2::integer - 1)::text AS year,
-        0::integer AS total_success,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM yearly_data
-        WHERE year = $2::integer - 1
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC;
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC;
 
 -- GetMonthTopupStatusFailedCardNumber: Retrieves monthly failed metrics for topups
 -- Purpose: Analyze failedful topup trends across comparison periods
@@ -586,67 +754,104 @@ ORDER BY
 --   - Orders by year and month (newest first)
 --   - Useful for identifying seasonal topup patterns
 -- name: GetMonthTopupStatusFailedCardNumber :many
-WITH monthly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.topup_time)::integer AS year,
-        EXTRACT(MONTH FROM t.topup_time)::integer AS month,
-        COUNT(*) AS total_failed,
-        COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
-    FROM
-        topups t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'failed'
-        AND t.card_number = $1
-        AND (
-            (t.topup_time >= $2::timestamp AND t.topup_time <= $3::timestamp)
-            OR (t.topup_time >= $4::timestamp AND t.topup_time <= $5::timestamp)
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.topup_time),
-        EXTRACT(MONTH FROM t.topup_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-        total_failed,
-        total_amount
-    FROM
-        monthly_data
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $2::timestamp)::text AS year,
-        TO_CHAR($2::timestamp, 'Mon') AS month,
-        0 AS total_failed,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    monthly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            )::integer AS year,
+            EXTRACT(
+                MONTH
+                FROM t.topup_time
+            )::integer AS month,
+            COUNT(*) AS total_failed,
+            COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
+        FROM topups t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'failed'
+            AND t.card_number = $1
+            AND (
+                (
+                    t.topup_time >= $2::timestamp
+                    AND t.topup_time <= $3::timestamp
+                )
+                OR (
+                    t.topup_time >= $4::timestamp
+                    AND t.topup_time <= $5::timestamp
+                )
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            ),
+            EXTRACT(
+                MONTH
+                FROM t.topup_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            TO_CHAR(
+                TO_DATE(month::text, 'MM'),
+                'Mon'
+            ) AS month,
+            total_failed,
+            total_amount
         FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $2::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $2::timestamp)::integer
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $2::timestamp
+            )::text AS year,
+            TO_CHAR($2::timestamp, 'Mon') AS month,
+            0 AS total_failed,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $2::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $2::timestamp
+                    )::integer
+            )
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $4::timestamp
+            )::text AS year,
+            TO_CHAR($4::timestamp, 'Mon') AS month,
+            0 AS total_failed,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $4::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $4::timestamp
+                    )::integer
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $4::timestamp)::text AS year,
-        TO_CHAR($4::timestamp, 'Mon') AS month,
-        0 AS total_failed,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $4::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $4::timestamp)::integer
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC,
-    TO_DATE(month, 'Mon') DESC;
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC, TO_DATE(month, 'Mon') DESC;
 
 -- GetYearlyTopupStatusFailedCardNumber: Retrieves yearly failed metrics for topups
 -- Purpose: Compare annual failedful topup performance
@@ -664,60 +869,69 @@ ORDER BY
 --   - Orders by year (newest first)
 --   - Useful for year-over-year growth analysis
 -- name: GetYearlyTopupStatusFailedCardNumber :many
-WITH yearly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.topup_time)::integer AS year,
-        COUNT(*) AS total_failed,
-        COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
-    FROM
-        topups t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'failed'
-        AND t.card_number = $1
+WITH
+    yearly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            )::integer AS year,
+            COUNT(*) AS total_failed,
+            COALESCE(SUM(t.topup_amount), 0)::integer AS total_amount
+        FROM topups t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'failed'
+            AND t.card_number = $1
             AND (
-                EXTRACT(YEAR FROM t.topup_time) = $2::integer
-                OR EXTRACT(YEAR FROM t.topup_time) = $2::integer - 1
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.topup_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        total_failed::integer,
-        total_amount::integer
-    FROM
-        yearly_data
-
-    UNION ALL
-
-    SELECT
-        $2::text AS year,
-        0::integer AS total_failed,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+                EXTRACT(
+                    YEAR
+                    FROM t.topup_time
+                ) = $2::integer
+                OR EXTRACT(
+                    YEAR
+                    FROM t.topup_time
+                ) = $2::integer - 1
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            total_failed::integer,
+            total_amount::integer
         FROM yearly_data
-        WHERE year = $2::integer
+        UNION ALL
+        SELECT
+            $2::text AS year,
+            0::integer AS total_failed,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $2::integer
+            )
+        UNION ALL
+        SELECT ($2::integer - 1)::text AS year,
+            0::integer AS total_failed,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $2::integer - 1
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        ($2::integer - 1)::text AS year,
-        0::integer AS total_failed,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM yearly_data
-        WHERE year = $2::integer - 1
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC;
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC;
 
 -- GetMonthlyTopupMethods: Retrieves monthly breakdown of topup usage by method
 -- Purpose: Track topup method distribution and amounts over each month of the selected year
@@ -734,18 +948,19 @@ ORDER BY
 --   - Uses CROSS JOIN to combine months with all available methods
 --   - Useful for visualizing adoption trends of each topup method monthly
 -- name: GetMonthlyTopupMethods :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $1::timestamp),
-        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-),
-topup_methods AS (
-    SELECT DISTINCT topup_method
-    FROM topups
-    WHERE deleted_at IS NULL
-)
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $1::timestamp), date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    ),
+    topup_methods AS (
+        SELECT DISTINCT
+            topup_method
+        FROM topups
+        WHERE
+            deleted_at IS NULL
+    )
 SELECT
     TO_CHAR(m.month, 'Mon') AS month,
     tm.topup_method,
@@ -753,22 +968,27 @@ SELECT
     COALESCE(SUM(t.topup_amount), 0)::int AS total_amount
 FROM
     months m
-CROSS JOIN
-    topup_methods tm
-LEFT JOIN
-    topups t ON EXTRACT(MONTH FROM t.topup_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.created_at) = EXTRACT(YEAR FROM m.month)
+    CROSS JOIN topup_methods tm
+    LEFT JOIN topups t ON EXTRACT(
+        MONTH
+        FROM t.topup_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.topup_method = tm.topup_method
     AND t.deleted_at IS NULL
 GROUP BY
     m.month,
     tm.topup_method
-ORDER BY
-    m.month,
-    tm.topup_method;
-
-
-
+ORDER BY m.month, tm.topup_method;
 
 -- GetYearlyTopupMethods: Retrieves yearly breakdown of topup usage by method
 -- Purpose: Analyze how different topup methods perform over the past 5 years
@@ -785,23 +1005,31 @@ ORDER BY
 --   - Useful for detecting long-term trends across payment methods
 -- name: GetYearlyTopupMethods :many
 SELECT
-    EXTRACT(YEAR FROM t.created_at) AS year,
+    EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) AS year,
     t.topup_method,
     COUNT(t.topup_id) AS total_topups,
     SUM(t.topup_amount) AS total_amount
-FROM
-    topups t
+FROM topups t
 WHERE
     t.deleted_at IS NULL
-    AND EXTRACT(YEAR FROM t.topup_time) >= $1 - 4
-    AND EXTRACT(YEAR FROM t.topup_time) <= $1
+    AND EXTRACT(
+        YEAR
+        FROM t.topup_time
+    ) >= $1 - 4
+    AND EXTRACT(
+        YEAR
+        FROM t.topup_time
+    ) <= $1
 GROUP BY
-    EXTRACT(YEAR FROM t.created_at),
+    EXTRACT(
+        YEAR
+        FROM t.created_at
+    ),
     t.topup_method
-ORDER BY
-    year;
-
-
+ORDER BY year;
 
 -- GetMonthlyTopupAmounts: Retrieves total topup amounts per month for the selected year
 -- Purpose: Visualize total topup volume across months in a given year
@@ -815,27 +1043,32 @@ ORDER BY
 --   - Uses LEFT JOIN to ensure months with no topups are still included with amount = 0
 --   - Useful for monthly topup charts or dashboards
 -- name: GetMonthlyTopupAmounts :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $1::timestamp),
-        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(t.topup_amount), 0)::int AS total_amount
-FROM
-    months m
-LEFT JOIN
-    topups t ON EXTRACT(MONTH FROM t.topup_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.topup_time) = EXTRACT(YEAR FROM m.month)
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $1::timestamp), date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(t.topup_amount), 0)::int AS total_amount
+FROM months m
+    LEFT JOIN topups t ON EXTRACT(
+        MONTH
+        FROM t.topup_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.topup_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.deleted_at IS NULL
 GROUP BY
     m.month
-ORDER BY
-    m.month;
-
+ORDER BY m.month;
 
 -- GetYearlyTopupAmounts: Retrieves yearly total of topup amounts
 -- Purpose: Analyze yearly growth or decline in topup volume
@@ -849,21 +1082,27 @@ ORDER BY
 --   - Excludes soft-deleted records (deleted_at IS NULL)
 --   - Ideal for trend lines or comparative bar charts by year
 -- name: GetYearlyTopupAmounts :many
-SELECT
-    EXTRACT(YEAR FROM t.topup_time) AS year,
-    SUM(t.topup_amount) AS total_amount
-FROM
-    topups t
+SELECT EXTRACT(
+        YEAR
+        FROM t.topup_time
+    ) AS year, SUM(t.topup_amount) AS total_amount
+FROM topups t
 WHERE
     t.deleted_at IS NULL
-    AND EXTRACT(YEAR FROM t.topup_time) >= $1 - 4
-    AND EXTRACT(YEAR FROM t.topup_time) <= $1
+    AND EXTRACT(
+        YEAR
+        FROM t.topup_time
+    ) >= $1 - 4
+    AND EXTRACT(
+        YEAR
+        FROM t.topup_time
+    ) <= $1
 GROUP BY
-    EXTRACT(YEAR FROM t.topup_time)
-ORDER BY
-    year;
-
-
+    EXTRACT(
+        YEAR
+        FROM t.topup_time
+    )
+ORDER BY year;
 
 -- GetMonthlyTopupMethodsByCardNumber: Retrieves monthly breakdown of topup usage by method
 -- Purpose: Track topup method distribution and amounts over each month of the selected year
@@ -881,18 +1120,19 @@ ORDER BY
 --   - Uses CROSS JOIN to combine months with all available methods
 --   - Useful for visualizing adoption trends of each topup method monthly
 -- name: GetMonthlyTopupMethodsByCardNumber :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $2::timestamp),
-        date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-),
-topup_methods AS (
-    SELECT DISTINCT topup_method
-    FROM topups
-    WHERE deleted_at IS NULL
-)
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $2::timestamp), date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    ),
+    topup_methods AS (
+        SELECT DISTINCT
+            topup_method
+        FROM topups
+        WHERE
+            deleted_at IS NULL
+    )
 SELECT
     TO_CHAR(m.month, 'Mon') AS month,
     tm.topup_method,
@@ -900,23 +1140,28 @@ SELECT
     COALESCE(SUM(t.topup_amount), 0)::int AS total_amount
 FROM
     months m
-CROSS JOIN
-    topup_methods tm
-LEFT JOIN
-    topups t ON EXTRACT(MONTH FROM t.topup_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.topup_time) = EXTRACT(YEAR FROM m.month)
+    CROSS JOIN topup_methods tm
+    LEFT JOIN topups t ON EXTRACT(
+        MONTH
+        FROM t.topup_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.topup_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.topup_method = tm.topup_method
     AND t.card_number = $1
     AND t.deleted_at IS NULL
 GROUP BY
     m.month,
     tm.topup_method
-ORDER BY
-    m.month,
-    tm.topup_method;
-
-
-
+ORDER BY m.month, tm.topup_method;
 
 -- GetYearlyTopupMethodsByCardNumber: Retrieves yearly breakdown of topup usage by method
 -- Purpose: Analyze how different topup methods perform over the past 5 years
@@ -934,23 +1179,32 @@ ORDER BY
 --   - Useful for detecting long-term trends across payment methods
 -- name: GetYearlyTopupMethodsByCardNumber :many
 SELECT
-    EXTRACT(YEAR FROM t.topup_time) AS year,
+    EXTRACT(
+        YEAR
+        FROM t.topup_time
+    ) AS year,
     t.topup_method,
     COUNT(t.topup_id) AS total_topups,
     SUM(t.topup_amount) AS total_amount
-FROM
-    topups t
+FROM topups t
 WHERE
     t.deleted_at IS NULL
     AND t.card_number = $1
-    AND EXTRACT(YEAR FROM t.created_at) >= $2 - 4
-    AND EXTRACT(YEAR FROM t.created_at) <= $2
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) >= $2 - 4
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) <= $2
 GROUP BY
-    EXTRACT(YEAR FROM t.topup_time),
+    EXTRACT(
+        YEAR
+        FROM t.topup_time
+    ),
     t.topup_method
-ORDER BY
-    year;
-
+ORDER BY year;
 
 -- GetMonthlyTopupAmountsByCardNumber: Retrieves total topup amounts per month for the selected year
 -- Purpose: Visualize total topup volume across months in a given year
@@ -965,28 +1219,34 @@ ORDER BY
 --   - Uses LEFT JOIN to ensure months with no topups are still included with amount = 0
 --   - Useful for monthly topup charts or dashboards
 -- name: GetMonthlyTopupAmountsByCardNumber :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $2::timestamp),
-        date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(t.topup_amount), 0)::int AS total_amount
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $2::timestamp), date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(t.topup_amount), 0)::int AS total_amount
 FROM
     months m
-LEFT JOIN
-    topups t ON EXTRACT(MONTH FROM t.topup_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.topup_time) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN topups t ON EXTRACT(
+        MONTH
+        FROM t.topup_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.topup_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.card_number = $1
     AND t.deleted_at IS NULL
 GROUP BY
     m.month
-ORDER BY
-    m.month;
-
+ORDER BY m.month;
 
 -- GetYearlyTopupAmountsByCardNumber: Retrieves yearly total of topup amounts
 -- Purpose: Analyze yearly growth or decline in topup volume
@@ -1001,22 +1261,28 @@ ORDER BY
 --   - Excludes soft-deleted records (deleted_at IS NULL)
 --   - Ideal for trend lines or comparative bar charts by year
 -- name: GetYearlyTopupAmountsByCardNumber :many
-SELECT
-    EXTRACT(YEAR FROM t.topup_time) AS year,
-    SUM(t.topup_amount) AS total_amount
-FROM
-    topups t
+SELECT EXTRACT(
+        YEAR
+        FROM t.topup_time
+    ) AS year, SUM(t.topup_amount) AS total_amount
+FROM topups t
 WHERE
     t.deleted_at IS NULL
     AND t.card_number = $1
-    AND EXTRACT(YEAR FROM t.created_at) >= $2 - 4
-    AND EXTRACT(YEAR FROM t.created_at) <= $2
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) >= $2 - 4
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) <= $2
 GROUP BY
-    EXTRACT(YEAR FROM t.topup_time)
-ORDER BY
-    year;
-
-
+    EXTRACT(
+        YEAR
+        FROM t.topup_time
+    )
+ORDER BY year;
 
 -- CreateTopup: Inserts a new topup transaction into the topups table
 -- Purpose: Used when a user performs a topup action
@@ -1046,8 +1312,17 @@ VALUES (
         $4,
         current_timestamp,
         current_timestamp
-    ) RETURNING *;
-
+    )
+RETURNING
+    topup_id,
+    topup_no,
+    card_number,
+    topup_amount,
+    topup_method,
+    topup_time,
+    status,
+    created_at,
+    updated_at;
 
 -- UpdateTopup: Updates an existing topup transaction
 -- Purpose: Modify existing topup information by ID
@@ -1071,8 +1346,16 @@ SET
 WHERE
     topup_id = $1
     AND deleted_at IS NULL
-RETURNING *;
-
+RETURNING
+    topup_id,
+    topup_no,
+    card_number,
+    topup_amount,
+    topup_method,
+    topup_time,
+    status,
+    created_at,
+    updated_at;
 
 -- UpdateTopupAmount: Updates only the topup_amount field for a specific topup
 -- Purpose: Allow adjustment of topup amount without affecting other fields
@@ -1090,8 +1373,16 @@ SET
 WHERE
     topup_id = $1
     AND deleted_at IS NULL
-RETURNING *;
-
+RETURNING
+    topup_id,
+    topup_no,
+    card_number,
+    topup_amount,
+    topup_method,
+    topup_time,
+    status,
+    created_at,
+    updated_at;
 
 -- UpdateTopupStatus: Updates the status of a specific topup
 -- Purpose: Mark topup as 'success', 'failed', etc.
@@ -1109,8 +1400,16 @@ SET
 WHERE
     topup_id = $1
     AND deleted_at IS NULL
-RETURNING *;
-
+RETURNING
+    topup_id,
+    topup_no,
+    card_number,
+    topup_amount,
+    topup_method,
+    topup_time,
+    status,
+    created_at,
+    updated_at;
 
 -- GetTopupsByCardNumber: Retrieves paginated topups based on card number and optional search keyword
 -- Purpose: View all topups for a specific card, with filtering and pagination
@@ -1126,23 +1425,30 @@ RETURNING *;
 --   - Ordered by topup_time descending
 -- name: GetTopupsByCardNumber :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
-FROM
-    topups
+    topup_id,
+    topup_no,
+    card_number,
+    topup_amount,
+    topup_method,
+    topup_time,
+    status,
+    created_at,
+    updated_at,
+    COUNT(*) OVER () AS total_count
+FROM topups
 WHERE
     deleted_at IS NULL
-    AND card_number = $1 -- Filter by card_number
+    AND card_number = $1
     AND (
         $2::TEXT IS NULL
         OR topup_no::TEXT ILIKE '%' || $2 || '%'
         OR topup_method ILIKE '%' || $2 || '%'
         OR status ILIKE '%' || $2 || '%'
     )
-ORDER BY
-    topup_time DESC
-LIMIT $3 OFFSET $4;
-
+ORDER BY topup_time DESC
+LIMIT $3
+OFFSET
+    $4;
 
 -- GetTrashedTopupByID: Retrieves a topup that has been soft-deleted
 -- Purpose: Preview or manage trashed entries (e.g., for restore)
@@ -1156,7 +1462,6 @@ FROM topups
 WHERE
     topup_id = $1
     AND deleted_at IS NOT NULL;
-
 
 -- TrashTopup: Soft deletes a topup by setting deleted_at
 -- Purpose: Moves topup to trash without losing data
@@ -1172,8 +1477,17 @@ SET
 WHERE
     topup_id = $1
     AND deleted_at IS NULL
-RETURNING *;
-
+RETURNING
+    topup_id,
+    topup_no,
+    card_number,
+    topup_amount,
+    topup_method,
+    topup_time,
+    status,
+    created_at,
+    updated_at,
+    deleted_at;
 
 -- RestoreTopup: Restores a soft-deleted topup by nullifying deleted_at
 -- Purpose: Reactivate a previously trashed topup
@@ -1188,8 +1502,17 @@ SET
 WHERE
     topup_id = $1
     AND deleted_at IS NOT NULL
-RETURNING *;
-
+RETURNING
+    topup_id,
+    topup_no,
+    card_number,
+    topup_amount,
+    topup_method,
+    topup_time,
+    status,
+    created_at,
+    updated_at,
+    deleted_at;
 
 -- DeleteTopupPermanently: Permanently deletes a topup record from the database
 -- Purpose: Irrecoverably removes topup data
@@ -1200,7 +1523,6 @@ RETURNING *;
 --   - Use with caution
 -- name: DeleteTopupPermanently :exec
 DELETE FROM topups WHERE topup_id = $1;
-
 
 -- RestoreAllTopups: Restores all soft-deleted topups in bulk
 -- Purpose: Batch recovery of trashed topup data
@@ -1213,13 +1535,10 @@ SET
 WHERE
     deleted_at IS NOT NULL;
 
-
 -- DeleteAllPermanentTopups: Permanently deletes all soft-deleted topups
 -- Purpose: Bulk cleanup of trashed topup records
 -- Business Logic:
 --   - Cannot be undone; this is a hard delete
 --   - Use for permanent data purging
 -- name: DeleteAllPermanentTopups :exec
-DELETE FROM topups
-WHERE
-    deleted_at IS NOT NULL;
+DELETE FROM topups WHERE deleted_at IS NOT NULL;

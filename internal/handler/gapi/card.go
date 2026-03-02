@@ -2,25 +2,24 @@ package gapi
 
 import (
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	protomapper "MamangRust/paymentgatewaygrpc/internal/mapper/proto"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
 	"MamangRust/paymentgatewaygrpc/internal/service"
+	"MamangRust/paymentgatewaygrpc/pkg/errors"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/card_errors"
 	"context"
 	"math"
 
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type cardHandleGrpc struct {
 	pb.UnimplementedCardServiceServer
 	cardService service.CardService
-	mapping     protomapper.CardProtoMapper
 }
 
-func NewCardHandleGrpc(card service.CardService, mapping protomapper.CardProtoMapper) CardHandleGrpc {
-	return &cardHandleGrpc{cardService: card, mapping: mapping}
+func NewCardHandleGrpc(card service.CardService) *cardHandleGrpc {
+	return &cardHandleGrpc{cardService: card}
 }
 
 func (s *cardHandleGrpc) FindAllCard(ctx context.Context, req *pb.FindAllCardRequest) (*pb.ApiResponsePaginationCard, error) {
@@ -41,10 +40,23 @@ func (s *cardHandleGrpc) FindAllCard(ctx context.Context, req *pb.FindAllCardReq
 		Search:   search,
 	}
 
-	cards, totalRecords, err := s.cardService.FindAll(&reqService)
-
+	cards, totalRecords, err := s.cardService.FindAll(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoCards := make([]*pb.CardResponse, len(cards))
+	for i, card := range cards {
+		protoCards[i] = &pb.CardResponse{
+			Id:         int32(card.CardID),
+			UserId:     int32(card.UserID),
+			CardNumber: card.CardNumber,
+			CardType:   card.CardType,
+			Cvv:        card.Cvv,
+			ExpireDate: card.ExpireDate.Time.Format("2006-01-02 15:04:05"),
+			CreatedAt:  card.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt:  card.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+		}
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -56,26 +68,44 @@ func (s *cardHandleGrpc) FindAllCard(ctx context.Context, req *pb.FindAllCardReq
 		TotalRecords: int32(*totalRecords),
 	}
 
-	so := s.mapping.ToProtoResponsePaginationCard(paginationMeta, "success", "Successfully fetched card records", cards)
-
-	return so, nil
+	return &pb.ApiResponsePaginationCard{
+		Status:     "success",
+		Message:    "Successfully fetched card records",
+		Data:       protoCards,
+		Pagination: paginationMeta,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindByIdCard(ctx context.Context, req *pb.FindByIdCardRequest) (*pb.ApiResponseCard, error) {
 	id := int(req.GetCardId())
 
 	if id == 0 {
+
 		return nil, card_errors.ErrGrpcInvalidCardID
 	}
 
-	card, err := s.cardService.FindById(id)
+	card, err := s.cardService.FindById(ctx, id)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseCard("success", "Successfully fetched card record", card)
+	res := &pb.ApiResponseCard{
+		Message: "successfully",
+		Status:  "success",
+		Data: &pb.CardResponse{
+			Id:           int32(card.CardID),
+			UserId:       int32(card.UserID),
+			CardNumber:   card.CardNumber,
+			CardType:     card.CardType,
+			CardProvider: card.CardProvider,
+			Cvv:          card.Cvv,
+			ExpireDate:   card.ExpireDate.Time.Format("2006-01-02 15:04:05"),
+			CreatedAt:    card.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt:    card.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+		},
+	}
 
-	return so, nil
+	return res, nil
 }
 
 func (s *cardHandleGrpc) FindByUserIdCard(ctx context.Context, req *pb.FindByUserIdCardRequest) (*pb.ApiResponseCard, error) {
@@ -84,26 +114,50 @@ func (s *cardHandleGrpc) FindByUserIdCard(ctx context.Context, req *pb.FindByUse
 	if id == 0 {
 		return nil, card_errors.ErrGrpcInvalidUserID
 	}
-	res, err := s.cardService.FindByUserID(id)
+	res, err := s.cardService.FindByUserID(ctx, id)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseCard("success", "Successfully fetched card record", res)
+	Pbres := &pb.ApiResponseCard{
+		Message: "successfully",
+		Status:  "success",
+		Data: &pb.CardResponse{
+			Id:           int32(res.CardID),
+			UserId:       int32(res.UserID),
+			CardNumber:   res.CardNumber,
+			CardType:     res.CardType,
+			CardProvider: res.CardProvider,
+			Cvv:          res.Cvv,
+			ExpireDate:   res.ExpireDate.Time.Format("2006-01-02 15:04:05"),
+			CreatedAt:    res.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt:    res.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+		},
+	}
 
-	return so, nil
+	return Pbres, nil
 }
 
 func (s *cardHandleGrpc) DashboardCard(ctx context.Context, _ *emptypb.Empty) (*pb.ApiResponseDashboardCard, error) {
-	dashboardCard, err := s.cardService.DashboardCard()
+	dashboardCard, err := s.cardService.DashboardCard(ctx)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseDashboardCard("success", "Dashboard card retrieved successfully", dashboardCard)
+	pbRes := &pb.ApiResponseDashboardCard{
+		Status:  "success",
+		Message: "Dashboard card retrieved successfully",
+		Data: &pb.CardResponseDashboard{
+			TotalBalance:     *dashboardCard.TotalBalance,
+			TotalTopup:       *dashboardCard.TotalTopup,
+			TotalTransaction: *dashboardCard.TotalTransaction,
+			TotalTransfer:    *dashboardCard.TotalTransfer,
+			TotalWithdraw:    *dashboardCard.TotalWithdraw,
+		},
+	}
 
-	return so, nil
+	return pbRes, nil
 }
 
 func (s *cardHandleGrpc) DashboardCardNumber(ctx context.Context, req *pb.FindByCardNumberRequest) (*pb.ApiResponseDashboardCardNumber, error) {
@@ -113,15 +167,26 @@ func (s *cardHandleGrpc) DashboardCardNumber(ctx context.Context, req *pb.FindBy
 		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
-	dashboardCard, err := s.cardService.DashboardCardCardNumber(card_number)
+	dashboardCard, err := s.cardService.DashboardCardCardNumber(ctx, card_number)
 
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseDashboardCardCardNumber("success", "Dashboard card for card number retrieved successfully", dashboardCard)
+	pbRes := &pb.ApiResponseDashboardCardNumber{
+		Status:  "success",
+		Message: "Dashboard card for card number retrieved successfully",
+		Data: &pb.CardResponseDashboardCardNumber{
+			TotalBalance:          *dashboardCard.TotalBalance,
+			TotalTopup:            *dashboardCard.TotalTopup,
+			TotalTransaction:      *dashboardCard.TotalTransaction,
+			TotalTransferSend:     *dashboardCard.TotalTransferSend,
+			TotalTransferReceiver: *dashboardCard.TotalTransferReceiver,
+			TotalWithdraw:         *dashboardCard.TotalWithdraw,
+		},
+	}
 
-	return so, nil
+	return pbRes, nil
 }
 
 func (s *cardHandleGrpc) FindMonthlyBalance(ctx context.Context, req *pb.FindYearBalance) (*pb.ApiResponseMonthlyBalance, error) {
@@ -130,15 +195,25 @@ func (s *cardHandleGrpc) FindMonthlyBalance(ctx context.Context, req *pb.FindYea
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
-	res, err := s.cardService.FindMonthlyBalance(year)
 
+	res, err := s.cardService.FindMonthlyBalance(ctx, year)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMonthlyBalances("success", "Monthly balance retrieved successfully", res)
+	protoData := make([]*pb.CardResponseMonthlyBalance, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseMonthlyBalance{
+			Month:        item.Month,
+			TotalBalance: int64(item.TotalBalance),
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMonthlyBalance{
+		Status:  "success",
+		Message: "Monthly balance retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindYearlyBalance(ctx context.Context, req *pb.FindYearBalance) (*pb.ApiResponseYearlyBalance, error) {
@@ -148,194 +223,284 @@ func (s *cardHandleGrpc) FindYearlyBalance(ctx context.Context, req *pb.FindYear
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
-	res, err := s.cardService.FindYearlyBalance(year)
+	res, err := s.cardService.FindYearlyBalance(ctx, year)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseYearlyBalances("success", "Yearly balance retrieved successfully", res)
+	protoData := make([]*pb.CardResponseYearlyBalance, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseYearlyBalance{
+			Year:         item.Year.Int.String(),
+			TotalBalance: item.TotalBalance,
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseYearlyBalance{
+		Status:  "success",
+		Message: "Yearly balance retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindMonthlyTopupAmount(ctx context.Context, req *pb.FindYearAmount) (*pb.ApiResponseMonthlyAmount, error) {
 	year := int(req.GetYear())
-
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
-	res, err := s.cardService.FindMonthlyTopupAmount(year)
-
+	res, err := s.cardService.FindMonthlyTopupAmount(ctx, year)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly topup amount retrieved successfully", res)
+	protoData := make([]*pb.CardResponseMonthlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseMonthlyAmount{
+			Month:       item.Month,
+			TotalAmount: int64(item.TotalTopupAmount),
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMonthlyAmount{
+		Status:  "success",
+		Message: "Monthly topup amount retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindYearlyTopupAmount(ctx context.Context, req *pb.FindYearAmount) (*pb.ApiResponseYearlyAmount, error) {
 	year := int(req.GetYear())
-
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
-	res, err := s.cardService.FindYearlyTopupAmount(year)
-
+	res, err := s.cardService.FindYearlyTopupAmount(ctx, year)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly topup amount retrieved successfully", res)
+	protoData := make([]*pb.CardResponseYearlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseYearlyAmount{
+			Year:        item.Year.Int.String(),
+			TotalAmount: item.TotalTopupAmount,
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseYearlyAmount{
+		Status:  "success",
+		Message: "Yearly topup amount retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindMonthlyWithdrawAmount(ctx context.Context, req *pb.FindYearAmount) (*pb.ApiResponseMonthlyAmount, error) {
 	year := int(req.GetYear())
-
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
-	res, err := s.cardService.FindMonthlyWithdrawAmount(year)
-
+	res, err := s.cardService.FindMonthlyWithdrawAmount(ctx, year)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly withdraw amount retrieved successfully", res)
+	protoData := make([]*pb.CardResponseMonthlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseMonthlyAmount{
+			Month:       item.Month,
+			TotalAmount: int64(item.TotalWithdrawAmount),
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMonthlyAmount{
+		Status:  "success",
+		Message: "Monthly withdraw amount retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindYearlyWithdrawAmount(ctx context.Context, req *pb.FindYearAmount) (*pb.ApiResponseYearlyAmount, error) {
 	year := int(req.GetYear())
-
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
-	res, err := s.cardService.FindYearlyWithdrawAmount(year)
-
+	res, err := s.cardService.FindYearlyWithdrawAmount(ctx, year)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly withdraw amount retrieved successfully", res)
+	protoData := make([]*pb.CardResponseYearlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseYearlyAmount{
+			Year:        item.Year.Int.String(),
+			TotalAmount: item.TotalWithdrawAmount,
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseYearlyAmount{
+		Status:  "success",
+		Message: "Yearly withdraw amount retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindMonthlyTransactionAmount(ctx context.Context, req *pb.FindYearAmount) (*pb.ApiResponseMonthlyAmount, error) {
 	year := int(req.GetYear())
-
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
-	res, err := s.cardService.FindMonthlyTransactionAmount(year)
-
+	res, err := s.cardService.FindMonthlyTransactionAmount(ctx, year)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly transaction amount retrieved successfully", res)
+	protoData := make([]*pb.CardResponseMonthlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseMonthlyAmount{
+			Month:       item.Month,
+			TotalAmount: int64(item.TotalTransactionAmount),
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMonthlyAmount{
+		Status:  "success",
+		Message: "Monthly transaction amount retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindYearlyTransactionAmount(ctx context.Context, req *pb.FindYearAmount) (*pb.ApiResponseYearlyAmount, error) {
 	year := int(req.GetYear())
-
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
-	res, err := s.cardService.FindYearlyTransactionAmount(year)
-
+	res, err := s.cardService.FindYearlyTransactionAmount(ctx, year)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly transaction amount retrieved successfully", res)
+	protoData := make([]*pb.CardResponseYearlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseYearlyAmount{
+			Year:        item.Year.Int.String(),
+			TotalAmount: item.TotalTransactionAmount,
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseYearlyAmount{
+		Status:  "success",
+		Message: "Yearly transaction amount retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindMonthlyTransferSenderAmount(ctx context.Context, req *pb.FindYearAmount) (*pb.ApiResponseMonthlyAmount, error) {
 	year := int(req.GetYear())
-
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
-	res, err := s.cardService.FindMonthlyTransferAmountSender(year)
-
+	res, err := s.cardService.FindMonthlyTransferAmountSender(ctx, year)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly transfer sender amount retrieved successfully", res)
+	protoData := make([]*pb.CardResponseMonthlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseMonthlyAmount{
+			Month:       item.Month,
+			TotalAmount: int64(item.TotalSentAmount),
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMonthlyAmount{
+		Status:  "success",
+		Message: "Monthly transfer sender amount retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindYearlyTransferSenderAmount(ctx context.Context, req *pb.FindYearAmount) (*pb.ApiResponseYearlyAmount, error) {
 	year := int(req.GetYear())
-
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
-	res, err := s.cardService.FindYearlyTransferAmountSender(year)
-
+	res, err := s.cardService.FindYearlyTransferAmountSender(ctx, year)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseYearlyAmounts("success", "transfer sender amount retrieved successfully", res)
+	protoData := make([]*pb.CardResponseYearlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseYearlyAmount{
+			Year:        item.Year.Int.String(),
+			TotalAmount: item.TotalSentAmount,
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseYearlyAmount{
+		Status:  "success",
+		Message: "transfer sender amount retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindMonthlyTransferReceiverAmount(ctx context.Context, req *pb.FindYearAmount) (*pb.ApiResponseMonthlyAmount, error) {
 	year := int(req.GetYear())
-
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
-	res, err := s.cardService.FindMonthlyTransferAmountReceiver(year)
-
+	res, err := s.cardService.FindMonthlyTransferAmountReceiver(ctx, year)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly transfer receiver amount retrieved successfully", res)
+	protoData := make([]*pb.CardResponseMonthlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseMonthlyAmount{
+			Month:       item.Month,
+			TotalAmount: int64(item.TotalReceivedAmount),
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMonthlyAmount{
+		Status:  "success",
+		Message: "Monthly transfer receiver amount retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindYearlyTransferReceiverAmount(ctx context.Context, req *pb.FindYearAmount) (*pb.ApiResponseYearlyAmount, error) {
 	year := int(req.GetYear())
-
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
 
-	res, err := s.cardService.FindYearlyTransferAmountReceiver(year)
-
+	res, err := s.cardService.FindYearlyTransferAmountReceiver(ctx, year)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly transfer receiver amount retrieved successfully", res)
+	protoData := make([]*pb.CardResponseYearlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseYearlyAmount{
+			Year:        item.Year.Int.String(),
+			TotalAmount: item.TotalReceivedAmount,
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseYearlyAmount{
+		Status:  "success",
+		Message: "Yearly transfer receiver amount retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindMonthlyBalanceByCardNumber(ctx context.Context, req *pb.FindYearBalanceCardNumber) (*pb.ApiResponseMonthlyBalance, error) {
@@ -345,7 +510,6 @@ func (s *cardHandleGrpc) FindMonthlyBalanceByCardNumber(ctx context.Context, req
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
-
 	if card_number == "" {
 		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
@@ -355,15 +519,24 @@ func (s *cardHandleGrpc) FindMonthlyBalanceByCardNumber(ctx context.Context, req
 		Year:       year,
 	}
 
-	res, err := s.cardService.FindMonthlyBalanceByCardNumber(&reqService)
-
+	res, err := s.cardService.FindMonthlyBalancesByCardNumber(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMonthlyBalances("success", "Monthly balance retrieved successfully", res)
+	protoData := make([]*pb.CardResponseMonthlyBalance, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseMonthlyBalance{
+			Month:        item.Month,
+			TotalBalance: int64(item.TotalBalance),
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMonthlyBalance{
+		Status:  "success",
+		Message: "Monthly balance retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindYearlyBalanceByCardNumber(ctx context.Context, req *pb.FindYearBalanceCardNumber) (*pb.ApiResponseYearlyBalance, error) {
@@ -373,7 +546,6 @@ func (s *cardHandleGrpc) FindYearlyBalanceByCardNumber(ctx context.Context, req 
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
-
 	if card_number == "" {
 		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
@@ -383,15 +555,24 @@ func (s *cardHandleGrpc) FindYearlyBalanceByCardNumber(ctx context.Context, req 
 		Year:       year,
 	}
 
-	res, err := s.cardService.FindYearlyBalanceByCardNumber(&reqService)
-
+	res, err := s.cardService.FindYearlyBalanceByCardNumber(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseYearlyBalances("success", "Yearly balance retrieved successfully", res)
+	protoData := make([]*pb.CardResponseYearlyBalance, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseYearlyBalance{
+			Year:         item.Year.Int.String(),
+			TotalBalance: item.TotalBalance,
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseYearlyBalance{
+		Status:  "success",
+		Message: "Yearly balance retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindMonthlyTopupAmountByCardNumber(ctx context.Context, req *pb.FindYearAmountCardNumber) (*pb.ApiResponseMonthlyAmount, error) {
@@ -401,7 +582,6 @@ func (s *cardHandleGrpc) FindMonthlyTopupAmountByCardNumber(ctx context.Context,
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
-
 	if card_number == "" {
 		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
@@ -411,15 +591,24 @@ func (s *cardHandleGrpc) FindMonthlyTopupAmountByCardNumber(ctx context.Context,
 		Year:       year,
 	}
 
-	res, err := s.cardService.FindMonthlyTopupAmountByCardNumber(&reqService)
-
+	res, err := s.cardService.FindMonthlyTopupAmountByCardNumber(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly topup amount by card number retrieved successfully", res)
+	protoData := make([]*pb.CardResponseMonthlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseMonthlyAmount{
+			Month:       item.Month,
+			TotalAmount: int64(item.TotalTopupAmount),
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMonthlyAmount{
+		Status:  "success",
+		Message: "Monthly topup amount by card number retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindYearlyTopupAmountByCardNumber(ctx context.Context, req *pb.FindYearAmountCardNumber) (*pb.ApiResponseYearlyAmount, error) {
@@ -429,25 +618,33 @@ func (s *cardHandleGrpc) FindYearlyTopupAmountByCardNumber(ctx context.Context, 
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
-
 	if card_number == "" {
 		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
 	reqService := requests.MonthYearCardNumberCard{
 		CardNumber: card_number,
-		Year:       int(year),
+		Year:       year,
 	}
 
-	res, err := s.cardService.FindYearlyTopupAmountByCardNumber(&reqService)
-
+	res, err := s.cardService.FindYearlyTopupAmountByCardNumber(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly topup amount by card number retrieved successfully", res)
+	protoData := make([]*pb.CardResponseYearlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseYearlyAmount{
+			Year:        item.Year.Int.String(),
+			TotalAmount: item.TotalTopupAmount,
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseYearlyAmount{
+		Status:  "success",
+		Message: "Yearly topup amount by card number retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindMonthlyWithdrawAmountByCardNumber(ctx context.Context, req *pb.FindYearAmountCardNumber) (*pb.ApiResponseMonthlyAmount, error) {
@@ -457,7 +654,6 @@ func (s *cardHandleGrpc) FindMonthlyWithdrawAmountByCardNumber(ctx context.Conte
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
-
 	if card_number == "" {
 		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
@@ -467,14 +663,24 @@ func (s *cardHandleGrpc) FindMonthlyWithdrawAmountByCardNumber(ctx context.Conte
 		Year:       year,
 	}
 
-	res, err := s.cardService.FindMonthlyWithdrawAmountByCardNumber(&reqService)
+	res, err := s.cardService.FindMonthlyWithdrawAmountByCardNumber(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly withdraw amount by card number retrieved successfully", res)
+	protoData := make([]*pb.CardResponseMonthlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseMonthlyAmount{
+			Month:       item.Month,
+			TotalAmount: int64(item.TotalWithdrawAmount),
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMonthlyAmount{
+		Status:  "success",
+		Message: "Monthly withdraw amount by card number retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindYearlyWithdrawAmountByCardNumber(ctx context.Context, req *pb.FindYearAmountCardNumber) (*pb.ApiResponseYearlyAmount, error) {
@@ -484,7 +690,6 @@ func (s *cardHandleGrpc) FindYearlyWithdrawAmountByCardNumber(ctx context.Contex
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
-
 	if card_number == "" {
 		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
@@ -494,14 +699,24 @@ func (s *cardHandleGrpc) FindYearlyWithdrawAmountByCardNumber(ctx context.Contex
 		Year:       year,
 	}
 
-	res, err := s.cardService.FindYearlyWithdrawAmountByCardNumber(&reqService)
+	res, err := s.cardService.FindYearlyWithdrawAmountByCardNumber(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly withdraw amount by card number retrieved successfully", res)
+	protoData := make([]*pb.CardResponseYearlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseYearlyAmount{
+			Year:        item.Year.Int.String(),
+			TotalAmount: item.TotalWithdrawAmount,
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseYearlyAmount{
+		Status:  "success",
+		Message: "Yearly withdraw amount by card number retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindMonthlyTransactionAmountByCardNumber(ctx context.Context, req *pb.FindYearAmountCardNumber) (*pb.ApiResponseMonthlyAmount, error) {
@@ -511,7 +726,6 @@ func (s *cardHandleGrpc) FindMonthlyTransactionAmountByCardNumber(ctx context.Co
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
-
 	if card_number == "" {
 		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
@@ -521,15 +735,24 @@ func (s *cardHandleGrpc) FindMonthlyTransactionAmountByCardNumber(ctx context.Co
 		Year:       year,
 	}
 
-	res, err := s.cardService.FindMonthlyTransactionAmountByCardNumber(&reqService)
-
+	res, err := s.cardService.FindMonthlyTransactionAmountByCardNumber(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly transaction amount by card number retrieved successfully", res)
+	protoData := make([]*pb.CardResponseMonthlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseMonthlyAmount{
+			Month:       item.Month,
+			TotalAmount: int64(item.TotalTransactionAmount),
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMonthlyAmount{
+		Status:  "success",
+		Message: "Monthly transaction amount by card number retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindYearlyTransactionAmountByCardNumber(ctx context.Context, req *pb.FindYearAmountCardNumber) (*pb.ApiResponseYearlyAmount, error) {
@@ -539,7 +762,6 @@ func (s *cardHandleGrpc) FindYearlyTransactionAmountByCardNumber(ctx context.Con
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
-
 	if card_number == "" {
 		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
@@ -549,14 +771,24 @@ func (s *cardHandleGrpc) FindYearlyTransactionAmountByCardNumber(ctx context.Con
 		Year:       year,
 	}
 
-	res, err := s.cardService.FindYearlyTransactionAmountByCardNumber(&reqService)
+	res, err := s.cardService.FindYearlyTransactionAmountByCardNumber(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly transaction amount by card number retrieved successfully", res)
+	protoData := make([]*pb.CardResponseYearlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseYearlyAmount{
+			Year:        item.Year.Int.String(),
+			TotalAmount: item.TotalTransactionAmount,
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseYearlyAmount{
+		Status:  "success",
+		Message: "Yearly transaction amount by card number retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindMonthlyTransferSenderAmountByCardNumber(ctx context.Context, req *pb.FindYearAmountCardNumber) (*pb.ApiResponseMonthlyAmount, error) {
@@ -566,7 +798,6 @@ func (s *cardHandleGrpc) FindMonthlyTransferSenderAmountByCardNumber(ctx context
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
-
 	if card_number == "" {
 		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
@@ -576,14 +807,24 @@ func (s *cardHandleGrpc) FindMonthlyTransferSenderAmountByCardNumber(ctx context
 		Year:       year,
 	}
 
-	res, err := s.cardService.FindMonthlyTransferAmountBySender(&reqService)
+	res, err := s.cardService.FindMonthlyTransferAmountBySender(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly transfer sender amount by card number retrieved successfully", res)
+	protoData := make([]*pb.CardResponseMonthlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseMonthlyAmount{
+			Month:       item.Month,
+			TotalAmount: int64(item.TotalSentAmount),
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMonthlyAmount{
+		Status:  "success",
+		Message: "Monthly transfer sender amount by card number retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindYearlyTransferSenderAmountByCardNumber(ctx context.Context, req *pb.FindYearAmountCardNumber) (*pb.ApiResponseYearlyAmount, error) {
@@ -593,7 +834,6 @@ func (s *cardHandleGrpc) FindYearlyTransferSenderAmountByCardNumber(ctx context.
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
-
 	if card_number == "" {
 		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
@@ -603,14 +843,24 @@ func (s *cardHandleGrpc) FindYearlyTransferSenderAmountByCardNumber(ctx context.
 		Year:       year,
 	}
 
-	res, err := s.cardService.FindYearlyTransferAmountBySender(&reqService)
+	res, err := s.cardService.FindYearlyTransferAmountBySender(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly transfer sender amount by card number retrieved successfully", res)
+	protoData := make([]*pb.CardResponseYearlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseYearlyAmount{
+			Year:        item.Year.Int.String(),
+			TotalAmount: item.TotalSentAmount,
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseYearlyAmount{
+		Status:  "success",
+		Message: "Yearly transfer sender amount by card number retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindMonthlyTransferReceiverAmountByCardNumber(ctx context.Context, req *pb.FindYearAmountCardNumber) (*pb.ApiResponseMonthlyAmount, error) {
@@ -620,7 +870,6 @@ func (s *cardHandleGrpc) FindMonthlyTransferReceiverAmountByCardNumber(ctx conte
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
-
 	if card_number == "" {
 		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
@@ -630,15 +879,24 @@ func (s *cardHandleGrpc) FindMonthlyTransferReceiverAmountByCardNumber(ctx conte
 		Year:       year,
 	}
 
-	res, err := s.cardService.FindMonthlyTransferAmountByReceiver(&reqService)
-
+	res, err := s.cardService.FindMonthlyTransferAmountByReceiver(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseMonthlyAmounts("success", "Monthly transfer receiver amount by card number retrieved successfully", res)
+	protoData := make([]*pb.CardResponseMonthlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseMonthlyAmount{
+			Month:       item.Month,
+			TotalAmount: int64(item.TotalReceivedAmount),
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseMonthlyAmount{
+		Status:  "success",
+		Message: "Monthly transfer receiver amount by card number retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindYearlyTransferReceiverAmountByCardNumber(ctx context.Context, req *pb.FindYearAmountCardNumber) (*pb.ApiResponseYearlyAmount, error) {
@@ -648,7 +906,6 @@ func (s *cardHandleGrpc) FindYearlyTransferReceiverAmountByCardNumber(ctx contex
 	if year <= 0 {
 		return nil, card_errors.ErrGrpcInvalidYear
 	}
-
 	if card_number == "" {
 		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
@@ -658,14 +915,24 @@ func (s *cardHandleGrpc) FindYearlyTransferReceiverAmountByCardNumber(ctx contex
 		Year:       year,
 	}
 
-	res, err := s.cardService.FindYearlyTransferAmountByReceiver(&reqService)
+	res, err := s.cardService.FindYearlyTransferAmountByReceiver(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseYearlyAmounts("success", "Yearly transfer receiver amount by card number retrieved successfully", res)
+	protoData := make([]*pb.CardResponseYearlyAmount, len(res))
+	for i, item := range res {
+		protoData[i] = &pb.CardResponseYearlyAmount{
+			Year:        item.Year.Int.String(),
+			TotalAmount: item.TotalReceivedAmount,
+		}
+	}
 
-	return so, nil
+	return &pb.ApiResponseYearlyAmount{
+		Status:  "success",
+		Message: "Yearly transfer receiver amount by card number retrieved successfully",
+		Data:    protoData,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindByActiveCard(ctx context.Context, req *pb.FindAllCardRequest) (*pb.ApiResponsePaginationCardDeleteAt, error) {
@@ -686,10 +953,25 @@ func (s *cardHandleGrpc) FindByActiveCard(ctx context.Context, req *pb.FindAllCa
 		Search:   search,
 	}
 
-	res, totalRecords, err := s.cardService.FindByActive(&reqService)
-
+	res, totalRecords, err := s.cardService.FindByActive(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoCards := make([]*pb.CardResponseDeleteAt, len(res))
+	for i, card := range res {
+		protoCards[i] = &pb.CardResponseDeleteAt{
+			Id:           int32(card.CardID),
+			UserId:       int32(card.UserID),
+			CardNumber:   card.CardNumber,
+			CardType:     card.CardType,
+			Cvv:          card.Cvv,
+			CardProvider: card.CardProvider,
+			ExpireDate:   card.ExpireDate.Time.Format("2006-01-02 15:04:05"),
+			CreatedAt:    card.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt:    card.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+			DeletedAt:    &wrapperspb.StringValue{Value: card.DeletedAt.Time.Format("2006-01-02 15:04:05")},
+		}
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -701,9 +983,12 @@ func (s *cardHandleGrpc) FindByActiveCard(ctx context.Context, req *pb.FindAllCa
 		TotalRecords: int32(*totalRecords),
 	}
 
-	so := s.mapping.ToProtoResponsePaginationCardDeletedAt(paginationMeta, "success", "Successfully fetched card record", res)
-
-	return so, nil
+	return &pb.ApiResponsePaginationCardDeleteAt{
+		Status:     "success",
+		Message:    "Successfully fetched card record",
+		Data:       protoCards,
+		Pagination: paginationMeta,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindByTrashedCard(ctx context.Context, req *pb.FindAllCardRequest) (*pb.ApiResponsePaginationCardDeleteAt, error) {
@@ -724,10 +1009,25 @@ func (s *cardHandleGrpc) FindByTrashedCard(ctx context.Context, req *pb.FindAllC
 		Search:   search,
 	}
 
-	res, totalRecords, err := s.cardService.FindByTrashed(&reqService)
-
+	res, totalRecords, err := s.cardService.FindByTrashed(ctx, &reqService)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
+	}
+
+	protoCards := make([]*pb.CardResponseDeleteAt, len(res))
+	for i, card := range res {
+		protoCards[i] = &pb.CardResponseDeleteAt{
+			Id:           int32(card.CardID),
+			UserId:       int32(card.UserID),
+			CardNumber:   card.CardNumber,
+			CardType:     card.CardType,
+			Cvv:          card.Cvv,
+			CardProvider: card.CardProvider,
+			ExpireDate:   card.ExpireDate.Time.Format("2006-01-02 15:04:05"),
+			CreatedAt:    card.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			UpdatedAt:    card.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+			DeletedAt:    &wrapperspb.StringValue{Value: card.DeletedAt.Time.Format("2006-01-02 15:04:05")},
+		}
 	}
 
 	totalPages := int(math.Ceil(float64(*totalRecords) / float64(pageSize)))
@@ -739,29 +1039,41 @@ func (s *cardHandleGrpc) FindByTrashedCard(ctx context.Context, req *pb.FindAllC
 		TotalRecords: int32(*totalRecords),
 	}
 
-	so := s.mapping.ToProtoResponsePaginationCardDeletedAt(paginationMeta, "success", "Successfully fetched card record", res)
-
-	return so, nil
-
+	return &pb.ApiResponsePaginationCardDeleteAt{
+		Status:     "success",
+		Message:    "Successfully fetched card record",
+		Data:       protoCards,
+		Pagination: paginationMeta,
+	}, nil
 }
 
 func (s *cardHandleGrpc) FindByCardNumber(ctx context.Context, req *pb.FindByCardNumberRequest) (*pb.ApiResponseCard, error) {
 	card_number := req.GetCardNumber()
-
 	if card_number == "" {
 		return nil, card_errors.ErrGrpcInvalidCardNumber
 	}
 
-	res, err := s.cardService.FindByCardNumber(card_number)
-
+	res, err := s.cardService.FindByCardNumber(ctx, card_number)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseCard("success", "Successfully fetched card record", res)
+	protoCard := &pb.CardResponse{
+		Id:         int32(res.CardID),
+		UserId:     int32(res.UserID),
+		CardNumber: res.CardNumber,
+		CardType:   res.CardType,
+		Cvv:        res.Cvv,
+		ExpireDate: res.ExpireDate.Time.Format("2006-01-02 15:04:05"),
+		CreatedAt:  res.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt:  res.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+	}
 
-	return so, nil
-
+	return &pb.ApiResponseCard{
+		Status:  "success",
+		Message: "Successfully fetched card record",
+		Data:    protoCard,
+	}, nil
 }
 
 func (s *cardHandleGrpc) CreateCard(ctx context.Context, req *pb.CreateCardRequest) (*pb.ApiResponseCard, error) {
@@ -777,15 +1089,27 @@ func (s *cardHandleGrpc) CreateCard(ctx context.Context, req *pb.CreateCardReque
 		return nil, card_errors.ErrGrpcValidateCreateCardRequest
 	}
 
-	res, err := s.cardService.CreateCard(&request)
-
+	res, err := s.cardService.CreateCard(ctx, &request)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseCard("success", "Successfully created card", res)
+	protoCard := &pb.CardResponse{
+		Id:         int32(res.CardID),
+		UserId:     int32(res.UserID),
+		CardNumber: res.CardNumber,
+		CardType:   res.CardType,
+		Cvv:        res.Cvv,
+		ExpireDate: res.ExpireDate.Time.Format("2006-01-02 15:04:05"),
+		CreatedAt:  res.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt:  res.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+	}
 
-	return so, nil
+	return &pb.ApiResponseCard{
+		Status:  "success",
+		Message: "Successfully created card",
+		Data:    protoCard,
+	}, nil
 }
 
 func (s *cardHandleGrpc) UpdateCard(ctx context.Context, req *pb.UpdateCardRequest) (*pb.ApiResponseCard, error) {
@@ -802,91 +1126,126 @@ func (s *cardHandleGrpc) UpdateCard(ctx context.Context, req *pb.UpdateCardReque
 		return nil, card_errors.ErrGrpcValidateUpdateCardRequest
 	}
 
-	res, err := s.cardService.UpdateCard(&request)
-
+	res, err := s.cardService.UpdateCard(ctx, &request)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseCard("success", "Successfully updated card", res)
+	protoCard := &pb.CardResponse{
+		Id:         int32(res.CardID),
+		UserId:     int32(res.UserID),
+		CardNumber: res.CardNumber,
+		CardType:   res.CardType,
+		Cvv:        res.Cvv,
+		ExpireDate: res.ExpireDate.Time.Format("2006-01-02 15:04:05"),
+		CreatedAt:  res.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt:  res.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+	}
 
-	return so, nil
+	return &pb.ApiResponseCard{
+		Status:  "success",
+		Message: "Successfully updated card",
+		Data:    protoCard,
+	}, nil
 }
 
 func (s *cardHandleGrpc) TrashedCard(ctx context.Context, req *pb.FindByIdCardRequest) (*pb.ApiResponseCardDeleteAt, error) {
 	id := int(req.GetCardId())
-
 	if id == 0 {
 		return nil, card_errors.ErrGrpcInvalidCardID
 	}
 
-	res, err := s.cardService.TrashedCard(id)
-
+	res, err := s.cardService.TrashedCard(ctx, id)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseCardDeleteAt("success", "Successfully trashed card", res)
+	protoCard := &pb.CardResponseDeleteAt{
+		Id:         int32(res.CardID),
+		UserId:     int32(res.UserID),
+		CardNumber: res.CardNumber,
+		CardType:   res.CardType,
+		Cvv:        res.Cvv,
+		ExpireDate: res.ExpireDate.Time.Format("2006-01-02 15:04:05"),
+		CreatedAt:  res.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt:  res.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+		DeletedAt:  wrapperspb.String(res.DeletedAt.Time.Format("2006-01-02 15:04:05")),
+	}
 
-	return so, nil
+	return &pb.ApiResponseCardDeleteAt{
+		Status:  "success",
+		Message: "Successfully trashed card",
+		Data:    protoCard,
+	}, nil
 }
 
 func (s *cardHandleGrpc) RestoreCard(ctx context.Context, req *pb.FindByIdCardRequest) (*pb.ApiResponseCardDeleteAt, error) {
 	id := int(req.GetCardId())
-
 	if id == 0 {
 		return nil, card_errors.ErrGrpcInvalidCardID
 	}
 
-	res, err := s.cardService.RestoreCard(id)
-
+	res, err := s.cardService.RestoreCard(ctx, id)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseCardDeleteAt("success", "Successfully restored card", res)
+	protoCard := &pb.CardResponseDeleteAt{
+		Id:         int32(res.CardID),
+		UserId:     int32(res.UserID),
+		CardNumber: res.CardNumber,
+		CardType:   res.CardType,
+		Cvv:        res.Cvv,
+		ExpireDate: res.ExpireDate.Time.Format("2006-01-02 15:04:05"),
+		CreatedAt:  res.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		UpdatedAt:  res.UpdatedAt.Time.Format("2006-01-02 15:04:05"),
+		DeletedAt:  wrapperspb.String(res.DeletedAt.Time.Format("2006-01-02 15:04:05")),
+	}
 
-	return so, nil
+	return &pb.ApiResponseCardDeleteAt{
+		Status:  "success",
+		Message: "Successfully restored card",
+		Data:    protoCard,
+	}, nil
 }
 
 func (s *cardHandleGrpc) DeleteCardPermanent(ctx context.Context, req *pb.FindByIdCardRequest) (*pb.ApiResponseCardDelete, error) {
 	id := int(req.GetCardId())
-
 	if id == 0 {
 		return nil, card_errors.ErrGrpcInvalidCardID
 	}
 
-	_, err := s.cardService.DeleteCardPermanent(id)
-
+	_, err := s.cardService.DeleteCardPermanent(ctx, id)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseCardDelete("success", "Successfully deleted card")
-
-	return so, nil
+	return &pb.ApiResponseCardDelete{
+		Status:  "success",
+		Message: "Successfully deleted card",
+	}, nil
 }
 
 func (s *cardHandleGrpc) RestoreAllCard(ctx context.Context, _ *emptypb.Empty) (*pb.ApiResponseCardAll, error) {
-	_, err := s.cardService.RestoreAllCard()
-
+	_, err := s.cardService.RestoreAllCard(ctx)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseCardAll("success", "Successfully restore card")
-
-	return so, nil
+	return &pb.ApiResponseCardAll{
+		Status:  "success",
+		Message: "Successfully restore card",
+	}, nil
 }
 
 func (s *cardHandleGrpc) DeleteAllCardPermanent(ctx context.Context, _ *emptypb.Empty) (*pb.ApiResponseCardAll, error) {
-	_, err := s.cardService.DeleteAllCardPermanent()
-
+	_, err := s.cardService.DeleteAllCardPermanent(ctx)
 	if err != nil {
-		return nil, response.ToGrpcErrorFromErrorResponse(err)
+		return nil, errors.ToGrpcError(err)
 	}
 
-	so := s.mapping.ToProtoResponseCardAll("success", "Successfully delete card permanent")
-
-	return so, nil
+	return &pb.ApiResponseCardAll{
+		Status:  "success",
+		Message: "Successfully delete card permanent",
+	}, nil
 }

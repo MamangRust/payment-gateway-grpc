@@ -13,14 +13,29 @@
 --   - Provides total_count for pagination calculations
 -- name: GetCards :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
+    card_id,
+    user_id,
+    card_number,
+    card_type,
+    expire_date,
+    cvv,
+    card_provider,
+    created_at,
+    updated_at,
+    COUNT(*) OVER () AS total_count
 FROM cards
-WHERE deleted_at IS NULL
-  AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%' OR card_type ILIKE '%' || $1 || '%' OR card_provider ILIKE '%' || $1 || '%')
+WHERE
+    deleted_at IS NULL
+    AND (
+        $1::TEXT IS NULL
+        OR card_number ILIKE '%' || $1 || '%'
+        OR card_type ILIKE '%' || $1 || '%'
+        OR card_provider ILIKE '%' || $1 || '%'
+    )
 ORDER BY card_id
-LIMIT $2 OFFSET $3;
-
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetCardByID: Retrieves a single card by its ID
 -- Purpose: Get detailed information about a specific card
@@ -32,8 +47,20 @@ LIMIT $2 OFFSET $3;
 --   - Only returns active cards (deleted_at IS NULL)
 --   - Returns NULL if card is not found or has been soft-deleted
 -- name: GetCardByID :one
-SELECT * FROM cards WHERE card_id = $1 AND deleted_at IS NULL;
-
+SELECT
+    card_id,
+    user_id,
+    card_number,
+    card_type,
+    expire_date,
+    cvv,
+    card_provider,
+    created_at,
+    updated_at
+FROM cards
+WHERE
+    card_id = $1
+    AND deleted_at IS NULL;
 
 -- GetActiveCardsWithCount: Retrieves paginated list of active cards with search capability
 -- Purpose: List all active cards for management UI (alternative to GetCards with same functionality)
@@ -50,14 +77,30 @@ SELECT * FROM cards WHERE card_id = $1 AND deleted_at IS NULL;
 --   - Provides total_count for pagination calculations
 -- name: GetActiveCardsWithCount :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
+    card_id,
+    user_id,
+    card_number,
+    card_type,
+    expire_date,
+    cvv,
+    card_provider,
+    created_at,
+    updated_at,
+    deleted_at,
+    COUNT(*) OVER () AS total_count
 FROM cards
-WHERE deleted_at IS NULL
-  AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%' OR card_type ILIKE '%' || $1 || '%' OR card_provider ILIKE '%' || $1 || '%')
+WHERE
+    deleted_at IS NULL
+    AND (
+        $1::TEXT IS NULL
+        OR card_number ILIKE '%' || $1 || '%'
+        OR card_type ILIKE '%' || $1 || '%'
+        OR card_provider ILIKE '%' || $1 || '%'
+    )
 ORDER BY card_id
-LIMIT $2 OFFSET $3;
-
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetTrashedCardsWithCount: Retrieves paginated list of soft-deleted cards with search capability
 -- Purpose: List all trashed (soft-deleted) cards for recovery or audit purposes
@@ -74,14 +117,30 @@ LIMIT $2 OFFSET $3;
 --   - Provides total_count for pagination calculations
 -- name: GetTrashedCardsWithCount :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
+    card_id,
+    user_id,
+    card_number,
+    card_type,
+    expire_date,
+    cvv,
+    card_provider,
+    created_at,
+    updated_at,
+    deleted_at,
+    COUNT(*) OVER () AS total_count
 FROM cards
-WHERE deleted_at IS NOT NULL
-  AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%' OR card_type ILIKE '%' || $1 || '%' OR card_provider ILIKE '%' || $1 || '%')
+WHERE
+    deleted_at IS NOT NULL
+    AND (
+        $1::TEXT IS NULL
+        OR card_number ILIKE '%' || $1 || '%'
+        OR card_type ILIKE '%' || $1 || '%'
+        OR card_provider ILIKE '%' || $1 || '%'
+    )
 ORDER BY card_id
-LIMIT $2 OFFSET $3;
-
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetCardByUserID: Retrieves a single active card associated with a specific user
 -- Purpose: Get the card information for a particular user
@@ -94,7 +153,16 @@ LIMIT $2 OFFSET $3;
 --   - Returns at most one card (LIMIT 1) even if multiple cards exist for the user
 --   - Useful for displaying a user's primary/default card
 -- name: GetCardByUserID :one
-SELECT *
+SELECT
+    card_id,
+    user_id,
+    card_number,
+    card_type,
+    expire_date,
+    cvv,
+    card_provider,
+    created_at,
+    updated_at
 FROM cards
 WHERE
     user_id = $1
@@ -112,7 +180,20 @@ LIMIT 1;
 --   - Performs exact match on card_number field (case-sensitive)
 --   - Useful for card verification during transactions
 -- name: GetCardByCardNumber :one
-SELECT * FROM cards WHERE card_number = $1 AND deleted_at IS NULL;
+SELECT
+    card_id,
+    user_id,
+    card_number,
+    card_type,
+    expire_date,
+    cvv,
+    card_provider,
+    created_at,
+    updated_at
+FROM cards
+WHERE
+    card_number = $1
+    AND deleted_at IS NULL;
 
 -- GetTrashedCardByID: Retrieves a single soft-deleted card by its ID
 -- Purpose: View details of a specific trashed card for recovery or audit
@@ -127,11 +208,9 @@ SELECT * FROM cards WHERE card_number = $1 AND deleted_at IS NULL;
 -- name: GetTrashedCardByID :one
 SELECT * FROM cards WHERE card_id = $1 AND deleted_at IS NOT NULL;
 
-
-
 -- GetTotalBalance: Calculates the sum of all active card balances
 -- Purpose: Get the total balance across all active cards in the system
--- Returns: 
+-- Returns:
 --   Single column 'total_balance' containing the sum of all non-deleted card balances
 -- Business Logic:
 --   - Only includes balances from active saldos records (s.deleted_at IS NULL)
@@ -139,14 +218,12 @@ SELECT * FROM cards WHERE card_id = $1 AND deleted_at IS NOT NULL;
 --   - Useful for financial dashboards and system health monitoring
 --   - Returns NULL if no active balances exist
 -- name: GetTotalBalance :one
-SELECT
-    SUM(s.total_balance) AS total_balance
-FROM
-    saldos s
-JOIN
-    cards c ON s.card_number = c.card_number
+SELECT SUM(s.total_balance) AS total_balance
+FROM saldos s
+    JOIN cards c ON s.card_number = c.card_number
 WHERE
-    s.deleted_at IS NULL AND c.deleted_at IS NULL;
+    s.deleted_at IS NULL
+    AND c.deleted_at IS NULL;
 
 -- GetTotalTopupAmount: Calculates the sum of all top-up transactions
 -- Purpose: Get the total amount ever topped up across all active cards
@@ -158,14 +235,12 @@ WHERE
 --   - Useful for financial reporting and reconciliation
 --   - Returns NULL if no topups exist
 -- name: GetTotalTopupAmount :one
-SELECT
-    SUM(t.topup_amount) AS total_topup_amount
-FROM
-    topups t
-JOIN
-    cards c ON t.card_number = c.card_number
+SELECT SUM(t.topup_amount) AS total_topup_amount
+FROM topups t
+    JOIN cards c ON t.card_number = c.card_number
 WHERE
-    t.deleted_at IS NULL AND c.deleted_at IS NULL;
+    t.deleted_at IS NULL
+    AND c.deleted_at IS NULL;
 
 -- GetTotalWithdrawAmount: Calculates the sum of all withdrawal transactions
 -- Purpose: Get the total amount ever withdrawn from all active cards
@@ -177,14 +252,12 @@ WHERE
 --   - Useful for cash flow analysis and auditing
 --   - Returns NULL if no withdrawals exist
 -- name: GetTotalWithdrawAmount :one
-SELECT
-    SUM(s.withdraw_amount) AS total_withdraw_amount
-FROM
-    withdraws s
-JOIN
-    cards c ON s.card_number = c.card_number
+SELECT SUM(s.withdraw_amount) AS total_withdraw_amount
+FROM withdraws s
+    JOIN cards c ON s.card_number = c.card_number
 WHERE
-    s.deleted_at IS NULL AND c.deleted_at IS NULL;
+    s.deleted_at IS NULL
+    AND c.deleted_at IS NULL;
 
 -- GetTotalTransactionAmount: Calculates the sum of all payment transactions
 -- Purpose: Get the total amount processed through all card transactions
@@ -196,14 +269,12 @@ WHERE
 --   - Useful for sales reporting and revenue analysis
 --   - Returns NULL if no transactions exist
 -- name: GetTotalTransactionAmount :one
-SELECT
-    SUM(t.amount) AS total_transaction_amount
-FROM
-    transactions t
-JOIN
-    cards c ON t.card_number = c.card_number
+SELECT SUM(t.amount) AS total_transaction_amount
+FROM transactions t
+    JOIN cards c ON t.card_number = c.card_number
 WHERE
-    t.deleted_at IS NULL AND c.deleted_at IS NULL;
+    t.deleted_at IS NULL
+    AND c.deleted_at IS NULL;
 
 -- GetTotalTransferAmount: Calculates the sum of all transfer transactions
 -- Purpose: Get the total amount transferred between accounts
@@ -218,26 +289,18 @@ WHERE
 -- Note: The current implementation appears to double-count transfers by including
 --       the same table twice in the UNION ALL. This may need review.
 -- name: GetTotalTransferAmount :one
-SELECT
-    SUM(transfer_amount) AS total_transfer_amount
+SELECT SUM(transfer_amount) AS total_transfer_amount
 FROM (
-    SELECT
-        transfer_amount
-    FROM
-        transfers
-    WHERE
-        deleted_at IS NULL
-    UNION ALL
-    SELECT
-        transfer_amount
-    FROM
-        transfers
-    WHERE
-        deleted_at IS NULL
-) AS transfer_data;
-
-
-
+        SELECT transfer_amount
+        FROM transfers
+        WHERE
+            deleted_at IS NULL
+        UNION ALL
+        SELECT transfer_amount
+        FROM transfers
+        WHERE
+            deleted_at IS NULL
+    ) AS transfer_data;
 
 -- GetTotalBalanceByCardNumber: Calculates the total balance for a specific card
 -- Purpose: Get the current balance of a particular active card
@@ -251,14 +314,12 @@ FROM (
 --   - Returns NULL if card doesn't exist or has been deleted
 --   - Useful for displaying individual card balances
 -- name: GetTotalBalanceByCardNumber :one
-SELECT
-    SUM(s.total_balance) AS total_balance
-FROM
-    saldos s
-JOIN
-    cards c ON s.card_number = c.card_number
+SELECT SUM(s.total_balance) AS total_balance
+FROM saldos s
+    JOIN cards c ON s.card_number = c.card_number
 WHERE
-    s.deleted_at IS NULL AND c.deleted_at IS NULL
+    s.deleted_at IS NULL
+    AND c.deleted_at IS NULL
     AND c.card_number = $1;
 
 -- GetTotalTopupAmountByCardNumber: Calculates total top-ups for a specific card
@@ -272,14 +333,12 @@ WHERE
 --   - Only includes amounts when card is active (c.deleted_at IS NULL)
 --   - Useful for card activity analysis and user statements
 -- name: GetTotalTopupAmountByCardNumber :one
-SELECT
-    SUM(t.topup_amount) AS total_topup_amount
-FROM
-    topups t
-JOIN
-    cards c ON t.card_number = c.card_number
+SELECT SUM(t.topup_amount) AS total_topup_amount
+FROM topups t
+    JOIN cards c ON t.card_number = c.card_number
 WHERE
-    t.deleted_at IS NULL AND c.deleted_at IS NULL
+    t.deleted_at IS NULL
+    AND c.deleted_at IS NULL
     AND c.card_number = $1;
 
 -- GetTotalWithdrawAmountByCardNumber: Calculates total withdrawals for a card
@@ -294,14 +353,12 @@ WHERE
 --   - Useful for cash flow analysis per card
 -- Note: Verify table name consistency (saldos vs withdraws)
 -- name: GetTotalWithdrawAmountByCardNumber :one
-SELECT
-    SUM(s.withdraw_amount) AS total_withdraw_amount
-FROM
-    saldos s
-JOIN
-    cards c ON s.card_number = c.card_number
+SELECT SUM(s.withdraw_amount) AS total_withdraw_amount
+FROM saldos s
+    JOIN cards c ON s.card_number = c.card_number
 WHERE
-    s.deleted_at IS NULL AND c.deleted_at IS NULL
+    s.deleted_at IS NULL
+    AND c.deleted_at IS NULL
     AND c.card_number = $1;
 
 -- GetTotalTransactionAmountByCardNumber: Calculates total transactions for a card
@@ -315,14 +372,12 @@ WHERE
 --   - Only includes amounts when card is active (c.deleted_at IS NULL)
 --   - Useful for spending analysis and card statements
 -- name: GetTotalTransactionAmountByCardNumber :one
-SELECT
-    SUM(t.amount) AS total_transaction_amount
-FROM
-    transactions t
-JOIN
-    cards c ON t.card_number = c.card_number
+SELECT SUM(t.amount) AS total_transaction_amount
+FROM transactions t
+    JOIN cards c ON t.card_number = c.card_number
 WHERE
-    t.deleted_at IS NULL AND c.deleted_at IS NULL
+    t.deleted_at IS NULL
+    AND c.deleted_at IS NULL
     AND c.card_number = $1;
 
 -- GetTotalTransferAmountBySender: Calculates total outgoing transfers from an account
@@ -335,10 +390,8 @@ WHERE
 --   - Only includes active transfer records (deleted_at IS NULL)
 --   - Useful for tracking money sent by a particular account
 -- name: GetTotalTransferAmountBySender :one
-SELECT
-    SUM(transfer_amount) AS total_transfer_amount
-FROM
-    transfers
+SELECT SUM(transfer_amount) AS total_transfer_amount
+FROM transfers
 WHERE
     transfer_from = $1
     AND deleted_at IS NULL;
@@ -353,16 +406,11 @@ WHERE
 --   - Only includes active transfer records (deleted_at IS NULL)
 --   - Useful for tracking money received by a particular account
 -- name: GetTotalTransferAmountByReceiver :one
-SELECT
-    SUM(transfer_amount) AS total_transfer_amount
-FROM
-    transfers
+SELECT SUM(transfer_amount) AS total_transfer_amount
+FROM transfers
 WHERE
     transfer_to = $1
     AND deleted_at IS NULL;
-
-
-
 
 -- GetMonthlyBalances: Retrieves monthly balance totals for a given year
 -- Purpose: Provide monthly balance trends for dashboard visualizations
@@ -378,29 +426,35 @@ WHERE
 --   - COALESCE returns 0 for months with no data
 --   - Results ordered chronologically
 -- name: GetMonthlyBalances :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $1::timestamp),
-        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(s.total_balance), 0)::int AS total_balance
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $1::timestamp), date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(s.total_balance), 0)::int AS total_balance
 FROM
     months m
-LEFT JOIN
-    saldos s ON EXTRACT(MONTH FROM s.created_at) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM s.created_at) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN saldos s ON EXTRACT(
+        MONTH
+        FROM s.created_at
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM s.created_at
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND s.deleted_at IS NULL
-LEFT JOIN
-    cards c ON s.card_number = c.card_number
+    LEFT JOIN cards c ON s.card_number = c.card_number
     AND c.deleted_at IS NULL
 GROUP BY
     m.month
-ORDER BY
-    m.month;
+ORDER BY m.month;
 
 -- GetYearlyBalances: Retrieves yearly balance totals for last 5 years
 -- Purpose: Provide annual balance trends for financial reporting
@@ -415,28 +469,34 @@ ORDER BY
 --   - Groups by calendar year
 --   - Results ordered chronologically
 -- name: GetYearlyBalances :many
-WITH last_five_years AS (
-    SELECT
-        EXTRACT(YEAR FROM s.created_at) AS year,
-        SUM(s.total_balance) AS total_balance
-    FROM
-        saldos s
-    JOIN
-        cards c ON s.card_number = c.card_number
-    WHERE
-        s.deleted_at IS NULL AND c.deleted_at IS NULL
-        AND EXTRACT(YEAR FROM s.created_at) >= $1 - 4
-        AND EXTRACT(YEAR FROM s.created_at) <= $1
-    GROUP BY
-        EXTRACT(YEAR FROM s.created_at)
-)
-SELECT
-    year,
-    total_balance
-FROM
-    last_five_years
-ORDER BY
-    year;
+WITH
+    last_five_years AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM s.created_at
+            ) AS year, SUM(s.total_balance) AS total_balance
+        FROM saldos s
+            JOIN cards c ON s.card_number = c.card_number
+        WHERE
+            s.deleted_at IS NULL
+            AND c.deleted_at IS NULL
+            AND EXTRACT(
+                YEAR
+                FROM s.created_at
+            ) >= $1 - 4
+            AND EXTRACT(
+                YEAR
+                FROM s.created_at
+            ) <= $1
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM s.created_at
+            )
+    )
+SELECT year, total_balance
+FROM last_five_years
+ORDER BY year;
 
 -- GetMonthlyTopupAmount: Retrieves monthly top-up totals for a given year
 -- Purpose: Analyze monthly top-up patterns and trends
@@ -452,29 +512,35 @@ ORDER BY
 --   - COALESCE returns 0 for months with no activity
 --   - Results ordered chronologically
 -- name: GetMonthlyTopupAmount :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $1::timestamp),
-        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(t.topup_amount), 0)::int AS total_topup_amount
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $1::timestamp), date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(t.topup_amount), 0)::int AS total_topup_amount
 FROM
     months m
-LEFT JOIN
-    topups t ON EXTRACT(MONTH FROM t.topup_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.topup_time) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN topups t ON EXTRACT(
+        MONTH
+        FROM t.topup_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.topup_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.deleted_at IS NULL
-LEFT JOIN
-    cards c ON t.card_number = c.card_number
+    LEFT JOIN cards c ON t.card_number = c.card_number
     AND c.deleted_at IS NULL
 GROUP BY
     m.month
-ORDER BY
-    m.month;
+ORDER BY m.month;
 
 -- GetYearlyTopupAmount: Retrieves yearly top-up totals for last 5 years
 -- Purpose: Analyze long-term top-up trends and growth
@@ -490,30 +556,34 @@ ORDER BY
 --   - Results ordered chronologically
 --   - Useful for identifying annual growth patterns
 -- name: GetYearlyTopupAmount :many
-WITH last_five_years AS (
-    SELECT
-        EXTRACT(YEAR FROM t.topup_time) AS year,
-        SUM(t.topup_amount) AS total_topup_amount
-    FROM
-        topups t
-    JOIN
-        cards c ON t.card_number = c.card_number
-    WHERE
-        t.deleted_at IS NULL
-        AND c.deleted_at IS NULL
-        AND EXTRACT(YEAR FROM t.topup_time) >= $1 - 4
-        AND EXTRACT(YEAR FROM t.topup_time) <= $1
-    GROUP BY
-        EXTRACT(YEAR FROM t.topup_time)
-)
-SELECT
-    year,
-    total_topup_amount
-FROM
-    last_five_years
-ORDER BY
-    year;
-    
+WITH
+    last_five_years AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM t.topup_time
+            ) AS year, SUM(t.topup_amount) AS total_topup_amount
+        FROM topups t
+            JOIN cards c ON t.card_number = c.card_number
+        WHERE
+            t.deleted_at IS NULL
+            AND c.deleted_at IS NULL
+            AND EXTRACT(
+                YEAR
+                FROM t.topup_time
+            ) >= $1 - 4
+            AND EXTRACT(
+                YEAR
+                FROM t.topup_time
+            ) <= $1
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            )
+    )
+SELECT year, total_topup_amount
+FROM last_five_years
+ORDER BY year;
 
 -- GetMonthlyWithdrawAmount: Retrieves monthly withdraw totals for a given year
 -- Purpose: Analyze monthly withdraw patterns and trends
@@ -529,31 +599,35 @@ ORDER BY
 --   - COALESCE returns 0 for months with no activity
 --   - Results ordered chronologically
 -- name: GetMonthlyWithdrawAmount :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $1::timestamp),
-        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(w.withdraw_amount), 0)::int AS total_withdraw_amount
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $1::timestamp), date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(w.withdraw_amount), 0)::int AS total_withdraw_amount
 FROM
     months m
-LEFT JOIN
-    withdraws w ON EXTRACT(MONTH FROM w.withdraw_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM w.withdraw_time) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN withdraws w ON EXTRACT(
+        MONTH
+        FROM w.withdraw_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM w.withdraw_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND w.deleted_at IS NULL
-LEFT JOIN
-    cards c ON w.card_number = c.card_number
+    LEFT JOIN cards c ON w.card_number = c.card_number
     AND c.deleted_at IS NULL
 GROUP BY
     m.month
-ORDER BY
-    m.month;
-
-
+ORDER BY m.month;
 
 -- GetYearlyWithdrawAmount: Retrieves yearly withdraw totals for last 5 years
 -- Purpose: Analyze long-term withdraw trends and growth
@@ -569,30 +643,34 @@ ORDER BY
 --   - Results ordered chronologically
 --   - Useful for identifying annual growth patterns
 -- name: GetYearlyWithdrawAmount :many
-WITH last_five_years AS (
-    SELECT
-        EXTRACT(YEAR FROM w.withdraw_time) AS year,
-        SUM(w.withdraw_amount) AS total_withdraw_amount
-    FROM
-        withdraws w
-    JOIN
-        cards c ON w.card_number = c.card_number
-    WHERE
-        w.deleted_at IS NULL
-        AND c.deleted_at IS NULL
-        AND EXTRACT(YEAR FROM w.withdraw_time) >= $1 - 4
-        AND EXTRACT(YEAR FROM w.withdraw_time) <= $1
-    GROUP BY
-        EXTRACT(YEAR FROM w.withdraw_time)
-)
-SELECT
-    year,
-    total_withdraw_amount
-FROM
-    last_five_years
-ORDER BY
-    year;
-
+WITH
+    last_five_years AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM w.withdraw_time
+            ) AS year, SUM(w.withdraw_amount) AS total_withdraw_amount
+        FROM withdraws w
+            JOIN cards c ON w.card_number = c.card_number
+        WHERE
+            w.deleted_at IS NULL
+            AND c.deleted_at IS NULL
+            AND EXTRACT(
+                YEAR
+                FROM w.withdraw_time
+            ) >= $1 - 4
+            AND EXTRACT(
+                YEAR
+                FROM w.withdraw_time
+            ) <= $1
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM w.withdraw_time
+            )
+    )
+SELECT year, total_withdraw_amount
+FROM last_five_years
+ORDER BY year;
 
 -- GetMonthlyTransactionAmount: Retrieves monthly transaction totals for a given year
 -- Purpose: Analyze monthly transaction patterns and trends
@@ -608,30 +686,37 @@ ORDER BY
 --   - COALESCE returns 0 for months with no activity
 --   - Results ordered chronologically
 -- name: GetMonthlyTransactionAmount :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $1::timestamp),
-        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $1::timestamp), date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
 SELECT
     TO_CHAR(m.month, 'Mon') AS month,
     COALESCE(SUM(t.amount), 0)::int AS total_transaction_amount
 FROM
     months m
-LEFT JOIN
-    transactions t ON EXTRACT(MONTH FROM t.transaction_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.transaction_time) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN transactions t ON EXTRACT(
+        MONTH
+        FROM t.transaction_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.transaction_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.deleted_at IS NULL
-LEFT JOIN
-    cards c ON t.card_number = c.card_number
+    LEFT JOIN cards c ON t.card_number = c.card_number
     AND c.deleted_at IS NULL
 GROUP BY
     m.month
-ORDER BY
-    m.month;
-
+ORDER BY m.month;
 
 -- GetYearlyTransactionAmount: Retrieves yearly transaction totals for last 5 years
 -- Purpose: Analyze long-term transaction trends and growth
@@ -647,30 +732,34 @@ ORDER BY
 --   - Results ordered chronologically
 --   - Useful for identifying annual growth patterns
 -- name: GetYearlyTransactionAmount :many
-WITH last_five_years AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transaction_time) AS year,
-        SUM(t.amount) AS total_transaction_amount
-    FROM
-        transactions t
-    JOIN
-        cards c ON t.card_number = c.card_number
-    WHERE
-        t.deleted_at IS NULL
-        AND c.deleted_at IS NULL
-        AND EXTRACT(YEAR FROM t.transaction_time) >= $1 - 4
-        AND EXTRACT(YEAR FROM t.transaction_time) <= $1
-    GROUP BY
-        EXTRACT(YEAR FROM t.transaction_time)
-)
-SELECT
-    year,
-    total_transaction_amount
-FROM
-    last_five_years
-ORDER BY
-    year;
-
+WITH
+    last_five_years AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            ) AS year, SUM(t.amount) AS total_transaction_amount
+        FROM transactions t
+            JOIN cards c ON t.card_number = c.card_number
+        WHERE
+            t.deleted_at IS NULL
+            AND c.deleted_at IS NULL
+            AND EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            ) >= $1 - 4
+            AND EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            ) <= $1
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            )
+    )
+SELECT year, total_transaction_amount
+FROM last_five_years
+ORDER BY year;
 
 -- GetMonthlyTransferAmountSender: Retrieves monthly transfer totals for a given year
 -- Purpose: Analyze monthly transfer patterns and trends
@@ -686,27 +775,32 @@ ORDER BY
 --   - COALESCE returns 0 for months with no activity
 --   - Results ordered chronologically
 -- name: GetMonthlyTransferAmountSender :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $1::timestamp),
-        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(t.transfer_amount), 0)::int AS total_sent_amount
-FROM
-    months m
-LEFT JOIN
-    transfers t ON EXTRACT(MONTH FROM t.transfer_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.transfer_time) = EXTRACT(YEAR FROM m.month)
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $1::timestamp), date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(t.transfer_amount), 0)::int AS total_sent_amount
+FROM months m
+    LEFT JOIN transfers t ON EXTRACT(
+        MONTH
+        FROM t.transfer_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.transfer_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.deleted_at IS NULL
 GROUP BY
     m.month
-ORDER BY
-    m.month;
-
+ORDER BY m.month;
 
 -- GetMonthlyTransferAmountReceiver: Retrieves monthly transfer totals for a given year
 -- Purpose: Analyze monthly transfer patterns and trends
@@ -722,27 +816,32 @@ ORDER BY
 --   - COALESCE returns 0 for months with no activity
 --   - Results ordered chronologically
 -- name: GetMonthlyTransferAmountReceiver :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $1::timestamp),
-        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(t.transfer_amount), 0)::int AS total_received_amount
-FROM
-    months m
-LEFT JOIN
-    transfers t ON EXTRACT(MONTH FROM t.transfer_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.transfer_time) = EXTRACT(YEAR FROM m.month)
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $1::timestamp), date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(t.transfer_amount), 0)::int AS total_received_amount
+FROM months m
+    LEFT JOIN transfers t ON EXTRACT(
+        MONTH
+        FROM t.transfer_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.transfer_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.deleted_at IS NULL
 GROUP BY
     m.month
-ORDER BY
-    m.month;
-
+ORDER BY m.month;
 
 -- GetYearlyTransferAmountSender: Retrieves yearly transfer totals for last 5 years
 -- Purpose: Analyze long-term transfer trends and growth
@@ -758,27 +857,32 @@ ORDER BY
 --   - Results ordered chronologically
 --   - Useful for identifying annual growth patterns
 -- name: GetYearlyTransferAmountSender :many
-WITH last_five_years AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transfer_time) AS year,
-        SUM(t.transfer_amount) AS total_sent_amount
-    FROM
-        transfers t
-    WHERE
-        t.deleted_at IS NULL
-        AND EXTRACT(YEAR FROM t.transfer_time) >= $1 - 4
-        AND EXTRACT(YEAR FROM t.transfer_time) <= $1
-    GROUP BY
-        EXTRACT(YEAR FROM t.transfer_time)
-)
-SELECT
-    year,
-    total_sent_amount
-FROM
-    last_five_years
-ORDER BY
-    year;
-
+WITH
+    last_five_years AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ) AS year, SUM(t.transfer_amount) AS total_sent_amount
+        FROM transfers t
+        WHERE
+            t.deleted_at IS NULL
+            AND EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ) >= $1 - 4
+            AND EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ) <= $1
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )
+    )
+SELECT year, total_sent_amount
+FROM last_five_years
+ORDER BY year;
 
 -- GetYearlyTransferAmountReceiver: Retrieves yearly transfer totals for last 5 years
 -- Purpose: Analyze long-term transfer trends and growth
@@ -794,29 +898,32 @@ ORDER BY
 --   - Results ordered chronologically
 --   - Useful for identifying annual growth patterns
 -- name: GetYearlyTransferAmountReceiver :many
-WITH last_five_years AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transfer_time) AS year,
-        SUM(t.transfer_amount) AS total_received_amount
-    FROM
-        transfers t
-    WHERE
-        t.deleted_at IS NULL
-        AND EXTRACT(YEAR FROM t.transfer_time) >= $1 - 4
-        AND EXTRACT(YEAR FROM t.transfer_time) <= $1
-    GROUP BY
-        EXTRACT(YEAR FROM t.transfer_time)
-)
-SELECT
-    year,
-    total_received_amount
-FROM
-    last_five_years
-ORDER BY
-    year;
-
-
-
+WITH
+    last_five_years AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ) AS year, SUM(t.transfer_amount) AS total_received_amount
+        FROM transfers t
+        WHERE
+            t.deleted_at IS NULL
+            AND EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ) >= $1 - 4
+            AND EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ) <= $1
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )
+    )
+SELECT year, total_received_amount
+FROM last_five_years
+ORDER BY year;
 
 -- GetMonthlyBalancesByCardNumber: Retrieves monthly balance history for a specific card
 -- Purpose: Track monthly balance trends for individual card statements
@@ -833,30 +940,36 @@ ORDER BY
 --   - Ensures all months appear with COALESCE default
 --   - Useful for cardholder spending pattern analysis
 -- name: GetMonthlyBalancesByCardNumber :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $1::timestamp),
-        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(s.total_balance), 0)::int AS total_balance
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $1::timestamp), date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(s.total_balance), 0)::int AS total_balance
 FROM
     months m
-LEFT JOIN
-    saldos s ON EXTRACT(MONTH FROM s.created_at) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM s.created_at) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN saldos s ON EXTRACT(
+        MONTH
+        FROM s.created_at
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM s.created_at
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND s.deleted_at IS NULL
-LEFT JOIN
-    cards c ON s.card_number = c.card_number
+    LEFT JOIN cards c ON s.card_number = c.card_number
     AND c.deleted_at IS NULL
     AND c.card_number = $2
 GROUP BY
     m.month
-ORDER BY
-    m.month;
+ORDER BY m.month;
 
 -- GetYearlyBalancesByCardNumber: Retrieves 5-year balance history for a specific card
 -- Purpose: Show annual balance trends for individual cardholders
@@ -872,29 +985,35 @@ ORDER BY
 --   - Only includes active records
 --   - Useful for long-term financial planning
 -- name: GetYearlyBalancesByCardNumber :many
-WITH last_five_years AS (
-    SELECT
-        EXTRACT(YEAR FROM s.created_at) AS year,
-        SUM(s.total_balance) AS total_balance
-    FROM
-        saldos s
-    JOIN
-        cards c ON s.card_number = c.card_number
-    WHERE
-        s.deleted_at IS NULL AND c.deleted_at IS NULL
-        AND EXTRACT(YEAR FROM s.created_at) >= $1 - 4
-        AND EXTRACT(YEAR FROM s.created_at) <= $1
-        AND c.card_number = $2
-    GROUP BY
-        EXTRACT(YEAR FROM s.created_at)
-)
-SELECT
-    year,
-    total_balance
-FROM
-    last_five_years
-ORDER BY
-    year;
+WITH
+    last_five_years AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM s.created_at
+            ) AS year, SUM(s.total_balance) AS total_balance
+        FROM saldos s
+            JOIN cards c ON s.card_number = c.card_number
+        WHERE
+            s.deleted_at IS NULL
+            AND c.deleted_at IS NULL
+            AND EXTRACT(
+                YEAR
+                FROM s.created_at
+            ) >= $1 - 4
+            AND EXTRACT(
+                YEAR
+                FROM s.created_at
+            ) <= $1
+            AND c.card_number = $2
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM s.created_at
+            )
+    )
+SELECT year, total_balance
+FROM last_five_years
+ORDER BY year;
 
 -- GetMonthlyTopupAmountByCardNumber: Retrieves monthly top-up history for a card
 -- Purpose: Analyze monthly top-up patterns for individual cards
@@ -911,30 +1030,36 @@ ORDER BY
 --   - Zero-filled for missing months
 --   - Helps identify top-up habit seasonality
 -- name: GetMonthlyTopupAmountByCardNumber :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $2::timestamp),
-        date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(t.topup_amount), 0)::int AS total_topup_amount
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $2::timestamp), date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(t.topup_amount), 0)::int AS total_topup_amount
 FROM
     months m
-LEFT JOIN
-    topups t ON EXTRACT(MONTH FROM t.topup_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.topup_time) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN topups t ON EXTRACT(
+        MONTH
+        FROM t.topup_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.topup_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.deleted_at IS NULL
-LEFT JOIN
-    cards c ON t.card_number = c.card_number
+    LEFT JOIN cards c ON t.card_number = c.card_number
     AND c.deleted_at IS NULL
     AND t.card_number = $1
 GROUP BY
     m.month
-ORDER BY
-    m.month;
+ORDER BY m.month;
 
 -- GetYearlyTopupAmountByCardNumber: Retrieves 5-year top-up history for a card
 -- Purpose: Track long-term top-up trends for individual cards
@@ -951,31 +1076,35 @@ ORDER BY
 --   - Chronological ordering
 --   - Useful for identifying annual top-up growth/decline
 -- name: GetYearlyTopupAmountByCardNumber :many
-WITH last_five_years AS (
-    SELECT
-        EXTRACT(YEAR FROM t.topup_time) AS year,
-        SUM(t.topup_amount) AS total_topup_amount
-    FROM
-        topups t
-    JOIN
-        cards c ON t.card_number = c.card_number
-    WHERE
-        t.deleted_at IS NULL
-        AND c.deleted_at IS NULL
-        AND t.card_number = $1
-        AND EXTRACT(YEAR FROM t.topup_time) >= $2 - 4
-        AND EXTRACT(YEAR FROM t.topup_time) <= $2
-    GROUP BY
-        EXTRACT(YEAR FROM t.topup_time)
-)
-SELECT
-    year,
-    total_topup_amount
-FROM
-    last_five_years
-ORDER BY
-    year;
-
+WITH
+    last_five_years AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM t.topup_time
+            ) AS year, SUM(t.topup_amount) AS total_topup_amount
+        FROM topups t
+            JOIN cards c ON t.card_number = c.card_number
+        WHERE
+            t.deleted_at IS NULL
+            AND c.deleted_at IS NULL
+            AND t.card_number = $1
+            AND EXTRACT(
+                YEAR
+                FROM t.topup_time
+            ) >= $2 - 4
+            AND EXTRACT(
+                YEAR
+                FROM t.topup_time
+            ) <= $2
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.topup_time
+            )
+    )
+SELECT year, total_topup_amount
+FROM last_five_years
+ORDER BY year;
 
 -- GetMonthlyWithdrawAmountByCardNumber: Retrieves monthly withdraw history for a card
 -- Purpose: Analyze monthly withdraw patterns for individual cards
@@ -992,31 +1121,36 @@ ORDER BY
 --   - Zero-filled for missing months
 --   - Helps identify withdraw habit seasonality
 -- name: GetMonthlyWithdrawAmountByCardNumber :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $2::timestamp),
-        date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(w.withdraw_amount), 0)::int AS total_withdraw_amount
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $2::timestamp), date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(w.withdraw_amount), 0)::int AS total_withdraw_amount
 FROM
     months m
-LEFT JOIN
-    withdraws w ON EXTRACT(MONTH FROM w.withdraw_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM w.withdraw_time) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN withdraws w ON EXTRACT(
+        MONTH
+        FROM w.withdraw_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM w.withdraw_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND w.deleted_at IS NULL
-LEFT JOIN
-    cards c ON w.card_number = c.card_number
+    LEFT JOIN cards c ON w.card_number = c.card_number
     AND c.deleted_at IS NULL
     AND w.card_number = $1
 GROUP BY
     m.month
-ORDER BY
-    m.month;
-
+ORDER BY m.month;
 
 -- GetYearlyWithdrawAmountByCardNumber: Retrieves 5-year withdraw history for a card
 -- Purpose: Track long-term withdraw trends for individual cards
@@ -1033,31 +1167,35 @@ ORDER BY
 --   - Chronological ordering
 --   - Useful for identifying annual withdraw growth/decline
 -- name: GetYearlyWithdrawAmountByCardNumber :many
-WITH last_five_years AS (
-    SELECT
-        EXTRACT(YEAR FROM w.withdraw_time) AS year,
-        SUM(w.withdraw_amount) AS total_withdraw_amount
-    FROM
-        withdraws w
-    JOIN
-        cards c ON w.card_number = c.card_number
-    WHERE
-        w.deleted_at IS NULL
-        AND c.deleted_at IS NULL
-        AND w.card_number = $1
-        AND EXTRACT(YEAR FROM w.withdraw_time) >= $2 - 4
-        AND EXTRACT(YEAR FROM w.withdraw_time) <= $2
-    GROUP BY
-        EXTRACT(YEAR FROM w.withdraw_time)
-)
-SELECT
-    year,
-    total_withdraw_amount
-FROM
-    last_five_years
-ORDER BY
-    year;
-
+WITH
+    last_five_years AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM w.withdraw_time
+            ) AS year, SUM(w.withdraw_amount) AS total_withdraw_amount
+        FROM withdraws w
+            JOIN cards c ON w.card_number = c.card_number
+        WHERE
+            w.deleted_at IS NULL
+            AND c.deleted_at IS NULL
+            AND w.card_number = $1
+            AND EXTRACT(
+                YEAR
+                FROM w.withdraw_time
+            ) >= $2 - 4
+            AND EXTRACT(
+                YEAR
+                FROM w.withdraw_time
+            ) <= $2
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM w.withdraw_time
+            )
+    )
+SELECT year, total_withdraw_amount
+FROM last_five_years
+ORDER BY year;
 
 -- GetMonthlyTransactionAmountByCardNumber: Retrieves monthly transaction history for a card
 -- Purpose: Analyze monthly transaction patterns for individual cards
@@ -1074,32 +1212,38 @@ ORDER BY
 --   - Zero-filled for missing months
 --   - Helps identify transaction habit seasonality
 -- name: GetMonthlyTransactionAmountByCardNumber :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $2::timestamp),
-        date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $2::timestamp), date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
 SELECT
     TO_CHAR(m.month, 'Mon') AS month,
     COALESCE(SUM(t.amount), 0)::int AS total_transaction_amount
 FROM
     months m
-LEFT JOIN
-    transactions t ON EXTRACT(MONTH FROM t.transaction_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.transaction_time) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN transactions t ON EXTRACT(
+        MONTH
+        FROM t.transaction_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.transaction_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.deleted_at IS NULL
-LEFT JOIN
-    cards c ON t.card_number = c.card_number
+    LEFT JOIN cards c ON t.card_number = c.card_number
     AND c.deleted_at IS NULL
     AND t.card_number = $1
 GROUP BY
     m.month
-ORDER BY
-    m.month;
-
-
+ORDER BY m.month;
 
 -- GetYearlyTransactionAmountByCardNumber: Retrieves 5-year transaction history for a card
 -- Purpose: Track long-term transaction trends for individual cards
@@ -1116,31 +1260,35 @@ ORDER BY
 --   - Chronological ordering
 --   - Useful for identifying annual transaction growth/decline
 -- name: GetYearlyTransactionAmountByCardNumber :many
-WITH last_five_years AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transaction_time) AS year,
-        SUM(t.amount) AS total_transaction_amount
-    FROM
-        transactions t
-    JOIN
-        cards c ON t.card_number = c.card_number
-    WHERE
-        t.deleted_at IS NULL
-        AND c.deleted_at IS NULL
-        AND t.card_number = $1
-        AND EXTRACT(YEAR FROM t.transaction_time) >= $2 - 4
-        AND EXTRACT(YEAR FROM t.transaction_time) <= $2
-    GROUP BY
-        EXTRACT(YEAR FROM t.transaction_time)
-)
-SELECT
-    year,
-    total_transaction_amount
-FROM
-    last_five_years
-ORDER BY
-    year;
-
+WITH
+    last_five_years AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            ) AS year, SUM(t.amount) AS total_transaction_amount
+        FROM transactions t
+            JOIN cards c ON t.card_number = c.card_number
+        WHERE
+            t.deleted_at IS NULL
+            AND c.deleted_at IS NULL
+            AND t.card_number = $1
+            AND EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            ) >= $2 - 4
+            AND EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            ) <= $2
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transaction_time
+            )
+    )
+SELECT year, total_transaction_amount
+FROM last_five_years
+ORDER BY year;
 
 -- GetMonthlyTransferAmountBySender: Retrieves monthly transfer history for a card
 -- Purpose: Analyze monthly transfer patterns for individual cards
@@ -1157,27 +1305,34 @@ ORDER BY
 --   - Zero-filled for missing months
 --   - Helps identify transfer habit seasonality
 -- name: GetMonthlyTransferAmountBySender :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $2::timestamp),
-        date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(t.transfer_amount), 0)::int AS total_sent_amount
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $2::timestamp), date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(t.transfer_amount), 0)::int AS total_sent_amount
 FROM
     months m
-LEFT JOIN
-    transfers t ON EXTRACT(MONTH FROM t.transfer_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.transfer_time) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN transfers t ON EXTRACT(
+        MONTH
+        FROM t.transfer_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.transfer_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.deleted_at IS NULL
     AND t.transfer_from = $1
 GROUP BY
     m.month
-ORDER BY
-    m.month;
+ORDER BY m.month;
 
 -- GetMonthlyTransferAmountByReceiver: Retrieves monthly transfer history for a card
 -- Purpose: Analyze monthly transfer patterns for individual cards
@@ -1194,29 +1349,34 @@ ORDER BY
 --   - Zero-filled for missing months
 --   - Helps identify transfer habit seasonality
 -- name: GetMonthlyTransferAmountByReceiver :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $2::timestamp),
-        date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(t.transfer_amount), 0)::int AS total_received_amount
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $2::timestamp), date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(t.transfer_amount), 0)::int AS total_received_amount
 FROM
     months m
-LEFT JOIN
-    transfers t ON EXTRACT(MONTH FROM t.transfer_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.transfer_time) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN transfers t ON EXTRACT(
+        MONTH
+        FROM t.transfer_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.transfer_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.deleted_at IS NULL
     AND t.transfer_to = $1
 GROUP BY
     m.month
-ORDER BY
-    m.month;
-
-
+ORDER BY m.month;
 
 -- GetYearlyTransferAmountBySender: Retrieves 5-year transfer history for a card
 -- Purpose: Track long-term transfer trends for individual cards
@@ -1233,28 +1393,33 @@ ORDER BY
 --   - Chronological ordering
 --   - Useful for identifying annual transfer growth/decline
 -- name: GetYearlyTransferAmountBySender :many
-WITH last_five_years AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transfer_time) AS year,
-        SUM(t.transfer_amount) AS total_sent_amount
-    FROM
-        transfers t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.transfer_from = $1
-        AND EXTRACT(YEAR FROM t.transfer_time) >= $2 - 4
-        AND EXTRACT(YEAR FROM t.transfer_time) <= $2
-    GROUP BY
-        EXTRACT(YEAR FROM t.transfer_time)
-)
-SELECT
-    year,
-    total_sent_amount
-FROM
-    last_five_years
-ORDER BY
-    year;
-
+WITH
+    last_five_years AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ) AS year, SUM(t.transfer_amount) AS total_sent_amount
+        FROM transfers t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.transfer_from = $1
+            AND EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ) >= $2 - 4
+            AND EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ) <= $2
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )
+    )
+SELECT year, total_sent_amount
+FROM last_five_years
+ORDER BY year;
 
 -- GetYearlyTransferAmountByReceiver: Retrieves 5-year transfer history for a card
 -- Purpose: Track long-term transfer trends for individual cards
@@ -1271,28 +1436,33 @@ ORDER BY
 --   - Chronological ordering
 --   - Useful for identifying annual transfer growth/decline
 -- name: GetYearlyTransferAmountByReceiver :many
-WITH last_five_years AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transfer_time) AS year,
-        SUM(t.transfer_amount) AS total_received_amount
-    FROM
-        transfers t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.transfer_to = $1
-        AND EXTRACT(YEAR FROM t.transfer_time) >= $2 - 4
-        AND EXTRACT(YEAR FROM t.transfer_time) <= $2
-    GROUP BY
-        EXTRACT(YEAR FROM t.transfer_time)
-)
-SELECT
-    year,
-    total_received_amount
-FROM
-    last_five_years
-ORDER BY
-    year;
-
+WITH
+    last_five_years AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ) AS year, SUM(t.transfer_amount) AS total_received_amount
+        FROM transfers t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.transfer_to = $1
+            AND EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ) >= $2 - 4
+            AND EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ) <= $2
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )
+    )
+SELECT year, total_received_amount
+FROM last_five_years
+ORDER BY year;
 
 -- CreateCard: Creates a new card record
 -- Purpose: Add a new card to the system for a specific user
@@ -1328,8 +1498,17 @@ VALUES (
         $6,
         current_timestamp,
         current_timestamp
-    ) RETURNING *;
-
+    )
+RETURNING
+    card_id,
+    user_id,
+    card_number,
+    card_type,
+    expire_date,
+    cvv,
+    card_provider,
+    created_at,
+    updated_at;
 
 -- UpdateCard: Updates an existing card's details
 -- Purpose: Modify card attributes for a specific card
@@ -1354,8 +1533,16 @@ SET
 WHERE
     card_id = $1
     AND deleted_at IS NULL
-RETURNING *;
-
+RETURNING
+    card_id,
+    user_id,
+    card_number,
+    card_type,
+    expire_date,
+    cvv,
+    card_provider,
+    created_at,
+    updated_at;
 
 -- TrashCard: Soft-deletes a card by marking deleted_at
 -- Purpose: Temporarily remove a card without deleting it permanently
@@ -1372,8 +1559,17 @@ SET
 WHERE
     card_id = $1
     AND deleted_at IS NULL
-RETURNING *;
-
+RETURNING
+    card_id,
+    user_id,
+    card_number,
+    card_type,
+    expire_date,
+    cvv,
+    card_provider,
+    created_at,
+    updated_at,
+    deleted_at;
 
 -- RestoreCard: Restores a previously trashed card
 -- Purpose: Undo soft-delete of a card
@@ -1390,9 +1586,17 @@ SET
 WHERE
     card_id = $1
     AND deleted_at IS NOT NULL
-RETURNING *;
-
-
+RETURNING
+    card_id,
+    user_id,
+    card_number,
+    card_type,
+    expire_date,
+    cvv,
+    card_provider,
+    created_at,
+    updated_at,
+    deleted_at;
 
 -- DeleteCardPermanently: Removes a trashed card from the database
 -- Purpose: Permanently delete a card that has been soft-deleted
@@ -1403,7 +1607,6 @@ RETURNING *;
 --   - Only deletes cards that are currently trashed
 -- name: DeleteCardPermanently :exec
 DELETE FROM cards WHERE card_id = $1 AND deleted_at IS NOT NULL;
-
 
 -- RestoreAllCards: Restores all trashed cards
 -- Purpose: Bulk-restore all soft-deleted cards
@@ -1418,7 +1621,6 @@ SET
 WHERE
     deleted_at IS NOT NULL;
 
-
 -- DeleteAllPermanentCards: Permanently deletes all trashed cards
 -- Purpose: Bulk-delete all cards that have been soft-deleted
 -- Parameters: None
@@ -1426,6 +1628,4 @@ WHERE
 -- Business Logic:
 --   - Deletes only cards with deleted_at set
 -- name: DeleteAllPermanentCards :exec
-DELETE FROM cards
-WHERE
-    deleted_at IS NOT NULL;
+DELETE FROM cards WHERE deleted_at IS NOT NULL;

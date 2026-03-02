@@ -1,47 +1,55 @@
 package api
 
 import (
+	user_cache "MamangRust/paymentgatewaygrpc/internal/cache/api/user"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api"
+	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
-	"MamangRust/paymentgatewaygrpc/pkg/errors/user_errors"
+	"MamangRust/paymentgatewaygrpc/pkg/errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
+	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type UserHandleApi struct {
-	client  pb.UserServiceClient
-	logger  logger.LoggerInterface
-	mapping apimapper.UserResponseMapper
+type userHandleApi struct {
+	client     pb.UserServiceClient
+	logger     logger.LoggerInterface
+	mapping    apimapper.UserResponseMapper
+	apihandler errors.ApiHandler
+	cache      user_cache.UserMencache
 }
 
-func NewHandlerUser(client pb.UserServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.UserResponseMapper) *UserHandleApi {
-	userHandler := &UserHandleApi{
-		client:  client,
-		logger:  logger,
-		mapping: mapping,
+func NewHandlerUser(client pb.UserServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.UserResponseMapper, apiHandler errors.ApiHandler, cache user_cache.UserMencache) *userHandleApi {
+	userHandler := &userHandleApi{
+		client:     client,
+		logger:     logger,
+		mapping:    mapping,
+		apihandler: apiHandler,
+		cache:      cache,
 	}
 	routerUser := router.Group("/api/user")
 
-	routerUser.GET("", userHandler.FindAllUser)
-	routerUser.GET("/:id", userHandler.FindById)
-	routerUser.GET("/active", userHandler.FindByActive)
-	routerUser.GET("/trashed", userHandler.FindByTrashed)
+	routerUser.GET("", apiHandler.Handle("find-all-users", userHandler.FindAllUser))
+	routerUser.GET("/:id", apiHandler.Handle("find-user-by-id", userHandler.FindById))
+	routerUser.GET("/active", apiHandler.Handle("find-active-users", userHandler.FindByActive))
+	routerUser.GET("/trashed", apiHandler.Handle("find-trashed-users", userHandler.FindByTrashed))
 
-	routerUser.POST("/create", userHandler.Create)
-	routerUser.POST("/update/:id", userHandler.Update)
+	routerUser.POST("/create", apiHandler.Handle("create-user", userHandler.Create))
+	routerUser.POST("/update/:id", apiHandler.Handle("update-user", userHandler.Update))
 
-	routerUser.POST("/trashed/:id", userHandler.TrashedUser)
-	routerUser.POST("/restore/:id", userHandler.RestoreUser)
-	routerUser.DELETE("/permanent/:id", userHandler.DeleteUserPermanent)
+	routerUser.POST("/trashed/:id", apiHandler.Handle("trash-user", userHandler.TrashedUser))
+	routerUser.POST("/restore/:id", apiHandler.Handle("restore-user", userHandler.RestoreUser))
+	routerUser.DELETE("/permanent/:id", apiHandler.Handle("delete-user-permanent", userHandler.DeleteUserPermanent))
 
-	routerUser.POST("/restore/all", userHandler.RestoreAllUser)
-	routerUser.POST("/permanent/all", userHandler.DeleteAllUserPermanent)
+	routerUser.POST("/restore/all", apiHandler.Handle("restore-all-users", userHandler.RestoreAllUser))
+	routerUser.POST("/permanent/all", apiHandler.Handle("delete-all-users-permanent", userHandler.DeleteAllUserPermanent))
 
 	return userHandler
 }
@@ -58,7 +66,7 @@ func NewHandlerUser(client pb.UserServiceClient, router *echo.Echo, logger logge
 // @Success 200 {object} response.ApiResponsePaginationUser "List of users"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve user data"
 // @Router /api/user [get]
-func (h *UserHandleApi) FindAllUser(c echo.Context) error {
+func (h *userHandleApi) FindAllUser(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -73,22 +81,33 @@ func (h *UserHandleApi) FindAllUser(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllUserRequest{
+	req := &requests.FindAllUsers{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedUsersCache(ctx, req)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	grpcReq := &pb.FindAllUserRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.client.FindAll(ctx, req)
-
+	res, err := h.client.FindAll(ctx, grpcReq)
 	if err != nil {
-		h.logger.Debug("Failed to retrieve user data", zap.Error(err))
-		return user_errors.ErrApiFailedFindAll(c)
+		return h.handleGrpcError(err, "FindAllUser")
 	}
 
-	so := h.mapping.ToApiResponsePaginationUser(res)
+	apiResponse := h.mapping.ToApiResponsePaginationUser(res)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedUsersCache(ctx, req, apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Security Bearer
@@ -102,30 +121,33 @@ func (h *UserHandleApi) FindAllUser(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid user ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve user data"
 // @Router /api/user/{id} [get]
-func (h *UserHandleApi) FindById(c echo.Context) error {
+func (h *userHandleApi) FindById(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
-
 	if err != nil {
-		h.logger.Debug("Invalid user ID", zap.Error(err))
-		return user_errors.ErrApiUserInvalidId(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetCachedUserCache(ctx, id)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	req := &pb.FindByIdUserRequest{
 		Id: int32(id),
 	}
 
 	user, err := h.client.FindById(ctx, req)
-
 	if err != nil {
-		h.logger.Debug("Failed to retrieve user data", zap.Error(err))
-		return user_errors.ErrApiUserNotFound(c)
+		return h.handleGrpcError(err, "FindById")
 	}
 
-	so := h.mapping.ToApiResponseUser(user)
+	apiResponse := h.mapping.ToApiResponseUser(user)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedUserCache(ctx, apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Security Bearer
@@ -137,10 +159,10 @@ func (h *UserHandleApi) FindById(c echo.Context) error {
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Number of items per page" default(10)
 // @Param search query string false "Search query"
-// @Success 200 {object} response.ApiResponsesUser "List of active users"
+// @Success 200 {object} response.ApiResponsePaginationUserDeleteAt "List of active users"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve user data"
 // @Router /api/user/active [get]
-func (h *UserHandleApi) FindByActive(c echo.Context) error {
+func (h *userHandleApi) FindByActive(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -155,22 +177,33 @@ func (h *UserHandleApi) FindByActive(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllUserRequest{
+	req := &requests.FindAllUsers{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedUserActiveCache(ctx, req)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	grpcReq := &pb.FindAllUserRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.client.FindByActive(ctx, req)
-
+	res, err := h.client.FindByActive(ctx, grpcReq)
 	if err != nil {
-		h.logger.Debug("Failed to retrieve user data", zap.Error(err))
-		return user_errors.ErrApiFailedFindActive(c)
+		return h.handleGrpcError(err, "FindByActive")
 	}
 
-	so := h.mapping.ToApiResponsePaginationUserDeleteAt(res)
+	apiResponse := h.mapping.ToApiResponsePaginationUserDeleteAt(res)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedUserActiveCache(ctx, req, apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Security Bearer
@@ -183,10 +216,10 @@ func (h *UserHandleApi) FindByActive(c echo.Context) error {
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Number of items per page" default(10)
 // @Param search query string false "Search query"
-// @Success 200 {object} response.ApiResponsesUser "List of trashed user data"
+// @Success 200 {object} response.ApiResponsePaginationUserDeleteAt "List of trashed user data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve user data"
 // @Router /api/user/trashed [get]
-func (h *UserHandleApi) FindByTrashed(c echo.Context) error {
+func (h *userHandleApi) FindByTrashed(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -201,22 +234,33 @@ func (h *UserHandleApi) FindByTrashed(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllUserRequest{
+	req := &requests.FindAllUsers{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedUserTrashedCache(ctx, req)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	grpcReq := &pb.FindAllUserRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.client.FindByTrashed(ctx, req)
-
+	res, err := h.client.FindByTrashed(ctx, grpcReq)
 	if err != nil {
-		h.logger.Debug("Failed to retrieve user data", zap.Error(err))
-		return user_errors.ErrApiFailedFindTrashed(c)
+		return h.handleGrpcError(err, "FindByTrashed")
 	}
 
-	so := h.mapping.ToApiResponsePaginationUserDeleteAt(res)
+	apiResponse := h.mapping.ToApiResponsePaginationUserDeleteAt(res)
 
-	return c.JSON(http.StatusOK, so)
+	h.cache.SetCachedUserTrashedCache(ctx, req, apiResponse)
+
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Security Bearer
@@ -231,17 +275,16 @@ func (h *UserHandleApi) FindByTrashed(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to create user"
 // @Router /api/user/create [post]
-func (h *UserHandleApi) Create(c echo.Context) error {
+func (h *userHandleApi) Create(c echo.Context) error {
 	var body requests.CreateUserRequest
 
 	if err := c.Bind(&body); err != nil {
-		h.logger.Debug("Invalid request body", zap.Error(err))
-		return user_errors.ErrApiBindCreateUser(c)
+		return errors.NewBadRequestError("Invalid request format").WithInternal(err)
 	}
 
 	if err := body.Validate(); err != nil {
-		h.logger.Debug("Validation Error", zap.Error(err))
-		return user_errors.ErrApiValidateCreateUser(c)
+		validations := h.parseValidationErrors(err)
+		return errors.NewValidationError(validations)
 	}
 
 	ctx := c.Request().Context()
@@ -257,11 +300,12 @@ func (h *UserHandleApi) Create(c echo.Context) error {
 	res, err := h.client.Create(ctx, req)
 
 	if err != nil {
-		h.logger.Debug("Failed to create user", zap.Error(err))
-		return user_errors.ErrApiFailedCreateUser(c)
+		return h.handleGrpcError(err, "Create")
 	}
 
 	so := h.mapping.ToApiResponseUser(res)
+
+	h.cache.SetCachedUserCache(ctx, so)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -273,31 +317,29 @@ func (h *UserHandleApi) Create(c echo.Context) error {
 // @Description Update an existing user record with the provided details
 // @Accept json
 // @Produce json
-// @Param id path int true "User ID"
 // @Param UpdateUserRequest body requests.UpdateUserRequest true "Update user request"
 // @Success 200 {object} response.ApiResponseUser "Successfully updated user"
 // @Failure 400 {object} response.ErrorResponse "Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to update user"
 // @Router /api/user/update/{id} [post]
-func (h *UserHandleApi) Update(c echo.Context) error {
+func (h *userHandleApi) Update(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
 
-	if err != nil || idInt <= 0 {
-		return user_errors.ErrApiUserInvalidId(c)
+	if err != nil {
+		return errors.NewBadRequestError("id is required")
 	}
 
 	var body requests.UpdateUserRequest
 
 	if err := c.Bind(&body); err != nil {
-		h.logger.Debug("Invalid request body", zap.Error(err))
-		return user_errors.ErrApiBindUpdateUser(c)
+		return errors.NewBadRequestError("Invalid request format").WithInternal(err)
 	}
 
 	if err := body.Validate(); err != nil {
-		h.logger.Debug("Validation Error", zap.Error(err))
-		return user_errors.ErrApiValidateUpdateUser(c)
+		validations := h.parseValidationErrors(err)
+		return errors.NewValidationError(validations)
 	}
 
 	ctx := c.Request().Context()
@@ -314,11 +356,13 @@ func (h *UserHandleApi) Update(c echo.Context) error {
 	res, err := h.client.Update(ctx, req)
 
 	if err != nil {
-		h.logger.Debug("Failed to update user", zap.Error(err))
-		return user_errors.ErrApiFailedUpdateUser(c)
+		return h.handleGrpcError(err, "Update")
 	}
 
 	so := h.mapping.ToApiResponseUser(res)
+
+	h.cache.DeleteUserCache(ctx, idInt)
+	h.cache.SetCachedUserCache(ctx, so)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -331,16 +375,15 @@ func (h *UserHandleApi) Update(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "User ID"
-// @Success 200 {object} response.ApiResponseUser "Successfully retrieved trashed user"
+// @Success 200 {object} response.ApiResponseUserDeleteAt "Successfully retrieved trashed user"
 // @Failure 400 {object} response.ErrorResponse "Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve trashed user"
-// @Router /api/user/trashed/{id} [post]
-func (h *UserHandleApi) TrashedUser(c echo.Context) error {
+// @Router /api/user/trashed/{id} [get]
+func (h *userHandleApi) TrashedUser(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		h.logger.Debug("Invalid user ID", zap.Error(err))
-		return user_errors.ErrApiUserInvalidId(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -352,11 +395,12 @@ func (h *UserHandleApi) TrashedUser(c echo.Context) error {
 	user, err := h.client.TrashedUser(ctx, req)
 
 	if err != nil {
-		h.logger.Debug("Failed to trashed user", zap.Error(err))
-		return user_errors.ErrApiFailedTrashedUser(c)
+		return h.handleGrpcError(err, "TrashedUser")
 	}
 
 	so := h.mapping.ToApiResponseUserDeleteAt(user)
+
+	h.cache.DeleteUserCache(ctx, id)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -369,16 +413,15 @@ func (h *UserHandleApi) TrashedUser(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "User ID"
-// @Success 200 {object} response.ApiResponseUser "Successfully restored user"
+// @Success 200 {object} response.ApiResponseUserDeleteAt "Successfully restored user"
 // @Failure 400 {object} response.ErrorResponse "Invalid user ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore user"
 // @Router /api/user/restore/{id} [post]
-func (h *UserHandleApi) RestoreUser(c echo.Context) error {
+func (h *userHandleApi) RestoreUser(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		h.logger.Debug("Invalid user ID", zap.Error(err))
-		return user_errors.ErrApiUserInvalidId(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -390,11 +433,12 @@ func (h *UserHandleApi) RestoreUser(c echo.Context) error {
 	user, err := h.client.RestoreUser(ctx, req)
 
 	if err != nil {
-		h.logger.Debug("Failed to restore user", zap.Error(err))
-		return user_errors.ErrApiFailedRestoreUser(c)
+		return h.handleGrpcError(err, "Restoreuser")
 	}
 
 	so := h.mapping.ToApiResponseUserDeleteAt(user)
+
+	h.cache.DeleteUserCache(ctx, id)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -411,12 +455,11 @@ func (h *UserHandleApi) RestoreUser(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete user:"
 // @Router /api/user/delete/{id} [delete]
-func (h *UserHandleApi) DeleteUserPermanent(c echo.Context) error {
+func (h *userHandleApi) DeleteUserPermanent(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		h.logger.Debug("Invalid user ID", zap.Error(err))
-		return user_errors.ErrApiUserInvalidId(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -428,11 +471,12 @@ func (h *UserHandleApi) DeleteUserPermanent(c echo.Context) error {
 	user, err := h.client.DeleteUserPermanent(ctx, req)
 
 	if err != nil {
-		h.logger.Debug("Failed to delete user", zap.Error(err))
-		return user_errors.ErrApiFailedDeletePermanent(c)
+		return h.handleGrpcError(err, "DeleteuserPermanent")
 	}
 
 	so := h.mapping.ToApiResponseUserDelete(user)
+
+	h.cache.DeleteUserCache(ctx, id)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -449,19 +493,18 @@ func (h *UserHandleApi) DeleteUserPermanent(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid user ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore user"
 // @Router /api/user/restore/all [post]
-func (h *UserHandleApi) RestoreAllUser(c echo.Context) error {
+func (h *userHandleApi) RestoreAllUser(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.client.RestoreAllUser(ctx, &emptypb.Empty{})
 
 	if err != nil {
-		h.logger.Error("Failed to restore all user", zap.Error(err))
-		return user_errors.ErrApiFailedRestoreAll(c)
+		return h.handleGrpcError(err, "RestoreAllUser")
 	}
 
-	h.logger.Debug("Successfully restored all user")
-
 	so := h.mapping.ToApiResponseUserAll(res)
+
+	h.logger.Debug("Successfully restored all user")
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -478,20 +521,96 @@ func (h *UserHandleApi) RestoreAllUser(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete user:"
 // @Router /api/user/delete/all [post]
-func (h *UserHandleApi) DeleteAllUserPermanent(c echo.Context) error {
+func (h *userHandleApi) DeleteAllUserPermanent(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.client.DeleteAllUserPermanent(ctx, &emptypb.Empty{})
 
 	if err != nil {
-		h.logger.Error("Failed to permanently delete all user", zap.Error(err))
-
-		return user_errors.ErrApiFailedDeleteAll(c)
+		return h.handleGrpcError(err, "DeleteAllUserPermanent")
 	}
-
-	h.logger.Debug("Successfully deleted all user permanently")
 
 	so := h.mapping.ToApiResponseUserAll(res)
 
+	h.logger.Debug("Successfully deleted all user permanently")
+
 	return c.JSON(http.StatusOK, so)
+}
+
+func (h *userHandleApi) handleGrpcError(err error, operation string) *errors.AppError {
+	st, ok := status.FromError(err)
+	if !ok {
+		return errors.NewInternalError(err).WithMessage("Failed to " + operation)
+	}
+
+	switch st.Code() {
+	case codes.NotFound:
+		return errors.NewNotFoundError("User").WithInternal(err)
+
+	case codes.AlreadyExists:
+		return errors.NewConflictError("User already exists").WithInternal(err)
+
+	case codes.InvalidArgument:
+		return errors.NewBadRequestError(st.Message()).WithInternal(err)
+
+	case codes.PermissionDenied:
+		return errors.ErrForbidden.WithInternal(err)
+
+	case codes.Unauthenticated:
+		return errors.ErrUnauthorized.WithInternal(err)
+
+	case codes.ResourceExhausted:
+		return errors.ErrTooManyRequests.WithInternal(err)
+
+	case codes.Unavailable:
+		return errors.NewServiceUnavailableError("User service").WithInternal(err)
+
+	case codes.DeadlineExceeded:
+		return errors.ErrTimeout.WithInternal(err)
+
+	default:
+		return errors.NewInternalError(err).WithMessage("Failed to " + operation)
+	}
+}
+
+func (h *userHandleApi) parseValidationErrors(err error) []errors.ValidationError {
+	var validationErrs []errors.ValidationError
+
+	if ve, ok := err.(validator.ValidationErrors); ok {
+		for _, fe := range ve {
+			validationErrs = append(validationErrs, errors.ValidationError{
+				Field:   fe.Field(),
+				Message: h.getValidationMessage(fe),
+			})
+		}
+		return validationErrs
+	}
+
+	return []errors.ValidationError{
+		{
+			Field:   "general",
+			Message: err.Error(),
+		},
+	}
+}
+
+func (h *userHandleApi) getValidationMessage(fe validator.FieldError) string {
+	switch fe.Tag() {
+	case "required":
+		return "This field is required"
+	case "email":
+		return "Invalid email format"
+	case "min":
+		return fmt.Sprintf("Must be at least %s", fe.Param())
+	case "max":
+		return fmt.Sprintf("Must be at most %s", fe.Param())
+	case "gte":
+		return fmt.Sprintf("Must be greater than or equal to %s", fe.Param())
+	case "lte":
+		return fmt.Sprintf("Must be less than or equal to %s", fe.Param())
+	case "oneof":
+		return fmt.Sprintf("Must be one of: %s", fe.Param())
+	default:
+		return fmt.Sprintf("Validation failed on '%s' tag", fe.Tag())
+	}
 }

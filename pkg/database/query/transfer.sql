@@ -14,16 +14,28 @@
 --   - Useful for transfer monitoring and auditing
 -- name: GetTransfers :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
-FROM
-    transfers
+    transfer_id,
+    transfer_no,
+    transfer_from,
+    transfer_to,
+    transfer_amount,
+    transfer_time,
+    status,
+    created_at,
+    updated_at,
+    COUNT(*) OVER () AS total_count
+FROM transfers
 WHERE
     deleted_at IS NULL
-    AND ($1::TEXT IS NULL OR transfer_from ILIKE '%' || $1 || '%' OR transfer_to ILIKE '%' || $1 || '%')
-ORDER BY
-    transfer_time DESC
-LIMIT $2 OFFSET $3;
+    AND (
+        $1::TEXT IS NULL
+        OR transfer_from ILIKE '%' || $1 || '%'
+        OR transfer_to ILIKE '%' || $1 || '%'
+    )
+ORDER BY transfer_time DESC
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetTransferByID: Retrieves a single transfer by its ID
 -- Purpose: Get detailed information about a specific transfer
@@ -35,7 +47,16 @@ LIMIT $2 OFFSET $3;
 --   - Only returns active transfers (deleted_at IS NULL)
 --   - Useful for transfer verification and detailed viewing
 -- name: GetTransferByID :one
-SELECT *
+SELECT
+    transfer_id,
+    transfer_no,
+    transfer_from,
+    transfer_to,
+    transfer_amount,
+    transfer_time,
+    status,
+    created_at,
+    updated_at
 FROM transfers
 WHERE
     transfer_id = $1
@@ -57,17 +78,29 @@ WHERE
 --   - Used in transfer management interfaces
 -- name: GetActiveTransfers :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
-FROM
-    transfers
+    transfer_id,
+    transfer_no,
+    transfer_from,
+    transfer_to,
+    transfer_amount,
+    transfer_time,
+    status,
+    created_at,
+    updated_at,
+    deleted_at,
+    COUNT(*) OVER () AS total_count
+FROM transfers
 WHERE
     deleted_at IS NULL
-    AND ($1::TEXT IS NULL OR transfer_from ILIKE '%' || $1 || '%' OR transfer_to ILIKE '%' || $1 || '%')
-ORDER BY
-    transfer_time DESC
-LIMIT $2 OFFSET $3;
-
+    AND (
+        $1::TEXT IS NULL
+        OR transfer_from ILIKE '%' || $1 || '%'
+        OR transfer_to ILIKE '%' || $1 || '%'
+    )
+ORDER BY transfer_time DESC
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetTrashedTransfers: Retrieves paginated soft-deleted transfers
 -- Purpose: List all deleted transfers for recovery or audit purposes
@@ -84,19 +117,29 @@ LIMIT $2 OFFSET $3;
 --   - Used in admin interfaces for transfer recovery
 -- name: GetTrashedTransfers :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
-FROM
-    transfers
+    transfer_id,
+    transfer_no,
+    transfer_from,
+    transfer_to,
+    transfer_amount,
+    transfer_time,
+    status,
+    created_at,
+    updated_at,
+    deleted_at,
+    COUNT(*) OVER () AS total_count
+FROM transfers
 WHERE
     deleted_at IS NOT NULL
-    AND ($1::TEXT IS NULL OR transfer_from ILIKE '%' || $1 || '%' OR transfer_to ILIKE '%' || $1 || '%')
-ORDER BY
-    transfer_time DESC
-LIMIT $2 OFFSET $3;
-
-
-
+    AND (
+        $1::TEXT IS NULL
+        OR transfer_from ILIKE '%' || $1 || '%'
+        OR transfer_to ILIKE '%' || $1 || '%'
+    )
+ORDER BY transfer_time DESC
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetTransfersByCardNumber:  Retrieves all transfers where the given card number is either the sender or the receiver
 -- Purpose:
@@ -109,7 +152,16 @@ LIMIT $2 OFFSET $3;
 --   - Excludes soft-deleted records (deleted_at IS NULL)
 --   - Sorted by most recent transfer first (DESC)
 -- name: GetTransfersByCardNumber :many
-SELECT *
+SELECT
+    transfer_id,
+    transfer_no,
+    transfer_from,
+    transfer_to,
+    transfer_amount,
+    transfer_time,
+    status,
+    created_at,
+    updated_at
 FROM transfers
 WHERE
     deleted_at IS NULL
@@ -118,7 +170,6 @@ WHERE
         OR transfer_to = $1
     )
 ORDER BY transfer_time DESC;
-
 
 -- GetTransfersBySourceCard: Retrieves all transfers where the specified card is the source (transfer_from)
 -- Purpose:
@@ -131,14 +182,21 @@ ORDER BY transfer_time DESC;
 --   - Excludes soft-deleted records (deleted_at IS NULL)
 --   - Sorted by most recent transfer first (DESC)
 -- name: GetTransfersBySourceCard :many
-SELECT *
+SELECT
+    transfer_id,
+    transfer_no,
+    transfer_from,
+    transfer_to,
+    transfer_amount,
+    transfer_time,
+    status,
+    created_at,
+    updated_at
 FROM transfers
 WHERE
     deleted_at IS NULL
     AND transfer_from = $1
 ORDER BY transfer_time DESC;
-
-
 
 -- GetTransfersByDestinationCard: Retrieves all transfers where the specified card is the destination (transfer_to)
 -- Purpose:
@@ -151,13 +209,21 @@ ORDER BY transfer_time DESC;
 --   - Excludes soft-deleted records (deleted_at IS NULL)
 --   - Sorted by most recent transfer first (DESC)
 -- name: GetTransfersByDestinationCard :many
-SELECT *
+SELECT
+    transfer_id,
+    transfer_no,
+    transfer_from,
+    transfer_to,
+    transfer_amount,
+    transfer_time,
+    status,
+    created_at,
+    updated_at
 FROM transfers
 WHERE
     deleted_at IS NULL
     AND transfer_to = $1
 ORDER BY transfer_time DESC;
-
 
 -- GetTrashedTransferByID: Retrieves a single soft-deleted transfer by its ID
 -- Purpose:
@@ -174,8 +240,6 @@ FROM transfers
 WHERE
     transfer_id = $1
     AND deleted_at IS NOT NULL;
-
-
 
 -- GetMonthTransferStatusSuccess: Retrieves monthly success metrics for fund transfers
 -- Purpose: Analyze successful transfer trends across comparison periods
@@ -197,67 +261,103 @@ WHERE
 --   - Orders by year and month (newest first)
 --   - Useful for identifying seasonal transfer patterns and cash flow analysis
 -- name: GetMonthTransferStatusSuccess :many
-WITH monthly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transfer_time)::integer AS year,
-        EXTRACT(MONTH FROM t.transfer_time)::integer AS month,
-        COUNT(*) AS total_success,
-        COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
-    FROM
-        transfers t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'success'
-        AND (
-            (t.transfer_time >= $1::timestamp AND t.transfer_time <= $2::timestamp)
-            OR (t.transfer_time >= $3::timestamp AND t.transfer_time <= $4::timestamp)
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transfer_time),
-        EXTRACT(MONTH FROM t.transfer_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-        total_success,
-        total_amount
-    FROM
-        monthly_data
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $1::timestamp)::text AS year,
-        TO_CHAR($1::timestamp, 'Mon') AS month,
-        0 AS total_success,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    monthly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )::integer AS year,
+            EXTRACT(
+                MONTH
+                FROM t.transfer_time
+            )::integer AS month,
+            COUNT(*) AS total_success,
+            COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
+        FROM transfers t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'success'
+            AND (
+                (
+                    t.transfer_time >= $1::timestamp
+                    AND t.transfer_time <= $2::timestamp
+                )
+                OR (
+                    t.transfer_time >= $3::timestamp
+                    AND t.transfer_time <= $4::timestamp
+                )
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ),
+            EXTRACT(
+                MONTH
+                FROM t.transfer_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            TO_CHAR(
+                TO_DATE(month::text, 'MM'),
+                'Mon'
+            ) AS month,
+            total_success,
+            total_amount
         FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $1::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $1::timestamp)::integer
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $1::timestamp
+            )::text AS year,
+            TO_CHAR($1::timestamp, 'Mon') AS month,
+            0 AS total_success,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $1::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $1::timestamp
+                    )::integer
+            )
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $3::timestamp
+            )::text AS year,
+            TO_CHAR($3::timestamp, 'Mon') AS month,
+            0 AS total_success,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $3::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $3::timestamp
+                    )::integer
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
-        TO_CHAR($3::timestamp, 'Mon') AS month,
-        0 AS total_success,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC,
-    TO_DATE(month, 'Mon') DESC;
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC, TO_DATE(month, 'Mon') DESC;
 
 -- GetYearlyTransferStatusSuccess: Retrieves yearly success metrics for fund transfers
 -- Purpose: Compare annual successful transfer performance year-over-year
@@ -275,59 +375,68 @@ ORDER BY
 --   - Useful for year-over-year growth analysis and financial reporting
 --   - Helps identify annual transfer volume and money movement trends
 -- name: GetYearlyTransferStatusSuccess :many
-WITH yearly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transfer_time)::integer AS year,
-        COUNT(*) AS total_success,
-        COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
-    FROM
-        transfers t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'success'
-        AND (
-            EXTRACT(YEAR FROM t.transfer_time) = $1::integer
-            OR EXTRACT(YEAR FROM t.transfer_time) = $1::integer - 1
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transfer_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        total_success::integer,
-        total_amount::integer
-    FROM
-        yearly_data
-
-    UNION ALL
-
-    SELECT
-        $1::text AS year,
-        0::integer AS total_success,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    yearly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )::integer AS year,
+            COUNT(*) AS total_success,
+            COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
+        FROM transfers t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'success'
+            AND (
+                EXTRACT(
+                    YEAR
+                    FROM t.transfer_time
+                ) = $1::integer
+                OR EXTRACT(
+                    YEAR
+                    FROM t.transfer_time
+                ) = $1::integer - 1
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            total_success::integer,
+            total_amount::integer
         FROM yearly_data
-        WHERE year = $1::integer
+        UNION ALL
+        SELECT
+            $1::text AS year,
+            0::integer AS total_success,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer
+            )
+        UNION ALL
+        SELECT ($1::integer - 1)::text AS year,
+            0::integer AS total_success,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer - 1
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        ($1::integer - 1)::text AS year,
-        0::integer AS total_success,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM yearly_data
-        WHERE year = $1::integer - 1
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC;
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC;
 
 -- GetMonthTransferStatusFailed: Retrieves monthly failed metrics for fund transfers
 -- Purpose: Analyze failedful transfer trends across comparison periods
@@ -349,67 +458,103 @@ ORDER BY
 --   - Orders by year and month (newest first)
 --   - Useful for identifying seasonal transfer patterns and cash flow analysis
 -- name: GetMonthTransferStatusFailed :many
-WITH monthly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transfer_time)::integer AS year,
-        EXTRACT(MONTH FROM t.transfer_time)::integer AS month,
-        COUNT(*) AS total_failed,
-        COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
-    FROM
-        transfers t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'failed'
-        AND (
-            (t.transfer_time >= $1::timestamp AND t.transfer_time <= $2::timestamp)
-            OR (t.transfer_time >= $3::timestamp AND t.transfer_time <= $4::timestamp)
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transfer_time),
-        EXTRACT(MONTH FROM t.transfer_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-        total_failed,
-        total_amount
-    FROM
-        monthly_data
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $1::timestamp)::text AS year,
-        TO_CHAR($1::timestamp, 'Mon') AS month,
-        0 AS total_failed,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    monthly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )::integer AS year,
+            EXTRACT(
+                MONTH
+                FROM t.transfer_time
+            )::integer AS month,
+            COUNT(*) AS total_failed,
+            COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
+        FROM transfers t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'failed'
+            AND (
+                (
+                    t.transfer_time >= $1::timestamp
+                    AND t.transfer_time <= $2::timestamp
+                )
+                OR (
+                    t.transfer_time >= $3::timestamp
+                    AND t.transfer_time <= $4::timestamp
+                )
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ),
+            EXTRACT(
+                MONTH
+                FROM t.transfer_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            TO_CHAR(
+                TO_DATE(month::text, 'MM'),
+                'Mon'
+            ) AS month,
+            total_failed,
+            total_amount
         FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $1::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $1::timestamp)::integer
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $1::timestamp
+            )::text AS year,
+            TO_CHAR($1::timestamp, 'Mon') AS month,
+            0 AS total_failed,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $1::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $1::timestamp
+                    )::integer
+            )
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $3::timestamp
+            )::text AS year,
+            TO_CHAR($3::timestamp, 'Mon') AS month,
+            0 AS total_failed,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $3::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $3::timestamp
+                    )::integer
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
-        TO_CHAR($3::timestamp, 'Mon') AS month,
-        0 AS total_failed,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC,
-    TO_DATE(month, 'Mon') DESC;
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC, TO_DATE(month, 'Mon') DESC;
 
 -- GetYearlyTransferStatusFailed: Retrieves yearly failed metrics for fund transfers
 -- Purpose: Compare annual failedful transfer performance year-over-year
@@ -427,59 +572,68 @@ ORDER BY
 --   - Useful for year-over-year growth analysis and financial reporting
 --   - Helps identify annual transfer volume and money movement trends
 -- name: GetYearlyTransferStatusFailed :many
-WITH yearly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transfer_time)::integer AS year,
-        COUNT(*) AS total_failed,
-        COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
-    FROM
-        transfers t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'failed'
-        AND (
-            EXTRACT(YEAR FROM t.transfer_time) = $1::integer
-            OR EXTRACT(YEAR FROM t.transfer_time) = $1::integer - 1
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transfer_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        total_failed::integer,
-        total_amount::integer
-    FROM
-        yearly_data
-
-    UNION ALL
-
-    SELECT
-        $1::text AS year,
-        0::integer AS total_failed,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    yearly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )::integer AS year,
+            COUNT(*) AS total_failed,
+            COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
+        FROM transfers t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'failed'
+            AND (
+                EXTRACT(
+                    YEAR
+                    FROM t.transfer_time
+                ) = $1::integer
+                OR EXTRACT(
+                    YEAR
+                    FROM t.transfer_time
+                ) = $1::integer - 1
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            total_failed::integer,
+            total_amount::integer
         FROM yearly_data
-        WHERE year = $1::integer
+        UNION ALL
+        SELECT
+            $1::text AS year,
+            0::integer AS total_failed,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer
+            )
+        UNION ALL
+        SELECT ($1::integer - 1)::text AS year,
+            0::integer AS total_failed,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer - 1
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        ($1::integer - 1)::text AS year,
-        0::integer AS total_failed,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM yearly_data
-        WHERE year = $1::integer - 1
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC;
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC;
 
 -- GetMonthTransferStatusSuccessCardNumber: Retrieves monthly success metrics for fund transfers
 -- Purpose: Analyze successful transfer trends across comparison periods
@@ -502,67 +656,107 @@ ORDER BY
 --   - Orders by year and month (newest first)
 --   - Useful for identifying seasonal transfer patterns and cash flow analysis
 -- name: GetMonthTransferStatusSuccessCardNumber :many
-WITH monthly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transfer_time)::integer AS year,
-        EXTRACT(MONTH FROM t.transfer_time)::integer AS month,
-        COUNT(*) AS total_success,
-        COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
-    FROM
-        transfers t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'success'
-        AND (t.transfer_from = $1 OR t.transfer_to = $1)
-        AND (
-            (t.transfer_time >= $2::timestamp AND t.transfer_time <= $3::timestamp)
-            OR (t.transfer_time >= $4::timestamp AND t.transfer_time <= $5::timestamp)
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transfer_time),
-        EXTRACT(MONTH FROM t.transfer_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-        total_success,
-        total_amount
-    FROM
-        monthly_data
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $1::timestamp)::text AS year,
-        TO_CHAR($1::timestamp, 'Mon') AS month,
-        0 AS total_success,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    monthly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )::integer AS year,
+            EXTRACT(
+                MONTH
+                FROM t.transfer_time
+            )::integer AS month,
+            COUNT(*) AS total_success,
+            COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
+        FROM transfers t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'success'
+            AND (
+                t.transfer_from = $1
+                OR t.transfer_to = $1
+            )
+            AND (
+                (
+                    t.transfer_time >= $2::timestamp
+                    AND t.transfer_time <= $3::timestamp
+                )
+                OR (
+                    t.transfer_time >= $4::timestamp
+                    AND t.transfer_time <= $5::timestamp
+                )
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ),
+            EXTRACT(
+                MONTH
+                FROM t.transfer_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            TO_CHAR(
+                TO_DATE(month::text, 'MM'),
+                'Mon'
+            ) AS month,
+            total_success,
+            total_amount
         FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $1::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $1::timestamp)::integer
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $1::timestamp
+            )::text AS year,
+            TO_CHAR($1::timestamp, 'Mon') AS month,
+            0 AS total_success,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $1::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $1::timestamp
+                    )::integer
+            )
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $3::timestamp
+            )::text AS year,
+            TO_CHAR($3::timestamp, 'Mon') AS month,
+            0 AS total_success,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $3::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $3::timestamp
+                    )::integer
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
-        TO_CHAR($3::timestamp, 'Mon') AS month,
-        0 AS total_success,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC,
-    TO_DATE(month, 'Mon') DESC;
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC, TO_DATE(month, 'Mon') DESC;
 
 -- GetYearlyTransferStatusSuccessCardNumber: Retrieves yearly success metrics for fund transfers
 -- Purpose: Compare annual successful transfer performance year-over-year
@@ -581,59 +775,72 @@ ORDER BY
 --   - Useful for year-over-year growth analysis and financial reporting
 --   - Helps identify annual transfer volume and money movement trends
 -- name: GetYearlyTransferStatusSuccessCardNumber :many
-WITH yearly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transfer_time)::integer AS year,
-        COUNT(*) AS total_success,
-        COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
-    FROM
-        transfers t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'success'
-        AND (t.transfer_from = $1 OR t.transfer_to = $1)
-        AND (
-            EXTRACT(YEAR FROM t.transfer_time) = $2::integer
-            OR EXTRACT(YEAR FROM t.transfer_time) = $2::integer - 1
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transfer_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        total_success::integer,
-        total_amount::integer
-    FROM
-        yearly_data
-
-    UNION ALL
-
-    SELECT
-        $1::text AS year,
-        0::integer AS total_success,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    yearly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )::integer AS year,
+            COUNT(*) AS total_success,
+            COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
+        FROM transfers t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'success'
+            AND (
+                t.transfer_from = $1
+                OR t.transfer_to = $1
+            )
+            AND (
+                EXTRACT(
+                    YEAR
+                    FROM t.transfer_time
+                ) = $2::integer
+                OR EXTRACT(
+                    YEAR
+                    FROM t.transfer_time
+                ) = $2::integer - 1
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            total_success::integer,
+            total_amount::integer
         FROM yearly_data
-        WHERE year = $1::integer
+        UNION ALL
+        SELECT
+            $1::text AS year,
+            0::integer AS total_success,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer
+            )
+        UNION ALL
+        SELECT ($1::integer - 1)::text AS year,
+            0::integer AS total_success,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer - 1
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        ($1::integer - 1)::text AS year,
-        0::integer AS total_success,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM yearly_data
-        WHERE year = $1::integer - 1
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC;
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC;
 
 -- GetMonthTransferStatusFailedCardNumber: Retrieves monthly failed metrics for fund transfers
 -- Purpose: Analyze failedful transfer trends across comparison periods
@@ -656,68 +863,107 @@ ORDER BY
 --   - Orders by year and month (newest first)
 --   - Useful for identifying seasonal transfer patterns and cash flow analysis
 -- name: GetMonthTransferStatusFailedCardNumber :many
-WITH monthly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transfer_time)::integer AS year,
-        EXTRACT(MONTH FROM t.transfer_time)::integer AS month,
-        COUNT(*) AS total_failed,
-        COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
-    FROM
-        transfers t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'failed'
-        AND (t.transfer_from = $1 OR t.transfer_to = $1)
-        AND (
-            (t.transfer_time >= $2::timestamp AND t.transfer_time <= $3::timestamp)
-            OR (t.transfer_time >= $4::timestamp AND t.transfer_time <= $5::timestamp)
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transfer_time),
-        EXTRACT(MONTH FROM t.transfer_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-        total_failed,
-        total_amount
-    FROM
-        monthly_data
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $1::timestamp)::text AS year,
-        TO_CHAR($1::timestamp, 'Mon') AS month,
-        0 AS total_failed,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    monthly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )::integer AS year,
+            EXTRACT(
+                MONTH
+                FROM t.transfer_time
+            )::integer AS month,
+            COUNT(*) AS total_failed,
+            COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
+        FROM transfers t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'failed'
+            AND (
+                t.transfer_from = $1
+                OR t.transfer_to = $1
+            )
+            AND (
+                (
+                    t.transfer_time >= $2::timestamp
+                    AND t.transfer_time <= $3::timestamp
+                )
+                OR (
+                    t.transfer_time >= $4::timestamp
+                    AND t.transfer_time <= $5::timestamp
+                )
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            ),
+            EXTRACT(
+                MONTH
+                FROM t.transfer_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            TO_CHAR(
+                TO_DATE(month::text, 'MM'),
+                'Mon'
+            ) AS month,
+            total_failed,
+            total_amount
         FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $1::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $1::timestamp)::integer
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $1::timestamp
+            )::text AS year,
+            TO_CHAR($1::timestamp, 'Mon') AS month,
+            0 AS total_failed,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $1::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $1::timestamp
+                    )::integer
+            )
+        UNION ALL
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM $3::timestamp
+            )::text AS year,
+            TO_CHAR($3::timestamp, 'Mon') AS month,
+            0 AS total_failed,
+            0 AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $3::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $3::timestamp
+                    )::integer
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
-        TO_CHAR($3::timestamp, 'Mon') AS month,
-        0 AS total_failed,
-        0 AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC,
-    TO_DATE(month, 'Mon') DESC;
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC, TO_DATE(month, 'Mon') DESC;
 
 -- GetYearlyTransferStatusFailedCardNumber: Retrieves yearly failed metrics for fund transfers
 -- Purpose: Compare annual failedful transfer performance year-over-year
@@ -736,59 +982,72 @@ ORDER BY
 --   - Useful for year-over-year growth analysis and financial reporting
 --   - Helps identify annual transfer volume and money movement trends
 -- name: GetYearlyTransferStatusFailedCardNumber :many
-WITH yearly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM t.transfer_time)::integer AS year,
-        COUNT(*) AS total_failed,
-        COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
-    FROM
-        transfers t
-    WHERE
-        t.deleted_at IS NULL
-        AND t.status = 'failed'
-        AND (t.transfer_from = $1 OR t.transfer_to = $1)
-        AND (
-            EXTRACT(YEAR FROM t.transfer_time) = $2::integer
-            OR EXTRACT(YEAR FROM t.transfer_time) = $2::integer - 1
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM t.transfer_time)
-), formatted_data AS (
-    SELECT
-        year::text,
-        total_failed::integer,
-        total_amount::integer
-    FROM
-        yearly_data
-
-    UNION ALL
-
-    SELECT
-        $1::text AS year,
-        0::integer AS total_failed,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    yearly_data AS (
+        SELECT
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )::integer AS year,
+            COUNT(*) AS total_failed,
+            COALESCE(SUM(t.transfer_amount), 0)::integer AS total_amount
+        FROM transfers t
+        WHERE
+            t.deleted_at IS NULL
+            AND t.status = 'failed'
+            AND (
+                t.transfer_from = $1
+                OR t.transfer_to = $1
+            )
+            AND (
+                EXTRACT(
+                    YEAR
+                    FROM t.transfer_time
+                ) = $2::integer
+                OR EXTRACT(
+                    YEAR
+                    FROM t.transfer_time
+                ) = $2::integer - 1
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM t.transfer_time
+            )
+    ),
+    formatted_data AS (
+        SELECT
+            year::text,
+            total_failed::integer,
+            total_amount::integer
         FROM yearly_data
-        WHERE year = $1::integer
+        UNION ALL
+        SELECT
+            $1::text AS year,
+            0::integer AS total_failed,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer
+            )
+        UNION ALL
+        SELECT ($1::integer - 1)::text AS year,
+            0::integer AS total_failed,
+            0::integer AS total_amount
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer - 1
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        ($1::integer - 1)::text AS year,
-        0::integer AS total_failed,
-        0::integer AS total_amount
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM yearly_data
-        WHERE year = $1::integer - 1
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC;
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC;
 
 -- GetMonthlyTransferAmounts: Retrieves monthly transfer amounts
 -- Purpose: Track total transfer amounts over each month of the selected year
@@ -804,28 +1063,32 @@ ORDER BY
 --   - Zero-fills months with no transfer activity
 --   - Useful for visualizing monthly cash flow patterns
 -- name: GetMonthlyTransferAmounts :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $1::timestamp),
-        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(t.transfer_amount), 0)::int AS total_transfer_amount
-FROM
-    months m
-LEFT JOIN
-    transfers t ON EXTRACT(MONTH FROM t.transfer_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.transfer_time) = EXTRACT(YEAR FROM m.month)
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $1::timestamp), date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(t.transfer_amount), 0)::int AS total_transfer_amount
+FROM months m
+    LEFT JOIN transfers t ON EXTRACT(
+        MONTH
+        FROM t.transfer_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.transfer_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.deleted_at IS NULL
 GROUP BY
     m.month
-ORDER BY
-    m.month;
-
-
+ORDER BY m.month;
 
 -- GetYearlyTransferAmounts: Retrieves yearly transfer amounts
 -- Purpose: Analyze total transfer amounts over a 5-year period
@@ -840,21 +1103,27 @@ ORDER BY
 --   - Groups by calendar year
 --   - Useful for identifying long-term money movement trends
 -- name: GetYearlyTransferAmounts :many
-SELECT
-    EXTRACT(YEAR FROM t.created_at) AS year,
-    SUM(t.transfer_amount) AS total_transfer_amount
-FROM
-    transfers t
+SELECT EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) AS year, SUM(t.transfer_amount) AS total_transfer_amount
+FROM transfers t
 WHERE
     t.deleted_at IS NULL
-    AND EXTRACT(YEAR FROM t.created_at) >= $1 - 4
-    AND EXTRACT(YEAR FROM t.created_at) <= $1
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) >= $1 - 4
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) <= $1
 GROUP BY
-    EXTRACT(YEAR FROM t.created_at)
-ORDER BY
-    year;
-
-
+    EXTRACT(
+        YEAR
+        FROM t.created_at
+    )
+ORDER BY year;
 
 -- GetMonthlyTransferAmountsBySenderCardNumber: Retrieves monthly transfer amounts
 -- Purpose: Track total transfer amounts over each month of the selected year
@@ -871,29 +1140,34 @@ ORDER BY
 --   - Zero-fills months with no transfer activity
 --   - Useful for visualizing monthly cash flow patterns
 -- name: GetMonthlyTransferAmountsBySenderCardNumber :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $2::timestamp),
-        date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(t.transfer_amount), 0)::int AS total_transfer_amount
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $2::timestamp), date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(t.transfer_amount), 0)::int AS total_transfer_amount
 FROM
     months m
-LEFT JOIN
-    transfers t ON EXTRACT(MONTH FROM t.transfer_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.transfer_time) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN transfers t ON EXTRACT(
+        MONTH
+        FROM t.transfer_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.transfer_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.transfer_from = $1
     AND t.deleted_at IS NULL
 GROUP BY
     m.month
-ORDER BY
-    m.month;
-
-
+ORDER BY m.month;
 
 -- GetMonthlyTransferAmountsByReceiverCardNumber: Retrieves monthly transfer amounts
 -- Purpose: Track total transfer amounts over each month of the selected year
@@ -910,29 +1184,34 @@ ORDER BY
 --   - Zero-fills months with no transfer activity
 --   - Useful for visualizing monthly cash flow patterns
 -- name: GetMonthlyTransferAmountsByReceiverCardNumber :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $2::timestamp),
-        date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(t.transfer_amount), 0)::int AS total_transfer_amount
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $2::timestamp), date_trunc('year', $2::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(t.transfer_amount), 0)::int AS total_transfer_amount
 FROM
     months m
-LEFT JOIN
-    transfers t ON EXTRACT(MONTH FROM t.transfer_time) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM t.transfer_time) = EXTRACT(YEAR FROM m.month)
+    LEFT JOIN transfers t ON EXTRACT(
+        MONTH
+        FROM t.transfer_time
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM t.transfer_time
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND t.transfer_to = $1
     AND t.deleted_at IS NULL
 GROUP BY
     m.month
-ORDER BY
-    m.month;
-
-
+ORDER BY m.month;
 
 -- GetYearlyTransferAmountsBySenderCardNumber: Retrieves yearly transfer amounts
 -- Purpose: Analyze total transfer amounts over a 5-year period
@@ -948,21 +1227,28 @@ ORDER BY
 --   - Groups by calendar year
 --   - Useful for identifying long-term money movement trends
 -- name: GetYearlyTransferAmountsBySenderCardNumber :many
-SELECT
-    EXTRACT(YEAR FROM t.created_at) AS year,
-    SUM(t.transfer_amount) AS total_transfer_amount
-FROM
-    transfers t
+SELECT EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) AS year, SUM(t.transfer_amount) AS total_transfer_amount
+FROM transfers t
 WHERE
     t.deleted_at IS NULL
     AND t.transfer_from = $1
-    AND EXTRACT(YEAR FROM t.created_at) >= $2 - 4
-    AND EXTRACT(YEAR FROM t.created_at) <= $2
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) >= $2 - 4
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) <= $2
 GROUP BY
-    EXTRACT(YEAR FROM t.created_at)
-ORDER BY
-    year;
-
+    EXTRACT(
+        YEAR
+        FROM t.created_at
+    )
+ORDER BY year;
 
 -- GetYearlyTransferAmountsByReceiverCardNumber: Retrieves yearly transfer amounts
 -- Purpose: Analyze total transfer amounts over a 5-year period
@@ -978,21 +1264,28 @@ ORDER BY
 --   - Groups by calendar year
 --   - Useful for identifying long-term money movement trends
 -- name: GetYearlyTransferAmountsByReceiverCardNumber :many
-SELECT
-    EXTRACT(YEAR FROM t.created_at) AS year,
-    SUM(t.transfer_amount) AS total_transfer_amount
-FROM
-    transfers t
+SELECT EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) AS year, SUM(t.transfer_amount) AS total_transfer_amount
+FROM transfers t
 WHERE
     t.deleted_at IS NULL
     AND t.transfer_to = $1
-    AND EXTRACT(YEAR FROM t.created_at) >= $2 - 4
-    AND EXTRACT(YEAR FROM t.created_at) <= $2
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) >= $2 - 4
+    AND EXTRACT(
+        YEAR
+        FROM t.created_at
+    ) <= $2
 GROUP BY
-    EXTRACT(YEAR FROM t.created_at)
-ORDER BY
-    year;
-
+    EXTRACT(
+        YEAR
+        FROM t.created_at
+    )
+ORDER BY year;
 
 -- FindAllTransfersByCardNumberAsSender: Retrieves all transfers where the card was the sender
 -- Purpose: View outgoing transfer history for a specific card
@@ -1005,23 +1298,12 @@ ORDER BY
 --   - Orders by transfer_time (newest first)
 --   - Useful for tracking money sent by a cardholder
 -- name: FindAllTransfersByCardNumberAsSender :many
-SELECT
-    t.transfer_id,
-    t.transfer_from,
-    t.transfer_to,
-    t.transfer_amount,
-    t.transfer_time,
-    t.created_at,
-    t.updated_at,
-    t.deleted_at
-FROM
-    transfers t
+SELECT t.transfer_id, t.transfer_from, t.transfer_to, t.transfer_amount, t.transfer_time, t.created_at, t.updated_at, t.deleted_at
+FROM transfers t
 WHERE
     t.transfer_from = $1
     AND t.deleted_at IS NULL
-ORDER BY
-    t.transfer_time DESC;
-
+ORDER BY t.transfer_time DESC;
 
 -- FindAllTransfersByCardNumberAsReceiver: Retrieves all transfers where the card was the receiver
 -- Purpose: View incoming transfer history for a specific card
@@ -1034,22 +1316,12 @@ ORDER BY
 --   - Orders by transfer_time (newest first)
 --   - Useful for tracking money received by a cardholder
 -- name: FindAllTransfersByCardNumberAsReceiver :many
-SELECT
-    t.transfer_id,
-    t.transfer_from,
-    t.transfer_to,
-    t.transfer_amount,
-    t.transfer_time,
-    t.created_at,
-    t.updated_at,
-    t.deleted_at
-FROM
-    transfers t
+SELECT t.transfer_id, t.transfer_from, t.transfer_to, t.transfer_amount, t.transfer_time, t.created_at, t.updated_at, t.deleted_at
+FROM transfers t
 WHERE
     t.transfer_to = $1
     AND t.deleted_at IS NULL
-ORDER BY
-    t.transfer_time DESC;
+ORDER BY t.transfer_time DESC;
 
 -- CreateTransfer: Records a new transfer transaction
 -- Purpose: Create a transfer between accounts/cards
@@ -1083,7 +1355,17 @@ VALUES (
         $5,
         current_timestamp,
         current_timestamp
-    ) RETURNING *;
+    )
+RETURNING
+    transfer_id,
+    transfer_no,
+    transfer_from,
+    transfer_to,
+    transfer_amount,
+    transfer_time,
+    status,
+    created_at,
+    updated_at;
 
 -- UpdateTransfer: Modifies transfer details
 -- Purpose: Update all fields of an existing transfer
@@ -1108,7 +1390,16 @@ SET
 WHERE
     transfer_id = $1
     AND deleted_at IS NULL
-RETURNING *;
+RETURNING
+    transfer_id,
+    transfer_no,
+    transfer_from,
+    transfer_to,
+    transfer_amount,
+    transfer_time,
+    status,
+    created_at,
+    updated_at;
 
 -- UpdateTransferAmount: Changes only the transfer amount
 -- Purpose: Adjust the amount of a transfer
@@ -1128,7 +1419,16 @@ SET
 WHERE
     transfer_id = $1
     AND deleted_at IS NULL
-RETURNING *;
+RETURNING
+    transfer_id,
+    transfer_no,
+    transfer_from,
+    transfer_to,
+    transfer_amount,
+    transfer_time,
+    status,
+    created_at,
+    updated_at;
 
 -- UpdateTransferStatus: Changes transfer status
 -- Purpose: Update processing status of a transfer
@@ -1147,7 +1447,16 @@ SET
 WHERE
     transfer_id = $1
     AND deleted_at IS NULL
-RETURNING *;
+RETURNING
+    transfer_id,
+    transfer_no,
+    transfer_from,
+    transfer_to,
+    transfer_amount,
+    transfer_time,
+    status,
+    created_at,
+    updated_at;
 
 -- TrashTransfer: Soft-deletes a transfer
 -- Purpose: Remove transfer from active view without permanent deletion
@@ -1164,7 +1473,17 @@ SET
 WHERE
     transfer_id = $1
     AND deleted_at IS NULL
-RETURNING *;
+RETURNING
+    transfer_id,
+    transfer_no,
+    transfer_from,
+    transfer_to,
+    transfer_amount,
+    transfer_time,
+    status,
+    created_at,
+    updated_at,
+    deleted_at;
 
 -- RestoreTransfer: Recovers a soft-deleted transfer
 -- Purpose: Reactivate a previously deleted transfer
@@ -1180,7 +1499,17 @@ SET
 WHERE
     transfer_id = $1
     AND deleted_at IS NOT NULL
-RETURNING *;
+RETURNING
+    transfer_id,
+    transfer_no,
+    transfer_from,
+    transfer_to,
+    transfer_amount,
+    transfer_time,
+    status,
+    created_at,
+    updated_at,
+    deleted_at;
 
 -- DeleteTransferPermanently: Hard-deletes a transfer
 -- Purpose: Permanently remove a transfer record
@@ -1191,7 +1520,10 @@ RETURNING *;
 --   - Only works on already trashed transfers
 --   - Irreversible operation
 -- name: DeleteTransferPermanently :exec
-DELETE FROM transfers WHERE transfer_id = $1 AND deleted_at IS NOT NULL;
+DELETE FROM transfers
+WHERE
+    transfer_id = $1
+    AND deleted_at IS NOT NULL;
 
 -- RestoreAllTransfers: Recovers all trashed transfers
 -- Purpose: Mass restoration of deleted transfers
@@ -1213,6 +1545,4 @@ WHERE
 --   - Only affects trashed records
 --   - Frees database space
 -- name: DeleteAllPermanentTransfers :exec
-DELETE FROM transfers
-WHERE
-    deleted_at IS NOT NULL;
+DELETE FROM transfers WHERE deleted_at IS NOT NULL;

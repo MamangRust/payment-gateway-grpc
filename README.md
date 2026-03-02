@@ -1,89 +1,91 @@
-# Proyek Payment Gateway gRPC
+# Payment Gateway gRPC Project
 
-Proyek ini merupakan **implementasi sistem pembayaran sederhana** yang dirancang untuk meniru alur kerja layanan keuangan digital pada umumnya. Sistem ini dibangun dengan pendekatan modular, sehingga setiap layanan dapat berdiri sendiri namun tetap saling terhubung melalui basis data dan API yang konsisten.
+This project is a **simple payment system implementation** designed to mimic the workflow of a typical digital financial service. The system is built with a modular approach, where each service can operate independently but remains interconnected through a consistent database and API.
 
-### Layanan Utama
+### Core Features
 
-Beberapa komponen penting yang menjadi inti dari proyek ini meliputi:
+The key components that form the core of this project include:
 
-* **🔐 Otentikasi Pengguna**
-  Mendukung pendaftaran akun baru, login dengan kredensial, serta penerbitan dan validasi token JWT. Sistem ini juga dilengkapi manajemen refresh token untuk menjaga keamanan sesi pengguna.
+- **🔐 User Authentication**
+  Supports new account registration, login with credentials, and JWT token issuance and validation. The system also includes refresh token management to maintain user session security.
 
-* **💳 Manajemen Kartu**
-  Setiap pengguna dapat menambahkan kartu ke akun mereka. Detail kartu seperti nomor, tipe kartu, tanggal kadaluarsa, dan CVV disimpan dengan aman, serta dapat diakses kembali sesuai kebutuhan transaksi.
+- **💳 Card Management**
+  Each user can add cards to their account. Card details such as number, card type, expiration date, and CVV are stored securely and can be accessed for transactions.
 
-* **🏬 Manajemen Merchant**
-  Merchant dapat dibuat dan diatur melalui sistem. Setiap merchant memiliki identitas unik berupa nomor merchant (UUID) dan API key yang digunakan untuk memproses transaksi.
+- **🏬 Merchant Management**
+  Merchants can be created and managed through the system. Each merchant has a unique identity in the form of a UUID merchant number and an API key used to process transactions.
 
-* **💸 Transaksi**
-  Menangani proses pembayaran antara kartu pengguna dan merchant. Setiap transaksi dicatat dengan nomor unik, jumlah pembayaran, serta informasi terkait merchant penerima.
+- **💸 Transactions**
+  Handles the payment process between a user's card and a merchant. Each transaction is recorded with a unique number, payment amount, and information about the receiving merchant.
 
-* **🔄 Transfer Dana**
-  Memungkinkan pengguna untuk melakukan transfer saldo antar kartu. Sistem mencatat asal (from) dan tujuan (to) transfer, serta memastikan saldo mencukupi sebelum transaksi diproses.
+- **🔄 Fund Transfers**
+  Allows users to transfer balances between cards. The system records the source (from) and destination (to) of the transfer, ensuring sufficient balance before processing the transaction.
 
-* **📈 Top-Up Saldo**
-  Pengguna dapat menambahkan dana ke kartu mereka melalui proses top-up. Setiap top-up memiliki identitas unik dan secara otomatis memperbarui saldo kartu terkait.
+- **📈 Balance Top-Up**
+  Users can add funds to their cards through a top-up process. Each top-up has a unique identity and automatically updates the respective card's balance.
 
-* **🏧 Penarikan (Withdraw)**
-  Pengguna dapat menarik dana dari kartu mereka. Sama seperti top-up, proses ini tercatat dan saldo diperbarui sesuai jumlah penarikan.
+- **🏧 Withdrawals**
+  Users can withdraw funds from their cards. Like top-ups, this process is recorded, and the balance is updated according to the withdrawal amount.
 
-* **💰 Manajemen Saldo**
-  Semua kartu terhubung dengan entitas saldo. Sistem bertanggung jawab untuk melacak, menambah, dan mengurangi saldo secara konsisten setelah setiap operasi keuangan (transaksi, transfer, top-up, atau penarikan).
-
----
-
-
-## 🚀 Penambahan Fitur Proyek
-- **REST API Client**: Klien RESTful yang berinteraksi dengan server gRPC.
-- **gRPC Server**: Server utama yang menangani semua logika bisnis.
-- **Migrasi Database**: Menggunakan `goose` untuk mengelola skema database.
-- **Dokumentasi API**: Dokumentasi Swagger yang dibuat secara otomatis.
-- **Docker Support**: Konfigurasi Docker dan Docker Compose untuk lingkungan pengembangan yang mudah.
-- **Unit & Integration Tests**: Pengujian untuk memastikan keandalan kode.
-- **CI/CD**: Alur kerja GitHub Actions untuk build, format, dan pengujian otomatis.
-
-## 🧰 Tech Teknologi
-
-- 🐹 **Go (Golang)** — Bahasa implementasi.
-- 🌐 **Echo** — Kerangka kerja web minimalis untuk membangun REST API.
-- 🪵 **Zap Logger** — Pencatatan terstruktur untuk aplikasi berkinerja tinggi.
-- 📦 **SQLC** — Menghasilkan kode Go yang aman dari tipe dari kueri SQL.
-- 🚀 **gRPC** — RPC berkinerja tinggi untuk komunikasi layanan internal.
-- 🧳 **Goose** — Alat migrasi untuk mengelola perubahan skema database.
-- 🐳 **Docker** — Platform kontainerisasi untuk lingkungan pengembangan yang konsisten.
-- 📄 **Swago** — Menghasilkan dokumentasi Swagger 2.0 untuk rute Echo.
-- 🔗 **Docker Compose** — Mengelola aplikasi Docker multi-kontainer.
+- **💰 Balance Management**
+  All cards are linked to a balance entity. The system is responsible for tracking, adding, and subtracting balances consistently after every financial operation (transaction, transfer, top-up, or withdrawal).
 
 ---
 
-## Arsitektur
-Aplikasi ini dirancang dengan arsitektur berorientasi layanan monolith (monolith). REST API yang menghadap klien bertindak sebagai gateway, menerjemahkan permintaan HTTP menjadi panggilan gRPC ke server backend. Server ini berisi logika bisnis inti dan berkomunikasi dengan database PostgreSQL.
+## 🚀 Project Features
+
+- **REST API Client**: A RESTful client that interacts with the gRPC server.
+- **gRPC Server**: The main server that handles all business logic.
+- **Database Migration**: Uses `goose` to manage the database schema.
+- **API Documentation**: Automatically generated Swagger documentation.
+- **Docker Support**: Docker and Docker Compose configurations for an easy development environment.
+- **Unit & Integration Tests**: Testing to ensure code reliability.
+- **CI/CD**: GitHub Actions workflows for automated builds, formatting, and testing.
+
+## 🧰 Technology Stack
+
+- 🐹 **Go (Golang)** — Implementation language.
+- 🌐 **Echo** — A minimalist web framework for building REST APIs.
+- 🪵 **Zap Logger** — Structured logging for high-performance applications.
+- 📦 **SQLC** — Generates type-safe Go code from SQL queries.
+- 🚀 **gRPC** — High-performance RPC for internal service communication.
+- 🧳 **Goose** — A migration tool for managing database schema changes.
+- 🐳 **Docker** — A containerization platform for consistent development environments.
+- 📄 **Swago** — Generates Swagger 2.0 documentation for Echo routes.
+- 🔗 **Docker Compose** — Manages multi-container Docker applications.
+
+---
+
+## Architecture
+
+This application is designed with a service-oriented monolithic architecture. The client-facing REST API acts as a gateway, translating HTTP requests into gRPC calls to the backend server. This server contains the core business logic and communicates with a PostgreSQL database.
 
 ```mermaid
 graph TD
-    subgraph "Interaksi Pengguna"
-        Pengguna -- "HTTP/REST (JSON)" --> Klien[Klien/API Gateway]
+    subgraph "User Interaction"
+        User -- "HTTP/REST (JSON)" --> Client[Client/API Gateway]
     end
 
-    subgraph "Layanan Aplikasi"
-        Klien -- "gRPC (Protobuf)" --> Server[Server gRPC]
+    subgraph "Application Services"
+        Client -- "gRPC (Protobuf)" --> Server[gRPC Server]
         Server -- "SQL" --> Database[(PostgreSQL)]
     end
 
-    subgraph "Pengembangan & Operasi"
-        Migrasi[Proses Migrasi] -- "SQL" --> Database
+    subgraph "Development & Operations"
+        Migration[Migration Process] -- "SQL" --> Database
     end
 
-    style Klien fill:#d3869b,stroke:#3c3836,stroke-width:2px,color:#282828
+    style Client fill:#d3869b,stroke:#3c3836,stroke-width:2px,color:#282828
     style Server fill:#83a598,stroke:#3c3836,stroke-width:2px,color:#282828
     style Database fill:#b8bb26,stroke:#3c3836,stroke-width:2px,color:#282828
-    style Migrasi fill:#fe8019,stroke:#3c3836,stroke-width:2px,color:#282828
+    style Migration fill:#fe8019,stroke:#3c3836,stroke-width:2px,color:#282828
 ```
 
 ---
 
-## Skema Database (ERD)
-Diagram berikut mengilustrasikan hubungan antar tabel dalam database.
+## Database Schema (ERD)
+
+The following diagram illustrates the relationships between the tables in the database.
 
 ```mermaid
 erDiagram
@@ -165,7 +167,7 @@ erDiagram
         VARCHAR token
     }
 
-    %% Relationships (English)
+    %% Relationships
     users ||--o{ cards : "has"
     users ||--o{ merchants : "has"
     users ||--o{ refresh_tokens : "has"
@@ -178,105 +180,183 @@ erDiagram
     cards ||--o{ transfers : "from"
     cards ||--o{ transfers : "to"
     merchants ||--o{ transactions : "receives"
-
 ```
 
 ---
 
-## Memulai
-Anda dapat menjalankan proyek ini baik secara lokal dengan lingkungan Go atau menggunakan Docker.
+## Getting Started
 
-### Prasyarat
-- Go (versi 1.21 atau lebih baru)
-- Docker dan Docker Compose
-- Alat baris perintah `make`
-- Sebuah file `.env` dengan variabel lingkungan yang diperlukan. Anda dapat menyalin dari `docker.env` sebagai template.
+You can run this project either locally with a Go environment or using Docker.
 
-### 1. Clone Repositori
+### Prerequisites
+
+- Go (version 1.21 or newer)
+- Docker and Docker Compose
+- The `make` command-line tool
+- An `.env` file with the necessary environment variables. You can copy from `docker.env` as a template.
+
+### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/hoover/payment-gateway-grpc.git
 cd payment-gateway-grpc
 ```
 
-### 2. Menjalankan dengan Docker (Disarankan)
-Ini adalah cara termudah untuk menjalankan semua layanan.
+### 2. Running with Docker (Recommended)
 
-1.  **Buat File Lingkungan:**
-    Salin `docker.env` ke file `.env` baru.
+This is the easiest way to run all services.
+
+1.  **Create Environment File:**
+    Copy `docker.env` to a new `.env` file.
+
     ```bash
     cp docker.env .env
     ```
 
-2.  **Bangun dan Jalankan Layanan:**
-    Gunakan perintah `make` untuk membangun image dan memulai kontainer dalam mode detached.
+2.  **Build and Run Services:**
+    Use the `make` command to build the images and start the containers in detached mode.
+
     ```bash
     make docker-up
     ```
-    Ini akan memulai layanan `postgres`, `migrate`, `server`, dan `client`. Klien akan tersedia di `http://localhost:5000`.
 
-3.  **Menghentikan Layanan:**
-    Untuk menghentikan semua kontainer yang berjalan, gunakan:
+    This will start the `postgres`, `migrate`, `server`, and `client` services. The client will be available at `http://localhost:5000`.
+
+3.  **Stopping Services:**
+    To stop all running containers, use:
     ```bash
     make docker-down
     ```
 
-### 3. Menjalankan Secara Lokal
+### 3. Running Locally
 
-1.  **Mulai Database:**
-    Anda dapat menggunakan file Docker Compose yang disediakan untuk hanya menjalankan database PostgreSQL.
+1.  **Start the Database:**
+    You can use the provided Docker Compose file to run only the PostgreSQL database.
+
     ```bash
     docker-compose up -d postgres
     ```
 
-2.  **Siapkan Lingkungan:**
-    Buat file `.env` di direktori root dan isi detail koneksi database serta variabel lain yang diperlukan.
+2.  **Set Up Environment:**
+    Create an `.env` file in the root directory and fill in the database connection details and other required variables.
 
-3.  **Jalankan Migrasi Database:**
-    Terapkan skema database terbaru.
+3.  **Run Database Migrations:**
+    Apply the latest database schema.
+
     ```bash
     make migrate
     ```
 
-4.  **Jalankan Layanan:**
-    Buka dua jendela terminal terpisah.
+4.  **Run Services:**
+    Open two separate terminal windows.
 
-    Di terminal pertama, jalankan server gRPC:
+    In the first terminal, run the gRPC server:
+
     ```bash
     make run-server
     ```
 
-    Di terminal kedua, jalankan klien:
+    In the second terminal, run the client:
+
     ```bash
     make run-client
     ```
-    API klien akan dapat diakses di `http://localhost:5000`.
+
+    The client API will be accessible at `http://localhost:5000`.
 
 ---
 
-## Perintah `make` yang Tersedia
+## Available `make` Commands
 
-- `migrate`: Menerapkan migrasi database.
-- `migrate-down`: Membatalkan migrasi database terakhir.
-- `run-server`: Memulai server gRPC secara lokal.
-- `run-client`: Memulai gateway API klien secara lokal.
-- `docker-up`: Membangun dan memulai semua layanan dengan Docker Compose.
-- `docker-down`: Menghentikan dan menghapus semua layanan yang dimulai dengan Docker Compose.
-- `test`: Menjalankan unit test.
-- `test-all`: Menjalankan semua tes (unit dan integrasi).
-- `fmt`: Memformat kode sumber Go.
-- `lint`: Melakukan `linting` pada basis kode.
-- `generate-proto`: Menghasilkan kode Go dari file Protobuf.
+- `migrate`: Applies database migrations.
+- `migrate-down`: Reverts the last database migration.
+- `run-server`: Starts the gRPC server locally.
+- `run-client`: Starts the client API gateway locally.
+- `docker-up`: Builds and starts all services with Docker Compose.
+- `docker-down`: Stops and removes all services started with Docker Compose.
+- `test`: Runs unit tests.
+- `test-all`: Runs all tests (unit and integration).
+- `fmt`: Formats the Go source code.
+- `lint`: Lints the codebase.
+- `generate-proto`: Generates Go code from Protobuf files.
 
 ---
 
-## Pratinjau
+## Preview
 
-### Dokumentasi API Swagger
+### Swagger API Documentation
+
 <img src="./images/swagger_3.png" alt="swagger" />
 
-### Contoh Tampilan Depan (Frontend)
+### Frontend Preview
+
 #### Web
-<img src="./images/preview_payment.png" alt="Pratinjau Frontend Web" />
+
+<img src="./images/preview_payment.png" alt="Web Frontend Preview" />
 
 #### Desktop
-<img src="./images/preview_payment_desktop.png" alt="Pratinjau Frontend Desktop" />
+
+<img src="./images/preview_payment_desktop.png" alt="Desktop Frontend Preview" />
+
+## Performance & Scability Summary (k6)
+
+### User Module
+
+| Test Type  | VUs  | Throughput (req/s) | Error Rate | p95 Latency | Notes                             |
+| ---------- | ---- | ------------------ | ---------- | ----------- | --------------------------------- |
+| Smoke      | 1    | –                  | 0%         | <10 ms      | Baseline validated                |
+| Capability | 150  | ~960               | ~0%        | ~6–7 ms     | Highly efficient, CPU-light       |
+| Load       | 1000 | ~3800              | 0%         | ~386 ms     | Tail latency increases but stable |
+| Stress     | 1500 | ~3560              | ~0%        | ~408 ms     | Graceful degradation              |
+| Spike      | 1000 | ~3235              | 0%         | ~336 ms     | Clean and fast recovery           |
+
+### Role Module
+
+| Test Type  | VUs  | Throughput (req/s) | Error Rate | p95 Latency | Notes                             |
+| ---------- | ---- | ------------------ | ---------- | ----------- | --------------------------------- |
+| Smoke      | 1    | –                  | 0%         | <10 ms      | Baseline validated                |
+| Capability | 154  | ~1200              | 0%         | ~7.5 ms     | Similar to User, slightly heavier |
+| Load       | 1000 | ~4200              | ~0%        | ~333 ms     | p95 exceeds soft threshold        |
+| Stress     | 1500 | ~3980              | ~0%        | ~349 ms     | Stable under sustained pressure   |
+| Spike      | 1000 | ~3850              | 0%         | ~271 ms     | Fast recovery after spike         |
+
+### Card Module
+
+| Test Type  | VUs  | Throughput (req/s) | Error Rate | p95 Latency | Notes                                 |
+| ---------- | ---- | ------------------ | ---------- | ----------- | ------------------------------------- |
+| Smoke      | 1    | –                  | 0%         | <100 ms     | Acceptable under low load             |
+| Capability | 900  | ~2240              | **12.5%**  | ~797 ms     | Structural failure observed           |
+| Load       | 1000 | ~2600              | **12.5%**  | ~806 ms     | Latency and error thresholds breached |
+| Stress     | 1500 | ~3230              | **12.5%**  | ~587 ms     | Consistent error pattern              |
+| Spike      | 1000 | ~3088              | **12.5%**  | ~360 ms     | Fast failure, consistent behavior     |
+
+---
+
+## Performance Test Visualizations
+
+### Card Module
+
+| Test Type       | Visualization                                                                                                              |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Capability Test | <img src="./images/load_test/card/card_capability.png" alt="Card module capability test results" width="500" />            |
+| Load Test       | <img src="./images/load_test/card/card_load_test.png" alt="Card module load test results near capacity" width="500" />     |
+| Stress Test     | <img src="./images/load_test/card/card_rampling.png" alt="Card module stress test behavior beyond capacity" width="500" /> |
+| Spike Test      | <img src="./images/load_test/card/card_spike.png" alt="Card module spike test results" width="500" />                      |
+
+### Role Module
+
+| Test Type       | Visualization                                                                                                              |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Capability Test | <img src="./images/load_test/role/role_capability.png" alt="Role module capability test results" width="500" />            |
+| Load Test       | <img src="./images/load_test/role/role_load_test.png" alt="Role module load test results near capacity" width="500" />     |
+| Stress Test     | <img src="./images/load_test/role/role_rampling.png" alt="Role module stress test behavior beyond capacity" width="500" /> |
+| Spike Test      | <img src="./images/load_test/role/role_spike.png" alt="Role module spike test results" width="500" />                      |
+
+### User Module
+
+| Test Type       | Visualization                                                                                                              |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Capability Test | <img src="./images/load_test/user/user_capability.png" alt="User module capability test results" width="500" />            |
+| Load Test       | <img src="./images/load_test/user/user_load_test.png" alt="User module load test results near capacity" width="500" />     |
+| Stress Test     | <img src="./images/load_test/user/user_rampling.png" alt="User module stress test behavior beyond capacity" width="500" /> |
+| Spike Test      | <img src="./images/load_test/user/user_spike.png" alt="User module spike test results" width="500" />                      |

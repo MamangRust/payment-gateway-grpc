@@ -1,16 +1,18 @@
 package service
 
 import (
+	withdraw_cache "MamangRust/paymentgatewaygrpc/internal/cache/withdraw"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/service"
-	"net/http"
-
+	"MamangRust/paymentgatewaygrpc/internal/errorhandler"
 	"MamangRust/paymentgatewaygrpc/internal/repository"
+	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/saldo_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/withdraw_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
+	"MamangRust/paymentgatewaygrpc/pkg/observability"
+	"context"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
 
@@ -19,30 +21,36 @@ type withdrawService struct {
 	saldoRepository    repository.SaldoRepository
 	withdrawRepository repository.WithdrawRepository
 	logger             logger.LoggerInterface
-	mapping            responseservice.WithdrawResponseMapper
+	cache              withdraw_cache.WithdrawMencache
+	observability      observability.TraceLoggerObservability
 }
 
-func NewWithdrawService(
-	userRepository repository.UserRepository,
-	withdrawRepository repository.WithdrawRepository, saldoRepository repository.SaldoRepository, logger logger.LoggerInterface, mapping responseservice.WithdrawResponseMapper) *withdrawService {
+type WithdrawServiceDeps struct {
+	UserRepo      repository.UserRepository
+	SaldoRepo     repository.SaldoRepository
+	WithdrawRepo  repository.WithdrawRepository
+	Cache         withdraw_cache.WithdrawMencache
+	Logger        logger.LoggerInterface
+	Observability observability.TraceLoggerObservability
+}
+
+func NewWithdrawService(deps WithdrawServiceDeps) *withdrawService {
 	return &withdrawService{
-		userRepository:     userRepository,
-		saldoRepository:    saldoRepository,
-		withdrawRepository: withdrawRepository,
-		logger:             logger,
-		mapping:            mapping,
+		userRepository:     deps.UserRepo,
+		saldoRepository:    deps.SaldoRepo,
+		withdrawRepository: deps.WithdrawRepo,
+		logger:             deps.Logger,
+		observability:      deps.Observability,
+		cache:              deps.Cache,
 	}
 }
 
-func (s *withdrawService) FindAll(req *requests.FindAllWithdraws) ([]*response.WithdrawResponse, *int, *response.ErrorResponse) {
+func (s *withdrawService) FindAll(ctx context.Context, req *requests.FindAllWithdraws) ([]*db.GetWithdrawsRow, *int, error) {
+	const method = "FindAll"
+
 	page := req.Page
 	pageSize := req.PageSize
 	search := req.Search
-
-	s.logger.Debug("Fetching withdraw",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
 
 	if page <= 0 {
 		page = 1
@@ -52,37 +60,59 @@ func (s *withdrawService) FindAll(req *requests.FindAllWithdraws) ([]*response.W
 		pageSize = 10
 	}
 
-	withdraws, totalRecords, err := s.withdrawRepository.FindAll(req)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("page", page),
+		attribute.Int("pageSize", pageSize),
+		attribute.String("search", search))
 
-	if err != nil {
-		s.logger.Error("Failed to fetch withdraw",
-			zap.Error(err),
-			zap.Int("page", page),
-			zap.Int("pageSize", pageSize),
-			zap.String("search", search))
+	defer func() {
+		end(status)
+	}()
 
-		return nil, nil, withdraw_errors.ErrFailedFindAllWithdraws
+	if data, total, found := s.cache.GetCachedWithdrawsCache(ctx, req); found {
+		logSuccess("Successfully retrieved all withdraw records from cache", zap.Int("totalRecords", *total), zap.Int("page", page), zap.Int("pageSize", pageSize))
+		return data, total, nil
 	}
 
-	withdrawResponse := s.mapping.ToWithdrawsResponse(withdraws)
+	withdraws, err := s.withdrawRepository.FindAll(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandlerErrorPagination[[]*db.GetWithdrawsRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindAllWithdraws,
+			method,
+			span,
 
-	s.logger.Debug("Successfully fetched withdraw",
-		zap.Int("totalRecords", *totalRecords),
+			zap.Int("page", page),
+			zap.Int("pageSize", pageSize),
+			zap.String("search", search),
+		)
+	}
+
+	var totalCount int
+
+	if len(withdraws) > 0 {
+		totalCount = int(withdraws[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+
+	s.cache.SetCachedWithdrawsCache(ctx, req, withdraws, &totalCount)
+
+	logSuccess("Successfully fetched withdraw",
+		zap.Int("totalRecords", totalCount),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
-	return withdrawResponse, totalRecords, nil
+	return withdraws, &totalCount, nil
 }
 
-func (s *withdrawService) FindAllByCardNumber(req *requests.FindAllWithdrawCardNumber) ([]*response.WithdrawResponse, *int, *response.ErrorResponse) {
+func (s *withdrawService) FindAllByCardNumber(ctx context.Context, req *requests.FindAllWithdrawCardNumber) ([]*db.GetWithdrawsByCardNumberRow, *int, error) {
+	const method = "FindAllByCardNumber"
+
 	page := req.Page
 	pageSize := req.PageSize
 	search := req.Search
-
-	s.logger.Debug("Fetching withdraw",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
 
 	if page <= 0 {
 		page = 1
@@ -92,284 +122,61 @@ func (s *withdrawService) FindAllByCardNumber(req *requests.FindAllWithdrawCardN
 		pageSize = 10
 	}
 
-	withdraws, totalRecords, err := s.withdrawRepository.FindAllByCardNumber(req)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("page", page),
+		attribute.Int("pageSize", pageSize),
+		attribute.String("search", search),
+		attribute.String("card_number", req.CardNumber))
 
-	if err != nil {
-		s.logger.Error("Failed to fetch withdraw",
-			zap.Error(err),
-			zap.Int("page", page),
-			zap.Int("pageSize", pageSize),
-			zap.String("search", search))
+	defer func() {
+		end(status)
+	}()
 
-		return nil, nil, withdraw_errors.ErrFailedFindAllWithdrawsByCard
+	if data, total, found := s.cache.GetCachedWithdrawByCardCache(ctx, req); found {
+		logSuccess("Successfully retrieved all withdraw records from cache", zap.Int("totalRecords", *total), zap.Int("page", page), zap.Int("pageSize", pageSize))
+		return data, total, nil
 	}
 
-	withdrawResponse := s.mapping.ToWithdrawsResponse(withdraws)
+	withdraws, err := s.withdrawRepository.FindAllByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandlerErrorPagination[[]*db.GetWithdrawsByCardNumberRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindAllWithdrawsByCard,
+			method,
+			span,
 
-	s.logger.Debug("Successfully fetched withdraw",
-		zap.Int("totalRecords", *totalRecords),
+			zap.Int("page", page),
+			zap.Int("pageSize", pageSize),
+			zap.String("search", search),
+			zap.String("card_number", req.CardNumber),
+		)
+	}
+
+	var totalCount int
+
+	if len(withdraws) > 0 {
+		totalCount = int(withdraws[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+
+	s.cache.SetCachedWithdrawByCardCache(ctx, req, withdraws, &totalCount)
+
+	logSuccess("Successfully fetched withdraw",
+		zap.Int("totalRecords", totalCount),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
-	return withdrawResponse, totalRecords, nil
+	return withdraws, &totalCount, nil
 }
 
-func (s *withdrawService) FindById(withdrawID int) (*response.WithdrawResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching withdraw by ID", zap.Int("withdraw_id", withdrawID))
+func (s *withdrawService) FindByActive(ctx context.Context, req *requests.FindAllWithdraws) ([]*db.GetActiveWithdrawsRow, *int, error) {
+	const method = "FindByActive"
 
-	withdraw, err := s.withdrawRepository.FindById(withdrawID)
-
-	if err != nil {
-		s.logger.Error("failed to find withdraw by id", zap.Error(err))
-		return nil, withdraw_errors.ErrWithdrawNotFound
-	}
-	so := s.mapping.ToWithdrawResponse(withdraw)
-
-	s.logger.Debug("Successfully fetched withdraw", zap.Int("withdraw_id", withdrawID))
-
-	return so, nil
-}
-
-func (s *withdrawService) FindMonthWithdrawStatusSuccess(req *requests.MonthStatusWithdraw) ([]*response.WithdrawResponseMonthStatusSuccess, *response.ErrorResponse) {
-	year := req.Year
-	month := req.Month
-
-	s.logger.Debug("Fetching monthly Withdraw status success", zap.Int("year", year), zap.Int("month", month))
-
-	records, err := s.withdrawRepository.GetMonthWithdrawStatusSuccess(req)
-
-	if err != nil {
-		s.logger.Error("failed to fetch monthly Withdraw status success", zap.Error(err))
-
-		return nil, withdraw_errors.ErrFailedFindMonthWithdrawStatusSuccess
-	}
-
-	s.logger.Debug("Successfully fetched monthly Withdraw status success", zap.Int("year", year), zap.Int("month", month))
-
-	so := s.mapping.ToWithdrawResponsesMonthStatusSuccess(records)
-
-	return so, nil
-}
-
-func (s *withdrawService) FindYearlyWithdrawStatusSuccess(year int) ([]*response.WithdrawResponseYearStatusSuccess, *response.ErrorResponse) {
-	s.logger.Debug("Fetching yearly Withdraw status success", zap.Int("year", year))
-
-	records, err := s.withdrawRepository.GetYearlyWithdrawStatusSuccess(year)
-	if err != nil {
-		s.logger.Error("failed to fetch yearly Withdraw status success", zap.Error(err))
-
-		return nil, withdraw_errors.ErrFailedFindYearWithdrawStatusSuccess
-	}
-
-	s.logger.Debug("Successfully fetched yearly Withdraw status success", zap.Int("year", year))
-
-	so := s.mapping.ToWithdrawResponsesYearStatusSuccess(records)
-
-	return so, nil
-}
-
-func (s *withdrawService) FindMonthWithdrawStatusFailed(req *requests.MonthStatusWithdraw) ([]*response.WithdrawResponseMonthStatusFailed, *response.ErrorResponse) {
-	year := req.Year
-	month := req.Month
-
-	s.logger.Debug("Fetching monthly Withdraw status Failed", zap.Int("year", year), zap.Int("month", month))
-
-	records, err := s.withdrawRepository.GetMonthWithdrawStatusFailed(req)
-
-	if err != nil {
-		s.logger.Error("failed to fetch monthly Withdraw status Failed", zap.Error(err))
-
-		return nil, withdraw_errors.ErrFailedFindMonthWithdrawStatusFailed
-	}
-
-	s.logger.Debug("Failedfully fetched monthly Withdraw status Failed", zap.Int("year", year), zap.Int("month", month))
-
-	so := s.mapping.ToWithdrawResponsesMonthStatusFailed(records)
-
-	return so, nil
-}
-
-func (s *withdrawService) FindYearlyWithdrawStatusFailed(year int) ([]*response.WithdrawResponseYearStatusFailed, *response.ErrorResponse) {
-	s.logger.Debug("Fetching yearly Withdraw status Failed", zap.Int("year", year))
-
-	records, err := s.withdrawRepository.GetYearlyWithdrawStatusFailed(year)
-	if err != nil {
-		s.logger.Error("failed to fetch yearly Withdraw status Failed", zap.Error(err))
-
-		return nil, withdraw_errors.ErrFailedFindYearWithdrawStatusFailed
-	}
-
-	s.logger.Debug("Failedfully fetched yearly Withdraw status Failed", zap.Int("year", year))
-
-	so := s.mapping.ToWithdrawResponsesYearStatusFailed(records)
-
-	return so, nil
-}
-
-func (s *withdrawService) FindMonthWithdrawStatusSuccessByCardNumber(req *requests.MonthStatusWithdrawCardNumber) ([]*response.WithdrawResponseMonthStatusSuccess, *response.ErrorResponse) {
-	year := req.Year
-	card_number := req.CardNumber
-	month := req.Month
-
-	s.logger.Debug("Fetching monthly Withdraw status success", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
-
-	records, err := s.withdrawRepository.GetMonthWithdrawStatusSuccessByCardNumber(req)
-
-	if err != nil {
-		s.logger.Error("failed to fetch monthly Withdraw status success", zap.Error(err))
-
-		return nil, withdraw_errors.ErrFailedFindMonthWithdrawStatusSuccess
-	}
-
-	s.logger.Debug("Successfully fetched monthly Withdraw status success", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
-
-	so := s.mapping.ToWithdrawResponsesMonthStatusSuccess(records)
-
-	return so, nil
-}
-
-func (s *withdrawService) FindYearlyWithdrawStatusSuccessByCardNumber(req *requests.YearStatusWithdrawCardNumber) ([]*response.WithdrawResponseYearStatusSuccess, *response.ErrorResponse) {
-	year := req.Year
-	card_number := req.CardNumber
-
-	s.logger.Debug("Fetching yearly Withdraw status success", zap.Int("year", year), zap.String("card_number", card_number))
-
-	records, err := s.withdrawRepository.GetYearlyWithdrawStatusSuccessByCardNumber(req)
-	if err != nil {
-		s.logger.Error("failed to fetch yearly Withdraw status success", zap.Error(err))
-
-		return nil, withdraw_errors.ErrFailedFindYearWithdrawStatusSuccess
-	}
-
-	s.logger.Debug("Successfully fetched yearly Withdraw status success", zap.Int("year", year), zap.String("card_number", card_number))
-
-	so := s.mapping.ToWithdrawResponsesYearStatusSuccess(records)
-
-	return so, nil
-}
-
-func (s *withdrawService) FindMonthWithdrawStatusFailedByCardNumber(req *requests.MonthStatusWithdrawCardNumber) ([]*response.WithdrawResponseMonthStatusFailed, *response.ErrorResponse) {
-	year := req.Year
-	card_number := req.CardNumber
-	month := req.Month
-
-	s.logger.Debug("Fetching monthly Withdraw status Failed", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
-
-	records, err := s.withdrawRepository.GetMonthWithdrawStatusFailedByCardNumber(req)
-
-	if err != nil {
-		s.logger.Error("failed to fetch monthly Withdraw status Failed", zap.Error(err))
-
-		return nil, withdraw_errors.ErrFailedFindMonthWithdrawStatusFailed
-	}
-
-	s.logger.Debug("Failedfully fetched monthly Withdraw status Failed", zap.Int("year", year), zap.Int("month", month), zap.String("card_number", card_number))
-
-	so := s.mapping.ToWithdrawResponsesMonthStatusFailed(records)
-
-	return so, nil
-}
-
-func (s *withdrawService) FindYearlyWithdrawStatusFailedByCardNumber(req *requests.YearStatusWithdrawCardNumber) ([]*response.WithdrawResponseYearStatusFailed, *response.ErrorResponse) {
-	year := req.Year
-	card_number := req.CardNumber
-
-	s.logger.Debug("Fetching yearly Withdraw status Failed", zap.Int("year", year), zap.String("card_number", card_number))
-
-	records, err := s.withdrawRepository.GetYearlyWithdrawStatusFailedByCardNumber(req)
-	if err != nil {
-		s.logger.Error("failed to fetch yearly Withdraw status Failed", zap.Error(err))
-
-		return nil, withdraw_errors.ErrFailedFindYearWithdrawStatusFailed
-	}
-
-	s.logger.Debug("Failedfully fetched yearly Withdraw status Failed", zap.Int("year", year), zap.String("card_number", card_number))
-
-	so := s.mapping.ToWithdrawResponsesYearStatusFailed(records)
-
-	return so, nil
-}
-
-func (s *withdrawService) FindMonthlyWithdraws(year int) ([]*response.WithdrawMonthlyAmountResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching monthly withdraws", zap.Int("year", year))
-
-	withdraws, err := s.withdrawRepository.GetMonthlyWithdraws(year)
-
-	if err != nil {
-		s.logger.Error("failed to find monthly withdraws", zap.Error(err))
-		return nil, withdraw_errors.ErrFailedFindMonthlyWithdraws
-	}
-
-	responseWithdraws := s.mapping.ToWithdrawsAmountMonthlyResponses(withdraws)
-
-	s.logger.Debug("Successfully fetched monthly withdraws", zap.Int("year", year))
-
-	return responseWithdraws, nil
-}
-
-func (s *withdrawService) FindYearlyWithdraws(year int) ([]*response.WithdrawYearlyAmountResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching yearly withdraws", zap.Int("year", year))
-
-	withdraws, err := s.withdrawRepository.GetYearlyWithdraws(year)
-	if err != nil {
-		s.logger.Error("failed to find yearly withdraws", zap.Error(err))
-		return nil, withdraw_errors.ErrFailedFindYearlyWithdraws
-	}
-
-	responseWithdraws := s.mapping.ToWithdrawsAmountYearlyResponses(withdraws)
-
-	s.logger.Debug("Successfully fetched yearly withdraws", zap.Int("year", year))
-
-	return responseWithdraws, nil
-}
-
-func (s *withdrawService) FindMonthlyWithdrawsByCardNumber(req *requests.YearMonthCardNumber) ([]*response.WithdrawMonthlyAmountResponse, *response.ErrorResponse) {
-	cardNumber := req.CardNumber
-	year := req.Year
-
-	s.logger.Debug("Fetching monthly withdraws by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
-
-	withdraws, err := s.withdrawRepository.GetMonthlyWithdrawsByCardNumber(req)
-	if err != nil {
-		s.logger.Error("failed to find monthly withdraws by card number", zap.Error(err))
-		return nil, withdraw_errors.ErrFailedFindMonthlyWithdraws
-	}
-
-	responseWithdraws := s.mapping.ToWithdrawsAmountMonthlyResponses(withdraws)
-
-	s.logger.Debug("Successfully fetched monthly withdraws by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
-
-	return responseWithdraws, nil
-}
-
-func (s *withdrawService) FindYearlyWithdrawsByCardNumber(req *requests.YearMonthCardNumber) ([]*response.WithdrawYearlyAmountResponse, *response.ErrorResponse) {
-	cardNumber := req.CardNumber
-	year := req.Year
-
-	s.logger.Debug("Fetching yearly withdraws by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
-
-	withdraws, err := s.withdrawRepository.GetYearlyWithdrawsByCardNumber(req)
-	if err != nil {
-		s.logger.Error("failed to find yearly withdraws by card number", zap.Error(err))
-		return nil, withdraw_errors.ErrFailedFindYearlyWithdraws
-	}
-
-	responseWithdraws := s.mapping.ToWithdrawsAmountYearlyResponses(withdraws)
-
-	s.logger.Debug("Successfully fetched yearly withdraws by card number", zap.String("card_number", cardNumber), zap.Int("year", year))
-
-	return responseWithdraws, nil
-}
-
-func (s *withdrawService) FindByActive(req *requests.FindAllWithdraws) ([]*response.WithdrawResponseDeleteAt, *int, *response.ErrorResponse) {
 	page := req.Page
 	pageSize := req.PageSize
 	search := req.Search
-
-	s.logger.Debug("Fetching active withdraw",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
 
 	if page <= 0 {
 		page = 1
@@ -379,37 +186,60 @@ func (s *withdrawService) FindByActive(req *requests.FindAllWithdraws) ([]*respo
 		pageSize = 10
 	}
 
-	withdraws, totalRecords, err := s.withdrawRepository.FindByActive(req)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("page", page),
+		attribute.Int("pageSize", pageSize),
+		attribute.String("search", search))
 
-	if err != nil {
-		s.logger.Error("Failed to fetch active withdraw",
-			zap.Error(err),
-			zap.Int("page", page),
-			zap.Int("pageSize", pageSize),
-			zap.String("search", search))
+	defer func() {
+		end(status)
+	}()
 
-		return nil, nil, withdraw_errors.ErrFailedFindActiveWithdraws
+	if data, total, found := s.cache.GetCachedWithdrawActiveCache(ctx, req); found {
+		logSuccess("Successfully retrieved all withdraw records from cache", zap.Int("totalRecords", *total), zap.Int("page", page), zap.Int("pageSize", pageSize))
+		return data, total, nil
 	}
 
-	withdrawResponses := s.mapping.ToWithdrawsResponseDeleteAt(withdraws)
+	withdraws, err := s.withdrawRepository.FindByActive(ctx, req)
 
-	s.logger.Debug("Successfully fetched active withdraw",
-		zap.Int("totalRecords", *totalRecords),
+	if err != nil {
+		status = "error"
+		return errorhandler.HandlerErrorPagination[[]*db.GetActiveWithdrawsRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindActiveWithdraws,
+			method,
+			span,
+
+			zap.Int("page", page),
+			zap.Int("pageSize", pageSize),
+			zap.String("search", search),
+		)
+	}
+
+	var totalCount int
+
+	if len(withdraws) > 0 {
+		totalCount = int(withdraws[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+
+	s.cache.SetCachedWithdrawActiveCache(ctx, req, withdraws, &totalCount)
+
+	logSuccess("Successfully fetched active withdraw",
+		zap.Int("totalRecords", totalCount),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
-	return withdrawResponses, totalRecords, nil
+	return withdraws, &totalCount, nil
 }
 
-func (s *withdrawService) FindByTrashed(req *requests.FindAllWithdraws) ([]*response.WithdrawResponseDeleteAt, *int, *response.ErrorResponse) {
+func (s *withdrawService) FindByTrashed(ctx context.Context, req *requests.FindAllWithdraws) ([]*db.GetTrashedWithdrawsRow, *int, error) {
+	const method = "FindByTrashed"
+
 	page := req.Page
 	pageSize := req.PageSize
 	search := req.Search
-
-	s.logger.Debug("Fetching trashed withdraw",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
 
 	if page <= 0 {
 		page = 1
@@ -419,249 +249,958 @@ func (s *withdrawService) FindByTrashed(req *requests.FindAllWithdraws) ([]*resp
 		pageSize = 10
 	}
 
-	withdraws, totalRecords, err := s.withdrawRepository.FindByTrashed(req)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("page", page),
+		attribute.Int("pageSize", pageSize),
+		attribute.String("search", search))
 
-	if err != nil {
-		s.logger.Error("Failed to fetch trashed withdraw",
-			zap.Error(err),
-			zap.Int("page", page),
-			zap.Int("pageSize", pageSize),
-			zap.String("search", search))
+	defer func() {
+		end(status)
+	}()
 
-		return nil, nil, withdraw_errors.ErrFailedFindTrashedWithdraws
+	if data, total, found := s.cache.GetCachedWithdrawTrashedCache(ctx, req); found {
+		logSuccess("Successfully retrieved all withdraw records from cache", zap.Int("totalRecords", *total), zap.Int("page", page), zap.Int("pageSize", pageSize))
+		return data, total, nil
 	}
 
-	withdrawResponses := s.mapping.ToWithdrawsResponseDeleteAt(withdraws)
+	withdraws, err := s.withdrawRepository.FindByTrashed(ctx, req)
 
-	s.logger.Debug("Successfully fetched trashed withdraw",
-		zap.Int("totalRecords", *totalRecords),
+	if err != nil {
+		status = "error"
+		return errorhandler.HandlerErrorPagination[[]*db.GetTrashedWithdrawsRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindTrashedWithdraws,
+			method,
+			span,
+
+			zap.Int("page", page),
+			zap.Int("pageSize", pageSize),
+			zap.String("search", search),
+		)
+	}
+
+	var totalCount int
+
+	if len(withdraws) > 0 {
+		totalCount = int(withdraws[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+
+	s.cache.SetCachedWithdrawTrashedCache(ctx, req, withdraws, &totalCount)
+
+	logSuccess("Successfully fetched trashed withdraw",
+		zap.Int("totalRecords", totalCount),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
-	return withdrawResponses, totalRecords, nil
+	return withdraws, &totalCount, nil
 }
 
-func (s *withdrawService) Create(request *requests.CreateWithdrawRequest) (*response.WithdrawResponse, *response.ErrorResponse) {
+func (s *withdrawService) FindById(ctx context.Context, withdrawID int) (*db.GetWithdrawByIDRow, error) {
+	const method = "FindById"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("withdraw_id", withdrawID))
+
+	defer func() {
+		end(status)
+	}()
+
+	withdraw, err := s.withdrawRepository.FindById(ctx, withdrawID)
+
+	if data, found := s.cache.GetCachedWithdrawCache(ctx, withdrawID); found {
+		logSuccess("Successfully retrieved withdraw from cache", zap.Int("withdraw_id", withdrawID))
+		return data, nil
+	}
+
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*db.GetWithdrawByIDRow](
+			s.logger,
+			withdraw_errors.ErrWithdrawNotFound,
+			method,
+			span,
+
+			zap.Int("withdraw_id", withdrawID),
+		)
+	}
+
+	s.cache.SetCachedWithdrawCache(ctx, withdraw)
+
+	logSuccess("Successfully fetched withdraw", zap.Int("withdraw_id", withdrawID))
+
+	return withdraw, nil
+}
+
+func (s *withdrawService) FindMonthWithdrawStatusSuccess(ctx context.Context, req *requests.MonthStatusWithdraw) ([]*db.GetMonthWithdrawStatusSuccessRow, error) {
+	const method = "FindMonthWithdrawStatusSuccess"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", req.Year),
+		attribute.Int("month", req.Month))
+
+	defer func() {
+		end(status)
+	}()
+
+	s.logger.Debug("Checking cache for monthly withdraw status success", zap.Int("year", req.Year), zap.Int("month", req.Month))
+
+	if dbRows, found := s.cache.GetCachedMonthWithdrawStatusSuccessCache(ctx, req); found {
+		s.logger.Info("Cache hit for monthly withdraw status success", zap.Int("year", req.Year), zap.Int("month", req.Month))
+		status = "ok"
+		logSuccess("Successfully fetched monthly withdraw status success (from cache)", zap.Int("year", req.Year), zap.Int("month", req.Month))
+		return dbRows, nil
+	}
+
+	dbRows, err := s.withdrawRepository.GetMonthWithdrawStatusSuccess(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthWithdrawStatusSuccessRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindMonthWithdrawStatusSuccess,
+			method,
+			span,
+
+			zap.Int("year", req.Year),
+			zap.Int("month", req.Month),
+		)
+	}
+
+	s.cache.SetCachedMonthWithdrawStatusSuccessCache(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched monthly withdraw status success (from DB)", zap.Int("year", req.Year), zap.Int("month", req.Month))
+
+	return dbRows, nil
+}
+
+func (s *withdrawService) FindYearlyWithdrawStatusSuccess(ctx context.Context, year int) ([]*db.GetYearlyWithdrawStatusSuccessRow, error) {
+	const method = "FindYearlyWithdrawStatusSuccess"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if dbRows, found := s.cache.GetCachedYearlyWithdrawStatusSuccessCache(ctx, year); found {
+		logSuccess("Successfully fetched yearly withdraw status success (from cache)", zap.Int("year", year))
+		return dbRows, nil
+	}
+
+	dbRows, err := s.withdrawRepository.GetYearlyWithdrawStatusSuccess(ctx, year)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyWithdrawStatusSuccessRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindYearWithdrawStatusSuccess,
+			method,
+			span,
+
+			zap.Int("year", year),
+		)
+	}
+
+	s.cache.SetCachedYearlyWithdrawStatusSuccessCache(ctx, year, dbRows)
+
+	logSuccess("Successfully fetched yearly withdraw status success (from DB)", zap.Int("year", year))
+
+	return dbRows, nil
+}
+
+func (s *withdrawService) FindMonthWithdrawStatusFailed(ctx context.Context, req *requests.MonthStatusWithdraw) ([]*db.GetMonthWithdrawStatusFailedRow, error) {
+	const method = "FindMonthWithdrawStatusFailed"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", req.Year),
+		attribute.Int("month", req.Month))
+
+	defer func() {
+		end(status)
+	}()
+
+	if dbRows, found := s.cache.GetCachedMonthWithdrawStatusFailedCache(ctx, req); found {
+		logSuccess("Successfully fetched monthly withdraw status failed (from cache)", zap.Int("year", req.Year), zap.Int("month", req.Month))
+		return dbRows, nil
+	}
+
+	dbRows, err := s.withdrawRepository.GetMonthWithdrawStatusFailed(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthWithdrawStatusFailedRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindMonthWithdrawStatusFailed,
+			method,
+			span,
+
+			zap.Int("year", req.Year),
+			zap.Int("month", req.Month),
+		)
+	}
+
+	s.cache.SetCachedMonthWithdrawStatusFailedCache(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched monthly withdraw status failed (from DB)", zap.Int("year", req.Year), zap.Int("month", req.Month))
+
+	return dbRows, nil
+}
+
+func (s *withdrawService) FindYearlyWithdrawStatusFailed(ctx context.Context, year int) ([]*db.GetYearlyWithdrawStatusFailedRow, error) {
+	const method = "FindYearlyWithdrawStatusFailed"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if dbRows, found := s.cache.GetCachedYearlyWithdrawStatusFailedCache(ctx, year); found {
+		logSuccess("Successfully fetched yearly withdraw status failed (from cache)", zap.Int("year", year))
+		return dbRows, nil
+	}
+
+	dbRows, err := s.withdrawRepository.GetYearlyWithdrawStatusFailed(ctx, year)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyWithdrawStatusFailedRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindYearWithdrawStatusFailed,
+			method,
+			span,
+
+			zap.Int("year", year),
+		)
+	}
+
+	s.cache.SetCachedYearlyWithdrawStatusFailedCache(ctx, year, dbRows)
+
+	logSuccess("Successfully fetched yearly withdraw status failed (from DB)", zap.Int("year", year))
+
+	return dbRows, nil
+}
+
+func (s *withdrawService) FindMonthlyWithdraws(ctx context.Context, year int) ([]*db.GetMonthlyWithdrawsRow, error) {
+	const method = "FindMonthlyWithdraws"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if dbRows, found := s.cache.GetCachedMonthlyWithdraws(ctx, year); found {
+		logSuccess("Successfully fetched monthly withdraws (from cache)", zap.Int("year", year))
+		return dbRows, nil
+	}
+
+	dbRows, err := s.withdrawRepository.GetMonthlyWithdraws(ctx, year)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyWithdrawsRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindMonthlyWithdraws,
+			method,
+			span,
+
+			zap.Int("year", year),
+		)
+	}
+
+	s.cache.SetCachedMonthlyWithdraws(ctx, year, dbRows)
+
+	logSuccess("Successfully fetched monthly withdraws (from DB)", zap.Int("year", year))
+
+	return dbRows, nil
+}
+
+func (s *withdrawService) FindYearlyWithdraws(ctx context.Context, year int) ([]*db.GetYearlyWithdrawsRow, error) {
+	const method = "FindYearlyWithdraws"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if dbRows, found := s.cache.GetCachedYearlyWithdraws(ctx, year); found {
+		logSuccess("Successfully fetched yearly withdraws (from cache)", zap.Int("year", year))
+		return dbRows, nil
+	}
+
+	dbRows, err := s.withdrawRepository.GetYearlyWithdraws(ctx, year)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyWithdrawsRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindYearlyWithdraws,
+			method,
+			span,
+
+			zap.Int("year", year),
+		)
+	}
+
+	s.cache.SetCachedYearlyWithdraws(ctx, year, dbRows)
+
+	logSuccess("Successfully fetched yearly withdraws (from DB)", zap.Int("year", year))
+
+	return dbRows, nil
+}
+
+func (s *withdrawService) FindMonthWithdrawStatusSuccessByCardNumber(ctx context.Context, req *requests.MonthStatusWithdrawCardNumber) ([]*db.GetMonthWithdrawStatusSuccessCardNumberRow, error) {
+	const method = "FindMonthWithdrawStatusSuccessByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year),
+		attribute.Int("month", req.Month))
+
+	defer func() {
+		end(status)
+	}()
+
+	if dbRows, found := s.cache.GetCachedMonthWithdrawStatusSuccessByCardNumber(ctx, req); found {
+		logSuccess("Successfully fetched monthly withdraw status success by card number (from cache)",
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+			zap.Int("month", req.Month))
+		return dbRows, nil
+	}
+
+	dbRows, err := s.withdrawRepository.GetMonthWithdrawStatusSuccessByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthWithdrawStatusSuccessCardNumberRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindMonthWithdrawStatusSuccess,
+			method,
+			span,
+
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+			zap.Int("month", req.Month),
+		)
+	}
+
+	s.cache.SetCachedMonthWithdrawStatusSuccessByCardNumber(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched monthly withdraw status success by card number (from DB)",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("month", req.Month))
+
+	return dbRows, nil
+}
+
+func (s *withdrawService) FindYearlyWithdrawStatusSuccessByCardNumber(ctx context.Context, req *requests.YearStatusWithdrawCardNumber) ([]*db.GetYearlyWithdrawStatusSuccessCardNumberRow, error) {
+	const method = "FindYearlyWithdrawStatusSuccessByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if dbRows, found := s.cache.GetCachedYearlyWithdrawStatusSuccessByCardNumber(ctx, req); found {
+		logSuccess("Successfully fetched yearly withdraw status success by card number (from cache)",
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year))
+		return dbRows, nil
+	}
+
+	dbRows, err := s.withdrawRepository.GetYearlyWithdrawStatusSuccessByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyWithdrawStatusSuccessCardNumberRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindYearWithdrawStatusSuccess,
+			method,
+			span,
+
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetCachedYearlyWithdrawStatusSuccessByCardNumber(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched yearly withdraw status success by card number (from DB)",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	return dbRows, nil
+}
+
+func (s *withdrawService) FindMonthWithdrawStatusFailedByCardNumber(ctx context.Context, req *requests.MonthStatusWithdrawCardNumber) ([]*db.GetMonthWithdrawStatusFailedCardNumberRow, error) {
+	const method = "FindMonthWithdrawStatusFailedByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year),
+		attribute.Int("month", req.Month))
+
+	defer func() {
+		end(status)
+	}()
+
+	if dbRows, found := s.cache.GetCachedMonthWithdrawStatusFailedByCardNumber(ctx, req); found {
+		logSuccess("Successfully fetched monthly withdraw status failed by card number (from cache)",
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+			zap.Int("month", req.Month))
+		return dbRows, nil
+	}
+
+	dbRows, err := s.withdrawRepository.GetMonthWithdrawStatusFailedByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthWithdrawStatusFailedCardNumberRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindMonthWithdrawStatusFailed,
+			method,
+			span,
+
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+			zap.Int("month", req.Month),
+		)
+	}
+
+	s.cache.SetCachedMonthWithdrawStatusFailedByCardNumber(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched monthly withdraw status failed by card number (from DB)",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year),
+		zap.Int("month", req.Month))
+
+	return dbRows, nil
+}
+
+func (s *withdrawService) FindYearlyWithdrawStatusFailedByCardNumber(ctx context.Context, req *requests.YearStatusWithdrawCardNumber) ([]*db.GetYearlyWithdrawStatusFailedCardNumberRow, error) {
+	const method = "FindYearlyWithdrawStatusFailedByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if dbRows, found := s.cache.GetCachedYearlyWithdrawStatusFailedByCardNumber(ctx, req); found {
+		logSuccess("Successfully fetched yearly withdraw status failed by card number (from cache)",
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year))
+		return dbRows, nil
+	}
+
+	dbRows, err := s.withdrawRepository.GetYearlyWithdrawStatusFailedByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyWithdrawStatusFailedCardNumberRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindYearWithdrawStatusFailed,
+			method,
+			span,
+
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetCachedYearlyWithdrawStatusFailedByCardNumber(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched yearly withdraw status failed by card number (from DB)",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	return dbRows, nil
+}
+
+func (s *withdrawService) FindMonthlyWithdrawsByCardNumber(ctx context.Context, req *requests.YearMonthCardNumber) ([]*db.GetMonthlyWithdrawsByCardNumberRow, error) {
+	const method = "FindMonthlyWithdrawsByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if dbRows, found := s.cache.GetCachedMonthlyWithdrawsByCardNumber(ctx, req); found {
+		logSuccess("Successfully fetched monthly withdraws by card number (from cache)",
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year))
+		return dbRows, nil
+	}
+
+	dbRows, err := s.withdrawRepository.GetMonthlyWithdrawsByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyWithdrawsByCardNumberRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindMonthlyWithdraws,
+			method,
+			span,
+
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetCachedMonthlyWithdrawsByCardNumber(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched monthly withdraws by card number (from DB)",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	return dbRows, nil
+}
+
+func (s *withdrawService) FindYearlyWithdrawsByCardNumber(ctx context.Context, req *requests.YearMonthCardNumber) ([]*db.GetYearlyWithdrawsByCardNumberRow, error) {
+	const method = "FindYearlyWithdrawsByCardNumber"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", req.CardNumber),
+		attribute.Int("year", req.Year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if dbRows, found := s.cache.GetCachedYearlyWithdrawsByCardNumber(ctx, req); found {
+		logSuccess("Successfully fetched yearly withdraws by card number (from cache)",
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year))
+		return dbRows, nil
+	}
+
+	dbRows, err := s.withdrawRepository.GetYearlyWithdrawsByCardNumber(ctx, req)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyWithdrawsByCardNumberRow](
+			s.logger,
+			withdraw_errors.ErrFailedFindYearlyWithdraws,
+			method,
+			span,
+
+			zap.String("card_number", req.CardNumber),
+			zap.Int("year", req.Year),
+		)
+	}
+
+	s.cache.SetCachedYearlyWithdrawsByCardNumber(ctx, req, dbRows)
+
+	logSuccess("Successfully fetched yearly withdraws by card number (from DB)",
+		zap.String("card_number", req.CardNumber),
+		zap.Int("year", req.Year))
+
+	return dbRows, nil
+}
+
+func (s *withdrawService) Create(ctx context.Context, request *requests.CreateWithdrawRequest) (*db.CreateWithdrawRow, error) {
+	const method = "CreateWithdraw"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", request.CardNumber),
+		attribute.Int("withdraw_amount", request.WithdrawAmount))
+
+	defer func() {
+		end(status)
+	}()
+
 	s.logger.Debug("Creating new withdraw", zap.Any("request", request))
 
-	saldo, err := s.saldoRepository.FindByCardNumber(request.CardNumber)
-
+	saldo, err := s.saldoRepository.FindByCardNumber(ctx, request.CardNumber)
 	if err != nil {
-		s.logger.Error("Failed to find saldo by user ID", zap.Error(err))
-		return nil, saldo_errors.ErrFailedSaldoNotFound
+		status = "error"
+		return errorhandler.HandleError[*db.CreateWithdrawRow](
+			s.logger,
+			saldo_errors.ErrFailedSaldoNotFound,
+			method,
+			span,
+
+			zap.String("card_number", request.CardNumber),
+		)
 	}
 
 	if saldo == nil {
-		s.logger.Error("Saldo not found for user", zap.String("cardNumber", request.CardNumber))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Saldo not found for the specified user ID.",
-			Code:    http.StatusNotFound,
-		}
+		status = "error"
+		return errorhandler.HandleError[*db.CreateWithdrawRow](
+			s.logger,
+			saldo_errors.ErrFailedSaldoNotFound,
+			method,
+			span,
+			zap.String("card_number", request.CardNumber),
+		)
 	}
-	if saldo.TotalBalance < request.WithdrawAmount {
-		s.logger.Error("Insufficient balance for user", zap.String("cardNumber", request.CardNumber), zap.Int("requested", request.WithdrawAmount))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Insufficient balance for withdrawal.",
-			Code:    http.StatusBadRequest,
-		}
+
+	if int(saldo.TotalBalance) < request.WithdrawAmount {
+		status = "error"
+		return errorhandler.HandleError[*db.CreateWithdrawRow](
+			s.logger,
+			saldo_errors.ErrFailedInsufficientBalance,
+			method,
+			span,
+			zap.String("card_number", request.CardNumber),
+			zap.Int("requested_amount", request.WithdrawAmount),
+			zap.Int32("current_balance", saldo.TotalBalance),
+		)
 	}
-	newTotalBalance := saldo.TotalBalance - request.WithdrawAmount
+
+	newTotalBalance := int(saldo.TotalBalance) - request.WithdrawAmount
 	updateData := &requests.UpdateSaldoWithdraw{
 		CardNumber:     request.CardNumber,
 		TotalBalance:   newTotalBalance,
 		WithdrawAmount: &request.WithdrawAmount,
 		WithdrawTime:   &request.WithdrawTime,
 	}
-	_, err = s.saldoRepository.UpdateSaldoWithdraw(updateData)
+
+	_, err = s.saldoRepository.UpdateSaldoWithdraw(ctx, updateData)
 	if err != nil {
-		s.logger.Error("Failed to update saldo after withdrawal", zap.Error(err))
-		return nil, saldo_errors.ErrFailedUpdateSaldo
+		status = "error"
+		return errorhandler.HandleError[*db.CreateWithdrawRow](
+			s.logger,
+			saldo_errors.ErrFailedUpdateSaldo,
+			method,
+			span,
+
+			zap.String("card_number", request.CardNumber),
+		)
 	}
-	withdrawRecord, err := s.withdrawRepository.CreateWithdraw(request)
+
+	withdrawRecord, err := s.withdrawRepository.CreateWithdraw(ctx, request)
 	if err != nil {
-		s.logger.Error("Failed to create withdraw record", zap.Error(err))
+		status = "error"
+		s.logger.Warn("Attempting to rollback saldo due to withdraw creation failure", zap.String("card_number", request.CardNumber))
 		rollbackData := &requests.UpdateSaldoWithdraw{
 			CardNumber:     request.CardNumber,
-			TotalBalance:   saldo.TotalBalance,
+			TotalBalance:   int(saldo.TotalBalance),
 			WithdrawAmount: &request.WithdrawAmount,
 			WithdrawTime:   &request.WithdrawTime,
 		}
-		if _, rollbackErr := s.saldoRepository.UpdateSaldoWithdraw(rollbackData); rollbackErr != nil {
+		var rollbackErr error
+		if _, rollbackErr = s.saldoRepository.UpdateSaldoWithdraw(ctx, rollbackData); rollbackErr != nil {
 			s.logger.Error("Failed to rollback saldo after withdraw creation failure", zap.Error(rollbackErr))
 		}
-		if _, err := s.withdrawRepository.UpdateWithdrawStatus(&requests.UpdateWithdrawStatus{
-			WithdrawID: withdrawRecord.ID,
-			Status:     "failed",
-		}); err != nil {
-			s.logger.Error("Failed to update withdraw status", zap.Error(err))
+
+		errorFields := []zap.Field{
+
+			zap.String("card_number", request.CardNumber),
 		}
-		return nil, withdraw_errors.ErrFailedCreateWithdraw
+		if rollbackErr != nil {
+			errorFields = append(errorFields, zap.NamedError("rollback_error", rollbackErr))
+		}
+
+		return errorhandler.HandleError[*db.CreateWithdrawRow](
+			s.logger,
+			withdraw_errors.ErrFailedCreateWithdraw,
+			method,
+			span,
+			errorFields...,
+		)
 	}
-	if _, err := s.withdrawRepository.UpdateWithdrawStatus(&requests.UpdateWithdrawStatus{
-		WithdrawID: withdrawRecord.ID,
+
+	if _, err := s.withdrawRepository.UpdateWithdrawStatus(ctx, &requests.UpdateWithdrawStatus{
+		WithdrawID: int(withdrawRecord.WithdrawID),
 		Status:     "success",
 	}); err != nil {
-		s.logger.Error("Failed to update withdraw status", zap.Error(err))
-		return nil, withdraw_errors.ErrFailedUpdateWithdraw
+		status = "error"
+		return errorhandler.HandleError[*db.CreateWithdrawRow](
+			s.logger,
+			withdraw_errors.ErrFailedUpdateWithdraw,
+			method,
+			span,
+
+			zap.Int("withdraw_id", int(withdrawRecord.WithdrawID)),
+		)
 	}
-	so := s.mapping.ToWithdrawResponse(withdrawRecord)
-	s.logger.Debug("Successfully created withdraw", zap.Int("withdraw_id", withdrawRecord.ID))
-	return so, nil
+
+	logSuccess("Successfully created withdraw", zap.Int("withdraw_id", int(withdrawRecord.WithdrawID)))
+
+	return withdrawRecord, nil
 }
 
-func (s *withdrawService) Update(request *requests.UpdateWithdrawRequest) (*response.WithdrawResponse, *response.ErrorResponse) {
+func (s *withdrawService) Update(ctx context.Context, request *requests.UpdateWithdrawRequest) (*db.UpdateWithdrawRow, error) {
+	const method = "UpdateWithdraw"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("withdraw_id", *request.WithdrawID),
+		attribute.String("card_number", request.CardNumber))
+
+	defer func() {
+		end(status)
+	}()
+
 	s.logger.Debug("Updating withdraw", zap.Int("withdraw_id", *request.WithdrawID), zap.Any("request", request))
-	_, err := s.withdrawRepository.FindById(*request.WithdrawID)
+
+	_, err := s.withdrawRepository.FindById(ctx, *request.WithdrawID)
 	if err != nil {
-		s.logger.Error("Failed to find withdraw record by ID", zap.Error(err))
-		return nil, withdraw_errors.ErrWithdrawNotFound
+		status = "error"
+		return errorhandler.HandleError[*db.UpdateWithdrawRow](
+			s.logger,
+			withdraw_errors.ErrWithdrawNotFound,
+			method,
+			span,
+
+			zap.Int("withdraw_id", *request.WithdrawID),
+		)
 	}
-	saldo, err := s.saldoRepository.FindByCardNumber(request.CardNumber)
+
+	saldo, err := s.saldoRepository.FindByCardNumber(ctx, request.CardNumber)
 	if err != nil {
-		s.logger.Error("Failed to fetch saldo by user ID", zap.Error(err))
-		return nil, saldo_errors.ErrFailedSaldoNotFound
+		status = "error"
+		return errorhandler.HandleError[*db.UpdateWithdrawRow](
+			s.logger,
+			saldo_errors.ErrFailedSaldoNotFound,
+			method,
+			span,
+
+			zap.String("card_number", request.CardNumber),
+		)
 	}
-	if saldo.TotalBalance < request.WithdrawAmount {
-		s.logger.Error("Insufficient balance for user", zap.String("cardNumber", request.CardNumber))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Insufficient balance for withdrawal update.",
-			Code:    http.StatusBadRequest,
-		}
+
+	if int(saldo.TotalBalance) < request.WithdrawAmount {
+		status = "error"
+		return errorhandler.HandleError[*db.UpdateWithdrawRow](
+			s.logger,
+			saldo_errors.ErrFailedInsufficientBalance,
+			method,
+			span,
+			zap.String("card_number", request.CardNumber),
+			zap.Int("requested_amount", request.WithdrawAmount),
+			zap.Int32("current_balance", saldo.TotalBalance),
+		)
 	}
-	newTotalBalance := saldo.TotalBalance - request.WithdrawAmount
+
+	newTotalBalance := int(saldo.TotalBalance) - request.WithdrawAmount
 	updateSaldoData := &requests.UpdateSaldoWithdraw{
 		CardNumber:     saldo.CardNumber,
 		TotalBalance:   newTotalBalance,
 		WithdrawAmount: &request.WithdrawAmount,
 		WithdrawTime:   &request.WithdrawTime,
 	}
-	_, err = s.saldoRepository.UpdateSaldoWithdraw(updateSaldoData)
+	_, err = s.saldoRepository.UpdateSaldoWithdraw(ctx, updateSaldoData)
 	if err != nil {
-		s.logger.Error("Failed to update saldo balance", zap.Error(err))
-		if _, err := s.withdrawRepository.UpdateWithdrawStatus(&requests.UpdateWithdrawStatus{
+		status = "error"
+		if _, statusErr := s.withdrawRepository.UpdateWithdrawStatus(ctx, &requests.UpdateWithdrawStatus{
 			WithdrawID: *request.WithdrawID,
 			Status:     "failed",
-		}); err != nil {
-			s.logger.Error("Failed to update withdraw status", zap.Error(err))
+		}); statusErr != nil {
+			s.logger.Error("Failed to update withdraw status to 'failed'", zap.Error(statusErr))
 		}
-		return nil, withdraw_errors.ErrFailedUpdateWithdraw
+		return errorhandler.HandleError[*db.UpdateWithdrawRow](
+			s.logger,
+			saldo_errors.ErrFailedUpdateSaldo,
+			method,
+			span,
+
+			zap.String("card_number", request.CardNumber),
+		)
 	}
-	updatedWithdraw, err := s.withdrawRepository.UpdateWithdraw(request)
+
+	updatedWithdraw, err := s.withdrawRepository.UpdateWithdraw(ctx, request)
 	if err != nil {
-		s.logger.Error("Failed to update withdraw record", zap.Error(err))
+		status = "error"
+		s.logger.Warn("Attempting to rollback saldo due to withdraw update failure", zap.String("card_number", request.CardNumber))
 		rollbackData := &requests.UpdateSaldoBalance{
 			CardNumber:   saldo.CardNumber,
-			TotalBalance: saldo.TotalBalance,
+			TotalBalance: int(saldo.TotalBalance),
 		}
-		_, rollbackErr := s.saldoRepository.UpdateSaldoBalance(rollbackData)
-		if rollbackErr != nil {
+		var rollbackErr error
+		if _, rollbackErr = s.saldoRepository.UpdateSaldoBalance(ctx, rollbackData); rollbackErr != nil {
 			s.logger.Error("Failed to rollback saldo after withdraw update failure", zap.Error(rollbackErr))
 		}
-		if _, err := s.withdrawRepository.UpdateWithdrawStatus(&requests.UpdateWithdrawStatus{
+
+		if _, statusErr := s.withdrawRepository.UpdateWithdrawStatus(ctx, &requests.UpdateWithdrawStatus{
 			WithdrawID: *request.WithdrawID,
 			Status:     "failed",
-		}); err != nil {
-			s.logger.Error("Failed to update withdraw status", zap.Error(err))
+		}); statusErr != nil {
+			s.logger.Error("Failed to update withdraw status to 'failed'", zap.Error(statusErr))
 		}
-		return nil, withdraw_errors.ErrFailedUpdateWithdraw
+
+		errorFields := []zap.Field{
+
+			zap.Int("withdraw_id", *request.WithdrawID),
+		}
+		if rollbackErr != nil {
+			errorFields = append(errorFields, zap.NamedError("rollback_error", rollbackErr))
+		}
+
+		return errorhandler.HandleError[*db.UpdateWithdrawRow](
+			s.logger,
+			withdraw_errors.ErrFailedUpdateWithdraw,
+			method,
+			span,
+			errorFields...,
+		)
 	}
-	if _, err := s.withdrawRepository.UpdateWithdrawStatus(&requests.UpdateWithdrawStatus{
-		WithdrawID: updatedWithdraw.ID,
+
+	if _, err := s.withdrawRepository.UpdateWithdrawStatus(ctx, &requests.UpdateWithdrawStatus{
+		WithdrawID: int(updatedWithdraw.WithdrawID),
 		Status:     "success",
 	}); err != nil {
-		s.logger.Error("Failed to update withdraw status", zap.Error(err))
-		return nil, withdraw_errors.ErrFailedUpdateWithdraw
+		status = "error"
+		return errorhandler.HandleError[*db.UpdateWithdrawRow](
+			s.logger,
+			withdraw_errors.ErrFailedUpdateWithdraw,
+			method,
+			span,
+
+			zap.Int("withdraw_id", int(updatedWithdraw.WithdrawID)),
+		)
 	}
-	so := s.mapping.ToWithdrawResponse(updatedWithdraw)
-	s.logger.Debug("Successfully updated withdraw", zap.Int("withdraw_id", so.ID))
-	return so, nil
+
+	logSuccess("Successfully updated withdraw", zap.Int("withdraw_id", int(updatedWithdraw.WithdrawID)))
+
+	return updatedWithdraw, nil
 }
 
-func (s *withdrawService) TrashedWithdraw(withdraw_id int) (*response.WithdrawResponseDeleteAt, *response.ErrorResponse) {
+func (s *withdrawService) TrashedWithdraw(ctx context.Context, withdraw_id int) (*db.Withdraw, error) {
+	const method = "TrashedWithdraw"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("withdraw_id", withdraw_id))
+
+	defer func() {
+		end(status)
+	}()
+
 	s.logger.Debug("Trashing withdraw", zap.Int("withdraw_id", withdraw_id))
 
-	res, err := s.withdrawRepository.TrashedWithdraw(withdraw_id)
-
+	res, err := s.withdrawRepository.TrashedWithdraw(ctx, withdraw_id)
 	if err != nil {
-		s.logger.Error("Failed to move withdraw to trash",
-			zap.Int("withdraw_id", withdraw_id),
-			zap.Error(err))
+		status = "error"
+		return errorhandler.HandleError[*db.Withdraw](
+			s.logger,
+			withdraw_errors.ErrFailedTrashedWithdraw,
+			method,
+			span,
 
-		return nil, withdraw_errors.ErrFailedTrashedWithdraw
+			zap.Int("withdraw_id", withdraw_id),
+		)
 	}
 
-	withdrawResponse := s.mapping.ToWithdrawResponseDeleteAt(res)
+	logSuccess("Successfully trashed withdraw", zap.Int("withdraw_id", withdraw_id))
 
-	s.logger.Debug("Successfully trashed withdraw", zap.Int("withdraw_id", withdraw_id))
-
-	return withdrawResponse, nil
+	return res, nil
 }
 
-func (s *withdrawService) RestoreWithdraw(withdraw_id int) (*response.WithdrawResponseDeleteAt, *response.ErrorResponse) {
+func (s *withdrawService) RestoreWithdraw(ctx context.Context, withdraw_id int) (*db.Withdraw, error) {
+	const method = "RestoreWithdraw"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("withdraw_id", withdraw_id))
+
+	defer func() {
+		end(status)
+	}()
+
 	s.logger.Debug("Restoring withdraw", zap.Int("withdraw_id", withdraw_id))
 
-	res, err := s.withdrawRepository.RestoreWithdraw(withdraw_id)
-
+	res, err := s.withdrawRepository.RestoreWithdraw(ctx, withdraw_id)
 	if err != nil {
-		s.logger.Error("Failed to restore withdraw from trash",
-			zap.Int("withdraw_id", withdraw_id),
-			zap.Error(err))
+		status = "error"
+		return errorhandler.HandleError[*db.Withdraw](
+			s.logger,
+			withdraw_errors.ErrFailedRestoreWithdraw,
+			method,
+			span,
 
-		return nil, withdraw_errors.ErrFailedRestoreWithdraw
+			zap.Int("withdraw_id", withdraw_id),
+		)
 	}
 
-	withdrawResponse := s.mapping.ToWithdrawResponseDeleteAt(res)
+	logSuccess("Successfully restored withdraw", zap.Int("withdraw_id", withdraw_id))
 
-	s.logger.Debug("Successfully restored withdraw", zap.Int("withdraw_id", withdraw_id))
-
-	return withdrawResponse, nil
+	return res, nil
 }
 
-func (s *withdrawService) DeleteWithdrawPermanent(withdraw_id int) (bool, *response.ErrorResponse) {
+func (s *withdrawService) DeleteWithdrawPermanent(ctx context.Context, withdraw_id int) (bool, error) {
+	const method = "DeleteWithdrawPermanent"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("withdraw_id", withdraw_id))
+
+	defer func() {
+		end(status)
+	}()
+
 	s.logger.Debug("Deleting withdraw permanently", zap.Int("withdraw_id", withdraw_id))
 
-	_, err := s.withdrawRepository.DeleteWithdrawPermanent(withdraw_id)
-
+	_, err := s.withdrawRepository.DeleteWithdrawPermanent(ctx, withdraw_id)
 	if err != nil {
-		s.logger.Error("Failed to permanently delete withdraw",
-			zap.Int("withdraw_id", withdraw_id),
-			zap.Error(err))
+		status = "error"
+		return errorhandler.HandleError[bool](
+			s.logger,
+			withdraw_errors.ErrFailedDeleteWithdrawPermanent,
+			method,
+			span,
 
-		return false, withdraw_errors.ErrFailedDeleteWithdrawPermanent
+			zap.Int("withdraw_id", withdraw_id),
+		)
 	}
 
-	s.logger.Debug("Successfully deleted withdraw permanently", zap.Int("withdraw_id", withdraw_id))
+	logSuccess("Successfully deleted withdraw permanently", zap.Int("withdraw_id", withdraw_id))
 
 	return true, nil
 }
 
-func (s *withdrawService) RestoreAllWithdraw() (bool, *response.ErrorResponse) {
+func (s *withdrawService) RestoreAllWithdraw(ctx context.Context) (bool, error) {
+	const method = "RestoreAllWithdraw"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method)
+
+	defer func() {
+		end(status)
+	}()
+
 	s.logger.Debug("Restoring all withdraws")
 
-	_, err := s.withdrawRepository.RestoreAllWithdraw()
-
+	_, err := s.withdrawRepository.RestoreAllWithdraw(ctx)
 	if err != nil {
-		s.logger.Error("Failed to restore all withdraws", zap.Error(err))
-		return false, withdraw_errors.ErrFailedRestoreAllWithdraw
+		status = "error"
+		return errorhandler.HandleError[bool](
+			s.logger,
+			withdraw_errors.ErrFailedRestoreAllWithdraw,
+			method,
+			span,
+		)
 	}
 
-	s.logger.Debug("Successfully restored all withdraws")
+	logSuccess("Successfully restored all withdraws")
 	return true, nil
 }
 
-func (s *withdrawService) DeleteAllWithdrawPermanent() (bool, *response.ErrorResponse) {
+func (s *withdrawService) DeleteAllWithdrawPermanent(ctx context.Context) (bool, error) {
+	const method = "DeleteAllWithdrawPermanent"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method)
+
+	defer func() {
+		end(status)
+	}()
+
 	s.logger.Debug("Permanently deleting all withdraws")
 
-	_, err := s.withdrawRepository.DeleteAllWithdrawPermanent()
-
+	_, err := s.withdrawRepository.DeleteAllWithdrawPermanent(ctx)
 	if err != nil {
-		s.logger.Error("Failed to permanently delete all withdraws", zap.Error(err))
-		return false, withdraw_errors.ErrFailedDeleteAllWithdrawPermanent
+		status = "error"
+		return errorhandler.HandleError[bool](
+			s.logger,
+			withdraw_errors.ErrFailedDeleteAllWithdrawPermanent,
+			method,
+			span,
+		)
 	}
 
-	s.logger.Debug("Successfully deleted all withdraws permanently")
+	logSuccess("Successfully deleted all withdraws permanently")
 	return true, nil
 }

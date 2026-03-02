@@ -155,16 +155,16 @@ message ApiResponsePaginationSaldoDeleteAt {
 service SaldoService{
    rpc FindAllSaldo(FindAllSaldoRequest) returns (ApiResponsePaginationSaldo) {}
    rpc FindByIdSaldo(FindByIdSaldoRequest) returns (ApiResponseSaldo) {}
+   rpc FindByCardNumber(pb.FindByCardNumberRequest) returns (ApiResponseSaldo) {}
+   rpc FindByActive(FindAllSaldoRequest) returns (ApiResponsePaginationSaldoDeleteAt) {}
+   rpc FindByTrashed(FindAllSaldoRequest) returns (ApiResponsePaginationSaldoDeleteAt) {}
+   rpc CreateSaldo(CreateSaldoRequest) returns (ApiResponseSaldo) {}
 
    rpc FindMonthlyTotalSaldoBalance(FindMonthlySaldoTotalBalance)returns(ApiResponseMonthTotalSaldo){}
    rpc FindYearTotalSaldoBalance(FindYearlySaldo)returns(ApiResponseYearTotalSaldo){}
    rpc FindMonthlySaldoBalances(FindYearlySaldo)returns(ApiResponseMonthSaldoBalances){}
    rpc FindYearlySaldoBalances(FindYearlySaldo)returns(ApiResponseYearSaldoBalances){}
 
-   rpc FindByCardNumber(pb.FindByCardNumberRequest) returns (ApiResponseSaldo) {}
-   rpc FindByActive(FindAllSaldoRequest) returns (ApiResponsePaginationSaldoDeleteAt) {}
-   rpc FindByTrashed(FindAllSaldoRequest) returns (ApiResponsePaginationSaldoDeleteAt) {}
-   rpc CreateSaldo(CreateSaldoRequest) returns (ApiResponseSaldo) {}
    rpc UpdateSaldo(UpdateSaldoRequest) returns (ApiResponseSaldo) {}
    rpc TrashedSaldo(FindByIdSaldoRequest) returns (ApiResponseSaldoDeleteAt) {}
    rpc RestoreSaldo(FindByIdSaldoRequest) returns (ApiResponseSaldoDeleteAt) {}

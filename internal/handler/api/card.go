@@ -1,84 +1,92 @@
 package api
 
 import (
+	card_cache "MamangRust/paymentgatewaygrpc/internal/cache/api/card"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api"
+	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
-	"MamangRust/paymentgatewaygrpc/pkg/errors/card_errors"
+	"MamangRust/paymentgatewaygrpc/pkg/errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
+	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type CardHandleApi struct {
-	card    pb.CardServiceClient
-	logger  logger.LoggerInterface
-	mapping apimapper.CardResponseMapper
+type cardHandleApi struct {
+	card       pb.CardServiceClient
+	logger     logger.LoggerInterface
+	apiHandler errors.ApiHandler
+	mapping    apimapper.CardResponseMapper
+	cache      card_cache.CardMencache
 }
 
-func NewHandlerCard(card pb.CardServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapper apimapper.CardResponseMapper) *CardHandleApi {
-	cardHandler := &CardHandleApi{
-		card:    card,
-		logger:  logger,
-		mapping: mapper,
+func NewHandlerCard(card pb.CardServiceClient, router *echo.Echo, logger logger.LoggerInterface, apiHandler errors.ApiHandler, mapping apimapper.CardResponseMapper, cache card_cache.CardMencache) *cardHandleApi {
+	cardHandler := &cardHandleApi{
+		card:       card,
+		logger:     logger,
+		apiHandler: apiHandler,
+		mapping:    mapping,
+		cache:      cache,
 	}
+
 	routerCard := router.Group("/api/card")
 
-	routerCard.GET("", cardHandler.FindAll)
-	routerCard.GET("/:id", cardHandler.FindById)
+	routerCard.GET("", apiHandler.Handle("find-all", cardHandler.FindAll))
+	routerCard.GET("/:id", apiHandler.Handle("find-by-id", cardHandler.FindById))
+	routerCard.GET("/user", apiHandler.Handle("find-by-user-id", cardHandler.FindByUserID))
+	routerCard.GET("/active", apiHandler.Handle("find-by-active", cardHandler.FindByActive))
+	routerCard.GET("/trashed", apiHandler.Handle("find-by-trashed", cardHandler.FindByTrashed))
+	routerCard.GET("/card_number/:card_number", apiHandler.Handle("find-by-card-number", cardHandler.FindByCardNumber))
 
-	routerCard.GET("/dashboard", cardHandler.DashboardCard)
-	routerCard.GET("/dashboard/:cardNumber", cardHandler.DashboardCardCardNumber)
+	routerCard.GET("/dashboard", apiHandler.Handle("dashboard-card", cardHandler.DashboardCard))
+	routerCard.GET("/dashboard/:cardNumber", apiHandler.Handle("dashboard-card-by-card-number", cardHandler.DashboardCardCardNumber))
 
-	routerCard.GET("/monthly-balance", cardHandler.FindMonthlyBalance)
-	routerCard.GET("/yearly-balance", cardHandler.FindYearlyBalance)
+	routerCard.GET("/monthly-balance", apiHandler.Handle("find-monthly-balance", cardHandler.FindMonthlyBalance))
+	routerCard.GET("/yearly-balance", apiHandler.Handle("find-yearly-balance", cardHandler.FindYearlyBalance))
 
-	routerCard.GET("/monthly-topup-amount", cardHandler.FindMonthlyTopupAmount)
-	routerCard.GET("/yearly-topup-amount", cardHandler.FindYearlyTopupAmount)
-	routerCard.GET("/monthly-withdraw-amount", cardHandler.FindMonthlyWithdrawAmount)
-	routerCard.GET("/yearly-withdraw-amount", cardHandler.FindYearlyWithdrawAmount)
+	routerCard.GET("/monthly-topup-amount", apiHandler.Handle("find-monthly-topup-amount", cardHandler.FindMonthlyTopupAmount))
+	routerCard.GET("/yearly-topup-amount", apiHandler.Handle("find-yearly-topup-amount", cardHandler.FindYearlyTopupAmount))
+	routerCard.GET("/monthly-withdraw-amount", apiHandler.Handle("find-monthly-withdraw-amount", cardHandler.FindMonthlyWithdrawAmount))
+	routerCard.GET("/yearly-withdraw-amount", apiHandler.Handle("find-yearly-withdraw-amount", cardHandler.FindYearlyWithdrawAmount))
 
-	routerCard.GET("/monthly-transaction-amount", cardHandler.FindMonthlyTransactionAmount)
-	routerCard.GET("/yearly-transaction-amount", cardHandler.FindYearlyTransactionAmount)
+	routerCard.GET("/monthly-transaction-amount", apiHandler.Handle("find-monthly-transaction-amount", cardHandler.FindMonthlyTransactionAmount))
+	routerCard.GET("/yearly-transaction-amount", apiHandler.Handle("find-yearly-transaction-amount", cardHandler.FindYearlyTransactionAmount))
 
-	routerCard.GET("/monthly-transfer-sender-amount", cardHandler.FindMonthlyTransferSenderAmount)
-	routerCard.GET("/yearly-transfer-sender-amount", cardHandler.FindYearlyTransferSenderAmount)
-	routerCard.GET("/monthly-transfer-receiver-amount", cardHandler.FindMonthlyTransferReceiverAmount)
-	routerCard.GET("/yearly-transfer-receiver-amount", cardHandler.FindYearlyTransferReceiverAmount)
+	routerCard.GET("/monthly-transfer-sender-amount", apiHandler.Handle("find-monthly-transfer-sender-amount", cardHandler.FindMonthlyTransferSenderAmount))
+	routerCard.GET("/yearly-transfer-sender-amount", apiHandler.Handle("find-yearly-transfer-sender-amount", cardHandler.FindYearlyTransferSenderAmount))
+	routerCard.GET("/monthly-transfer-receiver-amount", apiHandler.Handle("find-monthly-transfer-receiver-amount", cardHandler.FindMonthlyTransferReceiverAmount))
+	routerCard.GET("/yearly-transfer-receiver-amount", apiHandler.Handle("find-yearly-transfer-receiver-amount", cardHandler.FindYearlyTransferReceiverAmount))
 
-	routerCard.GET("/monthly-balance-by-card", cardHandler.FindMonthlyBalanceByCardNumber)
-	routerCard.GET("/yearly-balance-by-card", cardHandler.FindYearlyBalanceByCardNumber)
-	routerCard.GET("/monthly-topup-amount-by-card", cardHandler.FindMonthlyTopupAmountByCardNumber)
-	routerCard.GET("/yearly-topup-amount-by-card", cardHandler.FindYearlyTopupAmountByCardNumber)
+	routerCard.GET("/monthly-balance-by-card", apiHandler.Handle("find-monthly-balance-by-card", cardHandler.FindMonthlyBalanceByCardNumber))
+	routerCard.GET("/yearly-balance-by-card", apiHandler.Handle("find-yearly-balance-by-card", cardHandler.FindYearlyBalanceByCardNumber))
+	routerCard.GET("/monthly-topup-amount-by-card", apiHandler.Handle("find-monthly-topup-amount-by-card", cardHandler.FindMonthlyTopupAmountByCardNumber))
+	routerCard.GET("/yearly-topup-amount-by-card", apiHandler.Handle("find-yearly-topup-amount-by-card", cardHandler.FindYearlyTopupAmountByCardNumber))
 
-	routerCard.GET("/monthly-withdraw-amount-by-card", cardHandler.FindMonthlyWithdrawAmountByCardNumber)
-	routerCard.GET("/yearly-withdraw-amount-by-card", cardHandler.FindYearlyWithdrawAmountByCardNumber)
-	routerCard.GET("/monthly-transaction-amount-by-card", cardHandler.FindMonthlyTransactionAmountByCardNumber)
-	routerCard.GET("/yearly-transaction-amount-by-card", cardHandler.FindYearlyTransactionAmountByCardNumber)
+	routerCard.GET("/monthly-withdraw-amount-by-card", apiHandler.Handle("find-monthly-withdraw-amount-by-card", cardHandler.FindMonthlyWithdrawAmountByCardNumber))
+	routerCard.GET("/yearly-withdraw-amount-by-card", apiHandler.Handle("find-yearly-withdraw-amount-by-card", cardHandler.FindYearlyWithdrawAmountByCardNumber))
+	routerCard.GET("/monthly-transaction-amount-by-card", apiHandler.Handle("find-monthly-transaction-amount-by-card", cardHandler.FindMonthlyTransactionAmountByCardNumber))
+	routerCard.GET("/yearly-transaction-amount-by-card", apiHandler.Handle("find-yearly-transaction-amount-by-card", cardHandler.FindYearlyTransactionAmountByCardNumber))
 
-	routerCard.GET("/monthly-transfer-sender-amount-by-card", cardHandler.FindMonthlyTransferSenderAmountByCardNumber)
-	routerCard.GET("/yearly-transfer-sender-amount-by-card", cardHandler.FindYearlyTransferSenderAmountByCardNumber)
-	routerCard.GET("/monthly-transfer-receiver-amount-by-card", cardHandler.FindMonthlyTransferReceiverAmountByCardNumber)
-	routerCard.GET("/yearly-transfer-receiver-amount-by-card", cardHandler.FindYearlyTransferReceiverAmountByCardNumber)
+	routerCard.GET("/monthly-transfer-sender-amount-by-card", apiHandler.Handle("find-monthly-transfer-sender-amount-by-card", cardHandler.FindMonthlyTransferSenderAmountByCardNumber))
+	routerCard.GET("/yearly-transfer-sender-amount-by-card", apiHandler.Handle("find-yearly-transfer-sender-amount-by-card", cardHandler.FindYearlyTransferSenderAmountByCardNumber))
+	routerCard.GET("/monthly-transfer-receiver-amount-by-card", apiHandler.Handle("find-monthly-transfer-receiver-amount-by-card", cardHandler.FindMonthlyTransferReceiverAmountByCardNumber))
+	routerCard.GET("/yearly-transfer-receiver-amount-by-card", apiHandler.Handle("find-yearly-transfer-receiver-amount-by-card", cardHandler.FindYearlyTransferReceiverAmountByCardNumber))
 
-	routerCard.GET("/user", cardHandler.FindByUserID)
-	routerCard.GET("/active", cardHandler.FindByActive)
-	routerCard.GET("/trashed", cardHandler.FindByTrashed)
-	routerCard.GET("/card_number/:card_number", cardHandler.FindByCardNumber)
-
-	routerCard.POST("/create", cardHandler.CreateCard)
-	routerCard.POST("/update/:id", cardHandler.UpdateCard)
-	routerCard.POST("/trashed/:id", cardHandler.TrashedCard)
-	routerCard.POST("/restore/:id", cardHandler.RestoreCard)
-	routerCard.DELETE("/permanent/:id", cardHandler.DeleteCardPermanent)
-
-	routerCard.POST("/restore/all", cardHandler.RestoreAllCard)
-	routerCard.POST("/permanent/all", cardHandler.DeleteAllCardPermanent)
+	routerCard.POST("/create", apiHandler.Handle("create-card", cardHandler.CreateCard))
+	routerCard.POST("/update/:id", apiHandler.Handle("update-card", cardHandler.UpdateCard))
+	routerCard.POST("/trashed/:id", apiHandler.Handle("trashed-card", cardHandler.TrashedCard))
+	routerCard.POST("/restore/:id", apiHandler.Handle("restore-card", cardHandler.RestoreCard))
+	routerCard.DELETE("/permanent/:id", apiHandler.Handle("delete-card-permanent", cardHandler.DeleteCardPermanent))
+	routerCard.POST("/restore/all", apiHandler.Handle("restore-all-card", cardHandler.RestoreAllCard))
+	routerCard.POST("/permanent/all", apiHandler.Handle("delete-all-card-permanent", cardHandler.DeleteAllCardPermanent))
 
 	return cardHandler
 }
@@ -96,7 +104,7 @@ func NewHandlerCard(card pb.CardServiceClient, router *echo.Echo, logger logger.
 // @Success 200 {object} response.ApiResponsePaginationCard "Card data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card data"
 // @Router /api/card [get]
-func (h *CardHandleApi) FindAll(c echo.Context) error {
+func (h *cardHandleApi) FindAll(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -108,25 +116,34 @@ func (h *CardHandleApi) FindAll(c echo.Context) error {
 	}
 
 	search := c.QueryParam("search")
-
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllCardRequest{
+	reqCache := &requests.FindAllCards{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetFindAllCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindAllCardRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	cards, err := h.card.FindAllCard(ctx, req)
-
+	cards, err := h.card.FindAllCard(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to fetch card records", zap.Error(err))
-		return card_errors.ErrApiFailedFindAllCards(c)
+		return h.handleGrpcError(err, "FindAllCard")
 	}
 
-	so := h.mapping.ToApiResponsesCard(cards)
+	apiResponse := h.mapping.ToApiResponsesCard(cards)
+	h.cache.SetFindAllCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindById godoc
@@ -141,29 +158,32 @@ func (h *CardHandleApi) FindAll(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid card ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/{id} [get]
-func (h *CardHandleApi) FindById(c echo.Context) error {
+func (h *cardHandleApi) FindById(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		h.logger.Debug("Invalid card ID", zap.Error(err))
-		return card_errors.ErrApiInvalidCardID(c)
+		return errors.NewBadRequestError("id is required and must be an integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindByIdCardRequest{
+	cachedData, found := h.cache.GetByIdCache(ctx, id)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindByIdCardRequest{
 		CardId: int32(id),
 	}
 
-	card, err := h.card.FindByIdCard(ctx, req)
-
+	card, err := h.card.FindByIdCard(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to fetch card record", zap.Error(err))
-		return card_errors.ErrApiFailedFindByIdCard(c)
+		return h.handleGrpcError(err, "FindByIdCard")
 	}
 
-	so := h.mapping.ToApiResponseCard(card)
+	apiResponse := h.mapping.ToApiResponseCard(card)
+	h.cache.SetByIdCache(ctx, id, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindByUserID godoc
@@ -177,34 +197,38 @@ func (h *CardHandleApi) FindById(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid user ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/user [get]
-func (h *CardHandleApi) FindByUserID(c echo.Context) error {
+func (h *cardHandleApi) FindByUserID(c echo.Context) error {
 	userIDStr, ok := c.Get("userID").(string)
 	if !ok {
-		return card_errors.ErrApiInvalidUserID(c)
+		return errors.NewBadRequestError("user_id is required")
 	}
 
 	uid, err := strconv.ParseInt(userIDStr, 10, 32)
 	if err != nil {
-		return card_errors.ErrApiInvalidUserID(c)
+		return errors.NewBadRequestError("invalid user ID format")
 	}
-	userID := int32(uid)
+	userID := int(uid)
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindByUserIdCardRequest{
-		UserId: userID,
+	cachedData, found := h.cache.GetByUserIDCache(ctx, userID)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
 	}
 
-	card, err := h.card.FindByUserIdCard(ctx, req)
+	reqGrpc := &pb.FindByUserIdCardRequest{
+		UserId: int32(userID),
+	}
 
+	card, err := h.card.FindByUserIdCard(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to fetch card record", zap.Error(err))
-		return card_errors.ErrApiFailedFindByUserIdCard(c)
+		return h.handleGrpcError(err, "FindByUserIdCard")
 	}
 
-	so := h.mapping.ToApiResponseCard(card)
+	apiResponse := h.mapping.ToApiResponseCard(card)
+	h.cache.SetByUserIDCache(ctx, userID, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // DashboardCard godoc
@@ -216,17 +240,23 @@ func (h *CardHandleApi) FindByUserID(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseDashboardCard
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/dashboard [get]
-func (h *CardHandleApi) DashboardCard(c echo.Context) error {
+func (h *cardHandleApi) DashboardCard(c echo.Context) error {
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetDashboardCardCache(ctx)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	res, err := h.card.DashboardCard(ctx, &emptypb.Empty{})
 	if err != nil {
-		return card_errors.ErrApiFailedDashboardCard(c)
+		return h.handleGrpcError(err, "DashboardCard")
 	}
 
-	so := h.mapping.ToApiResponseDashboardCard(res)
+	apiResponse := h.mapping.ToApiResponseDashboardCard(res)
+	h.cache.SetDashboardCardCache(ctx, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // DashboardCardCardNumber godoc
@@ -240,13 +270,17 @@ func (h *CardHandleApi) DashboardCard(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/dashboard/{cardNumber} [get]
-func (h *CardHandleApi) DashboardCardCardNumber(c echo.Context) error {
+func (h *cardHandleApi) DashboardCardCardNumber(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	cardNumber := c.Param("cardNumber")
-
 	if cardNumber == "" {
-		return card_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("cardNumber is required")
+	}
+
+	cachedData, found := h.cache.GetDashboardCardCardNumberCache(ctx, cardNumber)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
 	}
 
 	req := &pb.FindByCardNumberRequest{
@@ -255,12 +289,13 @@ func (h *CardHandleApi) DashboardCardCardNumber(c echo.Context) error {
 
 	res, err := h.card.DashboardCardNumber(ctx, req)
 	if err != nil {
-		return card_errors.ErrApiFailedDashboardCardByCardNumber(c)
+		return h.handleGrpcError(err, "DashboardCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseDashboardCardCardNumber(res)
+	apiResponse := h.mapping.ToApiResponseDashboardCardCardNumber(res)
+	h.cache.SetDashboardCardCardNumberCache(ctx, cardNumber, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyBalance godoc
@@ -274,29 +309,33 @@ func (h *CardHandleApi) DashboardCardCardNumber(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-balance [get]
-func (h *CardHandleApi) FindMonthlyBalance(c echo.Context) error {
+func (h *cardHandleApi) FindMonthlyBalance(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearBalance{
+	cachedData, found := h.cache.GetMonthlyBalanceCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearBalance{
 		Year: int32(year),
 	}
 
-	res, err := h.card.FindMonthlyBalance(ctx, req)
-
+	res, err := h.card.FindMonthlyBalance(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindMonthlyBalance(c)
+		return h.handleGrpcError(err, "FindMonthlyBalance")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyBalances(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyBalances(res)
+	h.cache.SetMonthlyBalanceCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyBalance godoc
@@ -310,30 +349,33 @@ func (h *CardHandleApi) FindMonthlyBalance(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-balance [get]
-func (h *CardHandleApi) FindYearlyBalance(c echo.Context) error {
+func (h *cardHandleApi) FindYearlyBalance(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearBalance{
+	cachedData, found := h.cache.GetYearlyBalanceCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearBalance{
 		Year: int32(year),
 	}
 
-	res, err := h.card.FindYearlyBalance(ctx, req)
-
+	res, err := h.card.FindYearlyBalance(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindYearlyBalance(c)
+		return h.handleGrpcError(err, "FindYearlyBalance")
 	}
 
-	so := h.mapping.ToApiResponseYearlyBalances(res)
+	apiResponse := h.mapping.ToApiResponseYearlyBalances(res)
+	h.cache.SetYearlyBalanceCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyTopupAmount godoc
@@ -347,29 +389,33 @@ func (h *CardHandleApi) FindYearlyBalance(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-topup-amount [get]
-func (h *CardHandleApi) FindMonthlyTopupAmount(c echo.Context) error {
+func (h *cardHandleApi) FindMonthlyTopupAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmount{
+	cachedData, found := h.cache.GetMonthlyTopupCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmount{
 		Year: int32(year),
 	}
 
-	res, err := h.card.FindMonthlyTopupAmount(ctx, req)
+	res, err := h.card.FindMonthlyTopupAmount(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindMonthlyTopupAmount(c)
+		return h.handleGrpcError(err, "FindMonthlyTopupAmount")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyAmounts(res)
+	h.cache.SetMonthlyTopupCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyTopupAmount godoc
@@ -383,29 +429,33 @@ func (h *CardHandleApi) FindMonthlyTopupAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/topup/yearly-topup-amount [get]
-func (h *CardHandleApi) FindYearlyTopupAmount(c echo.Context) error {
+func (h *cardHandleApi) FindYearlyTopupAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmount{
+	cachedData, found := h.cache.GetYearlyTopupCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmount{
 		Year: int32(year),
 	}
 
-	res, err := h.card.FindYearlyTopupAmount(ctx, req)
+	res, err := h.card.FindYearlyTopupAmount(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindYearlyTopupAmount(c)
+		return h.handleGrpcError(err, "FindYearlyTopupAmount")
 	}
 
-	so := h.mapping.ToApiResponseYearlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyAmounts(res)
+	h.cache.SetYearlyTopupCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyWithdrawAmount godoc
@@ -419,29 +469,33 @@ func (h *CardHandleApi) FindYearlyTopupAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-withdraw-amount [get]
-func (h *CardHandleApi) FindMonthlyWithdrawAmount(c echo.Context) error {
+func (h *cardHandleApi) FindMonthlyWithdrawAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmount{
+	cachedData, found := h.cache.GetMonthlyWithdrawCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmount{
 		Year: int32(year),
 	}
 
-	res, err := h.card.FindMonthlyWithdrawAmount(ctx, req)
+	res, err := h.card.FindMonthlyWithdrawAmount(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindMonthlyWithdrawAmount(c)
+		return h.handleGrpcError(err, "FindMonthlyWithdrawAmount")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyAmounts(res)
+	h.cache.SetMonthlyWithdrawCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyWithdrawAmount godoc
@@ -455,29 +509,33 @@ func (h *CardHandleApi) FindMonthlyWithdrawAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-withdraw-amount [get]
-func (h *CardHandleApi) FindYearlyWithdrawAmount(c echo.Context) error {
+func (h *cardHandleApi) FindYearlyWithdrawAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmount{
+	cachedData, found := h.cache.GetYearlyWithdrawCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmount{
 		Year: int32(year),
 	}
 
-	res, err := h.card.FindYearlyWithdrawAmount(ctx, req)
+	res, err := h.card.FindYearlyWithdrawAmount(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindYearlyWithdrawAmount(c)
+		return h.handleGrpcError(err, "FindYearlyWithdrawAmount")
 	}
 
-	so := h.mapping.ToApiResponseYearlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyAmounts(res)
+	h.cache.SetYearlyWithdrawCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyTransactionAmount godoc
@@ -491,29 +549,33 @@ func (h *CardHandleApi) FindYearlyWithdrawAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transaction-amount [get]
-func (h *CardHandleApi) FindMonthlyTransactionAmount(c echo.Context) error {
+func (h *cardHandleApi) FindMonthlyTransactionAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmount{
+	cachedData, found := h.cache.GetMonthlyTransactionCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmount{
 		Year: int32(year),
 	}
 
-	res, err := h.card.FindMonthlyTransactionAmount(ctx, req)
+	res, err := h.card.FindMonthlyTransactionAmount(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindMonthlyTransactionAmount(c)
+		return h.handleGrpcError(err, "FindMonthlyTransactionAmount")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyAmounts(res)
+	h.cache.SetMonthlyTransactionCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyTransactionAmount godoc
@@ -527,29 +589,33 @@ func (h *CardHandleApi) FindMonthlyTransactionAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transaction-amount [get]
-func (h *CardHandleApi) FindYearlyTransactionAmount(c echo.Context) error {
+func (h *cardHandleApi) FindYearlyTransactionAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmount{
+	cachedData, found := h.cache.GetYearlyTransactionCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmount{
 		Year: int32(year),
 	}
 
-	res, err := h.card.FindYearlyTransactionAmount(ctx, req)
+	res, err := h.card.FindYearlyTransactionAmount(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindYearlyTransactionAmount(c)
+		return h.handleGrpcError(err, "FindYearlyTransactionAmount")
 	}
 
-	so := h.mapping.ToApiResponseYearlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyAmounts(res)
+	h.cache.SetYearlyTransactionCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyTransferSenderAmount godoc
@@ -563,29 +629,33 @@ func (h *CardHandleApi) FindYearlyTransactionAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transfer-sender-amount [get]
-func (h *CardHandleApi) FindMonthlyTransferSenderAmount(c echo.Context) error {
+func (h *cardHandleApi) FindMonthlyTransferSenderAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmount{
+	cachedData, found := h.cache.GetMonthlyTransferSenderCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmount{
 		Year: int32(year),
 	}
 
-	res, err := h.card.FindMonthlyTransferSenderAmount(ctx, req)
+	res, err := h.card.FindMonthlyTransferSenderAmount(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindMonthlyTransferSenderAmount(c)
+		return h.handleGrpcError(err, "FindMonthlyTransferSenderAmount")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyAmounts(res)
+	h.cache.SetMonthlyTransferSenderCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyTransferSenderAmount godoc
@@ -599,29 +669,33 @@ func (h *CardHandleApi) FindMonthlyTransferSenderAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/transfer/yearly-transfer-sender-amount [get]
-func (h *CardHandleApi) FindYearlyTransferSenderAmount(c echo.Context) error {
+func (h *cardHandleApi) FindYearlyTransferSenderAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmount{
+	cachedData, found := h.cache.GetYearlyTransferSenderCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmount{
 		Year: int32(year),
 	}
 
-	res, err := h.card.FindYearlyTransferSenderAmount(ctx, req)
+	res, err := h.card.FindYearlyTransferSenderAmount(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindYearlyTransferSenderAmount(c)
+		return h.handleGrpcError(err, "FindYearlyTransferSenderAmount")
 	}
 
-	so := h.mapping.ToApiResponseYearlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyAmounts(res)
+	h.cache.SetYearlyTransferSenderCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyTransferReceiverAmount godoc
@@ -635,29 +709,33 @@ func (h *CardHandleApi) FindYearlyTransferSenderAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transfer-receiver-amount [get]
-func (h *CardHandleApi) FindMonthlyTransferReceiverAmount(c echo.Context) error {
+func (h *cardHandleApi) FindMonthlyTransferReceiverAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmount{
+	cachedData, found := h.cache.GetMonthlyTransferReceiverCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmount{
 		Year: int32(year),
 	}
 
-	res, err := h.card.FindMonthlyTransferReceiverAmount(ctx, req)
+	res, err := h.card.FindMonthlyTransferReceiverAmount(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindMonthlyTransferReceiverAmount(c)
+		return h.handleGrpcError(err, "FindMonthlyTransferReceiverAmount")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyAmounts(res)
+	h.cache.SetMonthlyTransferReceiverCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyTransferReceiverAmount godoc
@@ -671,29 +749,33 @@ func (h *CardHandleApi) FindMonthlyTransferReceiverAmount(c echo.Context) error 
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transfer-receiver-amount [get]
-func (h *CardHandleApi) FindYearlyTransferReceiverAmount(c echo.Context) error {
+func (h *cardHandleApi) FindYearlyTransferReceiverAmount(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmount{
+	cachedData, found := h.cache.GetYearlyTransferReceiverCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmount{
 		Year: int32(year),
 	}
 
-	res, err := h.card.FindYearlyTransferReceiverAmount(ctx, req)
+	res, err := h.card.FindYearlyTransferReceiverAmount(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindYearlyTransferReceiverAmount(c)
+		return h.handleGrpcError(err, "FindYearlyTransferReceiverAmount")
 	}
 
-	so := h.mapping.ToApiResponseYearlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyAmounts(res)
+	h.cache.SetYearlyTransferReceiverCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyBalanceByCardNumber godoc
@@ -708,35 +790,44 @@ func (h *CardHandleApi) FindYearlyTransferReceiverAmount(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-balance-by-card [get]
-func (h *CardHandleApi) FindMonthlyBalanceByCardNumber(c echo.Context) error {
+func (h *cardHandleApi) FindMonthlyBalanceByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	cardNumber := c.QueryParam("card_number")
 	if cardNumber == "" {
-		return card_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("card_number is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearBalanceCardNumber{
+	reqCache := &requests.MonthYearCardNumberCard{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	cachedData, found := h.cache.GetMonthlyBalanceByNumberCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearBalanceCardNumber{
 		Year:       int32(year),
 		CardNumber: cardNumber,
 	}
 
-	res, err := h.card.FindMonthlyBalanceByCardNumber(ctx, req)
+	res, err := h.card.FindMonthlyBalanceByCardNumber(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindMonthlyBalanceByCard(c)
+		return h.handleGrpcError(err, "FindMonthlyBalanceByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyBalances(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyBalances(res)
+	h.cache.SetMonthlyBalanceByNumberCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyBalanceByCardNumber godoc
@@ -751,35 +842,44 @@ func (h *CardHandleApi) FindMonthlyBalanceByCardNumber(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-balance-by-card [get]
-func (h *CardHandleApi) FindYearlyBalanceByCardNumber(c echo.Context) error {
+func (h *cardHandleApi) FindYearlyBalanceByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	cardNumber := c.QueryParam("card_number")
 	if cardNumber == "" {
-		return card_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("card_number is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearBalanceCardNumber{
+	reqCache := &requests.MonthYearCardNumberCard{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	cachedData, found := h.cache.GetYearlyBalanceByNumberCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearBalanceCardNumber{
 		Year:       int32(year),
 		CardNumber: cardNumber,
 	}
 
-	res, err := h.card.FindYearlyBalanceByCardNumber(ctx, req)
+	res, err := h.card.FindYearlyBalanceByCardNumber(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindYearlyBalanceByCard(c)
+		return h.handleGrpcError(err, "FindYearlyBalanceByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseYearlyBalances(res)
+	apiResponse := h.mapping.ToApiResponseYearlyBalances(res)
+	h.cache.SetYearlyBalanceByNumberCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyTopupAmountByCardNumber godoc
@@ -794,35 +894,44 @@ func (h *CardHandleApi) FindYearlyBalanceByCardNumber(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-topup-amount-by-card [get]
-func (h *CardHandleApi) FindMonthlyTopupAmountByCardNumber(c echo.Context) error {
+func (h *cardHandleApi) FindMonthlyTopupAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	cardNumber := c.QueryParam("card_number")
 	if cardNumber == "" {
-		return card_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("card_number is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmountCardNumber{
+	reqCache := &requests.MonthYearCardNumberCard{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	cachedData, found := h.cache.GetMonthlyTopupByNumberCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmountCardNumber{
 		Year:       int32(year),
 		CardNumber: cardNumber,
 	}
 
-	res, err := h.card.FindMonthlyTopupAmountByCardNumber(ctx, req)
+	res, err := h.card.FindMonthlyTopupAmountByCardNumber(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindMonthlyTopupAmountByCard(c)
+		return h.handleGrpcError(err, "FindMonthlyTopupAmountByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyAmounts(res)
+	h.cache.SetMonthlyTopupByNumberCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyTopupAmountByCardNumber godoc
@@ -837,36 +946,44 @@ func (h *CardHandleApi) FindMonthlyTopupAmountByCardNumber(c echo.Context) error
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-topup-amount-by-card [get]
-func (h *CardHandleApi) FindYearlyTopupAmountByCardNumber(c echo.Context) error {
+func (h *cardHandleApi) FindYearlyTopupAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	cardNumber := c.QueryParam("card_number")
-
 	if cardNumber == "" {
-		return card_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("card_number is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmountCardNumber{
+	reqCache := &requests.MonthYearCardNumberCard{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	cachedData, found := h.cache.GetYearlyTopupByNumberCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmountCardNumber{
 		Year:       int32(year),
 		CardNumber: cardNumber,
 	}
 
-	res, err := h.card.FindYearlyTopupAmountByCardNumber(ctx, req)
+	res, err := h.card.FindYearlyTopupAmountByCardNumber(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindYearlyTopupAmountByCard(c)
+		return h.handleGrpcError(err, "FindYearlyTopupAmountByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseYearlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyAmounts(res)
+	h.cache.SetYearlyTopupByNumberCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyWithdrawAmountByCardNumber godoc
@@ -881,34 +998,44 @@ func (h *CardHandleApi) FindYearlyTopupAmountByCardNumber(c echo.Context) error 
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-withdraw-amount-by-card [get]
-func (h *CardHandleApi) FindMonthlyWithdrawAmountByCardNumber(c echo.Context) error {
+func (h *cardHandleApi) FindMonthlyWithdrawAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	cardNumber := c.QueryParam("card_number")
 	if cardNumber == "" {
-		return card_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("card_number is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmountCardNumber{
+	reqCache := &requests.MonthYearCardNumberCard{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	cachedData, found := h.cache.GetMonthlyWithdrawByNumberCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmountCardNumber{
 		Year:       int32(year),
 		CardNumber: cardNumber,
 	}
 
-	res, err := h.card.FindMonthlyWithdrawAmountByCardNumber(ctx, req)
+	res, err := h.card.FindMonthlyWithdrawAmountByCardNumber(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindMonthlyWithdrawAmountByCard(c)
+		return h.handleGrpcError(err, "FindMonthlyWithdrawAmountByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyAmounts(res)
+	h.cache.SetMonthlyWithdrawByNumberCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyWithdrawAmountByCardNumber godoc
@@ -923,36 +1050,44 @@ func (h *CardHandleApi) FindMonthlyWithdrawAmountByCardNumber(c echo.Context) er
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-withdraw-amount-by-card [get]
-func (h *CardHandleApi) FindYearlyWithdrawAmountByCardNumber(c echo.Context) error {
+func (h *cardHandleApi) FindYearlyWithdrawAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	cardNumber := c.QueryParam("card_number")
-
 	if cardNumber == "" {
-		return card_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("card_number is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmountCardNumber{
+	reqCache := &requests.MonthYearCardNumberCard{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	cachedData, found := h.cache.GetYearlyWithdrawByNumberCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmountCardNumber{
 		Year:       int32(year),
 		CardNumber: cardNumber,
 	}
 
-	res, err := h.card.FindYearlyWithdrawAmountByCardNumber(ctx, req)
+	res, err := h.card.FindYearlyWithdrawAmountByCardNumber(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindYearlyWithdrawAmountByCard(c)
+		return h.handleGrpcError(err, "FindYearlyWithdrawAmountByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseYearlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyAmounts(res)
+	h.cache.SetYearlyWithdrawByNumberCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyTransactionAmountByCardNumber godoc
@@ -967,36 +1102,44 @@ func (h *CardHandleApi) FindYearlyWithdrawAmountByCardNumber(c echo.Context) err
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transaction-amount-by-card [get]
-func (h *CardHandleApi) FindMonthlyTransactionAmountByCardNumber(c echo.Context) error {
+func (h *cardHandleApi) FindMonthlyTransactionAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	cardNumber := c.QueryParam("card_number")
-
 	if cardNumber == "" {
-		return card_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("card_number is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmountCardNumber{
+	reqCache := &requests.MonthYearCardNumberCard{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	cachedData, found := h.cache.GetMonthlyTransactionByNumberCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmountCardNumber{
 		Year:       int32(year),
 		CardNumber: cardNumber,
 	}
 
-	res, err := h.card.FindMonthlyTransactionAmountByCardNumber(ctx, req)
+	res, err := h.card.FindMonthlyTransactionAmountByCardNumber(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindMonthlyTransactionAmountByCard(c)
+		return h.handleGrpcError(err, "FindMonthlyTransactionAmountByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyAmounts(res)
+	h.cache.SetMonthlyTransactionByNumberCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyTransactionAmountByCardNumber godoc
@@ -1011,36 +1154,44 @@ func (h *CardHandleApi) FindMonthlyTransactionAmountByCardNumber(c echo.Context)
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transaction-amount-by-card [get]
-func (h *CardHandleApi) FindYearlyTransactionAmountByCardNumber(c echo.Context) error {
+func (h *cardHandleApi) FindYearlyTransactionAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	cardNumber := c.QueryParam("card_number")
-
 	if cardNumber == "" {
-		return card_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("card_number is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmountCardNumber{
+	reqCache := &requests.MonthYearCardNumberCard{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	cachedData, found := h.cache.GetYearlyTransactionByNumberCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmountCardNumber{
 		Year:       int32(year),
 		CardNumber: cardNumber,
 	}
 
-	res, err := h.card.FindYearlyTransactionAmountByCardNumber(ctx, req)
+	res, err := h.card.FindYearlyTransactionAmountByCardNumber(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindYearlyTransactionAmountByCard(c)
+		return h.handleGrpcError(err, "FindYearlyTransactionAmountByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseYearlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyAmounts(res)
+	h.cache.SetYearlyTransactionByNumberCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyTransferSenderAmountByCardNumber godoc
@@ -1055,35 +1206,44 @@ func (h *CardHandleApi) FindYearlyTransactionAmountByCardNumber(c echo.Context) 
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transfer-sender-amount-by-card [get]
-func (h *CardHandleApi) FindMonthlyTransferSenderAmountByCardNumber(c echo.Context) error {
+func (h *cardHandleApi) FindMonthlyTransferSenderAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	cardNumber := c.QueryParam("card_number")
 	if cardNumber == "" {
-		return card_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("card_number is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmountCardNumber{
+	reqCache := &requests.MonthYearCardNumberCard{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	cachedData, found := h.cache.GetMonthlyTransferBySenderCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmountCardNumber{
 		Year:       int32(year),
 		CardNumber: cardNumber,
 	}
 
-	res, err := h.card.FindMonthlyTransferSenderAmountByCardNumber(ctx, req)
+	res, err := h.card.FindMonthlyTransferSenderAmountByCardNumber(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindMonthlyTransferSenderAmountByCard(c)
+		return h.handleGrpcError(err, "FindMonthlyTransferSenderAmountByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyAmounts(res)
+	h.cache.SetMonthlyTransferBySenderCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyTransferSenderAmountByCardNumber godoc
@@ -1099,35 +1259,44 @@ func (h *CardHandleApi) FindMonthlyTransferSenderAmountByCardNumber(c echo.Conte
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transfer-sender-amount-by-card [get]
-func (h *CardHandleApi) FindYearlyTransferSenderAmountByCardNumber(c echo.Context) error {
+func (h *cardHandleApi) FindYearlyTransferSenderAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	cardNumber := c.QueryParam("card_number")
 	if cardNumber == "" {
-		return card_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("card_number is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmountCardNumber{
+	reqCache := &requests.MonthYearCardNumberCard{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	cachedData, found := h.cache.GetYearlyTransferBySenderCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmountCardNumber{
 		Year:       int32(year),
 		CardNumber: cardNumber,
 	}
 
-	res, err := h.card.FindYearlyTransferSenderAmountByCardNumber(ctx, req)
+	res, err := h.card.FindYearlyTransferSenderAmountByCardNumber(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindYearlyTransferSenderAmountByCard(c)
+		return h.handleGrpcError(err, "FindYearlyTransferSenderAmountByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseYearlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyAmounts(res)
+	h.cache.SetYearlyTransferBySenderCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyTransferReceiverAmountByCardNumber godoc
@@ -1143,36 +1312,44 @@ func (h *CardHandleApi) FindYearlyTransferSenderAmountByCardNumber(c echo.Contex
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/monthly-transfer-receiver-amount-by-card [get]
-func (h *CardHandleApi) FindMonthlyTransferReceiverAmountByCardNumber(c echo.Context) error {
+func (h *cardHandleApi) FindMonthlyTransferReceiverAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	cardNumber := c.QueryParam("card_number")
-
 	if cardNumber == "" {
-		return card_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("card_number is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmountCardNumber{
+	reqCache := &requests.MonthYearCardNumberCard{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	cachedData, found := h.cache.GetMonthlyTransferByReceiverCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmountCardNumber{
 		Year:       int32(year),
 		CardNumber: cardNumber,
 	}
 
-	res, err := h.card.FindMonthlyTransferReceiverAmountByCardNumber(ctx, req)
+	res, err := h.card.FindMonthlyTransferReceiverAmountByCardNumber(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindMonthlyTransferReceiverAmountByCard(c)
+		return h.handleGrpcError(err, "FindMonthlyTransferReceiverAmountByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseMonthlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseMonthlyAmounts(res)
+	h.cache.SetMonthlyTransferByReceiverCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlyTransferReceiverAmountByCardNumber godoc
@@ -1188,36 +1365,44 @@ func (h *CardHandleApi) FindMonthlyTransferReceiverAmountByCardNumber(c echo.Con
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/card/yearly-transfer-receiver-amount-by-card [get]
-func (h *CardHandleApi) FindYearlyTransferReceiverAmountByCardNumber(c echo.Context) error {
+func (h *cardHandleApi) FindYearlyTransferReceiverAmountByCardNumber(c echo.Context) error {
 	yearStr := c.QueryParam("year")
-
 	year, err := strconv.Atoi(yearStr)
-
-	if err != nil {
-		return card_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("year is required and must be a positive integer")
 	}
 
 	cardNumber := c.QueryParam("card_number")
-
 	if cardNumber == "" {
-		return card_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("card_number is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindYearAmountCardNumber{
+	reqCache := &requests.MonthYearCardNumberCard{
+		Year:       year,
+		CardNumber: cardNumber,
+	}
+
+	cachedData, found := h.cache.GetYearlyTransferByReceiverCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindYearAmountCardNumber{
 		Year:       int32(year),
 		CardNumber: cardNumber,
 	}
 
-	res, err := h.card.FindYearlyTransferReceiverAmountByCardNumber(ctx, req)
+	res, err := h.card.FindYearlyTransferReceiverAmountByCardNumber(ctx, reqGrpc)
 	if err != nil {
-		return card_errors.ErrApiFailedFindYearlyTransferReceiverAmountByCard(c)
+		return h.handleGrpcError(err, "FindYearlyTransferReceiverAmountByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseYearlyAmounts(res)
+	apiResponse := h.mapping.ToApiResponseYearlyAmounts(res)
+	h.cache.SetYearlyTransferByReceiverCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Security Bearer
@@ -1230,7 +1415,7 @@ func (h *CardHandleApi) FindYearlyTransferReceiverAmountByCardNumber(c echo.Cont
 // @Failure 400 {object} response.ErrorResponse "Invalid Saldo ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/active [get]
-func (h *CardHandleApi) FindByActive(c echo.Context) error {
+func (h *cardHandleApi) FindByActive(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -1242,25 +1427,34 @@ func (h *CardHandleApi) FindByActive(c echo.Context) error {
 	}
 
 	search := c.QueryParam("search")
-
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllCardRequest{
+	reqCache := &requests.FindAllCards{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetByActiveCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindAllCardRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.card.FindByActiveCard(ctx, req)
-
+	res, err := h.card.FindByActiveCard(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to fetch card record", zap.Error(err))
-		return card_errors.ErrApiFailedFindByActiveCard(c)
+		return h.handleGrpcError(err, "FindByActiveCard")
 	}
 
-	so := h.mapping.ToApiResponsesCardDeletedAt(res)
+	apiResponse := h.mapping.ToApiResponsesCardDeletedAt(res)
+	h.cache.SetByActiveCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Summary Retrieve trashed cards
@@ -1275,7 +1469,7 @@ func (h *CardHandleApi) FindByActive(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsePaginationCardDeleteAt "Card data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/trashed [get]
-func (h *CardHandleApi) FindByTrashed(c echo.Context) error {
+func (h *cardHandleApi) FindByTrashed(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -1287,25 +1481,34 @@ func (h *CardHandleApi) FindByTrashed(c echo.Context) error {
 	}
 
 	search := c.QueryParam("search")
-
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllCardRequest{
+	reqCache := &requests.FindAllCards{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetByTrashedCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindAllCardRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.card.FindByTrashedCard(ctx, req)
-
+	res, err := h.card.FindByTrashedCard(ctx, reqGrpc)
 	if err != nil {
-		h.logger.Debug("Failed to fetch card record", zap.Error(err))
-		return card_errors.ErrApiFailedFindByTrashedCard(c)
+		return h.handleGrpcError(err, "FindByTrashedCard")
 	}
 
-	so := h.mapping.ToApiResponsesCardDeletedAt(res)
+	apiResponse := h.mapping.ToApiResponsesCardDeletedAt(res)
+	h.cache.SetByTrashedCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Security Bearer
@@ -1319,7 +1522,7 @@ func (h *CardHandleApi) FindByTrashed(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Failed to fetch card record"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve card record"
 // @Router /api/card/{card_number} [get]
-func (h *CardHandleApi) FindByCardNumber(c echo.Context) error {
+func (h *cardHandleApi) FindByCardNumber(c echo.Context) error {
 	cardNumber := c.Param("card_number")
 
 	ctx := c.Request().Context()
@@ -1332,7 +1535,7 @@ func (h *CardHandleApi) FindByCardNumber(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to fetch card record", zap.Error(err))
-		return card_errors.ErrApiFailedFindByCardNumber(c)
+		return err
 	}
 
 	so := h.mapping.ToApiResponseCard(res)
@@ -1351,17 +1554,16 @@ func (h *CardHandleApi) FindByCardNumber(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to create card"
 // @Router /api/card/create [post]
-func (h *CardHandleApi) CreateCard(c echo.Context) error {
+func (h *cardHandleApi) CreateCard(c echo.Context) error {
 	var body requests.CreateCardRequest
 
 	if err := c.Bind(&body); err != nil {
-		h.logger.Debug("Bad Request: ", zap.Error(err))
-		return card_errors.ErrApiBindCreateCard(c)
+		return errors.NewBadRequestError("Invalid request")
 	}
 
 	if err := body.Validate(); err != nil {
-		h.logger.Debug("Validation Error: ", zap.Error(err))
-		return card_errors.ErrApiValidateCreateCard(c)
+		validations := h.parseValidationErrors(err)
+		return errors.NewValidationError(validations)
 	}
 
 	ctx := c.Request().Context()
@@ -1377,8 +1579,7 @@ func (h *CardHandleApi) CreateCard(c echo.Context) error {
 	res, err := h.card.CreateCard(ctx, req)
 
 	if err != nil {
-		h.logger.Debug("Failed to create card", zap.Error(err))
-		return card_errors.ErrApiFailedCreateCard(c)
+		return h.handleGrpcError(err, "Create")
 	}
 
 	so := h.mapping.ToApiResponseCard(res)
@@ -1398,26 +1599,24 @@ func (h *CardHandleApi) CreateCard(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to update card"
 // @Router /api/card/update/{id} [post]
-func (h *CardHandleApi) UpdateCard(c echo.Context) error {
+func (h *cardHandleApi) UpdateCard(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
-		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
-		return card_errors.ErrApiInvalidCardID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	var body requests.UpdateCardRequest
 
 	if err := c.Bind(&body); err != nil {
-		h.logger.Debug("Bad Request: ", zap.Error(err))
-		return card_errors.ErrApiBindUpdateCard(c)
+		return errors.NewBadRequestError("Invalid request")
 	}
 
 	if err := body.Validate(); err != nil {
-		h.logger.Debug("Validation Error: ", zap.Error(err))
-		return card_errors.ErrApiValidateUpdateCard(c)
+		validations := h.parseValidationErrors(err)
+		return errors.NewValidationError(validations)
 	}
 
 	ctx := c.Request().Context()
@@ -1434,8 +1633,7 @@ func (h *CardHandleApi) UpdateCard(c echo.Context) error {
 	res, err := h.card.UpdateCard(ctx, req)
 
 	if err != nil {
-		h.logger.Debug("Failed to update card", zap.Error(err))
-		return card_errors.ErrApiFailedUpdateCard(c)
+		return h.handleGrpcError(err, "Update")
 	}
 
 	so := h.mapping.ToApiResponseCard(res)
@@ -1454,14 +1652,13 @@ func (h *CardHandleApi) UpdateCard(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to trashed card"
 // @Router /api/card/trashed/{id} [post]
-func (h *CardHandleApi) TrashedCard(c echo.Context) error {
+func (h *cardHandleApi) TrashedCard(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
-		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
-		return card_errors.ErrApiInvalidCardID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -1473,8 +1670,7 @@ func (h *CardHandleApi) TrashedCard(c echo.Context) error {
 	res, err := h.card.TrashedCard(ctx, req)
 
 	if err != nil {
-		h.logger.Debug("Failed to trashed card", zap.Error(err))
-		return card_errors.ErrApiFailedTrashCard(c)
+		return h.handleGrpcError(err, "Trashed")
 	}
 
 	so := h.mapping.ToApiResponseCardDeleteAt(res)
@@ -1493,14 +1689,13 @@ func (h *CardHandleApi) TrashedCard(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore card"
 // @Router /api/card/restore/{id} [post]
-func (h *CardHandleApi) RestoreCard(c echo.Context) error {
+func (h *cardHandleApi) RestoreCard(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
-		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
-		return card_errors.ErrApiInvalidCardID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -1512,8 +1707,7 @@ func (h *CardHandleApi) RestoreCard(c echo.Context) error {
 	res, err := h.card.RestoreCard(ctx, req)
 
 	if err != nil {
-		h.logger.Debug("Failed to restore card", zap.Error(err))
-		return card_errors.ErrApiFailedRestoreCard(c)
+		return h.handleGrpcError(err, "Restore")
 	}
 
 	so := h.mapping.ToApiResponseCardDeleteAt(res)
@@ -1532,14 +1726,13 @@ func (h *CardHandleApi) RestoreCard(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad request or invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete card"
 // @Router /api/card/permanent/{id} [delete]
-func (h *CardHandleApi) DeleteCardPermanent(c echo.Context) error {
+func (h *cardHandleApi) DeleteCardPermanent(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
-		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
-		return card_errors.ErrApiInvalidCardID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -1551,8 +1744,7 @@ func (h *CardHandleApi) DeleteCardPermanent(c echo.Context) error {
 	res, err := h.card.DeleteCardPermanent(ctx, req)
 
 	if err != nil {
-		h.logger.Debug("Failed to delete card", zap.Error(err))
-		return card_errors.ErrApiFailedDeleteCardPermanent(c)
+		return h.handleGrpcError(err, "DeleteCard")
 	}
 
 	so := h.mapping.ToApiResponseCardDelete(res)
@@ -1569,13 +1761,12 @@ func (h *CardHandleApi) DeleteCardPermanent(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseCardAll "Successfully restored all card records"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore all card records"
 // @Router /api/card/restore/all [post]
-func (h *CardHandleApi) RestoreAllCard(c echo.Context) error {
+func (h *cardHandleApi) RestoreAllCard(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.card.RestoreAllCard(ctx, &emptypb.Empty{})
 	if err != nil {
-		h.logger.Error("Failed to restore all cards", zap.Error(err))
-		return card_errors.ErrApiFailedRestoreAllCard(c)
+		return h.handleGrpcError(err, "RestoreAll")
 	}
 
 	h.logger.Debug("Successfully restored all cards")
@@ -1594,14 +1785,13 @@ func (h *CardHandleApi) RestoreAllCard(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseCardAll "Successfully deleted all card records permanently"
 // @Failure 500 {object} response.ErrorResponse "Failed to permanently delete all card records"
 // @Router /api/card/permanent/all [post]
-func (h *CardHandleApi) DeleteAllCardPermanent(c echo.Context) error {
+func (h *cardHandleApi) DeleteAllCardPermanent(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.card.DeleteAllCardPermanent(ctx, &emptypb.Empty{})
 
 	if err != nil {
-		h.logger.Error("Failed to permanently delete all cards", zap.Error(err))
-		return card_errors.ErrApiFailedDeleteAllCardPermanent(c)
+		return h.handleGrpcError(err, "DeleteAll")
 	}
 
 	h.logger.Debug("Successfully deleted all cards permanently")
@@ -1609,4 +1799,82 @@ func (h *CardHandleApi) DeleteAllCardPermanent(c echo.Context) error {
 	so := h.mapping.ToApiResponseCardAll(res)
 
 	return c.JSON(http.StatusOK, so)
+}
+
+func (h *cardHandleApi) handleGrpcError(err error, operation string) *errors.AppError {
+	st, ok := status.FromError(err)
+	if !ok {
+		return errors.NewInternalError(err).WithMessage("Failed to " + operation)
+	}
+
+	switch st.Code() {
+	case codes.NotFound:
+		return errors.NewNotFoundError("Card").WithInternal(err)
+
+	case codes.AlreadyExists:
+		return errors.NewConflictError("Card already exists").WithInternal(err)
+
+	case codes.InvalidArgument:
+		return errors.NewBadRequestError(st.Message()).WithInternal(err)
+
+	case codes.PermissionDenied:
+		return errors.ErrForbidden.WithInternal(err)
+
+	case codes.Unauthenticated:
+		return errors.ErrUnauthorized.WithInternal(err)
+
+	case codes.ResourceExhausted:
+		return errors.ErrTooManyRequests.WithInternal(err)
+
+	case codes.Unavailable:
+		return errors.NewServiceUnavailableError("Card service").WithInternal(err)
+
+	case codes.DeadlineExceeded:
+		return errors.ErrTimeout.WithInternal(err)
+
+	default:
+		return errors.NewInternalError(err).WithMessage("Failed to " + operation)
+	}
+}
+
+func (h *cardHandleApi) parseValidationErrors(err error) []errors.ValidationError {
+	var validationErrs []errors.ValidationError
+
+	if ve, ok := err.(validator.ValidationErrors); ok {
+		for _, fe := range ve {
+			validationErrs = append(validationErrs, errors.ValidationError{
+				Field:   fe.Field(),
+				Message: h.getValidationMessage(fe),
+			})
+		}
+		return validationErrs
+	}
+
+	return []errors.ValidationError{
+		{
+			Field:   "general",
+			Message: err.Error(),
+		},
+	}
+}
+
+func (h *cardHandleApi) getValidationMessage(fe validator.FieldError) string {
+	switch fe.Tag() {
+	case "required":
+		return "This field is required"
+	case "email":
+		return "Invalid email format"
+	case "min":
+		return fmt.Sprintf("Must be at least %s", fe.Param())
+	case "max":
+		return fmt.Sprintf("Must be at most %s", fe.Param())
+	case "gte":
+		return fmt.Sprintf("Must be greater than or equal to %s", fe.Param())
+	case "lte":
+		return fmt.Sprintf("Must be less than or equal to %s", fe.Param())
+	case "oneof":
+		return fmt.Sprintf("Must be one of: %s", fe.Param())
+	default:
+		return fmt.Sprintf("Validation failed on '%s' tag", fe.Tag())
+	}
 }

@@ -1,31 +1,26 @@
 package repository
 
 import (
-	"MamangRust/paymentgatewaygrpc/internal/domain/record"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	recordmapper "MamangRust/paymentgatewaygrpc/internal/mapper/record"
 	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/saldo_errors"
 	"context"
-	"database/sql"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type saldoRepository struct {
-	db      *db.Queries
-	ctx     context.Context
-	mapping recordmapper.SaldoRecordMapping
+	db *db.Queries
 }
 
-func NewSaldoRepository(db *db.Queries, ctx context.Context, mapping recordmapper.SaldoRecordMapping) *saldoRepository {
+func NewSaldoRepository(db *db.Queries) SaldoRepository {
 	return &saldoRepository{
-		db:      db,
-		ctx:     ctx,
-		mapping: mapping,
+		db: db,
 	}
 }
 
-func (r *saldoRepository) FindAllSaldos(req *requests.FindAllSaldos) ([]*record.SaldoRecord, *int, error) {
+func (r *saldoRepository) FindAllSaldos(ctx context.Context, req *requests.FindAllSaldos) ([]*db.GetSaldosRow, error) {
 	offset := (req.Page - 1) * req.PageSize
 
 	reqDb := db.GetSaldosParams{
@@ -34,23 +29,16 @@ func (r *saldoRepository) FindAllSaldos(req *requests.FindAllSaldos) ([]*record.
 		Offset:  int32(offset),
 	}
 
-	saldos, err := r.db.GetSaldos(r.ctx, reqDb)
+	saldos, err := r.db.GetSaldos(ctx, reqDb)
 
 	if err != nil {
-		return nil, nil, saldo_errors.ErrFindAllSaldosFailed
+		return nil, saldo_errors.ErrFindAllSaldosFailed
 	}
 
-	var totalCount int
-	if len(saldos) > 0 {
-		totalCount = int(saldos[0].TotalCount)
-	} else {
-		totalCount = 0
-	}
-
-	return r.mapping.ToSaldosRecordAll(saldos), &totalCount, nil
+	return saldos, nil
 }
 
-func (r *saldoRepository) FindByActive(req *requests.FindAllSaldos) ([]*record.SaldoRecord, *int, error) {
+func (r *saldoRepository) FindByActive(ctx context.Context, req *requests.FindAllSaldos) ([]*db.GetActiveSaldosRow, error) {
 	offset := (req.Page - 1) * req.PageSize
 
 	reqDb := db.GetActiveSaldosParams{
@@ -59,24 +47,16 @@ func (r *saldoRepository) FindByActive(req *requests.FindAllSaldos) ([]*record.S
 		Offset:  int32(offset),
 	}
 
-	res, err := r.db.GetActiveSaldos(r.ctx, reqDb)
+	res, err := r.db.GetActiveSaldos(ctx, reqDb)
 
 	if err != nil {
-		return nil, nil, saldo_errors.ErrFindActiveSaldosFailed
+		return nil, saldo_errors.ErrFindActiveSaldosFailed
 	}
 
-	var totalCount int
-	if len(res) > 0 {
-		totalCount = int(res[0].TotalCount)
-	} else {
-		totalCount = 0
-	}
-
-	return r.mapping.ToSaldosRecordActive(res), &totalCount, nil
-
+	return res, nil
 }
 
-func (r *saldoRepository) FindByTrashed(req *requests.FindAllSaldos) ([]*record.SaldoRecord, *int, error) {
+func (r *saldoRepository) FindByTrashed(ctx context.Context, req *requests.FindAllSaldos) ([]*db.GetTrashedSaldosRow, error) {
 	offset := (req.Page - 1) * req.PageSize
 
 	reqDb := db.GetTrashedSaldosParams{
@@ -85,43 +65,36 @@ func (r *saldoRepository) FindByTrashed(req *requests.FindAllSaldos) ([]*record.
 		Offset:  int32(offset),
 	}
 
-	saldos, err := r.db.GetTrashedSaldos(r.ctx, reqDb)
+	saldos, err := r.db.GetTrashedSaldos(ctx, reqDb)
 
 	if err != nil {
-		return nil, nil, saldo_errors.ErrFindTrashedSaldosFailed
+		return nil, saldo_errors.ErrFindTrashedSaldosFailed
 	}
 
-	var totalCount int
-	if len(saldos) > 0 {
-		totalCount = int(saldos[0].TotalCount)
-	} else {
-		totalCount = 0
-	}
-
-	return r.mapping.ToSaldosRecordTrashed(saldos), &totalCount, nil
+	return saldos, nil
 }
 
-func (r *saldoRepository) FindByCardNumber(card_number string) (*record.SaldoRecord, error) {
-	res, err := r.db.GetSaldoByCardNumber(r.ctx, card_number)
+func (r *saldoRepository) FindByCardNumber(ctx context.Context, card_number string) (*db.Saldo, error) {
+	res, err := r.db.GetSaldoByCardNumber(ctx, card_number)
 
 	if err != nil {
 		return nil, saldo_errors.ErrFindSaldoByCardNumberFailed
 	}
 
-	return r.mapping.ToSaldoRecord(res), nil
+	return res, nil
 }
 
-func (r *saldoRepository) FindById(saldo_id int) (*record.SaldoRecord, error) {
-	res, err := r.db.GetSaldoByID(r.ctx, int32(saldo_id))
+func (r *saldoRepository) FindById(ctx context.Context, saldo_id int) (*db.GetSaldoByIDRow, error) {
+	res, err := r.db.GetSaldoByID(ctx, int32(saldo_id))
 
 	if err != nil {
 		return nil, saldo_errors.ErrFindSaldoByIdFailed
 	}
 
-	return r.mapping.ToSaldoRecord(res), nil
+	return res, nil
 }
 
-func (r *saldoRepository) GetMonthlyTotalSaldoBalance(req *requests.MonthTotalSaldoBalance) ([]*record.SaldoMonthTotalBalance, error) {
+func (r *saldoRepository) GetMonthlyTotalSaldoBalance(ctx context.Context, req *requests.MonthTotalSaldoBalance) ([]*db.GetMonthlyTotalSaldoBalanceRow, error) {
 	year := req.Year
 	month := req.Month
 
@@ -131,7 +104,7 @@ func (r *saldoRepository) GetMonthlyTotalSaldoBalance(req *requests.MonthTotalSa
 	lastDayCurrentMonth := currentDate.AddDate(0, 1, -1)
 	lastDayPrevMonth := prevDate.AddDate(0, 1, -1)
 
-	res, err := r.db.GetMonthlyTotalSaldoBalance(r.ctx, db.GetMonthlyTotalSaldoBalanceParams{
+	res, err := r.db.GetMonthlyTotalSaldoBalance(ctx, db.GetMonthlyTotalSaldoBalanceParams{
 		Column1: currentDate,
 		Column2: lastDayCurrentMonth,
 		Column3: prevDate,
@@ -142,101 +115,98 @@ func (r *saldoRepository) GetMonthlyTotalSaldoBalance(req *requests.MonthTotalSa
 		return nil, saldo_errors.ErrGetMonthlyTotalSaldoBalanceFailed
 	}
 
-	so := r.mapping.ToSaldoMonthTotalBalances(res)
-	return so, nil
+	return res, nil
 }
 
-func (r *saldoRepository) GetYearTotalSaldoBalance(year int) ([]*record.SaldoYearTotalBalance, error) {
-	res, err := r.db.GetYearlyTotalSaldoBalances(r.ctx, int32(year))
+func (r *saldoRepository) GetYearTotalSaldoBalance(ctx context.Context, year int) ([]*db.GetYearlyTotalSaldoBalancesRow, error) {
+	res, err := r.db.GetYearlyTotalSaldoBalances(ctx, int32(year))
 
 	if err != nil {
 		return nil, saldo_errors.ErrGetYearTotalSaldoBalanceFailed
 	}
 
-	so := r.mapping.ToSaldoYearTotalBalances(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *saldoRepository) GetMonthlySaldoBalances(year int) ([]*record.SaldoMonthSaldoBalance, error) {
+func (r *saldoRepository) GetMonthlySaldoBalances(ctx context.Context, year int) ([]*db.GetMonthlySaldoBalancesRow, error) {
 	yearStart := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	res, err := r.db.GetMonthlySaldoBalances(r.ctx, yearStart)
+	res, err := r.db.GetMonthlySaldoBalances(ctx, yearStart)
 
 	if err != nil {
 		return nil, saldo_errors.ErrGetMonthlySaldoBalancesFailed
 	}
 
-	so := r.mapping.ToSaldoMonthBalances(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *saldoRepository) GetYearlySaldoBalances(year int) ([]*record.SaldoYearSaldoBalance, error) {
-	res, err := r.db.GetYearlySaldoBalances(r.ctx, year)
+func (r *saldoRepository) GetYearlySaldoBalances(ctx context.Context, year int) ([]*db.GetYearlySaldoBalancesRow, error) {
+	res, err := r.db.GetYearlySaldoBalances(ctx, year)
 
 	if err != nil {
 		return nil, saldo_errors.ErrGetYearlySaldoBalancesFailed
 	}
 
-	so := r.mapping.ToSaldoYearSaldoBalances(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *saldoRepository) CreateSaldo(request *requests.CreateSaldoRequest) (*record.SaldoRecord, error) {
+func (r *saldoRepository) CreateSaldo(ctx context.Context, request *requests.CreateSaldoRequest) (*db.CreateSaldoRow, error) {
 	req := db.CreateSaldoParams{
 		CardNumber:   request.CardNumber,
 		TotalBalance: int32(request.TotalBalance),
 	}
-	res, err := r.db.CreateSaldo(r.ctx, req)
+	res, err := r.db.CreateSaldo(ctx, req)
 
 	if err != nil {
 		return nil, saldo_errors.ErrCreateSaldoFailed
 	}
 
-	return r.mapping.ToSaldoRecord(res), nil
+	return res, nil
 }
 
-func (r *saldoRepository) UpdateSaldo(request *requests.UpdateSaldoRequest) (*record.SaldoRecord, error) {
+func (r *saldoRepository) UpdateSaldo(ctx context.Context, request *requests.UpdateSaldoRequest) (*db.UpdateSaldoRow, error) {
 	req := db.UpdateSaldoParams{
 		SaldoID:      int32(*request.SaldoID),
 		CardNumber:   request.CardNumber,
 		TotalBalance: int32(request.TotalBalance),
 	}
 
-	res, err := r.db.UpdateSaldo(r.ctx, req)
+	res, err := r.db.UpdateSaldo(ctx, req)
 
 	if err != nil {
 		return nil, saldo_errors.ErrUpdateSaldoFailed
 	}
 
-	return r.mapping.ToSaldoRecord(res), nil
+	return res, nil
 }
 
-func (r *saldoRepository) UpdateSaldoBalance(request *requests.UpdateSaldoBalance) (*record.SaldoRecord, error) {
+func (r *saldoRepository) UpdateSaldoBalance(ctx context.Context, request *requests.UpdateSaldoBalance) (*db.UpdateSaldoBalanceRow, error) {
 	req := db.UpdateSaldoBalanceParams{
 		CardNumber:   request.CardNumber,
 		TotalBalance: int32(request.TotalBalance),
 	}
 
-	res, err := r.db.UpdateSaldoBalance(r.ctx, req)
+	res, err := r.db.UpdateSaldoBalance(ctx, req)
 
 	if err != nil {
 		return nil, saldo_errors.ErrUpdateSaldoBalanceFailed
 	}
 
-	return r.mapping.ToSaldoRecord(res), nil
+	return res, nil
 }
 
-func (r *saldoRepository) UpdateSaldoWithdraw(request *requests.UpdateSaldoWithdraw) (*record.SaldoRecord, error) {
-	withdrawAmount := sql.NullInt32{
-		Int32: int32(*request.WithdrawAmount),
-		Valid: request.WithdrawAmount != nil,
+func (r *saldoRepository) UpdateSaldoWithdraw(ctx context.Context, request *requests.UpdateSaldoWithdraw) (*db.UpdateSaldoWithdrawRow, error) {
+	var withdrawAmount pgtype.Int4
+	if request.WithdrawAmount != nil {
+		withdrawAmount = pgtype.Int4{
+			Int32: int32(*request.WithdrawAmount),
+			Valid: true,
+		}
 	}
-	var withdrawTime sql.NullTime
+
+	var withdrawTime pgtype.Timestamp
 	if request.WithdrawTime != nil {
-		withdrawTime = sql.NullTime{
+		withdrawTime = pgtype.Timestamp{
 			Time:  *request.WithdrawTime,
 			Valid: true,
 		}
@@ -244,45 +214,44 @@ func (r *saldoRepository) UpdateSaldoWithdraw(request *requests.UpdateSaldoWithd
 
 	req := db.UpdateSaldoWithdrawParams{
 		CardNumber:     request.CardNumber,
-		WithdrawAmount: withdrawAmount,
+		WithdrawAmount: &withdrawAmount.Int32,
 		WithdrawTime:   withdrawTime,
 	}
 
-	res, err := r.db.UpdateSaldoWithdraw(r.ctx, req)
-
+	res, err := r.db.UpdateSaldoWithdraw(ctx, req)
 	if err != nil {
 		return nil, saldo_errors.ErrUpdateSaldoWithdrawFailed
 	}
 
-	return r.mapping.ToSaldoRecord(res), nil
+	return res, nil
 }
 
-func (r *saldoRepository) TrashedSaldo(saldo_id int) (*record.SaldoRecord, error) {
-	res, err := r.db.TrashSaldo(r.ctx, int32(saldo_id))
+func (r *saldoRepository) TrashedSaldo(ctx context.Context, saldo_id int) (*db.Saldo, error) {
+	res, err := r.db.TrashSaldo(ctx, int32(saldo_id))
 	if err != nil {
 		return nil, saldo_errors.ErrTrashSaldoFailed
 	}
-	return r.mapping.ToSaldoRecord(res), nil
+	return res, nil
 }
 
-func (r *saldoRepository) RestoreSaldo(saldo_id int) (*record.SaldoRecord, error) {
-	res, err := r.db.RestoreSaldo(r.ctx, int32(saldo_id))
+func (r *saldoRepository) RestoreSaldo(ctx context.Context, saldo_id int) (*db.Saldo, error) {
+	res, err := r.db.RestoreSaldo(ctx, int32(saldo_id))
 	if err != nil {
 		return nil, saldo_errors.ErrRestoreSaldoFailed
 	}
-	return r.mapping.ToSaldoRecord(res), nil
+	return res, nil
 }
 
-func (r *saldoRepository) DeleteSaldoPermanent(saldo_id int) (bool, error) {
-	err := r.db.DeleteSaldoPermanently(r.ctx, int32(saldo_id))
+func (r *saldoRepository) DeleteSaldoPermanent(ctx context.Context, saldo_id int) (bool, error) {
+	err := r.db.DeleteSaldoPermanently(ctx, int32(saldo_id))
 	if err != nil {
 		return false, saldo_errors.ErrDeleteSaldoPermanentFailed
 	}
 	return true, nil
 }
 
-func (r *saldoRepository) RestoreAllSaldo() (bool, error) {
-	err := r.db.RestoreAllSaldos(r.ctx)
+func (r *saldoRepository) RestoreAllSaldo(ctx context.Context) (bool, error) {
+	err := r.db.RestoreAllSaldos(ctx)
 
 	if err != nil {
 		return false, saldo_errors.ErrRestoreAllSaldosFailed
@@ -291,8 +260,8 @@ func (r *saldoRepository) RestoreAllSaldo() (bool, error) {
 	return true, nil
 }
 
-func (r *saldoRepository) DeleteAllSaldoPermanent() (bool, error) {
-	err := r.db.DeleteAllPermanentSaldos(r.ctx)
+func (r *saldoRepository) DeleteAllSaldoPermanent(ctx context.Context) (bool, error) {
+	err := r.db.DeleteAllPermanentSaldos(ctx)
 
 	if err != nil {
 		return false, saldo_errors.ErrDeleteAllSaldosPermanentFailed

@@ -1,11 +1,22 @@
 package service
 
 import (
-	responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/service"
+	"MamangRust/paymentgatewaygrpc/internal/cache"
+	auth_cache "MamangRust/paymentgatewaygrpc/internal/cache/auth"
+	card_cache "MamangRust/paymentgatewaygrpc/internal/cache/card"
+	merchant_cache "MamangRust/paymentgatewaygrpc/internal/cache/merchant"
+	role_cache "MamangRust/paymentgatewaygrpc/internal/cache/role"
+	saldo_cache "MamangRust/paymentgatewaygrpc/internal/cache/saldo"
+	topup_cache "MamangRust/paymentgatewaygrpc/internal/cache/topup"
+	transaction_cache "MamangRust/paymentgatewaygrpc/internal/cache/transaction"
+	transfer_cache "MamangRust/paymentgatewaygrpc/internal/cache/transfer"
+	user_cache "MamangRust/paymentgatewaygrpc/internal/cache/user"
+	withdraw_cache "MamangRust/paymentgatewaygrpc/internal/cache/withdraw"
 	"MamangRust/paymentgatewaygrpc/internal/repository"
 	"MamangRust/paymentgatewaygrpc/pkg/auth"
 	"MamangRust/paymentgatewaygrpc/pkg/hash"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
+	"MamangRust/paymentgatewaygrpc/pkg/observability"
 )
 
 type Service struct {
@@ -26,20 +37,102 @@ type Deps struct {
 	Token        auth.TokenManager
 	Hash         hash.HashPassword
 	Logger       logger.LoggerInterface
-	Mapper       responseservice.ResponseServiceMapper
+	Cache        *cache.CacheStore
 }
 
 func NewService(deps Deps) *Service {
+	observability, _ := observability.NewObservability("grpc-server", deps.Logger)
+
+	cacheAuth := auth_cache.NewMencache(deps.Cache)
+	cacheUser := user_cache.NewUserMencache(deps.Cache)
+	cacheRole := role_cache.NewRoleMencache(deps.Cache)
+	cacheSaldo := saldo_cache.NewSaldoMencache(deps.Cache)
+	cacheTopup := topup_cache.NewTopupMencache(deps.Cache)
+	cacheTransaction := transaction_cache.NewTransactionMencache(deps.Cache)
+	cacheTransfer := transfer_cache.NewTransferMencache(deps.Cache)
+	cacheWithdraw := withdraw_cache.NewWithdrawMencache(deps.Cache)
+	cacheMerchant := merchant_cache.NewMerchantMencache(deps.Cache)
+	cacheCard := card_cache.NewCardMencache(deps.Cache)
+
 	return &Service{
-		Auth:        NewAuthService(deps.Repositories.User, deps.Repositories.RefreshToken, deps.Repositories.Role, deps.Repositories.UserRole, deps.Hash, deps.Token, deps.Logger, deps.Mapper.UserResponseMapper),
-		User:        NewUserService(deps.Repositories.User, deps.Logger, deps.Mapper.UserResponseMapper, deps.Hash),
-		Role:        NewRoleService(deps.Repositories.Role, deps.Logger, deps.Mapper.RoleResponseMapper),
-		Saldo:       NewSaldoService(deps.Repositories.Saldo, deps.Repositories.Card, deps.Logger, deps.Mapper.SaldoResponseMapper),
-		Topup:       NewTopupService(deps.Repositories.Card, deps.Repositories.Topup, deps.Repositories.Saldo, deps.Logger, deps.Mapper.TopupResponseMapper),
-		Transfer:    NewTransferService(deps.Repositories.User, deps.Repositories.Card, deps.Repositories.Transfer, deps.Repositories.Saldo, deps.Logger, deps.Mapper.TransferResponseMapper),
-		Withdraw:    NewWithdrawService(deps.Repositories.User, deps.Repositories.Withdraw, deps.Repositories.Saldo, deps.Logger, deps.Mapper.WithdrawResponseMapper),
-		Card:        NewCardService(deps.Repositories.Card, deps.Repositories.User, deps.Logger, deps.Mapper.CardResponseMapper),
-		Merchant:    NewMerchantService(deps.Repositories.Merchant, deps.Logger, deps.Mapper.MerchantResponseMapper),
-		Transaction: NewTransactionService(deps.Repositories.Merchant, deps.Repositories.Card, deps.Repositories.Saldo, deps.Repositories.Transaction, deps.Logger, deps.Mapper.TransactionResponseMapper),
+		Auth: NewAuthService(AuthServiceDeps{
+			AuthRepo:         deps.Repositories.User,
+			RefreshTokenRepo: deps.Repositories.RefreshToken,
+			RoleRepo:         deps.Repositories.Role,
+			UserRoleRepo:     deps.Repositories.UserRole,
+			Hash:             deps.Hash,
+			Token:            deps.Token,
+			Logger:           deps.Logger,
+			Tracer:           observability,
+			CacheIdentity:    cacheAuth.IdentityCache,
+			CacheLogin:       cacheAuth.LoginCache,
+		}),
+		User: NewUserService(UserServiceDeps{
+			UserRepo:      deps.Repositories.User,
+			Logger:        deps.Logger,
+			Observability: observability,
+			Hashing:       deps.Hash,
+			Cache:         cacheUser,
+		}),
+		Role: NewRoleService(RoleServiceDeps{
+			RoleRepo:      deps.Repositories.Role,
+			Observability: observability,
+			Logger:        deps.Logger,
+			Cache:         cacheRole,
+		}),
+		Saldo: NewSaldoService(SaldoServiceDeps{
+			SaldoRepo:     deps.Repositories.Saldo,
+			CardRepo:      deps.Repositories.Card,
+			Logger:        deps.Logger,
+			Observability: observability,
+			Cache:         cacheSaldo,
+		}),
+		Topup: NewTopupService(TopupServiceDeps{
+			CardRepo:      deps.Repositories.Card,
+			TopupRepo:     deps.Repositories.Topup,
+			SaldoRepo:     deps.Repositories.Saldo,
+			Logger:        deps.Logger,
+			Observability: observability,
+			Cache:         cacheTopup,
+		}),
+		Transfer: NewTransferService(TransferServiceDeps{
+			UserRepo:      deps.Repositories.User,
+			CardRepo:      deps.Repositories.Card,
+			SaldoRepo:     deps.Repositories.Saldo,
+			TransferRepo:  deps.Repositories.Transfer,
+			Logger:        deps.Logger,
+			Observability: observability,
+			Cache:         cacheTransfer,
+		}),
+		Withdraw: NewWithdrawService(WithdrawServiceDeps{
+			UserRepo:      deps.Repositories.User,
+			SaldoRepo:     deps.Repositories.Saldo,
+			WithdrawRepo:  deps.Repositories.Withdraw,
+			Logger:        deps.Logger,
+			Observability: observability,
+			Cache:         cacheWithdraw,
+		}),
+		Card: NewCardService(CardServiceDeps{
+			CardRepo:      deps.Repositories.Card,
+			UserRepo:      deps.Repositories.User,
+			Logger:        deps.Logger,
+			Observability: observability,
+			cache:         cacheCard,
+		}),
+		Merchant: NewMerchantService(MerchantServiceDeps{
+			UserRepo:      deps.Repositories.User,
+			MerchantRepo:  deps.Repositories.Merchant,
+			Logger:        deps.Logger,
+			Observability: observability,
+			Cache:         cacheMerchant,
+		}),
+		Transaction: NewTransactionService(TransactionServiceDeps{
+			MerchantRepo:    deps.Repositories.Merchant,
+			CardRepo:        deps.Repositories.Card,
+			SaldoRepo:       deps.Repositories.Saldo,
+			TransactionRepo: deps.Repositories.Transaction,
+			Logger:          deps.Logger,
+			Cache:           cacheTransaction,
+		}),
 	}
 }

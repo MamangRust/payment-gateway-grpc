@@ -1,53 +1,62 @@
 package api
 
 import (
+	saldo_cache "MamangRust/paymentgatewaygrpc/internal/cache/api/saldo"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper/response/api"
+	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper"
+	"fmt"
+
 	"MamangRust/paymentgatewaygrpc/internal/pb"
-	"MamangRust/paymentgatewaygrpc/pkg/errors/saldo_errors"
+	"MamangRust/paymentgatewaygrpc/pkg/errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
 	"net/http"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type SaldoHandleApi struct {
-	saldo   pb.SaldoServiceClient
-	logger  logger.LoggerInterface
-	mapping apimapper.SaldoResponseMapper
+type saldoHandleApi struct {
+	saldo      pb.SaldoServiceClient
+	logger     logger.LoggerInterface
+	mapping    apimapper.SaldoResponseMapper
+	apihandler errors.ApiHandler
+	cache      saldo_cache.SaldoMencache
 }
 
-func NewHandlerSaldo(client pb.SaldoServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.SaldoResponseMapper) *SaldoHandleApi {
-	saldoHandler := &SaldoHandleApi{
-		saldo:   client,
-		logger:  logger,
-		mapping: mapping,
+func NewHandlerSaldo(client pb.SaldoServiceClient, router *echo.Echo, logger logger.LoggerInterface, mapping apimapper.SaldoResponseMapper, apiHandler errors.ApiHandler, cache saldo_cache.SaldoMencache) *saldoHandleApi {
+	saldoHandler := &saldoHandleApi{
+		saldo:      client,
+		logger:     logger,
+		mapping:    mapping,
+		apihandler: apiHandler,
+		cache:      cache,
 	}
 	routerSaldo := router.Group("/api/saldos")
 
-	routerSaldo.GET("", saldoHandler.FindAll)
-	routerSaldo.GET("/:id", saldoHandler.FindById)
+	routerSaldo.GET("", apiHandler.Handle("find-all-saldos", saldoHandler.FindAll))
+	routerSaldo.GET("/:id", apiHandler.Handle("find-saldo-by-id", saldoHandler.FindById))
+	routerSaldo.GET("/active", apiHandler.Handle("find-active-saldos", saldoHandler.FindByActive))
+	routerSaldo.GET("/trashed", apiHandler.Handle("find-trashed-saldos", saldoHandler.FindByTrashed))
+	routerSaldo.GET("/card_number/:card_number", apiHandler.Handle("find-saldo-by-card-number", saldoHandler.FindByCardNumber))
 
-	routerSaldo.GET("/monthly-total-balance", saldoHandler.FindMonthlyTotalSaldoBalance)
-	routerSaldo.GET("/yearly-total-balance", saldoHandler.FindYearTotalSaldoBalance)
-	routerSaldo.GET("/monthly-balances", saldoHandler.FindMonthlySaldoBalances)
-	routerSaldo.GET("/yearly-balances", saldoHandler.FindYearlySaldoBalances)
+	routerSaldo.GET("/monthly-total-balance", apiHandler.Handle("find-monthly-total-saldo-balance", saldoHandler.FindMonthlyTotalSaldoBalance))
+	routerSaldo.GET("/yearly-total-balance", apiHandler.Handle("find-yearly-total-saldo-balance", saldoHandler.FindYearTotalSaldoBalance))
+	routerSaldo.GET("/monthly-balances", apiHandler.Handle("find-monthly-saldo-balances", saldoHandler.FindMonthlySaldoBalances))
+	routerSaldo.GET("/yearly-balances", apiHandler.Handle("find-yearly-saldo-balances", saldoHandler.FindYearlySaldoBalances))
 
-	routerSaldo.GET("/active", saldoHandler.FindByActive)
-	routerSaldo.GET("/trashed", saldoHandler.FindByTrashed)
-	routerSaldo.GET("/card_number/:card_number", saldoHandler.FindByCardNumber)
+	routerSaldo.POST("/create", apiHandler.Handle("create-saldo", saldoHandler.Create))
+	routerSaldo.POST("/update/:id", apiHandler.Handle("update-saldo", saldoHandler.Update))
+	routerSaldo.POST("/trashed/:id", apiHandler.Handle("trash-saldo", saldoHandler.TrashSaldo))
+	routerSaldo.POST("/restore/:id", apiHandler.Handle("restore-saldo", saldoHandler.RestoreSaldo))
+	routerSaldo.DELETE("/permanent/:id", apiHandler.Handle("delete-saldo-permanent", saldoHandler.Delete))
 
-	routerSaldo.POST("/create", saldoHandler.Create)
-	routerSaldo.POST("/update/:id", saldoHandler.Update)
-	routerSaldo.POST("/trashed/:id", saldoHandler.TrashSaldo)
-	routerSaldo.POST("/restore/:id", saldoHandler.RestoreSaldo)
-	routerSaldo.DELETE("/permanent/:id", saldoHandler.Delete)
-
-	routerSaldo.POST("/restore/all", saldoHandler.RestoreAllSaldo)
-	routerSaldo.POST("/permanent/all", saldoHandler.DeleteAllSaldoPermanent)
+	routerSaldo.POST("/restore/all", apiHandler.Handle("restore-all-saldos", saldoHandler.RestoreAllSaldo))
+	routerSaldo.POST("/permanent/all", apiHandler.Handle("delete-all-saldos-permanent", saldoHandler.DeleteAllSaldoPermanent))
 
 	return saldoHandler
 
@@ -65,7 +74,7 @@ func NewHandlerSaldo(client pb.SaldoServiceClient, router *echo.Echo, logger log
 // @Success 200 {object} response.ApiResponsePaginationSaldo "List of saldo data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve saldo data"
 // @Router /api/saldos [get]
-func (h *SaldoHandleApi) FindAll(c echo.Context) error {
+func (h *saldoHandleApi) FindAll(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -80,23 +89,33 @@ func (h *SaldoHandleApi) FindAll(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllSaldoRequest{
+	reqCache := &requests.FindAllSaldos{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedSaldos(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindAllSaldoRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.saldo.FindAllSaldo(ctx, req)
-
+	res, err := h.saldo.FindAllSaldo(ctx, reqGrpc)
 	if err != nil {
 		h.logger.Debug("Failed to retrieve saldo data", zap.Error(err))
-
-		return saldo_errors.ErrApiFailedFindAllSaldo(c)
+		return h.handleGrpcError(err, "FindAll")
 	}
 
-	so := h.mapping.ToApiResponsePaginationSaldo(res)
+	apiResponse := h.mapping.ToApiResponsePaginationSaldo(res)
+	h.cache.SetCachedSaldos(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Summary Find a saldo by ID
@@ -110,31 +129,35 @@ func (h *SaldoHandleApi) FindAll(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid saldo ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve saldo data"
 // @Router /api/saldos/{id} [get]
-func (h *SaldoHandleApi) FindById(c echo.Context) error {
-	id, err := strconv.Atoi(c.Param("id"))
-
+func (h *saldoHandleApi) FindById(c echo.Context) error {
+	idStr := c.Param("id")
+	idInt, err := strconv.Atoi(idStr)
 	if err != nil {
 		h.logger.Debug("Invalid saldo ID", zap.Error(err))
-
-		return saldo_errors.ErrApiInvalidSaldoID(c)
+		return errors.NewBadRequestError("invalid id parameter")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindByIdSaldoRequest{
-		SaldoId: int32(id),
+	cachedData, found := h.cache.GetCachedSaldoById(ctx, idInt)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
 	}
 
-	res, err := h.saldo.FindByIdSaldo(ctx, req)
+	reqGrpc := &pb.FindByIdSaldoRequest{
+		SaldoId: int32(idInt),
+	}
 
+	res, err := h.saldo.FindByIdSaldo(ctx, reqGrpc)
 	if err != nil {
 		h.logger.Debug("Failed to retrieve saldo data", zap.Error(err))
-		return saldo_errors.ErrApiFailedFindByIdSaldo(c)
+		return h.handleGrpcError(err, "FindById")
 	}
 
-	so := h.mapping.ToApiResponseSaldo(res)
+	apiResponse := h.mapping.ToApiResponseSaldo(res)
+	h.cache.SetCachedSaldoById(ctx, apiResponse.Data.ID, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlyTotalSaldoBalance retrieves the total saldo balance for a specific month and year.
@@ -150,23 +173,31 @@ func (h *SaldoHandleApi) FindById(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year or month parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly total saldo balance"
 // @Router /api/saldos/monthly-total-balance [get]
-func (h *SaldoHandleApi) FindMonthlyTotalSaldoBalance(c echo.Context) error {
+func (h *saldoHandleApi) FindMonthlyTotalSaldoBalance(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	monthStr := c.QueryParam("month")
 
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return saldo_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	month, err := strconv.Atoi(monthStr)
-	if err != nil {
-		h.logger.Debug("Invalid month parameter", zap.Error(err))
-		return saldo_errors.ErrApiInvalidMonth(c)
+	if err != nil || month <= 0 || month > 12 {
+		return errors.NewBadRequestError("invalid month parameter")
 	}
 
 	ctx := c.Request().Context()
+
+	reqCache := &requests.MonthTotalSaldoBalance{
+		Year:  year,
+		Month: month,
+	}
+
+	cachedData, found := h.cache.GetMonthlyTotalSaldoBalanceCache(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	res, err := h.saldo.FindMonthlyTotalSaldoBalance(ctx, &pb.FindMonthlySaldoTotalBalance{
 		Year:  int32(year),
@@ -174,12 +205,13 @@ func (h *SaldoHandleApi) FindMonthlyTotalSaldoBalance(c echo.Context) error {
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly total saldo balance", zap.Error(err))
-		return saldo_errors.ErrApiFailedFindMonthlyTotalSaldoBalance(c)
+		return h.handleGrpcError(err, "FindMonthlyTotalSaldoBalance")
 	}
 
-	so := h.mapping.ToApiResponseMonthTotalSaldo(res)
+	apiResponse := h.mapping.ToApiResponseMonthTotalSaldo(res)
+	h.cache.SetMonthlyTotalSaldoCache(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearTotalSaldoBalance retrieves the total saldo balance for a specific year.
@@ -194,27 +226,32 @@ func (h *SaldoHandleApi) FindMonthlyTotalSaldoBalance(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly total saldo balance"
 // @Router /api/saldos/yearly-total-balance [get]
-func (h *SaldoHandleApi) FindYearTotalSaldoBalance(c echo.Context) error {
+func (h *saldoHandleApi) FindYearTotalSaldoBalance(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return saldo_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetYearTotalSaldoBalanceCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	res, err := h.saldo.FindYearTotalSaldoBalance(ctx, &pb.FindYearlySaldo{
 		Year: int32(year),
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve year total saldo balance", zap.Error(err))
-		return saldo_errors.ErrApiFailedFindYearTotalSaldoBalance(c)
+		return h.handleGrpcError(err, "FindYearTotalSaldoBalance")
 	}
 
-	so := h.mapping.ToApiResponseYearTotalSaldo(res)
+	apiResponse := h.mapping.ToApiResponseYearTotalSaldo(res)
+	h.cache.SetYearTotalSaldoBalanceCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindMonthlySaldoBalances retrieves monthly saldo balances for a specific year.
@@ -229,27 +266,32 @@ func (h *SaldoHandleApi) FindYearTotalSaldoBalance(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve monthly saldo balances"
 // @Router /api/saldos/monthly-balances [get]
-func (h *SaldoHandleApi) FindMonthlySaldoBalances(c echo.Context) error {
+func (h *saldoHandleApi) FindMonthlySaldoBalances(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return saldo_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetMonthlySaldoBalanceCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	res, err := h.saldo.FindMonthlySaldoBalances(ctx, &pb.FindYearlySaldo{
 		Year: int32(year),
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve monthly saldo balances", zap.Error(err))
-		return saldo_errors.ErrApiFailedFindMonthlySaldoBalances(c)
+		return h.handleGrpcError(err, "FindMonthlySaldoBalances")
 	}
 
-	so := h.mapping.ToApiResponseMonthSaldoBalances(res)
+	apiResponse := h.mapping.ToApiResponseMonthSaldoBalances(res)
+	h.cache.SetMonthlySaldoBalanceCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // FindYearlySaldoBalances retrieves yearly saldo balances for a specific year.
@@ -264,27 +306,32 @@ func (h *SaldoHandleApi) FindMonthlySaldoBalances(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Invalid year parameter"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve yearly saldo balances"
 // @Router /api/saldo/yearly-balances [get]
-func (h *SaldoHandleApi) FindYearlySaldoBalances(c echo.Context) error {
+func (h *saldoHandleApi) FindYearlySaldoBalances(c echo.Context) error {
 	yearStr := c.QueryParam("year")
 	year, err := strconv.Atoi(yearStr)
-	if err != nil {
-		h.logger.Debug("Invalid year parameter", zap.Error(err))
-		return saldo_errors.ErrApiInvalidYear(c)
+	if err != nil || year <= 0 {
+		return errors.NewBadRequestError("invalid year parameter")
 	}
 
 	ctx := c.Request().Context()
+
+	cachedData, found := h.cache.GetYearlySaldoBalanceCache(ctx, year)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
 
 	res, err := h.saldo.FindYearlySaldoBalances(ctx, &pb.FindYearlySaldo{
 		Year: int32(year),
 	})
 	if err != nil {
 		h.logger.Debug("Failed to retrieve yearly saldo balances", zap.Error(err))
-		return saldo_errors.ErrApiFailedFindYearlySaldoBalances(c)
+		return h.handleGrpcError(err, "FindYearlySaldoBalances")
 	}
 
-	so := h.mapping.ToApiResponseYearSaldoBalances(res)
+	apiResponse := h.mapping.ToApiResponseYearSaldoBalances(res)
+	h.cache.SetYearlySaldoBalanceCache(ctx, year, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Summary Find a saldo by card number
@@ -297,29 +344,33 @@ func (h *SaldoHandleApi) FindYearlySaldoBalances(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseSaldo "Saldo data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve saldo data"
 // @Router /api/saldos/card_number/{card_number} [get]
-func (h *SaldoHandleApi) FindByCardNumber(c echo.Context) error {
+func (h *saldoHandleApi) FindByCardNumber(c echo.Context) error {
 	cardNumber := c.Param("card_number")
-
 	if cardNumber == "" {
-		return saldo_errors.ErrApiInvalidCardNumber(c)
+		return errors.NewBadRequestError("card_number is required")
 	}
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindByCardNumberRequest{
+	cachedData, found := h.cache.GetCachedSaldoByCardNumber(ctx, cardNumber)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindByCardNumberRequest{
 		CardNumber: cardNumber,
 	}
 
-	res, err := h.saldo.FindByCardNumber(ctx, req)
-
+	res, err := h.saldo.FindByCardNumber(ctx, reqGrpc)
 	if err != nil {
 		h.logger.Debug("Failed to retrieve saldo data", zap.Error(err))
-		return saldo_errors.ErrApiFailedFindByCardNumberSaldo(c)
+		return h.handleGrpcError(err, "FindByCardNumber")
 	}
 
-	so := h.mapping.ToApiResponseSaldo(res)
+	apiResponse := h.mapping.ToApiResponseSaldo(res)
+	h.cache.SetCachedSaldoByCardNumber(ctx, cardNumber, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Summary Retrieve all active saldo data
@@ -334,7 +385,7 @@ func (h *SaldoHandleApi) FindByCardNumber(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsesSaldo "List of saldo data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve saldo data"
 // @Router /api/saldos/active [get]
-func (h *SaldoHandleApi) FindByActive(c echo.Context) error {
+func (h *saldoHandleApi) FindByActive(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -349,22 +400,33 @@ func (h *SaldoHandleApi) FindByActive(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllSaldoRequest{
+	reqCache := &requests.FindAllSaldos{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedSaldoByActive(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindAllSaldoRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.saldo.FindByActive(ctx, req)
-
+	res, err := h.saldo.FindByActive(ctx, reqGrpc)
 	if err != nil {
 		h.logger.Debug("Failed to retrieve saldo data", zap.Error(err))
-		return saldo_errors.ErrApiFailedFindAllSaldoActive(c)
+		return h.handleGrpcError(err, "FindByActive")
 	}
 
-	so := h.mapping.ToApiResponsePaginationSaldoDeleteAt(res)
+	apiResponse := h.mapping.ToApiResponsePaginationSaldoDeleteAt(res)
+	h.cache.SetCachedSaldoByActive(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Summary Retrieve trashed saldo data
@@ -379,7 +441,7 @@ func (h *SaldoHandleApi) FindByActive(c echo.Context) error {
 // @Success 200 {object} response.ApiResponsesSaldo "List of trashed saldo data"
 // @Failure 500 {object} response.ErrorResponse "Failed to retrieve saldo data"
 // @Router /api/saldos/trashed [get]
-func (h *SaldoHandleApi) FindByTrashed(c echo.Context) error {
+func (h *saldoHandleApi) FindByTrashed(c echo.Context) error {
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil || page <= 0 {
 		page = 1
@@ -394,22 +456,33 @@ func (h *SaldoHandleApi) FindByTrashed(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	req := &pb.FindAllSaldoRequest{
+	reqCache := &requests.FindAllSaldos{
+		Page:     page,
+		PageSize: pageSize,
+		Search:   search,
+	}
+
+	cachedData, found := h.cache.GetCachedSaldoByTrashed(ctx, reqCache)
+	if found {
+		return c.JSON(http.StatusOK, cachedData)
+	}
+
+	reqGrpc := &pb.FindAllSaldoRequest{
 		Page:     int32(page),
 		PageSize: int32(pageSize),
 		Search:   search,
 	}
 
-	res, err := h.saldo.FindByTrashed(ctx, req)
-
+	res, err := h.saldo.FindByTrashed(ctx, reqGrpc)
 	if err != nil {
 		h.logger.Debug("Failed to retrieve saldo data", zap.Error(err))
-		return saldo_errors.ErrApiFailedFindAllSaldoTrashed(c)
+		return h.handleGrpcError(err, "FindByTrashed")
 	}
 
-	so := h.mapping.ToApiResponsePaginationSaldoDeleteAt(res)
+	apiResponse := h.mapping.ToApiResponsePaginationSaldoDeleteAt(res)
+	h.cache.SetCachedSaldoByTrashed(ctx, reqCache, apiResponse)
 
-	return c.JSON(http.StatusOK, so)
+	return c.JSON(http.StatusOK, apiResponse)
 }
 
 // @Summary Create a new saldo
@@ -423,17 +496,16 @@ func (h *SaldoHandleApi) FindByTrashed(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to create saldo"
 // @Router /api/saldos/create [post]
-func (h *SaldoHandleApi) Create(c echo.Context) error {
+func (h *saldoHandleApi) Create(c echo.Context) error {
 	var body requests.CreateSaldoRequest
 
 	if err := c.Bind(&body); err != nil {
-		h.logger.Debug("Bad Request", zap.Error(err))
-		return saldo_errors.ErrApiBindCreateSaldo(c)
+		return errors.NewBadRequestError("Invalid request")
 	}
 
 	if err := body.Validate(); err != nil {
-		h.logger.Debug("Validation Error", zap.Error(err))
-		return saldo_errors.ErrApiValidateCreateSaldo(c)
+		validations := h.parseValidationErrors(err)
+		return errors.NewValidationError(validations)
 	}
 
 	ctx := c.Request().Context()
@@ -444,11 +516,12 @@ func (h *SaldoHandleApi) Create(c echo.Context) error {
 	})
 
 	if err != nil {
-		h.logger.Debug("Failed to create saldo", zap.Error(err))
-		return saldo_errors.ErrApiFailedCreateSaldo(c)
+		return h.handleGrpcError(err, "Create")
 	}
 
 	so := h.mapping.ToApiResponseSaldo(res)
+
+	h.cache.SetCachedSaldoById(ctx, so.Data.ID, so)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -465,24 +538,22 @@ func (h *SaldoHandleApi) Create(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid request body or validation error"
 // @Failure 500 {object} response.ErrorResponse "Failed to update saldo"
 // @Router /api/saldos/update/{id} [post]
-func (h *SaldoHandleApi) Update(c echo.Context) error {
+func (h *saldoHandleApi) Update(c echo.Context) error {
 	idint, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
-		h.logger.Debug("Bad Request", zap.Error(err))
-		return saldo_errors.ErrApiInvalidSaldoID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	var body requests.UpdateSaldoRequest
 
 	if err := c.Bind(&body); err != nil {
-		h.logger.Debug("Bad Request", zap.Error(err))
-		return saldo_errors.ErrApiBindUpdateSaldo(c)
+		return errors.NewBadRequestError("Invalid request")
 	}
 
 	if err := body.Validate(); err != nil {
-		h.logger.Debug("Validation Error", zap.Error(err))
-		return saldo_errors.ErrApiValidateUpdateSaldo(c)
+		validations := h.parseValidationErrors(err)
+		return errors.NewValidationError(validations)
 	}
 
 	ctx := c.Request().Context()
@@ -495,10 +566,14 @@ func (h *SaldoHandleApi) Update(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to update saldo", zap.Error(err))
-		return saldo_errors.ErrApiFailedUpdateSaldo(c)
+		return h.handleGrpcError(err, "Update")
 	}
 
 	so := h.mapping.ToApiResponseSaldo(res)
+
+	h.cache.DeleteSaldoCache(ctx, idint)
+
+	h.cache.SetCachedSaldoById(ctx, so.Data.ID, so)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -514,14 +589,14 @@ func (h *SaldoHandleApi) Update(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to trashed saldo"
 // @Router /api/saldos/trashed/{id} [post]
-func (h *SaldoHandleApi) TrashSaldo(c echo.Context) error {
+func (h *saldoHandleApi) TrashSaldo(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
 		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
-		return saldo_errors.ErrApiInvalidSaldoID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -532,10 +607,12 @@ func (h *SaldoHandleApi) TrashSaldo(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to trashed saldo", zap.Error(err))
-		return saldo_errors.ErrApiFailedTrashSaldo(c)
+		return h.handleGrpcError(err, "Trashed")
 	}
 
 	so := h.mapping.ToApiResponseSaldoDeleteAt(res)
+
+	h.cache.DeleteSaldoCache(ctx, idInt)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -551,14 +628,14 @@ func (h *SaldoHandleApi) TrashSaldo(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore saldo"
 // @Router /api/saldos/restore/{id} [post]
-func (h *SaldoHandleApi) RestoreSaldo(c echo.Context) error {
+func (h *saldoHandleApi) RestoreSaldo(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
 		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
-		return saldo_errors.ErrApiInvalidSaldoID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -569,10 +646,12 @@ func (h *SaldoHandleApi) RestoreSaldo(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to restore saldo", zap.Error(err))
-		return saldo_errors.ErrApiFailedRestoreSaldo(c)
+		return h.handleGrpcError(err, "Restore")
 	}
 
 	so := h.mapping.ToApiResponseSaldoDeleteAt(res)
+
+	h.cache.DeleteSaldoCache(ctx, idInt)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -588,14 +667,14 @@ func (h *SaldoHandleApi) RestoreSaldo(c echo.Context) error {
 // @Failure 400 {object} response.ErrorResponse "Bad Request: Invalid ID"
 // @Failure 500 {object} response.ErrorResponse "Failed to delete saldo"
 // @Router /api/saldos/permanent/{id} [delete]
-func (h *SaldoHandleApi) Delete(c echo.Context) error {
+func (h *saldoHandleApi) Delete(c echo.Context) error {
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
 		h.logger.Debug("Bad Request: Invalid ID", zap.Error(err))
-		return saldo_errors.ErrApiInvalidSaldoID(c)
+		return errors.NewBadRequestError("id is required")
 	}
 
 	ctx := c.Request().Context()
@@ -606,10 +685,12 @@ func (h *SaldoHandleApi) Delete(c echo.Context) error {
 
 	if err != nil {
 		h.logger.Debug("Failed to delete saldo", zap.Error(err))
-		return saldo_errors.ErrApiFailedDeleteSaldoPermanent(c)
+		return h.handleGrpcError(err, "DeleteSaldo")
 	}
 
 	so := h.mapping.ToApiResponseSaldoDelete(res)
+
+	h.cache.DeleteSaldoCache(ctx, idInt)
 
 	return c.JSON(http.StatusOK, so)
 }
@@ -624,14 +705,14 @@ func (h *SaldoHandleApi) Delete(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseSaldoAll "Successfully restored all saldo records"
 // @Failure 500 {object} response.ErrorResponse "Failed to restore all saldo records"
 // @Router /api/saldos/restore/all [post]
-func (h *SaldoHandleApi) RestoreAllSaldo(c echo.Context) error {
+func (h *saldoHandleApi) RestoreAllSaldo(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.saldo.RestoreAllSaldo(ctx, &emptypb.Empty{})
 
 	if err != nil {
 		h.logger.Error("Failed to restore all saldo", zap.Error(err))
-		return saldo_errors.ErrApiFailedRestoreAllSaldo(c)
+		return h.handleGrpcError(err, "RestoreAll")
 	}
 
 	h.logger.Debug("Successfully restored all saldo")
@@ -650,7 +731,7 @@ func (h *SaldoHandleApi) RestoreAllSaldo(c echo.Context) error {
 // @Success 200 {object} response.ApiResponseSaldoAll "Successfully deleted all saldo records permanently"
 // @Failure 500 {object} response.ErrorResponse "Failed to permanently delete all saldo records"
 // @Router /api/saldos/permanent/all [post]
-func (h *SaldoHandleApi) DeleteAllSaldoPermanent(c echo.Context) error {
+func (h *saldoHandleApi) DeleteAllSaldoPermanent(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	res, err := h.saldo.DeleteAllSaldoPermanent(ctx, &emptypb.Empty{})
@@ -658,7 +739,7 @@ func (h *SaldoHandleApi) DeleteAllSaldoPermanent(c echo.Context) error {
 	if err != nil {
 		h.logger.Error("Failed to permanently delete all saldo", zap.Error(err))
 
-		return saldo_errors.ErrApiFailedDeleteAllSaldoPermanent(c)
+		return h.handleGrpcError(err, "DeleteAll")
 	}
 
 	h.logger.Debug("Successfully deleted all saldo permanently")
@@ -666,4 +747,82 @@ func (h *SaldoHandleApi) DeleteAllSaldoPermanent(c echo.Context) error {
 	so := h.mapping.ToApiResponseSaldoAll(res)
 
 	return c.JSON(http.StatusOK, so)
+}
+
+func (h *saldoHandleApi) handleGrpcError(err error, operation string) *errors.AppError {
+	st, ok := status.FromError(err)
+	if !ok {
+		return errors.NewInternalError(err).WithMessage("Failed to " + operation)
+	}
+
+	switch st.Code() {
+	case codes.NotFound:
+		return errors.NewNotFoundError("Saldo").WithInternal(err)
+
+	case codes.AlreadyExists:
+		return errors.NewConflictError("Saldo already exists").WithInternal(err)
+
+	case codes.InvalidArgument:
+		return errors.NewBadRequestError(st.Message()).WithInternal(err)
+
+	case codes.PermissionDenied:
+		return errors.ErrForbidden.WithInternal(err)
+
+	case codes.Unauthenticated:
+		return errors.ErrUnauthorized.WithInternal(err)
+
+	case codes.ResourceExhausted:
+		return errors.ErrTooManyRequests.WithInternal(err)
+
+	case codes.Unavailable:
+		return errors.NewServiceUnavailableError("Saldo service").WithInternal(err)
+
+	case codes.DeadlineExceeded:
+		return errors.ErrTimeout.WithInternal(err)
+
+	default:
+		return errors.NewInternalError(err).WithMessage("Failed to " + operation)
+	}
+}
+
+func (h *saldoHandleApi) parseValidationErrors(err error) []errors.ValidationError {
+	var validationErrs []errors.ValidationError
+
+	if ve, ok := err.(validator.ValidationErrors); ok {
+		for _, fe := range ve {
+			validationErrs = append(validationErrs, errors.ValidationError{
+				Field:   fe.Field(),
+				Message: h.getValidationMessage(fe),
+			})
+		}
+		return validationErrs
+	}
+
+	return []errors.ValidationError{
+		{
+			Field:   "general",
+			Message: err.Error(),
+		},
+	}
+}
+
+func (h *saldoHandleApi) getValidationMessage(fe validator.FieldError) string {
+	switch fe.Tag() {
+	case "required":
+		return "This field is required"
+	case "email":
+		return "Invalid email format"
+	case "min":
+		return fmt.Sprintf("Must be at least %s", fe.Param())
+	case "max":
+		return fmt.Sprintf("Must be at most %s", fe.Param())
+	case "gte":
+		return fmt.Sprintf("Must be greater than or equal to %s", fe.Param())
+	case "lte":
+		return fmt.Sprintf("Must be less than or equal to %s", fe.Param())
+	case "oneof":
+		return fmt.Sprintf("Must be one of: %s", fe.Param())
+	default:
+		return fmt.Sprintf("Validation failed on '%s' tag", fe.Tag())
+	}
 }

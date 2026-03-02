@@ -1,14 +1,18 @@
 package service
 
 import (
+	saldo_cache "MamangRust/paymentgatewaygrpc/internal/cache/saldo"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	"MamangRust/paymentgatewaygrpc/internal/domain/response"
-	responseservice "MamangRust/paymentgatewaygrpc/internal/mapper/response/service"
+	"MamangRust/paymentgatewaygrpc/internal/errorhandler"
 	"MamangRust/paymentgatewaygrpc/internal/repository"
+	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/card_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/saldo_errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
+	"MamangRust/paymentgatewaygrpc/pkg/observability"
+	"context"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
 
@@ -16,27 +20,34 @@ type saldoService struct {
 	cardRepository  repository.CardRepository
 	saldoRepository repository.SaldoRepository
 	logger          logger.LoggerInterface
-	mapping         responseservice.SaldoResponseMapper
+	cache           saldo_cache.SaldoMencache
+	observability   observability.TraceLoggerObservability
 }
 
-func NewSaldoService(saldo repository.SaldoRepository, card repository.CardRepository, logger logger.LoggerInterface, mapping responseservice.SaldoResponseMapper) *saldoService {
+type SaldoServiceDeps struct {
+	SaldoRepo     repository.SaldoRepository
+	CardRepo      repository.CardRepository
+	Cache         saldo_cache.SaldoMencache
+	Logger        logger.LoggerInterface
+	Observability observability.TraceLoggerObservability
+}
+
+func NewSaldoService(deps SaldoServiceDeps) *saldoService {
 	return &saldoService{
-		saldoRepository: saldo,
-		cardRepository:  card,
-		logger:          logger,
-		mapping:         mapping,
+		saldoRepository: deps.SaldoRepo,
+		cardRepository:  deps.CardRepo,
+		logger:          deps.Logger,
+		cache:           deps.Cache,
+		observability:   deps.Observability,
 	}
 }
 
-func (s *saldoService) FindAll(req *requests.FindAllSaldos) ([]*response.SaldoResponse, *int, *response.ErrorResponse) {
+func (s *saldoService) FindAll(ctx context.Context, req *requests.FindAllSaldos) ([]*db.GetSaldosRow, *int, error) {
+	const method = "FindAll"
+
 	page := req.Page
 	pageSize := req.PageSize
 	search := req.Search
-
-	s.logger.Debug("Fetching saldo",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
 
 	if page <= 0 {
 		page = 1
@@ -45,37 +56,52 @@ func (s *saldoService) FindAll(req *requests.FindAllSaldos) ([]*response.SaldoRe
 		pageSize = 10
 	}
 
-	res, totalRecords, err := s.saldoRepository.FindAllSaldos(req)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("page", page),
+		attribute.Int("pageSize", pageSize),
+		attribute.String("search", search))
 
+	defer func() {
+		end(status)
+	}()
+
+	res, err := s.saldoRepository.FindAllSaldos(ctx, req)
 	if err != nil {
-		s.logger.Error("Failed to fetch saldo",
-			zap.Error(err),
+		status = "error"
+		return errorhandler.HandlerErrorPagination[[]*db.GetSaldosRow](
+			s.logger,
+			saldo_errors.ErrFailedFindAllSaldos,
+			method,
+			span,
+
 			zap.Int("page", page),
 			zap.Int("pageSize", pageSize),
-			zap.String("search", search))
-
-		return nil, nil, saldo_errors.ErrFailedFindAllSaldos
+			zap.String("search", search),
+		)
 	}
 
-	so := s.mapping.ToSaldoResponses(res)
+	var totalCount int
 
-	s.logger.Debug("Successfully fetched saldo",
-		zap.Int("totalRecords", *totalRecords),
+	if len(res) > 0 {
+		totalCount = int(res[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+
+	logSuccess("Successfully fetched saldo",
+		zap.Int("totalRecords", totalCount),
 		zap.Int("page", req.Page),
 		zap.Int("pageSize", req.PageSize))
 
-	return so, totalRecords, nil
+	return res, &totalCount, nil
 }
 
-func (s *saldoService) FindByActive(req *requests.FindAllSaldos) ([]*response.SaldoResponseDeleteAt, *int, *response.ErrorResponse) {
+func (s *saldoService) FindByActive(ctx context.Context, req *requests.FindAllSaldos) ([]*db.GetActiveSaldosRow, *int, error) {
+	const method = "FindByActive"
+
 	page := req.Page
 	pageSize := req.PageSize
 	search := req.Search
-
-	s.logger.Debug("Fetching active saldo",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
 
 	if page <= 0 {
 		page = 1
@@ -84,37 +110,61 @@ func (s *saldoService) FindByActive(req *requests.FindAllSaldos) ([]*response.Sa
 		pageSize = 10
 	}
 
-	res, totalRecords, err := s.saldoRepository.FindByActive(req)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("page", page),
+		attribute.Int("pageSize", pageSize),
+		attribute.String("search", search))
 
+	defer func() {
+		end(status)
+	}()
+
+	res, err := s.saldoRepository.FindByActive(ctx, req)
 	if err != nil {
-		s.logger.Error("Failed to retrieve active saldo",
-			zap.Error(err),
+		status = "error"
+		return errorhandler.HandlerErrorPagination[[]*db.GetActiveSaldosRow](
+			s.logger,
+			saldo_errors.ErrFailedFindActiveSaldos,
+			method,
+			span,
+
 			zap.Int("page", page),
 			zap.Int("page_size", pageSize),
-			zap.String("search", search))
-
-		return nil, nil, saldo_errors.ErrFailedFindActiveSaldos
+			zap.String("search", search),
+		)
 	}
 
-	so := s.mapping.ToSaldoResponsesDeleteAt(res)
+	var totalCount int
 
-	s.logger.Debug("Successfully fetched active saldo",
-		zap.Int("totalRecords", *totalRecords),
+	if len(res) > 0 {
+		totalCount = int(res[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+
+	logSuccess("Successfully fetched active saldo",
+		zap.Int("totalRecords", totalCount),
 		zap.Int("page", page),
 		zap.Int("pageSize", pageSize))
 
-	return so, totalRecords, nil
+	return res, &totalCount, nil
 }
 
-func (s *saldoService) FindByTrashed(req *requests.FindAllSaldos) ([]*response.SaldoResponseDeleteAt, *int, *response.ErrorResponse) {
+func (s *saldoService) FindByTrashed(ctx context.Context, req *requests.FindAllSaldos) ([]*db.GetTrashedSaldosRow, *int, error) {
+	const method = "FindByTrashed"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("page", req.Page),
+		attribute.Int("pageSize", req.PageSize),
+		attribute.String("search", req.Search))
+
+	defer func() {
+		end(status)
+	}()
+
 	page := req.Page
 	pageSize := req.PageSize
 	search := req.Search
-
-	s.logger.Debug("Fetching saldo record",
-		zap.Int("page", page),
-		zap.Int("pageSize", pageSize),
-		zap.String("search", search))
 
 	if page <= 0 {
 		page = 1
@@ -123,279 +173,457 @@ func (s *saldoService) FindByTrashed(req *requests.FindAllSaldos) ([]*response.S
 		pageSize = 10
 	}
 
-	res, totalRecords, err := s.saldoRepository.FindByTrashed(req)
-
+	res, err := s.saldoRepository.FindByTrashed(ctx, req)
 	if err != nil {
-		s.logger.Error("Failed to retrieve trashed saldo",
-			zap.Error(err),
+		status = "error"
+		return errorhandler.HandlerErrorPagination[[]*db.GetTrashedSaldosRow](
+			s.logger,
+			saldo_errors.ErrFailedFindTrashedSaldos,
+			method,
+			span,
+
 			zap.Int("page", page),
 			zap.Int("page_size", pageSize),
-			zap.String("search", search))
-
-		return nil, nil, saldo_errors.ErrFailedFindTrashedSaldos
+			zap.String("search", search),
+		)
 	}
 
-	s.logger.Debug("Successfully fetched trashed saldo",
-		zap.Int("totalRecords", *totalRecords),
+	var totalCount int
+
+	if len(res) > 0 {
+		totalCount = int(res[0].TotalCount)
+	} else {
+		totalCount = 0
+	}
+
+	logSuccess("Successfully fetched trashed saldo",
+		zap.Int("totalRecords", totalCount),
 		zap.Int("page", req.Page),
 		zap.Int("pageSize", req.PageSize))
 
-	so := s.mapping.ToSaldoResponsesDeleteAt(res)
-
-	return so, totalRecords, nil
+	return res, &totalCount, nil
 }
 
-func (s *saldoService) FindById(saldo_id int) (*response.SaldoResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching saldo record by ID", zap.Int("saldo_id", saldo_id))
+func (s *saldoService) FindById(ctx context.Context, saldo_id int) (*db.GetSaldoByIDRow, error) {
+	const method = "FindById"
 
-	res, err := s.saldoRepository.FindById(saldo_id)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("saldo_id", saldo_id))
 
+	defer func() {
+		end(status)
+	}()
+
+	res, err := s.saldoRepository.FindById(ctx, saldo_id)
 	if err != nil {
-		s.logger.Error("Failed to retrieve saldo details",
+		status = "error"
+		return errorhandler.HandleError[*db.GetSaldoByIDRow](
+			s.logger,
+			saldo_errors.ErrFailedSaldoNotFound,
+			method,
+			span,
+
 			zap.Int("saldo_id", saldo_id),
-			zap.Error(err))
-
-		return nil, saldo_errors.ErrFailedSaldoNotFound
+		)
 	}
 
-	so := s.mapping.ToSaldoResponse(res)
+	logSuccess("Successfully fetched saldo", zap.Int("saldo_id", saldo_id))
 
-	s.logger.Debug("Successfully fetched saldo", zap.Int("saldo_id", saldo_id))
-
-	return so, nil
+	return res, nil
 }
 
-func (s *saldoService) FindMonthlyTotalSaldoBalance(req *requests.MonthTotalSaldoBalance) ([]*response.SaldoMonthTotalBalanceResponse, *response.ErrorResponse) {
-	year := req.Year
-	month := req.Month
+func (s *saldoService) FindByCardNumber(ctx context.Context, card_number string) (*db.Saldo, error) {
+	const method = "FindByCardNumber"
 
-	s.logger.Debug("Fetching monthly total saldo balance", zap.Int("year", year), zap.Int("month", month))
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", card_number))
 
-	res, err := s.saldoRepository.GetMonthlyTotalSaldoBalance(req)
+	defer func() {
+		end(status)
+	}()
+
+	res, err := s.saldoRepository.FindByCardNumber(ctx, card_number)
 	if err != nil {
-		s.logger.Error("Failed to fetch monthly total saldo balance", zap.Error(err), zap.Int("year", year), zap.Int("month", month))
+		status = "error"
+		return errorhandler.HandleError[*db.Saldo](
+			s.logger,
+			saldo_errors.ErrFailedSaldoNotFound,
+			method,
+			span,
 
-		return nil, saldo_errors.ErrFailedFindMonthlyTotalSaldoBalance
-	}
-
-	responses := s.mapping.ToSaldoMonthTotalBalanceResponses(res)
-
-	s.logger.Debug("Successfully fetched monthly total saldo balance", zap.Int("year", year), zap.Int("month", month))
-
-	return responses, nil
-}
-
-func (s *saldoService) FindYearTotalSaldoBalance(year int) ([]*response.SaldoYearTotalBalanceResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching yearly total saldo balance", zap.Int("year", year))
-
-	res, err := s.saldoRepository.GetYearTotalSaldoBalance(year)
-
-	if err != nil {
-		s.logger.Error("Failed to fetch yearly total saldo balance", zap.Error(err), zap.Int("year", year))
-
-		return nil, saldo_errors.ErrFailedFindYearTotalSaldoBalance
-	}
-
-	s.logger.Debug("Successfully fetched yearly total saldo balance", zap.Int("year", year))
-
-	so := s.mapping.ToSaldoYearTotalBalanceResponses(res)
-
-	return so, nil
-}
-
-func (s *saldoService) FindMonthlySaldoBalances(year int) ([]*response.SaldoMonthBalanceResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching monthly saldo balances", zap.Int("year", year))
-
-	res, err := s.saldoRepository.GetMonthlySaldoBalances(year)
-
-	if err != nil {
-		s.logger.Error("Failed to fetch monthly saldo balances", zap.Error(err), zap.Int("year", year))
-
-		return nil, saldo_errors.ErrFailedFindMonthlySaldoBalances
-	}
-
-	responses := s.mapping.ToSaldoMonthBalanceResponses(res)
-
-	s.logger.Debug("Successfully fetched monthly saldo balances", zap.Int("year", year))
-
-	return responses, nil
-}
-
-func (s *saldoService) FindYearlySaldoBalances(year int) ([]*response.SaldoYearBalanceResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching yearly saldo balances", zap.Int("year", year))
-
-	res, err := s.saldoRepository.GetYearlySaldoBalances(year)
-
-	if err != nil {
-		s.logger.Error("Failed to fetch yearly saldo balances", zap.Error(err), zap.Int("year", year))
-
-		return nil, saldo_errors.ErrFailedFindYearlySaldoBalances
-	}
-
-	responses := s.mapping.ToSaldoYearBalanceResponses(res)
-
-	s.logger.Debug("Successfully fetched yearly saldo balances", zap.Int("year", year))
-
-	return responses, nil
-}
-
-func (s *saldoService) FindByCardNumber(card_number string) (*response.SaldoResponse, *response.ErrorResponse) {
-	s.logger.Debug("Fetching saldo record by card number", zap.String("card_number", card_number))
-
-	res, err := s.saldoRepository.FindByCardNumber(card_number)
-
-	if err != nil {
-		s.logger.Error("Failed to retrieve saldo details",
 			zap.String("card_number", card_number),
-			zap.Error(err))
-
-		return nil, saldo_errors.ErrFailedSaldoNotFound
+		)
 	}
 
-	so := s.mapping.ToSaldoResponse(res)
+	logSuccess("Successfully fetched saldo by card number", zap.String("card_number", card_number))
 
-	s.logger.Debug("Successfully fetched saldo by card number", zap.String("card_number", card_number))
-
-	return so, nil
+	return res, nil
 }
 
-func (s *saldoService) CreateSaldo(request *requests.CreateSaldoRequest) (*response.SaldoResponse, *response.ErrorResponse) {
-	s.logger.Debug("Creating saldo record", zap.String("card_number", request.CardNumber))
+func (s *saldoService) FindMonthlyTotalSaldoBalance(ctx context.Context, req *requests.MonthTotalSaldoBalance) ([]*db.GetMonthlyTotalSaldoBalanceRow, error) {
+	const method = "FindMonthlyTotalSaldoBalance"
 
-	_, err := s.cardRepository.FindCardByCardNumber(request.CardNumber)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", req.Year),
+		attribute.Int("month", req.Month))
 
-	if err != nil {
-		s.logger.Error("Failed to create new saldo",
-			zap.Error(err),
-			zap.Any("request", request))
+	defer func() {
+		end(status)
+	}()
 
-		return nil, card_errors.ErrCardNotFoundRes
+	if cache, found := s.cache.GetMonthlyTotalSaldoBalanceCache(ctx, req); found {
+		logSuccess("Successfully fetched monthly total saldo balance from cache", zap.Int("year", req.Year), zap.Int("month", req.Month))
+		return cache, nil
 	}
 
-	res, err := s.saldoRepository.CreateSaldo(request)
-
+	dbRows, err := s.saldoRepository.GetMonthlyTotalSaldoBalance(ctx, req)
 	if err != nil {
-		s.logger.Error("Failed to create saldo record",
-			zap.Error(err))
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlyTotalSaldoBalanceRow](
+			s.logger,
+			saldo_errors.ErrFailedFindMonthlyTotalSaldoBalance,
+			method,
+			span,
 
-		return nil, saldo_errors.ErrFailedCreateSaldo
+			zap.Int("year", req.Year),
+			zap.Int("month", req.Month),
+		)
 	}
 
-	so := s.mapping.ToSaldoResponse(res)
+	s.logger.Debug("Setting cache for monthly total saldo balance", zap.Int("year", req.Year), zap.Int("month", req.Month))
+	s.cache.SetMonthlyTotalSaldoCache(ctx, req, dbRows)
 
-	s.logger.Debug("Successfully created saldo record", zap.String("card_number", request.CardNumber))
+	logSuccess("Successfully fetched monthly total saldo balance (from DB)", zap.Int("year", req.Year), zap.Int("month", req.Month))
 
-	return so, nil
+	return dbRows, nil
 }
 
-func (s *saldoService) UpdateSaldo(request *requests.UpdateSaldoRequest) (*response.SaldoResponse, *response.ErrorResponse) {
-	s.logger.Debug("Updating saldo record", zap.String("card_number", request.CardNumber), zap.Float64("amount", float64(request.TotalBalance)))
+func (s *saldoService) FindYearTotalSaldoBalance(ctx context.Context, year int) ([]*db.GetYearlyTotalSaldoBalancesRow, error) {
+	const method = "FindYearTotalSaldoBalance"
 
-	_, err := s.cardRepository.FindCardByCardNumber(request.CardNumber)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
 
+	defer func() {
+		end(status)
+	}()
+
+	if cache, found := s.cache.GetYearTotalSaldoBalanceCache(ctx, year); found {
+		logSuccess("Successfully fetched yearly total saldo balance from cache", zap.Int("year", year))
+		return cache, nil
+	}
+
+	s.logger.Debug("Cache miss for yearly total saldo balance, fetching from DB", zap.Int("year", year))
+
+	dbRows, err := s.saldoRepository.GetYearTotalSaldoBalance(ctx, year)
 	if err != nil {
-		s.logger.Error("Card not found for card number update",
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlyTotalSaldoBalancesRow](
+			s.logger,
+			saldo_errors.ErrFailedFindYearTotalSaldoBalance,
+			method,
+			span,
+
+			zap.Int("year", year),
+		)
+	}
+
+	s.logger.Debug("Setting cache for yearly total saldo balance", zap.Int("year", year))
+
+	s.cache.SetYearTotalSaldoBalanceCache(ctx, year, dbRows)
+
+	logSuccess("Successfully fetched yearly total saldo balance (from DB)", zap.Int("year", year))
+
+	return dbRows, nil
+}
+
+func (s *saldoService) FindMonthlySaldoBalances(ctx context.Context, year int) ([]*db.GetMonthlySaldoBalancesRow, error) {
+	const method = "FindMonthlySaldoBalances"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if cache, found := s.cache.GetMonthlySaldoBalanceCache(ctx, year); found {
+		logSuccess("Successfully fetched monthly saldo balances from cache", zap.Int("year", year))
+		return cache, nil
+	}
+
+	s.logger.Debug("Cache miss for monthly saldo balances, fetching from DB", zap.Int("year", year))
+
+	dbRows, err := s.saldoRepository.GetMonthlySaldoBalances(ctx, year)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetMonthlySaldoBalancesRow](
+			s.logger,
+			saldo_errors.ErrFailedFindMonthlySaldoBalances,
+			method,
+			span,
+
+			zap.Int("year", year),
+		)
+	}
+
+	s.logger.Debug("Setting cache for monthly saldo balances", zap.Int("year", year))
+
+	s.cache.SetMonthlySaldoBalanceCache(ctx, year, dbRows)
+
+	logSuccess("Successfully fetched monthly saldo balances (from DB)", zap.Int("year", year))
+
+	return dbRows, nil
+}
+
+func (s *saldoService) FindYearlySaldoBalances(ctx context.Context, year int) ([]*db.GetYearlySaldoBalancesRow, error) {
+	const method = "FindYearlySaldoBalances"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("year", year))
+
+	defer func() {
+		end(status)
+	}()
+
+	if cache, found := s.cache.GetYearlySaldoBalanceCache(ctx, year); found {
+		logSuccess("Successfully fetched yearly saldo balances from cache", zap.Int("year", year))
+		return cache, nil
+	}
+
+	s.logger.Debug("Cache miss for yearly saldo balances, fetching from DB", zap.Int("year", year))
+
+	dbRows, err := s.saldoRepository.GetYearlySaldoBalances(ctx, year)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[[]*db.GetYearlySaldoBalancesRow](
+			s.logger,
+			saldo_errors.ErrFailedFindYearlySaldoBalances,
+			method,
+			span,
+
+			zap.Int("year", year),
+		)
+	}
+
+	s.logger.Debug("Setting cache for yearly saldo balances", zap.Int("year", year))
+	s.cache.SetYearlySaldoBalanceCache(ctx, year, dbRows)
+
+	logSuccess("Successfully fetched yearly saldo balances (from DB)", zap.Int("year", year))
+
+	return dbRows, nil
+}
+
+func (s *saldoService) CreateSaldo(ctx context.Context, request *requests.CreateSaldoRequest) (*db.CreateSaldoRow, error) {
+	const method = "CreateSaldo"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", request.CardNumber))
+
+	defer func() {
+		end(status)
+	}()
+
+	_, err := s.cardRepository.FindCardByCardNumber(ctx, request.CardNumber)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*db.CreateSaldoRow](
+			s.logger,
+			card_errors.ErrCardNotFoundRes,
+			method,
+			span,
+
 			zap.String("card_number", request.CardNumber),
-			zap.Error(err))
-
-		return nil, card_errors.ErrCardNotFoundRes
+		)
 	}
 
-	res, err := s.saldoRepository.UpdateSaldo(request)
-
+	res, err := s.saldoRepository.CreateSaldo(ctx, request)
 	if err != nil {
-		s.logger.Error("Failed to update saldo", zap.Error(err), zap.String("card_number", request.CardNumber))
-		return nil, saldo_errors.ErrFailedUpdateSaldo
+		status = "error"
+		return errorhandler.HandleError[*db.CreateSaldoRow](
+			s.logger,
+			saldo_errors.ErrFailedCreateSaldo,
+			method,
+			span,
+		)
 	}
 
-	so := s.mapping.ToSaldoResponse(res)
+	logSuccess("Successfully created saldo record", zap.String("card_number", request.CardNumber))
 
-	s.logger.Debug("Successfully updated saldo", zap.String("card_number", request.CardNumber), zap.Int("saldo_id", res.ID))
-
-	return so, nil
+	return res, nil
 }
 
-func (s *saldoService) TrashSaldo(saldo_id int) (*response.SaldoResponseDeleteAt, *response.ErrorResponse) {
-	s.logger.Debug("Trashing saldo record", zap.Int("saldo_id", saldo_id))
+func (s *saldoService) UpdateSaldo(ctx context.Context, request *requests.UpdateSaldoRequest) (*db.UpdateSaldoRow, error) {
+	const method = "UpdateSaldo"
 
-	res, err := s.saldoRepository.TrashedSaldo(saldo_id)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.String("card_number", request.CardNumber),
+		attribute.Float64("amount", float64(request.TotalBalance)))
+
+	defer func() {
+		end(status)
+	}()
+
+	_, err := s.cardRepository.FindCardByCardNumber(ctx, request.CardNumber)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[*db.UpdateSaldoRow](
+			s.logger,
+			card_errors.ErrCardNotFoundRes,
+			method,
+			span,
+
+			zap.String("card_number", request.CardNumber),
+		)
+	}
+
+	res, err := s.saldoRepository.UpdateSaldo(ctx, request)
 
 	if err != nil {
-		s.logger.Error("Failed to move saldo to trash",
-			zap.Int("saldo", saldo_id),
-			zap.Error(err))
+		status = "error"
+		return errorhandler.HandleError[*db.UpdateSaldoRow](
+			s.logger,
+			saldo_errors.ErrFailedUpdateSaldo,
+			method,
+			span,
 
-		return nil, saldo_errors.ErrFailedTrashSaldo
+			zap.String("card_number", request.CardNumber),
+		)
 	}
-	so := s.mapping.ToSaldoResponseDeleteAt(res)
 
-	s.logger.Debug("Successfully trashed saldo", zap.Int("saldo_id", saldo_id))
+	logSuccess("Successfully updated saldo", zap.String("card_number", request.CardNumber), zap.Int("saldo_id", int(res.SaldoID)))
 
-	return so, nil
+	return res, nil
 }
 
-func (s *saldoService) RestoreSaldo(saldo_id int) (*response.SaldoResponseDeleteAt, *response.ErrorResponse) {
-	s.logger.Debug("Restoring saldo record from trash", zap.Int("saldo_id", saldo_id))
+func (s *saldoService) TrashSaldo(ctx context.Context, saldo_id int) (*db.Saldo, error) {
+	const method = "TrashSaldo"
 
-	res, err := s.saldoRepository.RestoreSaldo(saldo_id)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("saldo_id", saldo_id))
 
+	defer func() {
+		end(status)
+	}()
+
+	res, err := s.saldoRepository.TrashedSaldo(ctx, saldo_id)
 	if err != nil {
-		s.logger.Error("Failed to restore saldo from trash",
+		status = "error"
+		return errorhandler.HandleError[*db.Saldo](
+			s.logger,
+			saldo_errors.ErrFailedTrashSaldo,
+			method,
+			span,
+
 			zap.Int("saldo_id", saldo_id),
-			zap.Error(err))
-
-		return nil, saldo_errors.ErrFailedRestoreSaldo
+		)
 	}
 
-	so := s.mapping.ToSaldoResponseDeleteAt(res)
+	logSuccess("Successfully trashed saldo", zap.Int("saldo_id", saldo_id))
 
-	s.logger.Debug("Successfully restored saldo", zap.Int("saldo_id", saldo_id))
-
-	return so, nil
+	return res, nil
 }
 
-func (s *saldoService) DeleteSaldoPermanent(saldo_id int) (bool, *response.ErrorResponse) {
-	s.logger.Debug("Deleting saldo permanently", zap.Int("saldo_id", saldo_id))
+func (s *saldoService) RestoreSaldo(ctx context.Context, saldo_id int) (*db.Saldo, error) {
+	const method = "RestoreSaldo"
 
-	_, err := s.saldoRepository.DeleteSaldoPermanent(saldo_id)
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("saldo_id", saldo_id))
 
+	defer func() {
+		end(status)
+	}()
+
+	res, err := s.saldoRepository.RestoreSaldo(ctx, saldo_id)
 	if err != nil {
-		s.logger.Error("Failed to permanently delete saldo",
-			zap.Int("saldo_id", saldo_id),
-			zap.Error(err))
+		status = "error"
+		return errorhandler.HandleError[*db.Saldo](
+			s.logger,
+			saldo_errors.ErrFailedRestoreSaldo,
+			method,
+			span,
 
-		return false, saldo_errors.ErrFailedDeleteSaldoPermanent
+			zap.Int("saldo_id", saldo_id),
+		)
 	}
 
-	s.logger.Debug("Successfully deleted saldo permanently", zap.Int("saldo_id", saldo_id))
+	logSuccess("Successfully restored saldo", zap.Int("saldo_id", saldo_id))
+
+	return res, nil
+}
+
+func (s *saldoService) DeleteSaldoPermanent(ctx context.Context, saldo_id int) (bool, error) {
+	const method = "DeleteSaldoPermanent"
+
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method,
+		attribute.Int("saldo_id", saldo_id))
+
+	defer func() {
+		end(status)
+	}()
+
+	_, err := s.saldoRepository.DeleteSaldoPermanent(ctx, saldo_id)
+	if err != nil {
+		status = "error"
+		return errorhandler.HandleError[bool](
+			s.logger,
+			saldo_errors.ErrFailedDeleteSaldoPermanent,
+			method,
+			span,
+
+			zap.Int("saldo_id", saldo_id),
+		)
+	}
+
+	logSuccess("Successfully deleted saldo permanently", zap.Int("saldo_id", saldo_id))
 
 	return true, nil
 }
 
-func (s *saldoService) RestoreAllSaldo() (bool, *response.ErrorResponse) {
-	s.logger.Debug("Restoring all saldo")
+func (s *saldoService) RestoreAllSaldo(ctx context.Context) (bool, error) {
+	const method = "RestoreAllSaldo"
 
-	_, err := s.saldoRepository.RestoreAllSaldo()
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method)
 
+	defer func() {
+		end(status)
+	}()
+
+	_, err := s.saldoRepository.RestoreAllSaldo(ctx)
 	if err != nil {
-		s.logger.Error("Failed to restore all saldo", zap.Error(err))
-		return false, saldo_errors.ErrFailedRestoreAllSaldo
+		status = "error"
+		return errorhandler.HandleError[bool](
+			s.logger,
+			saldo_errors.ErrFailedRestoreAllSaldo,
+			method,
+			span,
+		)
 	}
 
-	s.logger.Debug("Successfully restored all saldo")
+	logSuccess("Successfully restored all saldo")
 	return true, nil
 }
 
-func (s *saldoService) DeleteAllSaldoPermanent() (bool, *response.ErrorResponse) {
-	s.logger.Debug("Permanently deleting all saldo")
+func (s *saldoService) DeleteAllSaldoPermanent(ctx context.Context) (bool, error) {
+	const method = "DeleteAllSaldoPermanent"
 
-	_, err := s.saldoRepository.DeleteAllSaldoPermanent()
+	ctx, span, end, status, logSuccess := s.observability.StartTracingAndLogging(ctx, method)
 
+	defer func() {
+		end(status)
+	}()
+
+	_, err := s.saldoRepository.DeleteAllSaldoPermanent(ctx)
 	if err != nil {
-		s.logger.Error("Failed to permanently delete all saldo", zap.Error(err))
-		return false, saldo_errors.ErrFailedDeleteAllSaldoPermanent
+		status = "error"
+		return errorhandler.HandleError[bool](
+			s.logger,
+			saldo_errors.ErrFailedDeleteAllSaldoPermanent,
+			method,
+			span,
+		)
 	}
 
-	s.logger.Debug("Successfully deleted all saldo permanently")
+	logSuccess("Successfully deleted all saldo permanently")
 	return true, nil
 }

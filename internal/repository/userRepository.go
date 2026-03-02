@@ -1,9 +1,7 @@
 package repository
 
 import (
-	"MamangRust/paymentgatewaygrpc/internal/domain/record"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	recordmapper "MamangRust/paymentgatewaygrpc/internal/mapper/record"
 	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/user_errors"
 	"context"
@@ -12,20 +10,16 @@ import (
 )
 
 type userRepository struct {
-	db      *db.Queries
-	ctx     context.Context
-	mapping recordmapper.UserRecordMapping
+	db *db.Queries
 }
 
-func NewUserRepository(db *db.Queries, ctx context.Context, mapping recordmapper.UserRecordMapping) *userRepository {
+func NewUserRepository(db *db.Queries) *userRepository {
 	return &userRepository{
-		db:      db,
-		ctx:     ctx,
-		mapping: mapping,
+		db: db,
 	}
 }
 
-func (r *userRepository) FindAllUsers(req *requests.FindAllUsers) ([]*record.UserRecord, *int, error) {
+func (r *userRepository) FindAllUsers(ctx context.Context, req *requests.FindAllUsers) ([]*db.GetUsersWithPaginationRow, error) {
 	offset := (req.Page - 1) * req.PageSize
 
 	reqDb := db.GetUsersWithPaginationParams{
@@ -34,24 +28,17 @@ func (r *userRepository) FindAllUsers(req *requests.FindAllUsers) ([]*record.Use
 		Offset:  int32(offset),
 	}
 
-	res, err := r.db.GetUsersWithPagination(r.ctx, reqDb)
+	res, err := r.db.GetUsersWithPagination(ctx, reqDb)
 
 	if err != nil {
-		return nil, nil, user_errors.ErrFindAllUsers
+		return nil, user_errors.ErrFindAllUsers
 	}
 
-	var totalCount int
-	if len(res) > 0 {
-		totalCount = int(res[0].TotalCount)
-	} else {
-		totalCount = 0
-	}
-
-	return r.mapping.ToUsersRecordPagination(res), &totalCount, nil
+	return res, nil
 }
 
-func (r *userRepository) FindById(user_id int) (*record.UserRecord, error) {
-	res, err := r.db.GetUserByID(r.ctx, int32(user_id))
+func (r *userRepository) FindById(ctx context.Context, user_id int) (*db.GetUserByIDRow, error) {
+	res, err := r.db.GetUserByID(ctx, int32(user_id))
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -61,10 +48,10 @@ func (r *userRepository) FindById(user_id int) (*record.UserRecord, error) {
 		return nil, user_errors.ErrUserNotFound
 	}
 
-	return r.mapping.ToUserRecord(res), nil
+	return res, nil
 }
 
-func (r *userRepository) FindByActive(req *requests.FindAllUsers) ([]*record.UserRecord, *int, error) {
+func (r *userRepository) FindByActive(ctx context.Context, req *requests.FindAllUsers) ([]*db.GetActiveUsersWithPaginationRow, error) {
 	offset := (req.Page - 1) * req.PageSize
 
 	reqDb := db.GetActiveUsersWithPaginationParams{
@@ -73,23 +60,16 @@ func (r *userRepository) FindByActive(req *requests.FindAllUsers) ([]*record.Use
 		Offset:  int32(offset),
 	}
 
-	res, err := r.db.GetActiveUsersWithPagination(r.ctx, reqDb)
+	res, err := r.db.GetActiveUsersWithPagination(ctx, reqDb)
 
 	if err != nil {
-		return nil, nil, user_errors.ErrFindActiveUsers
+		return nil, user_errors.ErrFindActiveUsers
 	}
 
-	var totalCount int
-	if len(res) > 0 {
-		totalCount = int(res[0].TotalCount)
-	} else {
-		totalCount = 0
-	}
-
-	return r.mapping.ToUsersRecordActivePagination(res), &totalCount, nil
+	return res, nil
 }
 
-func (r *userRepository) FindByTrashed(req *requests.FindAllUsers) ([]*record.UserRecord, *int, error) {
+func (r *userRepository) FindByTrashed(ctx context.Context, req *requests.FindAllUsers) ([]*db.GetTrashedUsersWithPaginationRow, error) {
 	offset := (req.Page - 1) * req.PageSize
 
 	reqDb := db.GetTrashedUsersWithPaginationParams{
@@ -98,24 +78,17 @@ func (r *userRepository) FindByTrashed(req *requests.FindAllUsers) ([]*record.Us
 		Offset:  int32(offset),
 	}
 
-	res, err := r.db.GetTrashedUsersWithPagination(r.ctx, reqDb)
+	res, err := r.db.GetTrashedUsersWithPagination(ctx, reqDb)
 
 	if err != nil {
-		return nil, nil, user_errors.ErrFindTrashedUsers
+		return nil, user_errors.ErrFindTrashedUsers
 	}
 
-	var totalCount int
-	if len(res) > 0 {
-		totalCount = int(res[0].TotalCount)
-	} else {
-		totalCount = 0
-	}
-
-	return r.mapping.ToUsersRecordTrashedPagination(res), &totalCount, nil
+	return res, nil
 }
 
-func (r *userRepository) FindByEmail(email string) (*record.UserRecord, error) {
-	res, err := r.db.GetUserByEmail(r.ctx, email)
+func (r *userRepository) FindByEmail(ctx context.Context, email string) (*db.GetUserByEmailRow, error) {
+	res, err := r.db.GetUserByEmail(ctx, email)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -125,10 +98,24 @@ func (r *userRepository) FindByEmail(email string) (*record.UserRecord, error) {
 		return nil, user_errors.ErrUserNotFound
 	}
 
-	return r.mapping.ToUserRecord(res), nil
+	return res, nil
 }
 
-func (r *userRepository) CreateUser(request *requests.CreateUserRequest) (*record.UserRecord, error) {
+func (r *userRepository) FindByEmailWithPassword(ctx context.Context, email string) (*db.GetUserByEmailWithPasswordRow, error) {
+	res, err := r.db.GetUserByEmailWithPassword(ctx, email)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, user_errors.ErrUserNotFound
+		}
+
+		return nil, user_errors.ErrUserNotFound
+	}
+
+	return res, nil
+}
+
+func (r *userRepository) CreateUser(ctx context.Context, request *requests.CreateUserRequest) (*db.CreateUserRow, error) {
 	req := db.CreateUserParams{
 		Firstname: request.FirstName,
 		Lastname:  request.LastName,
@@ -136,16 +123,16 @@ func (r *userRepository) CreateUser(request *requests.CreateUserRequest) (*recor
 		Password:  request.Password,
 	}
 
-	user, err := r.db.CreateUser(r.ctx, req)
+	user, err := r.db.CreateUser(ctx, req)
 
 	if err != nil {
 		return nil, user_errors.ErrCreateUser
 	}
 
-	return r.mapping.ToUserRecord(user), nil
+	return user, nil
 }
 
-func (r *userRepository) UpdateUser(request *requests.UpdateUserRequest) (*record.UserRecord, error) {
+func (r *userRepository) UpdateUser(ctx context.Context, request *requests.UpdateUserRequest) (*db.UpdateUserRow, error) {
 	req := db.UpdateUserParams{
 		UserID:    int32(*request.UserID),
 		Firstname: request.FirstName,
@@ -154,37 +141,37 @@ func (r *userRepository) UpdateUser(request *requests.UpdateUserRequest) (*recor
 		Password:  request.Password,
 	}
 
-	res, err := r.db.UpdateUser(r.ctx, req)
+	res, err := r.db.UpdateUser(ctx, req)
 
 	if err != nil {
 		return nil, user_errors.ErrUpdateUser
 	}
 
-	return r.mapping.ToUserRecord(res), nil
+	return res, nil
 }
 
-func (r *userRepository) TrashedUser(user_id int) (*record.UserRecord, error) {
-	res, err := r.db.TrashUser(r.ctx, int32(user_id))
+func (r *userRepository) TrashedUser(ctx context.Context, user_id int) (*db.User, error) {
+	res, err := r.db.TrashUser(ctx, int32(user_id))
 
 	if err != nil {
 		return nil, user_errors.ErrTrashedUser
 	}
 
-	return r.mapping.ToUserRecord(res), nil
+	return res, nil
 }
 
-func (r *userRepository) RestoreUser(user_id int) (*record.UserRecord, error) {
-	res, err := r.db.RestoreUser(r.ctx, int32(user_id))
+func (r *userRepository) RestoreUser(ctx context.Context, user_id int) (*db.User, error) {
+	res, err := r.db.RestoreUser(ctx, int32(user_id))
 
 	if err != nil {
 		return nil, user_errors.ErrRestoreUser
 	}
 
-	return r.mapping.ToUserRecord(res), nil
+	return res, nil
 }
 
-func (r *userRepository) DeleteUserPermanent(user_id int) (bool, error) {
-	err := r.db.DeleteUserPermanently(r.ctx, int32(user_id))
+func (r *userRepository) DeleteUserPermanent(ctx context.Context, user_id int) (bool, error) {
+	err := r.db.DeleteUserPermanently(ctx, int32(user_id))
 
 	if err != nil {
 		return false, user_errors.ErrDeleteUserPermanent
@@ -193,8 +180,8 @@ func (r *userRepository) DeleteUserPermanent(user_id int) (bool, error) {
 	return true, nil
 }
 
-func (r *userRepository) RestoreAllUser() (bool, error) {
-	err := r.db.RestoreAllUsers(r.ctx)
+func (r *userRepository) RestoreAllUser(ctx context.Context) (bool, error) {
+	err := r.db.RestoreAllUsers(ctx)
 
 	if err != nil {
 		return false, user_errors.ErrRestoreAllUsers
@@ -203,8 +190,8 @@ func (r *userRepository) RestoreAllUser() (bool, error) {
 	return true, nil
 }
 
-func (r *userRepository) DeleteAllUserPermanent() (bool, error) {
-	err := r.db.DeleteAllPermanentUsers(r.ctx)
+func (r *userRepository) DeleteAllUserPermanent(ctx context.Context) (bool, error) {
+	err := r.db.DeleteAllPermanentUsers(ctx)
 
 	if err != nil {
 		return false, user_errors.ErrDeleteAllUsers

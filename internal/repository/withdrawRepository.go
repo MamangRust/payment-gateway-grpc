@@ -1,9 +1,7 @@
 package repository
 
 import (
-	"MamangRust/paymentgatewaygrpc/internal/domain/record"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
-	recordmapper "MamangRust/paymentgatewaygrpc/internal/mapper/record"
 	db "MamangRust/paymentgatewaygrpc/pkg/database/schema"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/withdraw_errors"
 	"context"
@@ -11,20 +9,16 @@ import (
 )
 
 type withdrawRepository struct {
-	db      *db.Queries
-	ctx     context.Context
-	mapping recordmapper.WithdrawRecordMapping
+	db *db.Queries
 }
 
-func NewWithdrawRepository(db *db.Queries, ctx context.Context, mapping recordmapper.WithdrawRecordMapping) *withdrawRepository {
+func NewWithdrawRepository(db *db.Queries) WithdrawRepository {
 	return &withdrawRepository{
-		db:      db,
-		ctx:     ctx,
-		mapping: mapping,
+		db: db,
 	}
 }
 
-func (r *withdrawRepository) FindAll(req *requests.FindAllWithdraws) ([]*record.WithdrawRecord, *int, error) {
+func (r *withdrawRepository) FindAll(ctx context.Context, req *requests.FindAllWithdraws) ([]*db.GetWithdrawsRow, error) {
 	offset := (req.Page - 1) * req.PageSize
 
 	reqDb := db.GetWithdrawsParams{
@@ -33,24 +27,17 @@ func (r *withdrawRepository) FindAll(req *requests.FindAllWithdraws) ([]*record.
 		Offset:  int32(offset),
 	}
 
-	withdraw, err := r.db.GetWithdraws(r.ctx, reqDb)
+	withdraw, err := r.db.GetWithdraws(ctx, reqDb)
 
 	if err != nil {
-		return nil, nil, withdraw_errors.ErrFindAllWithdrawsFailed
+		return nil, withdraw_errors.ErrFindAllWithdrawsFailed
 	}
 
-	var totalCount int
-	if len(withdraw) > 0 {
-		totalCount = int(withdraw[0].TotalCount)
-	} else {
-		totalCount = 0
-	}
-
-	return r.mapping.ToWithdrawsRecordALl(withdraw), &totalCount, nil
+	return withdraw, nil
 
 }
 
-func (r *withdrawRepository) FindByActive(req *requests.FindAllWithdraws) ([]*record.WithdrawRecord, *int, error) {
+func (r *withdrawRepository) FindByActive(ctx context.Context, req *requests.FindAllWithdraws) ([]*db.GetActiveWithdrawsRow, error) {
 	offset := (req.Page - 1) * req.PageSize
 
 	reqDb := db.GetActiveWithdrawsParams{
@@ -59,23 +46,16 @@ func (r *withdrawRepository) FindByActive(req *requests.FindAllWithdraws) ([]*re
 		Offset:  int32(offset),
 	}
 
-	res, err := r.db.GetActiveWithdraws(r.ctx, reqDb)
+	res, err := r.db.GetActiveWithdraws(ctx, reqDb)
 
 	if err != nil {
-		return nil, nil, withdraw_errors.ErrFindActiveWithdrawsFailed
+		return nil, withdraw_errors.ErrFindActiveWithdrawsFailed
 	}
 
-	var totalCount int
-	if len(res) > 0 {
-		totalCount = int(res[0].TotalCount)
-	} else {
-		totalCount = 0
-	}
-
-	return r.mapping.ToWithdrawsRecordActive(res), &totalCount, nil
+	return res, nil
 }
 
-func (r *withdrawRepository) FindByTrashed(req *requests.FindAllWithdraws) ([]*record.WithdrawRecord, *int, error) {
+func (r *withdrawRepository) FindByTrashed(ctx context.Context, req *requests.FindAllWithdraws) ([]*db.GetTrashedWithdrawsRow, error) {
 	offset := (req.Page - 1) * req.PageSize
 
 	reqDb := db.GetTrashedWithdrawsParams{
@@ -84,23 +64,16 @@ func (r *withdrawRepository) FindByTrashed(req *requests.FindAllWithdraws) ([]*r
 		Offset:  int32(offset),
 	}
 
-	res, err := r.db.GetTrashedWithdraws(r.ctx, reqDb)
+	res, err := r.db.GetTrashedWithdraws(ctx, reqDb)
 
 	if err != nil {
-		return nil, nil, withdraw_errors.ErrFindTrashedWithdrawsFailed
+		return nil, withdraw_errors.ErrFindTrashedWithdrawsFailed
 	}
 
-	var totalCount int
-	if len(res) > 0 {
-		totalCount = int(res[0].TotalCount)
-	} else {
-		totalCount = 0
-	}
-
-	return r.mapping.ToWithdrawsRecordTrashed(res), &totalCount, nil
+	return res, nil
 }
 
-func (r *withdrawRepository) FindAllByCardNumber(req *requests.FindAllWithdrawCardNumber) ([]*record.WithdrawRecord, *int, error) {
+func (r *withdrawRepository) FindAllByCardNumber(ctx context.Context, req *requests.FindAllWithdrawCardNumber) ([]*db.GetWithdrawsByCardNumberRow, error) {
 	offset := (req.Page - 1) * req.PageSize
 
 	reqDb := db.GetWithdrawsByCardNumberParams{
@@ -110,33 +83,27 @@ func (r *withdrawRepository) FindAllByCardNumber(req *requests.FindAllWithdrawCa
 		Offset:     int32(offset),
 	}
 
-	withdraw, err := r.db.GetWithdrawsByCardNumber(r.ctx, reqDb)
+	withdraw, err := r.db.GetWithdrawsByCardNumber(ctx, reqDb)
 
 	if err != nil {
-		return nil, nil, withdraw_errors.ErrFindWithdrawsByCardNumberFailed
-	}
-	var totalCount int
-	if len(withdraw) > 0 {
-		totalCount = int(withdraw[0].TotalCount)
-	} else {
-		totalCount = 0
+		return nil, withdraw_errors.ErrFindWithdrawsByCardNumberFailed
 	}
 
-	return r.mapping.ToWithdrawsByCardNumberRecord(withdraw), &totalCount, nil
+	return withdraw, nil
 
 }
 
-func (r *withdrawRepository) FindById(id int) (*record.WithdrawRecord, error) {
-	withdraw, err := r.db.GetWithdrawByID(r.ctx, int32(id))
+func (r *withdrawRepository) FindById(ctx context.Context, id int) (*db.GetWithdrawByIDRow, error) {
+	withdraw, err := r.db.GetWithdrawByID(ctx, int32(id))
 
 	if err != nil {
 		return nil, withdraw_errors.ErrFindWithdrawByIdFailed
 	}
 
-	return r.mapping.ToWithdrawRecord(withdraw), nil
+	return withdraw, nil
 }
 
-func (r *withdrawRepository) GetMonthWithdrawStatusSuccess(req *requests.MonthStatusWithdraw) ([]*record.WithdrawRecordMonthStatusSuccess, error) {
+func (r *withdrawRepository) GetMonthWithdrawStatusSuccess(ctx context.Context, req *requests.MonthStatusWithdraw) ([]*db.GetMonthWithdrawStatusSuccessRow, error) {
 	year := req.Year
 	month := req.Month
 
@@ -146,7 +113,7 @@ func (r *withdrawRepository) GetMonthWithdrawStatusSuccess(req *requests.MonthSt
 	lastDayCurrentMonth := currentDate.AddDate(0, 1, -1)
 	lastDayPrevMonth := prevDate.AddDate(0, 1, -1)
 
-	res, err := r.db.GetMonthWithdrawStatusSuccess(r.ctx, db.GetMonthWithdrawStatusSuccessParams{
+	res, err := r.db.GetMonthWithdrawStatusSuccess(ctx, db.GetMonthWithdrawStatusSuccessParams{
 		Column1: currentDate,
 		Column2: lastDayCurrentMonth,
 		Column3: prevDate,
@@ -157,31 +124,27 @@ func (r *withdrawRepository) GetMonthWithdrawStatusSuccess(req *requests.MonthSt
 		return nil, withdraw_errors.ErrGetMonthWithdrawStatusSuccessFailed
 	}
 
-	so := r.mapping.ToWithdrawRecordsMonthStatusSuccess(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *withdrawRepository) GetYearlyWithdrawStatusSuccess(year int) ([]*record.WithdrawRecordYearStatusSuccess, error) {
-	res, err := r.db.GetYearlyWithdrawStatusSuccess(r.ctx, int32(year))
+func (r *withdrawRepository) GetYearlyWithdrawStatusSuccess(ctx context.Context, year int) ([]*db.GetYearlyWithdrawStatusSuccessRow, error) {
+	res, err := r.db.GetYearlyWithdrawStatusSuccess(ctx, int32(year))
 
 	if err != nil {
 		return nil, withdraw_errors.ErrGetYearlyWithdrawStatusSuccessFailed
 	}
 
-	so := r.mapping.ToWithdrawRecordsYearStatusSuccess(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *withdrawRepository) GetMonthWithdrawStatusFailed(req *requests.MonthStatusWithdraw) ([]*record.WithdrawRecordMonthStatusFailed, error) {
+func (r *withdrawRepository) GetMonthWithdrawStatusFailed(ctx context.Context, req *requests.MonthStatusWithdraw) ([]*db.GetMonthWithdrawStatusFailedRow, error) {
 	currentDate := time.Date(req.Year, time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
 	prevDate := currentDate.AddDate(0, -1, 0)
 
 	lastDayCurrentMonth := currentDate.AddDate(0, 1, -1)
 	lastDayPrevMonth := prevDate.AddDate(0, 1, -1)
 
-	res, err := r.db.GetMonthWithdrawStatusFailed(r.ctx, db.GetMonthWithdrawStatusFailedParams{
+	res, err := r.db.GetMonthWithdrawStatusFailed(ctx, db.GetMonthWithdrawStatusFailedParams{
 		Column1: currentDate,
 		Column2: lastDayCurrentMonth,
 		Column3: prevDate,
@@ -192,31 +155,27 @@ func (r *withdrawRepository) GetMonthWithdrawStatusFailed(req *requests.MonthSta
 		return nil, withdraw_errors.ErrGetMonthWithdrawStatusFailedFailed
 	}
 
-	so := r.mapping.ToWithdrawRecordsMonthStatusFailed(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *withdrawRepository) GetYearlyWithdrawStatusFailed(year int) ([]*record.WithdrawRecordYearStatusFailed, error) {
-	res, err := r.db.GetYearlyWithdrawStatusFailed(r.ctx, int32(year))
+func (r *withdrawRepository) GetYearlyWithdrawStatusFailed(ctx context.Context, year int) ([]*db.GetYearlyWithdrawStatusFailedRow, error) {
+	res, err := r.db.GetYearlyWithdrawStatusFailed(ctx, int32(year))
 
 	if err != nil {
 		return nil, withdraw_errors.ErrGetYearlyWithdrawStatusFailedFailed
 	}
 
-	so := r.mapping.ToWithdrawRecordsYearStatusFailed(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *withdrawRepository) GetMonthWithdrawStatusSuccessByCardNumber(req *requests.MonthStatusWithdrawCardNumber) ([]*record.WithdrawRecordMonthStatusSuccess, error) {
+func (r *withdrawRepository) GetMonthWithdrawStatusSuccessByCardNumber(ctx context.Context, req *requests.MonthStatusWithdrawCardNumber) ([]*db.GetMonthWithdrawStatusSuccessCardNumberRow, error) {
 	currentDate := time.Date(req.Year, time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
 	prevDate := currentDate.AddDate(0, -1, 0)
 
 	lastDayCurrentMonth := currentDate.AddDate(0, 1, -1)
 	lastDayPrevMonth := prevDate.AddDate(0, 1, -1)
 
-	res, err := r.db.GetMonthWithdrawStatusSuccessCardNumber(r.ctx, db.GetMonthWithdrawStatusSuccessCardNumberParams{
+	res, err := r.db.GetMonthWithdrawStatusSuccessCardNumber(ctx, db.GetMonthWithdrawStatusSuccessCardNumberParams{
 		CardNumber: req.CardNumber,
 		Column2:    currentDate,
 		Column3:    lastDayCurrentMonth,
@@ -228,13 +187,11 @@ func (r *withdrawRepository) GetMonthWithdrawStatusSuccessByCardNumber(req *requ
 		return nil, withdraw_errors.ErrGetMonthWithdrawStatusSuccessByCardFailed
 	}
 
-	so := r.mapping.ToWithdrawRecordsMonthStatusSuccessCardNumber(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *withdrawRepository) GetYearlyWithdrawStatusSuccessByCardNumber(req *requests.YearStatusWithdrawCardNumber) ([]*record.WithdrawRecordYearStatusSuccess, error) {
-	res, err := r.db.GetYearlyWithdrawStatusSuccessCardNumber(r.ctx, db.GetYearlyWithdrawStatusSuccessCardNumberParams{
+func (r *withdrawRepository) GetYearlyWithdrawStatusSuccessByCardNumber(ctx context.Context, req *requests.YearStatusWithdrawCardNumber) ([]*db.GetYearlyWithdrawStatusSuccessCardNumberRow, error) {
+	res, err := r.db.GetYearlyWithdrawStatusSuccessCardNumber(ctx, db.GetYearlyWithdrawStatusSuccessCardNumberParams{
 		CardNumber: req.CardNumber,
 		Column2:    int32(req.Year),
 	})
@@ -243,19 +200,17 @@ func (r *withdrawRepository) GetYearlyWithdrawStatusSuccessByCardNumber(req *req
 		return nil, withdraw_errors.ErrGetYearlyWithdrawStatusSuccessByCardFailed
 	}
 
-	so := r.mapping.ToWithdrawRecordsYearStatusSuccessCardNumber(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *withdrawRepository) GetMonthWithdrawStatusFailedByCardNumber(req *requests.MonthStatusWithdrawCardNumber) ([]*record.WithdrawRecordMonthStatusFailed, error) {
+func (r *withdrawRepository) GetMonthWithdrawStatusFailedByCardNumber(ctx context.Context, req *requests.MonthStatusWithdrawCardNumber) ([]*db.GetMonthWithdrawStatusFailedCardNumberRow, error) {
 	currentDate := time.Date(req.Year, time.Month(req.Month), 1, 0, 0, 0, 0, time.UTC)
 	prevDate := currentDate.AddDate(0, -1, 0)
 
 	lastDayCurrentMonth := currentDate.AddDate(0, 1, -1)
 	lastDayPrevMonth := prevDate.AddDate(0, 1, -1)
 
-	res, err := r.db.GetMonthWithdrawStatusFailedCardNumber(r.ctx, db.GetMonthWithdrawStatusFailedCardNumberParams{
+	res, err := r.db.GetMonthWithdrawStatusFailedCardNumber(ctx, db.GetMonthWithdrawStatusFailedCardNumberParams{
 		CardNumber: req.CardNumber,
 		Column2:    currentDate,
 		Column3:    lastDayCurrentMonth,
@@ -267,13 +222,11 @@ func (r *withdrawRepository) GetMonthWithdrawStatusFailedByCardNumber(req *reque
 		return nil, withdraw_errors.ErrGetMonthWithdrawStatusFailedByCardFailed
 	}
 
-	so := r.mapping.ToWithdrawRecordsMonthStatusFailedCardNumber(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *withdrawRepository) GetYearlyWithdrawStatusFailedByCardNumber(req *requests.YearStatusWithdrawCardNumber) ([]*record.WithdrawRecordYearStatusFailed, error) {
-	res, err := r.db.GetYearlyWithdrawStatusFailedCardNumber(r.ctx, db.GetYearlyWithdrawStatusFailedCardNumberParams{
+func (r *withdrawRepository) GetYearlyWithdrawStatusFailedByCardNumber(ctx context.Context, req *requests.YearStatusWithdrawCardNumber) ([]*db.GetYearlyWithdrawStatusFailedCardNumberRow, error) {
+	res, err := r.db.GetYearlyWithdrawStatusFailedCardNumber(ctx, db.GetYearlyWithdrawStatusFailedCardNumberParams{
 		CardNumber: req.CardNumber,
 		Column2:    int32(req.Year),
 	})
@@ -282,39 +235,37 @@ func (r *withdrawRepository) GetYearlyWithdrawStatusFailedByCardNumber(req *requ
 		return nil, withdraw_errors.ErrGetYearlyWithdrawStatusFailedByCardFailed
 	}
 
-	so := r.mapping.ToWithdrawRecordsYearStatusFailedCardNumber(res)
-
-	return so, nil
+	return res, nil
 }
 
-func (r *withdrawRepository) GetMonthlyWithdraws(year int) ([]*record.WithdrawMonthlyAmount, error) {
+func (r *withdrawRepository) GetMonthlyWithdraws(ctx context.Context, year int) ([]*db.GetMonthlyWithdrawsRow, error) {
 	yearStart := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	res, err := r.db.GetMonthlyWithdraws(r.ctx, yearStart)
+	res, err := r.db.GetMonthlyWithdraws(ctx, yearStart)
 
 	if err != nil {
 		return nil, withdraw_errors.ErrGetMonthlyWithdrawsFailed
 	}
 
-	return r.mapping.ToWithdrawsAmountMonthly(res), nil
+	return res, nil
 
 }
 
-func (r *withdrawRepository) GetYearlyWithdraws(year int) ([]*record.WithdrawYearlyAmount, error) {
-	res, err := r.db.GetYearlyWithdraws(r.ctx, year)
+func (r *withdrawRepository) GetYearlyWithdraws(ctx context.Context, year int) ([]*db.GetYearlyWithdrawsRow, error) {
+	res, err := r.db.GetYearlyWithdraws(ctx, year)
 
 	if err != nil {
 		return nil, withdraw_errors.ErrGetYearlyWithdrawsFailed
 	}
 
-	return r.mapping.ToWithdrawsAmountYearly(res), nil
+	return res, nil
 
 }
 
-func (r *withdrawRepository) GetMonthlyWithdrawsByCardNumber(req *requests.YearMonthCardNumber) ([]*record.WithdrawMonthlyAmount, error) {
+func (r *withdrawRepository) GetMonthlyWithdrawsByCardNumber(ctx context.Context, req *requests.YearMonthCardNumber) ([]*db.GetMonthlyWithdrawsByCardNumberRow, error) {
 	yearStart := time.Date(req.Year, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	res, err := r.db.GetMonthlyWithdrawsByCardNumber(r.ctx, db.GetMonthlyWithdrawsByCardNumberParams{
+	res, err := r.db.GetMonthlyWithdrawsByCardNumber(ctx, db.GetMonthlyWithdrawsByCardNumberParams{
 		CardNumber: req.CardNumber,
 		Column2:    yearStart,
 	})
@@ -323,12 +274,12 @@ func (r *withdrawRepository) GetMonthlyWithdrawsByCardNumber(req *requests.YearM
 		return nil, withdraw_errors.ErrGetMonthlyWithdrawsByCardFailed
 	}
 
-	return r.mapping.ToWithdrawsAmountMonthlyByCardNumber(res), nil
+	return res, nil
 
 }
 
-func (r *withdrawRepository) GetYearlyWithdrawsByCardNumber(req *requests.YearMonthCardNumber) ([]*record.WithdrawYearlyAmount, error) {
-	res, err := r.db.GetYearlyWithdrawsByCardNumber(r.ctx, db.GetYearlyWithdrawsByCardNumberParams{
+func (r *withdrawRepository) GetYearlyWithdrawsByCardNumber(ctx context.Context, req *requests.YearMonthCardNumber) ([]*db.GetYearlyWithdrawsByCardNumberRow, error) {
+	res, err := r.db.GetYearlyWithdrawsByCardNumber(ctx, db.GetYearlyWithdrawsByCardNumberParams{
 		CardNumber: req.CardNumber,
 		Column2:    req.Year,
 	})
@@ -337,26 +288,26 @@ func (r *withdrawRepository) GetYearlyWithdrawsByCardNumber(req *requests.YearMo
 		return nil, withdraw_errors.ErrGetYearlyWithdrawsByCardFailed
 	}
 
-	return r.mapping.ToWithdrawsAmountYearlyByCardNumber(res), nil
+	return res, nil
 }
 
-func (r *withdrawRepository) CreateWithdraw(request *requests.CreateWithdrawRequest) (*record.WithdrawRecord, error) {
+func (r *withdrawRepository) CreateWithdraw(ctx context.Context, request *requests.CreateWithdrawRequest) (*db.CreateWithdrawRow, error) {
 	req := db.CreateWithdrawParams{
 		CardNumber:     request.CardNumber,
 		WithdrawAmount: int32(request.WithdrawAmount),
 		WithdrawTime:   request.WithdrawTime,
 	}
 
-	res, err := r.db.CreateWithdraw(r.ctx, req)
+	res, err := r.db.CreateWithdraw(ctx, req)
 
 	if err != nil {
 		return nil, withdraw_errors.ErrCreateWithdrawFailed
 	}
 
-	return r.mapping.ToWithdrawRecord(res), nil
+	return res, nil
 }
 
-func (r *withdrawRepository) UpdateWithdraw(request *requests.UpdateWithdrawRequest) (*record.WithdrawRecord, error) {
+func (r *withdrawRepository) UpdateWithdraw(ctx context.Context, request *requests.UpdateWithdrawRequest) (*db.UpdateWithdrawRow, error) {
 	req := db.UpdateWithdrawParams{
 		WithdrawID:     int32(*request.WithdrawID),
 		CardNumber:     request.CardNumber,
@@ -364,52 +315,52 @@ func (r *withdrawRepository) UpdateWithdraw(request *requests.UpdateWithdrawRequ
 		WithdrawTime:   request.WithdrawTime,
 	}
 
-	res, err := r.db.UpdateWithdraw(r.ctx, req)
+	res, err := r.db.UpdateWithdraw(ctx, req)
 
 	if err != nil {
 		return nil, withdraw_errors.ErrUpdateWithdrawFailed
 	}
 
-	return r.mapping.ToWithdrawRecord(res), nil
+	return res, nil
 }
 
-func (r *withdrawRepository) UpdateWithdrawStatus(request *requests.UpdateWithdrawStatus) (*record.WithdrawRecord, error) {
+func (r *withdrawRepository) UpdateWithdrawStatus(ctx context.Context, request *requests.UpdateWithdrawStatus) (*db.UpdateWithdrawStatusRow, error) {
 	req := db.UpdateWithdrawStatusParams{
 		WithdrawID: int32(request.WithdrawID),
 		Status:     request.Status,
 	}
 
-	res, err := r.db.UpdateWithdrawStatus(r.ctx, req)
+	res, err := r.db.UpdateWithdrawStatus(ctx, req)
 
 	if err != nil {
 		return nil, withdraw_errors.ErrUpdateWithdrawStatusFailed
 	}
 
-	return r.mapping.ToWithdrawRecord(res), nil
+	return res, nil
 }
 
-func (r *withdrawRepository) TrashedWithdraw(withdraw_id int) (*record.WithdrawRecord, error) {
-	res, err := r.db.TrashWithdraw(r.ctx, int32(withdraw_id))
+func (r *withdrawRepository) TrashedWithdraw(ctx context.Context, withdraw_id int) (*db.Withdraw, error) {
+	res, err := r.db.TrashWithdraw(ctx, int32(withdraw_id))
 
 	if err != nil {
 		return nil, withdraw_errors.ErrTrashedWithdrawFailed
 	}
 
-	return r.mapping.ToWithdrawRecord(res), nil
+	return res, nil
 }
 
-func (r *withdrawRepository) RestoreWithdraw(withdraw_id int) (*record.WithdrawRecord, error) {
-	res, err := r.db.RestoreWithdraw(r.ctx, int32(withdraw_id))
+func (r *withdrawRepository) RestoreWithdraw(ctx context.Context, withdraw_id int) (*db.Withdraw, error) {
+	res, err := r.db.RestoreWithdraw(ctx, int32(withdraw_id))
 
 	if err != nil {
 		return nil, withdraw_errors.ErrRestoreWithdrawFailed
 	}
 
-	return r.mapping.ToWithdrawRecord(res), nil
+	return res, nil
 }
 
-func (r *withdrawRepository) DeleteWithdrawPermanent(withdraw_id int) (bool, error) {
-	err := r.db.DeleteWithdrawPermanently(r.ctx, int32(withdraw_id))
+func (r *withdrawRepository) DeleteWithdrawPermanent(ctx context.Context, withdraw_id int) (bool, error) {
+	err := r.db.DeleteWithdrawPermanently(ctx, int32(withdraw_id))
 
 	if err != nil {
 		return false, withdraw_errors.ErrDeleteWithdrawPermanentFailed
@@ -418,8 +369,8 @@ func (r *withdrawRepository) DeleteWithdrawPermanent(withdraw_id int) (bool, err
 	return true, nil
 }
 
-func (r *withdrawRepository) RestoreAllWithdraw() (bool, error) {
-	err := r.db.RestoreAllWithdraws(r.ctx)
+func (r *withdrawRepository) RestoreAllWithdraw(ctx context.Context) (bool, error) {
+	err := r.db.RestoreAllWithdraws(ctx)
 
 	if err != nil {
 		return false, withdraw_errors.ErrRestoreAllWithdrawsFailed
@@ -428,8 +379,8 @@ func (r *withdrawRepository) RestoreAllWithdraw() (bool, error) {
 	return true, nil
 }
 
-func (r *withdrawRepository) DeleteAllWithdrawPermanent() (bool, error) {
-	err := r.db.DeleteAllPermanentWithdraws(r.ctx)
+func (r *withdrawRepository) DeleteAllWithdrawPermanent(ctx context.Context) (bool, error) {
+	err := r.db.DeleteAllPermanentWithdraws(ctx)
 
 	if err != nil {
 		return false, withdraw_errors.ErrDeleteAllWithdrawsPermanentFailed

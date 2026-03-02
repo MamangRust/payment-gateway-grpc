@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"go.uber.org/zap"
 	"golang.org/x/exp/rand"
 )
@@ -53,11 +54,16 @@ func (r *cardSeeder) Seed() error {
 			}
 		}
 
+		expireDate := pgtype.Date{
+			Time:  date.GenerateExpireDate(),
+			Valid: true,
+		}
+
 		request := db.CreateCardParams{
 			UserID:       int32(i),
 			CardNumber:   random,
 			CardType:     cardTypes[i%len(cardTypes)],
-			ExpireDate:   date.GenerateExpireDate(),
+			ExpireDate:   expireDate,
 			Cvv:          fmt.Sprintf("%03d", rand.Intn(1000)),
 			CardProvider: cardProviders[i%len(cardProviders)],
 		}

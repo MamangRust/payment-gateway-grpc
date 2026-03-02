@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
@@ -18,7 +18,7 @@ RUN go mod tidy
 COPY . .
 
 # Build the Go client app
-RUN CGO_ENABLED=0 GOOS=linux go build -o client ./cmd/client
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o client ./cmd/client
 
 # Start a new stage from Alpine to reduce image size
 FROM alpine:latest

@@ -13,14 +13,25 @@
 --   - Provides total_count for pagination calculations
 -- name: GetSaldos :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
+    saldo_id,
+    card_number,
+    total_balance,
+    withdraw_amount,
+    withdraw_time,
+    created_at,
+    updated_at,
+    COUNT(*) OVER () AS total_count
 FROM saldos
-WHERE deleted_at IS NULL
-  AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%')
+WHERE
+    deleted_at IS NULL
+    AND (
+        $1::TEXT IS NULL
+        OR card_number ILIKE '%' || $1 || '%'
+    )
 ORDER BY saldo_id
-LIMIT $2 OFFSET $3;
-
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetSaldoByID: Retrieves single active saldo by ID
 -- Purpose: Fetch a specific saldo record for display or processing
@@ -32,8 +43,18 @@ LIMIT $2 OFFSET $3;
 --   - Ensures only active saldos are returned (soft-deleted saldos are excluded)
 --   - Used for detail views or transaction lookups
 -- name: GetSaldoByID :one
-SELECT * FROM saldos WHERE saldo_id = $1 AND deleted_at IS NULL;
-
+SELECT
+    saldo_id,
+    card_number,
+    total_balance,
+    withdraw_amount,
+    withdraw_time,
+    created_at,
+    updated_at
+FROM saldos
+WHERE
+    saldo_id = $1
+    AND deleted_at IS NULL;
 
 -- GetActiveSaldos: Retrieves active saldos with pagination and optional search
 -- Purpose: List all non-deleted saldos with optional filtering for administrative views
@@ -49,15 +70,26 @@ SELECT * FROM saldos WHERE saldo_id = $1 AND deleted_at IS NULL;
 --   - Results ordered by saldo_id
 -- name: GetActiveSaldos :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
+    saldo_id,
+    card_number,
+    total_balance,
+    withdraw_amount,
+    withdraw_time,
+    created_at,
+    updated_at,
+    deleted_at,
+    COUNT(*) OVER () AS total_count
 FROM saldos
-WHERE deleted_at IS NULL
-  AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%')
+WHERE
+    deleted_at IS NULL
+    AND (
+        $1::TEXT IS NULL
+        OR card_number ILIKE '%' || $1 || '%'
+    )
 ORDER BY saldo_id
-LIMIT $2 OFFSET $3;
-
-
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetTrashedSaldos: Retrieves soft-deleted saldos with search and pagination
 -- Purpose: Display trashed saldos for recovery or permanent deletion
@@ -73,15 +105,26 @@ LIMIT $2 OFFSET $3;
 --   - Useful for building a "Trash Bin" feature in the UI
 -- name: GetTrashedSaldos :many
 SELECT
-    *,
-    COUNT(*) OVER() AS total_count
+    saldo_id,
+    card_number,
+    total_balance,
+    withdraw_amount,
+    withdraw_time,
+    created_at,
+    updated_at,
+    deleted_at,
+    COUNT(*) OVER () AS total_count
 FROM saldos
-WHERE deleted_at IS NOT NULL
-  AND ($1::TEXT IS NULL OR card_number ILIKE '%' || $1 || '%')
+WHERE
+    deleted_at IS NOT NULL
+    AND (
+        $1::TEXT IS NULL
+        OR card_number ILIKE '%' || $1 || '%'
+    )
 ORDER BY saldo_id
-LIMIT $2 OFFSET $3;
-
-
+LIMIT $2
+OFFSET
+    $3;
 
 -- GetTrashedSaldoByID: Retrieves a single soft-deleted saldo record by ID
 -- Purpose: View details of a trashed saldo for recovery or audit purposes
@@ -95,7 +138,6 @@ LIMIT $2 OFFSET $3;
 --   - Can be used before restoring a deleted saldo
 -- name: GetTrashedSaldoByID :one
 SELECT * FROM saldos WHERE saldo_id = $1 AND deleted_at IS NOT NULL;
-
 
 -- GetMonthlyTotalSaldoBalance: Retrieves monthly balance totals for comparison periods
 -- Purpose: Compare monthly balance trends between two time periods
@@ -115,61 +157,85 @@ SELECT * FROM saldos WHERE saldo_id = $1 AND deleted_at IS NOT NULL;
 --   - Formats output for consistent visualization
 --   - Results ordered by year and month (newest first)
 -- name: GetMonthlyTotalSaldoBalance :many
-WITH monthly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM s.created_at)::integer AS year,
-        EXTRACT(MONTH FROM s.created_at)::integer AS month,
-        COALESCE(SUM(s.total_balance), 0) AS total_balance
-    FROM
-        saldos s
-    WHERE
-        s.deleted_at IS NULL
-        AND (
-            (s.created_at >= $1::timestamp AND s.created_at <= $2::timestamp)
-            OR (s.created_at >= $3::timestamp AND s.created_at <= $4::timestamp)
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM s.created_at),
-        EXTRACT(MONTH FROM s.created_at)
-), formatted_data AS (
-    SELECT
-        year::text,
-        TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-        total_balance::integer
-    FROM
-        monthly_data
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $1::timestamp)::text AS year,
-        TO_CHAR($1::timestamp, 'Mon') AS month,
-        0::integer AS total_balance
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    monthly_data AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM s.created_at
+            )::integer AS year, EXTRACT(
+                MONTH
+                FROM s.created_at
+            )::integer AS month, COALESCE(SUM(s.total_balance), 0) AS total_balance
+        FROM saldos s
+        WHERE
+            s.deleted_at IS NULL
+            AND (
+                (
+                    s.created_at >= $1::timestamp
+                    AND s.created_at <= $2::timestamp
+                )
+                OR (
+                    s.created_at >= $3::timestamp
+                    AND s.created_at <= $4::timestamp
+                )
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM s.created_at
+            ),
+            EXTRACT(
+                MONTH
+                FROM s.created_at
+            )
+    ),
+    formatted_data AS (
+        SELECT year::text, TO_CHAR(
+                TO_DATE(month::text, 'MM'), 'Mon'
+            ) AS month, total_balance::integer
         FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $1::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $1::timestamp)::integer
+        UNION ALL
+        SELECT EXTRACT(
+                YEAR
+                FROM $1::timestamp
+            )::text AS year, TO_CHAR($1::timestamp, 'Mon') AS month, 0::integer AS total_balance
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $1::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $1::timestamp
+                    )::integer
+            )
+        UNION ALL
+        SELECT EXTRACT(
+                YEAR
+                FROM $3::timestamp
+            )::text AS year, TO_CHAR($3::timestamp, 'Mon') AS month, 0::integer AS total_balance
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM monthly_data
+                WHERE
+                    year = EXTRACT(
+                        YEAR
+                        FROM $3::timestamp
+                    )::integer
+                    AND month = EXTRACT(
+                        MONTH
+                        FROM $3::timestamp
+                    )::integer
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        EXTRACT(YEAR FROM $3::timestamp)::text AS year,
-        TO_CHAR($3::timestamp, 'Mon') AS month,
-        0::integer AS total_balance
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM monthly_data
-        WHERE year = EXTRACT(YEAR FROM $3::timestamp)::integer
-        AND month = EXTRACT(MONTH FROM $3::timestamp)::integer
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC,
-    TO_DATE(month, 'Mon') DESC;
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC, TO_DATE(month, 'Mon') DESC;
 
 -- GetYearlyTotalSaldoBalances: Retrieves yearly balance totals for current and previous year
 -- Purpose: Compare annual balance trends between current and previous year
@@ -185,55 +251,56 @@ ORDER BY
 --   - Results ordered by year (newest first)
 --   - Useful for year-over-year financial analysis
 -- name: GetYearlyTotalSaldoBalances :many
-WITH yearly_data AS (
-    SELECT
-        EXTRACT(YEAR FROM s.created_at)::integer AS year,
-        COALESCE(SUM(s.total_balance), 0)::integer AS total_balance
-    FROM
-        saldos s
-    WHERE
-        s.deleted_at IS NULL
-        AND (
-            EXTRACT(YEAR FROM s.created_at) = $1::integer
-            OR EXTRACT(YEAR FROM s.created_at) = $1::integer - 1
-        )
-    GROUP BY
-        EXTRACT(YEAR FROM s.created_at)
-), formatted_data AS (
-    SELECT
-        year::text,
-        total_balance::integer
-    FROM
-        yearly_data
-
-    UNION ALL
-
-    SELECT
-        $1::text AS year,
-        0::integer AS total_balance
-    WHERE NOT EXISTS (
-        SELECT 1
+WITH
+    yearly_data AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM s.created_at
+            )::integer AS year, COALESCE(SUM(s.total_balance), 0)::integer AS total_balance
+        FROM saldos s
+        WHERE
+            s.deleted_at IS NULL
+            AND (
+                EXTRACT(
+                    YEAR
+                    FROM s.created_at
+                ) = $1::integer
+                OR EXTRACT(
+                    YEAR
+                    FROM s.created_at
+                ) = $1::integer - 1
+            )
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM s.created_at
+            )
+    ),
+    formatted_data AS (
+        SELECT year::text, total_balance::integer
         FROM yearly_data
-        WHERE year = $1::integer
+        UNION ALL
+        SELECT $1::text AS year, 0::integer AS total_balance
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer
+            )
+        UNION ALL
+        SELECT ($1::integer - 1)::text AS year, 0::integer AS total_balance
+        WHERE
+            NOT EXISTS (
+                SELECT 1
+                FROM yearly_data
+                WHERE
+                    year = $1::integer - 1
+            )
     )
-
-    UNION ALL
-
-    SELECT
-        ($1::integer - 1)::text AS year,
-        0::integer AS total_balance
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM yearly_data
-        WHERE year = $1::integer - 1
-    )
-)
-SELECT * FROM formatted_data
-ORDER BY
-    year DESC;
-
-
-
+SELECT *
+FROM formatted_data
+ORDER BY year DESC;
 
 -- GetMonthlySaldoBalances: Retrieves monthly balance totals for a given year
 -- Purpose: Provide monthly balance trends for financial reporting and dashboards
@@ -250,26 +317,32 @@ ORDER BY
 --   - Groups by month and orders chronologically
 --   - Useful for cash flow analysis and financial planning
 -- name: GetMonthlySaldoBalances :many
-WITH months AS (
-    SELECT generate_series(
-        date_trunc('year', $1::timestamp),
-        date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day',
-        interval '1 month'
-    ) AS month
-)
-SELECT
-    TO_CHAR(m.month, 'Mon') AS month,
-    COALESCE(SUM(s.total_balance), 0)::int AS total_balance
-FROM
-    months m
-LEFT JOIN
-    saldos s ON EXTRACT(MONTH FROM s.created_at) = EXTRACT(MONTH FROM m.month)
-    AND EXTRACT(YEAR FROM s.created_at) = EXTRACT(YEAR FROM m.month)
+WITH
+    months AS (
+        SELECT generate_series(
+                date_trunc('year', $1::timestamp), date_trunc('year', $1::timestamp) + interval '1 year' - interval '1 day', interval '1 month'
+            ) AS month
+    )
+SELECT TO_CHAR(m.month, 'Mon') AS month, COALESCE(SUM(s.total_balance), 0)::int AS total_balance
+FROM months m
+    LEFT JOIN saldos s ON EXTRACT(
+        MONTH
+        FROM s.created_at
+    ) = EXTRACT(
+        MONTH
+        FROM m.month
+    )
+    AND EXTRACT(
+        YEAR
+        FROM s.created_at
+    ) = EXTRACT(
+        YEAR
+        FROM m.month
+    )
     AND s.deleted_at IS NULL
 GROUP BY
     m.month
-ORDER BY
-    m.month;
+ORDER BY m.month;
 
 -- GetYearlySaldoBalances: Retrieves yearly balance totals for a 5-year period
 -- Purpose: Show annual balance trends for long-term financial analysis
@@ -285,28 +358,32 @@ ORDER BY
 --   - Results ordered chronologically
 --   - Useful for identifying year-over-year trends and growth patterns
 -- name: GetYearlySaldoBalances :many
-WITH last_five_years AS (
-    SELECT
-        EXTRACT(YEAR FROM s.created_at) AS year,
-        SUM(s.total_balance) AS total_balance
-    FROM
-        saldos s
-    WHERE
-        s.deleted_at IS NULL
-        AND EXTRACT(YEAR FROM s.created_at) >= $1 - 4
-        AND EXTRACT(YEAR FROM s.created_at) <= $1
-    GROUP BY
-        EXTRACT(YEAR FROM s.created_at)
-)
-SELECT
-    year,
-    total_balance
-FROM
-    last_five_years
-ORDER BY
-    year;
-
-
+WITH
+    last_five_years AS (
+        SELECT EXTRACT(
+                YEAR
+                FROM s.created_at
+            ) AS year, SUM(s.total_balance) AS total_balance
+        FROM saldos s
+        WHERE
+            s.deleted_at IS NULL
+            AND EXTRACT(
+                YEAR
+                FROM s.created_at
+            ) >= $1 - 4
+            AND EXTRACT(
+                YEAR
+                FROM s.created_at
+            ) <= $1
+        GROUP BY
+            EXTRACT(
+                YEAR
+                FROM s.created_at
+            )
+    )
+SELECT year, total_balance
+FROM last_five_years
+ORDER BY year;
 
 -- GetSaldoByCardNumber: Retrieves saldo information for a specific card
 -- Purpose: Get the current balance and details for a particular card
@@ -343,7 +420,15 @@ VALUES (
         $2,
         current_timestamp,
         current_timestamp
-    ) RETURNING *;
+    )
+RETURNING
+    saldo_id,
+    card_number,
+    total_balance,
+    withdraw_amount,
+    withdraw_time,
+    created_at,
+    updated_at;
 
 -- UpdateSaldo: Modifies saldo record details
 -- Purpose: Update card number and balance for an existing saldo
@@ -364,7 +449,14 @@ SET
 WHERE
     saldo_id = $1
     AND deleted_at IS NULL
-RETURNING *;
+RETURNING
+    saldo_id,
+    card_number,
+    total_balance,
+    withdraw_amount,
+    withdraw_time,
+    created_at,
+    updated_at;
 ;
 -- UpdateSaldoBalance: Updates only the balance amount for a card
 -- Purpose: Adjust card balance without changing card association
@@ -383,7 +475,14 @@ SET
 WHERE
     card_number = $1
     AND deleted_at IS NULL
-RETURNING *;
+RETURNING
+    saldo_id,
+    card_number,
+    total_balance,
+    withdraw_amount,
+    withdraw_time,
+    created_at,
+    updated_at;
 
 -- UpdateSaldoWithdraw: Processes a withdrawal transaction
 -- Purpose: Record a withdrawal and update the remaining balance
@@ -407,7 +506,14 @@ WHERE
     card_number = $1
     AND deleted_at IS NULL
     AND total_balance >= $2
-RETURNING *;
+RETURNING
+    saldo_id,
+    card_number,
+    total_balance,
+    withdraw_amount,
+    withdraw_time,
+    created_at,
+    updated_at;
 
 -- TrashSaldo: Soft-deletes a saldo record
 -- Purpose: Remove a saldo from active use without permanent deletion
@@ -424,7 +530,15 @@ SET
 WHERE
     saldo_id = $1
     AND deleted_at IS NULL
-RETURNING *;
+RETURNING
+    saldo_id,
+    card_number,
+    total_balance,
+    withdraw_amount,
+    withdraw_time,
+    created_at,
+    updated_at,
+    deleted_at;
 
 -- RestoreSaldo: Recovers a soft-deleted saldo
 -- Purpose: Reactivate a previously trashed saldo record
@@ -440,7 +554,15 @@ SET
 WHERE
     saldo_id = $1
     AND deleted_at IS NOT NULL
-RETURNING *;
+RETURNING
+    saldo_id,
+    card_number,
+    total_balance,
+    withdraw_amount,
+    withdraw_time,
+    created_at,
+    updated_at,
+    deleted_at;
 
 -- DeleteSaldoPermanently: Hard-deletes a trashed saldo
 -- Purpose: Permanently remove a previously soft-deleted record
@@ -472,6 +594,4 @@ WHERE
 --   - Only affects records marked as deleted
 --   - Frees database space from old records
 -- name: DeleteAllPermanentSaldos :exec
-DELETE FROM saldos
-WHERE
-    deleted_at IS NOT NULL;
+DELETE FROM saldos WHERE deleted_at IS NOT NULL;

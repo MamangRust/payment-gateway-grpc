@@ -23,7 +23,6 @@ type redisClient struct {
 	Client *redis.Client
 }
 
-// NewRedisClient creates a new Redis client using provided configuration.
 func NewRedisClient(cfg *Config) *redisClient {
 	addr := fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)
 
