@@ -12,7 +12,9 @@ import (
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
 	"MamangRust/paymentgatewaygrpc/pkg/observability"
 	"context"
+	"fmt"
 
+	"github.com/grafana/pyroscope-go"
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
@@ -30,7 +32,7 @@ type CardServiceDeps struct {
 	UserRepo      repository.UserRepository
 	Logger        logger.LoggerInterface
 	Observability observability.TraceLoggerObservability
-	cache         card_cache.CardMencache
+	Cache         card_cache.CardMencache
 }
 
 func NewCardService(deps CardServiceDeps) CardService {
@@ -39,7 +41,7 @@ func NewCardService(deps CardServiceDeps) CardService {
 		userRepository: deps.UserRepo,
 		logger:         deps.Logger,
 		observability:  deps.Observability,
-		cache:          deps.cache,
+		cache:          deps.Cache,
 	}
 }
 
@@ -70,7 +72,17 @@ func (s *cardService) FindAll(ctx context.Context, req *requests.FindAllCards) (
 		return data, total, nil
 	}
 
-	cards, err := s.cardRepository.FindAllCards(ctx, req)
+	var cards []*db.GetCardsRow
+	var err error
+
+	pyroscope.TagWrapper(ctx, pyroscope.Labels(
+		"page", fmt.Sprint(page),
+		"pageSize", fmt.Sprint(pageSize),
+		"search", req.Search,
+	), func(ctx context.Context) {
+		cards, err = s.cardRepository.FindAllCards(ctx, req)
+	})
+
 	if err != nil {
 		status = "error"
 		return errorhandler.HandlerErrorPagination[[]*db.GetCardsRow](
@@ -240,7 +252,13 @@ func (s *cardService) FindById(ctx context.Context, card_id int) (*db.GetCardByI
 		return data, nil
 	}
 
-	res, err := s.cardRepository.FindById(ctx, card_id)
+	var res *db.GetCardByIDRow
+	var err error
+
+	pyroscope.TagWrapper(ctx, pyroscope.Labels("card_id", fmt.Sprint(card_id)), func(ctx context.Context) {
+		res, err = s.cardRepository.FindById(ctx, card_id)
+	})
+
 	if err != nil {
 		status = "error"
 		return errorhandler.HandleError[*db.GetCardByIDRow](

@@ -1,173 +1,103 @@
-# Payment Gateway gRPC Project
+# Payment Gateway gRPC
 
-This project is a **simple payment system implementation** designed to mimic the workflow of a typical digital financial service. The system is built with a modular approach, where each service can operate independently but remains interconnected through a consistent database and API.
+[![Go Version](https://img.shields.io/badge/Go-1.25.0-00ADD8?style=for-the-badge&logo=go)](https://golang.org/)
+[![gRPC](https://img.shields.io/badge/gRPC-v1.77.0-4285F4?style=for-the-badge&logo=grpc)](https://grpc.io/)
+[![Echo](https://img.shields.io/badge/Echo-v4.13.2-00BFFF?style=for-the-badge&logo=echo)](https://echo.labstack.com/)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/)
 
-### Core Features
-
-The key components that form the core of this project include:
-
-- **🔐 User Authentication**
-  Supports new account registration, login with credentials, and JWT token issuance and validation. The system also includes refresh token management to maintain user session security.
-
-- **💳 Card Management**
-  Each user can add cards to their account. Card details such as number, card type, expiration date, and CVV are stored securely and can be accessed for transactions.
-
-- **🏬 Merchant Management**
-  Merchants can be created and managed through the system. Each merchant has a unique identity in the form of a UUID merchant number and an API key used to process transactions.
-
-- **💸 Transactions**
-  Handles the payment process between a user's card and a merchant. Each transaction is recorded with a unique number, payment amount, and information about the receiving merchant.
-
-- **🔄 Fund Transfers**
-  Allows users to transfer balances between cards. The system records the source (from) and destination (to) of the transfer, ensuring sufficient balance before processing the transaction.
-
-- **📈 Balance Top-Up**
-  Users can add funds to their cards through a top-up process. Each top-up has a unique identity and automatically updates the respective card's balance.
-
-- **🏧 Withdrawals**
-  Users can withdraw funds from their cards. Like top-ups, this process is recorded, and the balance is updated according to the withdrawal amount.
-
-- **💰 Balance Management**
-  All cards are linked to a balance entity. The system is responsible for tracking, adding, and subtracting balances consistently after every financial operation (transaction, transfer, top-up, or withdrawal).
+A high-performance, Monolith payment system implementation. This project demonstrates a production-ready architecture using gRPC for internal service communication and Echo for a RESTful API gateway, all wrapped in a robust observability stack.
 
 ---
 
-## 🚀 Project Features
+## Table of Contents
+- [Core Features](#core-features)
+- [Technology Stack](#technology-stack)
+- [Architecture](#architecture)
+- [Database Schema](#database-schema)
+- [Getting Started](#getting-started)
+- [Project Commands (Justfile)](#project-commands-justfile)
+- [Observability](#observability)
+- [Testing & Performance](#testing--performance)
+- [Preview](#preview)
 
-- **REST API Client**: A RESTful client that interacts with the gRPC server.
-- **gRPC Server**: The main server that handles all business logic.
-- **Database Migration**: Uses `goose` to manage the database schema.
-- **API Documentation**: Automatically generated Swagger documentation.
-- **Docker Support**: Docker and Docker Compose configurations for an easy development environment.
-- **Unit & Integration Tests**: Testing to ensure code reliability.
-- **CI/CD**: GitHub Actions workflows for automated builds, formatting, and testing.
+---
 
-## 🧰 Technology Stack
+## Core Features
 
-- 🐹 **Go (Golang)** — Implementation language.
-- 🌐 **Echo** — A minimalist web framework for building REST APIs.
-- 🪵 **Zap Logger** — Structured logging for high-performance applications.
-- 📦 **SQLC** — Generates type-safe Go code from SQL queries.
-- 🚀 **gRPC** — High-performance RPC for internal service communication.
-- 🧳 **Goose** — A migration tool for managing database schema changes.
-- 🐳 **Docker** — A containerization platform for consistent development environments.
-- 📄 **Swago** — Generates Swagger 2.0 documentation for Echo routes.
-- 🔗 **Docker Compose** — Manages multi-container Docker applications.
+- **Robust Authentication**: JWT-based auth with Refresh Token management.
+- **Card Management**: Secure storage and retrieval of user payment cards.
+- **Merchant Ecosystem**: Merchant onboarding and API key-based transaction processing.
+- **Transaction Engine**: Handles complex payment flows between users and merchants.
+- **Internal Transfers**: Peer-to-peer balance transfers between cards.
+- **Wallet Operations**: Seamless Top-up and Withdrawal workflows.
+- **Atomic Balance Management**: Consistent balance updates across all financial operations.
+
+---
+
+## Technology Stack
+
+| Category | Tools |
+| :--- | :--- |
+| **Core** | ![Go](https://img.shields.io/badge/Go-00ADD8?style=flat-square&logo=go&logoColor=white) ![gRPC](https://img.shields.io/badge/gRPC-4285F4?style=flat-square&logo=grpc&logoColor=white) ![Echo](https://img.shields.io/badge/Echo-00BFFF?style=flat-square&logo=echo&logoColor=white) |
+| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white) ![SQLC](https://img.shields.io/badge/SQLC-Type--Safe-blue?style=flat-square) |
+| **Observability** | ![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-000000?style=flat-square&logo=opentelemetry&logoColor=white) ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=flat-square&logo=prometheus&logoColor=white) ![Grafana](https://img.shields.io/badge/Grafana-F46800?style=flat-square&logo=grafana&logoColor=white) ![Pyroscope](https://img.shields.io/badge/Pyroscope-Flame-red?style=flat-square) |
+| **Testing** | ![k6](https://img.shields.io/badge/k6-7D64FF?style=flat-square&logo=k6&logoColor=white) ![Hurl](https://img.shields.io/badge/Hurl-Testing-orange?style=flat-square) ![Testcontainers](https://img.shields.io/badge/Testcontainers-Docker-blue?style=flat-square) |
+| **DevOps** | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Just](https://img.shields.io/badge/Just-Task--Runner-black?style=flat-square) ![Goose](https://img.shields.io/badge/Goose-Migrations-brown?style=flat-square) |
 
 ---
 
 ## Architecture
 
-This application is designed with a service-oriented monolithic architecture. The client-facing REST API acts as a gateway, translating HTTP requests into gRPC calls to the backend server. This server contains the core business logic and communicates with a PostgreSQL database.
+The project follows a Monolith pattern. The REST API (Echo) acts as a gateway that communicates via gRPC with internal modules. Each module is logically separated but shares a common infrastructure.
 
 ```mermaid
 graph TD
-    subgraph "User Interaction"
-        User -- "HTTP/REST (JSON)" --> Client[Client/API Gateway]
+    subgraph "External World"
+        User((User))
     end
 
-    subgraph "Application Services"
-        Client -- "gRPC (Protobuf)" --> Server[gRPC Server]
-        Server -- "SQL" --> Database[(PostgreSQL)]
+    subgraph "API Gateway (Echo)"
+        Gateway[REST API Gateway]
     end
 
-    subgraph "Development & Operations"
-        Migration[Migration Process] -- "SQL" --> Database
+    subgraph "Monolith (gRPC Server)"
+        direction TB
+        AuthService[Auth Module]
+        CardService[Card Module]
+        MerchantService[Merchant Module]
+        TransactionService[Transaction Module]
     end
 
-    style Client fill:#d3869b,stroke:#3c3836,stroke-width:2px,color:#282828
-    style Server fill:#83a598,stroke:#3c3836,stroke-width:2px,color:#282828
-    style Database fill:#b8bb26,stroke:#3c3836,stroke-width:2px,color:#282828
-    style Migration fill:#fe8019,stroke:#3c3836,stroke-width:2px,color:#282828
+    subgraph "Persistence"
+        Postgres[(PostgreSQL)]
+        Redis[(Redis Cache)]
+    end
+
+    subgraph "Observability Stack"
+        OTel[OTel Collector] --> Prometheus[Prometheus]
+        OTel --> Jaeger[Jaeger/Tracing]
+        OTel --> Pyroscope[Pyroscope]
+        Prometheus --> Grafana[Grafana]
+    end
+
+    User -- "HTTP/JSON" --> Gateway
+    Gateway -- "gRPC/Protobuf" --> AuthService
+    Gateway -- "gRPC/Protobuf" --> CardService
+    Gateway -- "gRPC/Protobuf" --> MerchantService
+    Gateway -- "gRPC/Protobuf" --> TransactionService
+    
+    AuthService & CardService & MerchantService & TransactionService -- "SQL" --> Postgres
+    AuthService & TransactionService -- "KV" --> Redis
+    
+    AuthService & CardService & MerchantService & TransactionService -- "Telemetry" --> OTel
 ```
 
 ---
 
-## Database Schema (ERD)
-
-The following diagram illustrates the relationships between the tables in the database.
+## Database Schema
 
 ```mermaid
 erDiagram
-    users {
-        INT user_id PK
-        VARCHAR firstname
-        VARCHAR lastname
-        VARCHAR email
-        VARCHAR password
-    }
-
-    roles {
-        INT role_id PK
-        VARCHAR role_name
-    }
-
-    user_roles {
-        INT user_role_id PK
-        INT user_id FK
-        INT role_id FK
-    }
-
-    cards {
-        INT card_id PK
-        INT user_id FK
-        VARCHAR card_number
-        VARCHAR card_type
-        DATE expire_date
-        VARCHAR cvv
-    }
-
-    merchants {
-        INT merchant_id PK
-        UUID merchant_no
-        VARCHAR name
-        VARCHAR api_key
-        INT user_id FK
-    }
-
-    saldos {
-        INT saldo_id PK
-        VARCHAR card_number FK
-        INT total_balance
-    }
-
-    transactions {
-        INT transaction_id PK
-        UUID transaction_no
-        VARCHAR card_number FK
-        INT amount
-        INT merchant_id FK
-    }
-
-    transfers {
-        INT transfer_id PK
-        UUID transfer_no
-        VARCHAR transfer_from FK
-        VARCHAR transfer_to FK
-        INT transfer_amount
-    }
-
-    topups {
-        INT topup_id PK
-        UUID topup_no
-        VARCHAR card_number FK
-        INT topup_amount
-    }
-
-    withdraws {
-        INT withdraw_id PK
-        UUID withdraw_no
-        VARCHAR card_number FK
-        INT withdraw_amount
-    }
-
-    refresh_tokens {
-        INT refresh_token_id PK
-        INT user_id FK
-        VARCHAR token
-    }
-
-    %% Relationships
     users ||--o{ cards : "has"
     users ||--o{ merchants : "has"
     users ||--o{ refresh_tokens : "has"
@@ -182,181 +112,104 @@ erDiagram
     merchants ||--o{ transactions : "receives"
 ```
 
+> [!NOTE]
+> This schema is managed using Goose migrations and SQLC for type-safe query generation.
+
 ---
 
 ## Getting Started
 
-You can run this project either locally with a Go environment or using Docker.
-
 ### Prerequisites
+- Go 1.25.0+
+- Docker & Docker Compose
+- Just (Alternative to Make)
 
-- Go (version 1.21 or newer)
-- Docker and Docker Compose
-- The `make` command-line tool
-- An `.env` file with the necessary environment variables. You can copy from `docker.env` as a template.
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/hoover/payment-gateway-grpc.git
-cd payment-gateway-grpc
-```
-
-### 2. Running with Docker (Recommended)
-
-This is the easiest way to run all services.
-
-1.  **Create Environment File:**
-    Copy `docker.env` to a new `.env` file.
-
+### Docker Setup (Fastest)
+1.  **Initialize Environment**:
     ```bash
     cp docker.env .env
     ```
-
-2.  **Build and Run Services:**
-    Use the `make` command to build the images and start the containers in detached mode.
-
+2.  **Start Services**:
     ```bash
-    make docker-up
+    just docker-up
     ```
+    API Gateway will be available at `http://localhost:5000`.
 
-    This will start the `postgres`, `migrate`, `server`, and `client` services. The client will be available at `http://localhost:5000`.
-
-3.  **Stopping Services:**
-    To stop all running containers, use:
+### Local Development
+1.  **Spin up Dependencies**:
     ```bash
-    make docker-down
+    docker-compose up -d postgres redis
     ```
-
-### 3. Running Locally
-
-1.  **Start the Database:**
-    You can use the provided Docker Compose file to run only the PostgreSQL database.
-
+2.  **Run Migrations**:
     ```bash
-    docker-compose up -d postgres
+    just migrate
     ```
-
-2.  **Set Up Environment:**
-    Create an `.env` file in the root directory and fill in the database connection details and other required variables.
-
-3.  **Run Database Migrations:**
-    Apply the latest database schema.
-
+3.  **Start Components**:
     ```bash
-    make migrate
+    # Terminal 1: gRPC Server
+    just run-server
+    
+    # Terminal 2: API Gateway
+    just run-client
     ```
-
-4.  **Run Services:**
-    Open two separate terminal windows.
-
-    In the first terminal, run the gRPC server:
-
-    ```bash
-    make run-server
-    ```
-
-    In the second terminal, run the client:
-
-    ```bash
-    make run-client
-    ```
-
-    The client API will be accessible at `http://localhost:5000`.
 
 ---
 
-## Available `make` Commands
+## Project Commands (Justfile)
 
-- `migrate`: Applies database migrations.
-- `migrate-down`: Reverts the last database migration.
-- `run-server`: Starts the gRPC server locally.
-- `run-client`: Starts the client API gateway locally.
-- `docker-up`: Builds and starts all services with Docker Compose.
-- `docker-down`: Stops and removes all services started with Docker Compose.
-- `test`: Runs unit tests.
-- `test-all`: Runs all tests (unit and integration).
-- `fmt`: Formats the Go source code.
-- `lint`: Lints the codebase.
-- `generate-proto`: Generates Go code from Protobuf files.
+We use `just` for task automation. Here are some common commands:
+
+| Command | Description |
+| :--- | :--- |
+| `just migrate` | Apply database migrations |
+| `just generate-proto` | Generate Go code from Protobuf definitions |
+| `just generate-swagger` | Generate Swagger documentation |
+| `just test` | Run tests with race detection |
+| `just test-all` | Run all tests including integration tests |
+| `just k6 <module> <type>` | Run performance tests (e.g., `just k6 card stress`) |
+| `just hurl` | Run API integration tests using Hurl |
+| `just fmt` | Format Go source code |
+
+---
+
+## Observability
+
+This project features a comprehensive observability stack integrated via OpenTelemetry:
+
+- **Metrics**: Exported to Prometheus and visualized in Grafana.
+- **Tracing**: Distributed tracing via OTel gRPC/HTTP instrumentation.
+- **Profiling**: Continuous profiling with Pyroscope.
+- **Logging**: Structured logging using Uber Zap and OTel integration.
+
+> Visit `http://localhost:3000` for pre-configured Grafana dashboards.
+
+---
+
+## Testing & Performance
+
+### Unit & Integration Testing
+We use Testcontainers to spin up ephemeral PostgreSQL and Redis instances for integration tests, ensuring tests are hermetic and reliable.
+```bash
+just test-all
+```
+
+### Performance Benchmarks (k6)
+Comprehensive performance testing across modules:
+
+| Module | VUs | Throughput | p95 Latency | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **User** | 1500 | ~3500 req/s | ~400ms | Stable |
+| **Role** | 1500 | ~4000 req/s | ~350ms | Stable |
+| **Card** | 1500 | ~3200 req/s | ~600ms | ⚠️ Error Spike (12.5%) |
 
 ---
 
 ## Preview
 
-### Swagger API Documentation
+### Swagger Documentation
+![Swagger API Documentation](./images/swagger_3.png)
 
-<img src="./images/swagger_3.png" alt="swagger" />
-
-### Frontend Preview
-
-#### Web
-
-<img src="./images/preview_payment.png" alt="Web Frontend Preview" />
-
-#### Desktop
-
-<img src="./images/preview_payment_desktop.png" alt="Desktop Frontend Preview" />
-
-## Performance & Scability Summary (k6)
-
-### User Module
-
-| Test Type  | VUs  | Throughput (req/s) | Error Rate | p95 Latency | Notes                             |
-| ---------- | ---- | ------------------ | ---------- | ----------- | --------------------------------- |
-| Smoke      | 1    | –                  | 0%         | <10 ms      | Baseline validated                |
-| Capability | 150  | ~960               | ~0%        | ~6–7 ms     | Highly efficient, CPU-light       |
-| Load       | 1000 | ~3800              | 0%         | ~386 ms     | Tail latency increases but stable |
-| Stress     | 1500 | ~3560              | ~0%        | ~408 ms     | Graceful degradation              |
-| Spike      | 1000 | ~3235              | 0%         | ~336 ms     | Clean and fast recovery           |
-
-### Role Module
-
-| Test Type  | VUs  | Throughput (req/s) | Error Rate | p95 Latency | Notes                             |
-| ---------- | ---- | ------------------ | ---------- | ----------- | --------------------------------- |
-| Smoke      | 1    | –                  | 0%         | <10 ms      | Baseline validated                |
-| Capability | 154  | ~1200              | 0%         | ~7.5 ms     | Similar to User, slightly heavier |
-| Load       | 1000 | ~4200              | ~0%        | ~333 ms     | p95 exceeds soft threshold        |
-| Stress     | 1500 | ~3980              | ~0%        | ~349 ms     | Stable under sustained pressure   |
-| Spike      | 1000 | ~3850              | 0%         | ~271 ms     | Fast recovery after spike         |
-
-### Card Module
-
-| Test Type  | VUs  | Throughput (req/s) | Error Rate | p95 Latency | Notes                                 |
-| ---------- | ---- | ------------------ | ---------- | ----------- | ------------------------------------- |
-| Smoke      | 1    | –                  | 0%         | <100 ms     | Acceptable under low load             |
-| Capability | 900  | ~2240              | **12.5%**  | ~797 ms     | Structural failure observed           |
-| Load       | 1000 | ~2600              | **12.5%**  | ~806 ms     | Latency and error thresholds breached |
-| Stress     | 1500 | ~3230              | **12.5%**  | ~587 ms     | Consistent error pattern              |
-| Spike      | 1000 | ~3088              | **12.5%**  | ~360 ms     | Fast failure, consistent behavior     |
-
----
-
-## Performance Test Visualizations
-
-### Card Module
-
-| Test Type       | Visualization                                                                                                              |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Capability Test | <img src="./images/load_test/card/card_capability.png" alt="Card module capability test results" width="500" />            |
-| Load Test       | <img src="./images/load_test/card/card_load_test.png" alt="Card module load test results near capacity" width="500" />     |
-| Stress Test     | <img src="./images/load_test/card/card_rampling.png" alt="Card module stress test behavior beyond capacity" width="500" /> |
-| Spike Test      | <img src="./images/load_test/card/card_spike.png" alt="Card module spike test results" width="500" />                      |
-
-### Role Module
-
-| Test Type       | Visualization                                                                                                              |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Capability Test | <img src="./images/load_test/role/role_capability.png" alt="Role module capability test results" width="500" />            |
-| Load Test       | <img src="./images/load_test/role/role_load_test.png" alt="Role module load test results near capacity" width="500" />     |
-| Stress Test     | <img src="./images/load_test/role/role_rampling.png" alt="Role module stress test behavior beyond capacity" width="500" /> |
-| Spike Test      | <img src="./images/load_test/role/role_spike.png" alt="Role module spike test results" width="500" />                      |
-
-### User Module
-
-| Test Type       | Visualization                                                                                                              |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Capability Test | <img src="./images/load_test/user/user_capability.png" alt="User module capability test results" width="500" />            |
-| Load Test       | <img src="./images/load_test/user/user_load_test.png" alt="User module load test results near capacity" width="500" />     |
-| Stress Test     | <img src="./images/load_test/user/user_rampling.png" alt="User module stress test behavior beyond capacity" width="500" /> |
-| Spike Test      | <img src="./images/load_test/user/user_spike.png" alt="User module spike test results" width="500" />                      |
+### Frontend Previews
+| Web | Desktop |
+| :---: | :---: |
+| ![Web Frontend](./images/preview_payment.png) | ![Desktop Frontend](./images/preview_payment_desktop.png) |

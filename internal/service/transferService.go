@@ -12,7 +12,9 @@ import (
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
 	"MamangRust/paymentgatewaygrpc/pkg/observability"
 	"context"
+	"fmt"
 
+	"github.com/grafana/pyroscope-go"
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
@@ -78,7 +80,17 @@ func (s *transferService) FindAll(ctx context.Context, req *requests.FindAllTran
 		return data, total, nil
 	}
 
-	transfers, err := s.transferRepository.FindAll(ctx, req)
+	var transfers []*db.GetTransfersRow
+	var err error
+
+	pyroscope.TagWrapper(ctx, pyroscope.Labels(
+		"page", fmt.Sprint(page),
+		"pageSize", fmt.Sprint(pageSize),
+		"search", search,
+	), func(ctx context.Context) {
+		transfers, err = s.transferRepository.FindAll(ctx, req)
+	})
+
 	if err != nil {
 		status = "error"
 		return errorhandler.HandlerErrorPagination[[]*db.GetTransfersRow](
@@ -126,7 +138,12 @@ func (s *transferService) FindById(ctx context.Context, transferId int) (*db.Get
 		return data, nil
 	}
 
-	transfer, err := s.transferRepository.FindById(ctx, transferId)
+	var transfer *db.GetTransferByIDRow
+	var err error
+
+	pyroscope.TagWrapper(ctx, pyroscope.Labels("transfer_id", fmt.Sprint(transferId)), func(ctx context.Context) {
+		transfer, err = s.transferRepository.FindById(ctx, transferId)
+	})
 
 	if err != nil {
 		status = "error"
@@ -1237,7 +1254,7 @@ func (s *transferService) UpdateTransaction(ctx context.Context, request *reques
 	}
 
 	_, err = s.transferRepository.UpdateTransferStatus(ctx, &requests.UpdateTransferStatus{
-		TransferID: int(updatedTransfer.TransferAmount),
+		TransferID: int(updatedTransfer.TransferID),
 		Status:     "success",
 	})
 	if err != nil {

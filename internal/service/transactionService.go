@@ -14,7 +14,9 @@ import (
 	"MamangRust/paymentgatewaygrpc/pkg/observability"
 	"context"
 	"errors"
+	"fmt"
 
+	"github.com/grafana/pyroscope-go"
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
@@ -80,7 +82,17 @@ func (s *transactionService) FindAll(ctx context.Context, req *requests.FindAllT
 		return data, total, nil
 	}
 
-	transactions, err := s.transactionRepository.FindAllTransactions(ctx, req)
+	var transactions []*db.GetTransactionsRow
+	var err error
+
+	pyroscope.TagWrapper(ctx, pyroscope.Labels(
+		"page", fmt.Sprint(page),
+		"pageSize", fmt.Sprint(pageSize),
+		"search", search,
+	), func(ctx context.Context) {
+		transactions, err = s.transactionRepository.FindAllTransactions(ctx, req)
+	})
+
 	if err != nil {
 		status = "error"
 		return errorhandler.HandlerErrorPagination[[]*db.GetTransactionsRow](

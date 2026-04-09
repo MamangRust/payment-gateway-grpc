@@ -97,6 +97,10 @@ func NewServer(cfg *Config) (*Server, error) {
 			pyroscope.ProfileAllocSpace,
 			pyroscope.ProfileInuseObjects,
 			pyroscope.ProfileInuseSpace,
+			pyroscope.ProfileBlockCount,
+			pyroscope.ProfileBlockDuration,
+			pyroscope.ProfileMutexCount,
+			pyroscope.ProfileMutexDuration,
 		},
 
 		Tags: map[string]string{
