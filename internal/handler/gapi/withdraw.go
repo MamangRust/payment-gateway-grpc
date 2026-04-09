@@ -709,20 +709,32 @@ func (w *withdrawHandleGrpc) FindYearlyWithdrawsByCardNumber(ctx context.Context
 }
 
 func (w *withdrawHandleGrpc) CreateWithdraw(ctx context.Context, req *pb.CreateWithdrawRequest) (*pb.ApiResponseWithdraw, error) {
-	request := &requests.CreateWithdrawRequest{
+	if req == nil {
+		return nil, errors.ToGrpcError(withdraw_errors.ErrGrpcValidateCreateWithdrawRequest)
+	}
+
+	withdrawTime := time.Now()
+	if req.WithdrawTime != nil {
+		withdrawTime = req.WithdrawTime.AsTime()
+	}
+
+	request := requests.CreateWithdrawRequest{
 		CardNumber:     req.CardNumber,
 		WithdrawAmount: int(req.WithdrawAmount),
-		WithdrawTime:   req.WithdrawTime.AsTime(),
+		WithdrawTime:   withdrawTime,
 	}
 
 	if err := request.Validate(); err != nil {
 		return nil, withdraw_errors.ErrGrpcValidateCreateWithdrawRequest
 	}
 
-	withdraw, err := w.withdrawService.Create(ctx, request)
-
+	withdraw, err := w.withdrawService.Create(ctx, &request)
 	if err != nil {
 		return nil, errors.ToGrpcError(err)
+	}
+
+	if withdraw == nil {
+		return nil, errors.ToGrpcError(withdraw_errors.ErrWithdrawNotFound)
 	}
 
 	return &pb.ApiResponseWithdraw{
@@ -741,27 +753,38 @@ func (w *withdrawHandleGrpc) CreateWithdraw(ctx context.Context, req *pb.CreateW
 }
 
 func (w *withdrawHandleGrpc) UpdateWithdraw(ctx context.Context, req *pb.UpdateWithdrawRequest) (*pb.ApiResponseWithdraw, error) {
+	if req == nil {
+		return nil, errors.ToGrpcError(withdraw_errors.ErrGrpcValidateUpdateWithdrawRequest)
+	}
 	id := int(req.GetWithdrawId())
 
 	if id == 0 {
 		return nil, withdraw_errors.ErrGrpcWithdrawInvalidID
 	}
 
-	request := &requests.UpdateWithdrawRequest{
+	withdrawTime := time.Now()
+	if req.WithdrawTime != nil {
+		withdrawTime = req.WithdrawTime.AsTime()
+	}
+
+	request := requests.UpdateWithdrawRequest{
 		WithdrawID:     &id,
 		CardNumber:     req.CardNumber,
 		WithdrawAmount: int(req.WithdrawAmount),
-		WithdrawTime:   req.WithdrawTime.AsTime(),
+		WithdrawTime:   withdrawTime,
 	}
 
 	if err := request.Validate(); err != nil {
 		return nil, withdraw_errors.ErrGrpcValidateUpdateWithdrawRequest
 	}
 
-	withdraw, err := w.withdrawService.Update(ctx, request)
-
+	withdraw, err := w.withdrawService.Update(ctx, &request)
 	if err != nil {
 		return nil, errors.ToGrpcError(err)
+	}
+
+	if withdraw == nil {
+		return nil, errors.ToGrpcError(withdraw_errors.ErrWithdrawNotFound)
 	}
 
 	return &pb.ApiResponseWithdraw{

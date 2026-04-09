@@ -467,7 +467,6 @@ func (r *merchantRepository) RestoreMerchant(ctx context.Context, merchant_id in
 	return res, nil
 }
 
-
 func (r *merchantRepository) DeleteMerchantPermanent(ctx context.Context, merchant_id int) (bool, error) {
 	err := r.db.DeleteMerchantPermanently(ctx, int32(merchant_id))
 

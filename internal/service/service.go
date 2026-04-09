@@ -117,7 +117,7 @@ func NewService(deps Deps) *Service {
 			UserRepo:      deps.Repositories.User,
 			Logger:        deps.Logger,
 			Observability: observability,
-			cache:         cacheCard,
+			Cache:         cacheCard,
 		}),
 		Merchant: NewMerchantService(MerchantServiceDeps{
 			UserRepo:      deps.Repositories.User,

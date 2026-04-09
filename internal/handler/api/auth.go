@@ -4,6 +4,7 @@ import (
 	auth_cache "MamangRust/paymentgatewaygrpc/internal/cache/api/auth"
 	"MamangRust/paymentgatewaygrpc/internal/domain/requests"
 	apimapper "MamangRust/paymentgatewaygrpc/internal/mapper"
+	"MamangRust/paymentgatewaygrpc/internal/middlewares"
 	"MamangRust/paymentgatewaygrpc/internal/pb"
 	"MamangRust/paymentgatewaygrpc/pkg/errors"
 	"MamangRust/paymentgatewaygrpc/pkg/logger"
@@ -34,12 +35,13 @@ func NewHandlerAuth(router *echo.Echo, client pb.AuthServiceClient, logger logge
 		apiHandler: apiHandler,
 		cache:      cache,
 	}
-	routerAuth := router.Group("/api/auth")
+	limiter := middlewares.NewRateLimiter(5, 10) // 5 requests per second, burst of 10
+	routerAuth := router.Group("/api/auth", limiter.Limit)
 
 	routerAuth.GET("/hello", authHandler.HandleHello)
 	routerAuth.POST("/register", apiHandler.Handle("register", authHandler.Register))
 	routerAuth.POST("/login", apiHandler.Handle("login", authHandler.Login))
-	routerAuth.POST("/refresh-token", apiHandler.Handle("register", authHandler.RefreshToken))
+	routerAuth.POST("/refresh-token", apiHandler.Handle("refresh-token", authHandler.RefreshToken))
 	routerAuth.GET("/me", apiHandler.Handle("GetMe", authHandler.GetMe))
 
 	return authHandler

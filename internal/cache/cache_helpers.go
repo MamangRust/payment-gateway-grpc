@@ -49,28 +49,38 @@ func GetFromCache[T any](ctx context.Context, store *CacheStore, key string) (*T
 
 	start := time.Now()
 	defer func() {
-		store.metrics.RecordCacheOperationLatency(ctx, "get", time.Since(start))
+		if store.metrics != nil {
+			store.metrics.RecordCacheOperationLatency(ctx, "get", time.Since(start))
+		}
 	}()
 
 	cached, err := store.redis.Get(ctx, key).Result()
 	if err == redis.Nil {
-		store.metrics.RecordCacheMiss(ctx, key)
+		if store.metrics != nil {
+			store.metrics.RecordCacheMiss(ctx, key)
+		}
 		return nil, false
 	}
 	if err != nil {
 		store.Logger.Error("Redis get error", zap.Error(err), zap.String("cacheKey", key))
-		store.metrics.RecordCacheError(ctx, "get", key, err)
+		if store.metrics != nil {
+			store.metrics.RecordCacheError(ctx, "get", key, err)
+		}
 		return nil, false
 	}
 
 	var result T
 	if err := json.Unmarshal([]byte(cached), &result); err != nil {
 		store.Logger.Error("Failed to unmarshal cache", zap.Error(err), zap.String("cacheKey", key))
-		store.metrics.RecordCacheError(ctx, "unmarshal", key, err)
+		if store.metrics != nil {
+			store.metrics.RecordCacheError(ctx, "unmarshal", key, err)
+		}
 		return nil, false
 	}
 
-	store.metrics.RecordCacheHit(ctx, key)
+	if store.metrics != nil {
+		store.metrics.RecordCacheHit(ctx, key)
+	}
 	return &result, true
 }
 
@@ -80,26 +90,34 @@ func SetToCache[T any](ctx context.Context, store *CacheStore, key string, data 
 
 	start := time.Now()
 	defer func() {
-		store.metrics.RecordCacheOperationLatency(ctx, "set", time.Since(start))
+		if store.metrics != nil {
+			store.metrics.RecordCacheOperationLatency(ctx, "set", time.Since(start))
+		}
 	}()
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		store.Logger.Error("Failed to marshal cache", zap.Error(err), zap.String("cacheKey", key))
-		store.metrics.RecordCacheError(ctx, "marshal", key, err)
-		store.metrics.RecordCacheSet(ctx, key, false)
+		if store.metrics != nil {
+			store.metrics.RecordCacheError(ctx, "marshal", key, err)
+			store.metrics.RecordCacheSet(ctx, key, false)
+		}
 		return
 	}
 
 	if err := store.redis.Set(ctx, key, jsonData, expiration).Err(); err != nil {
 		store.Logger.Error("Failed to set cache", zap.Error(err), zap.String("cacheKey", key))
-		store.metrics.RecordCacheError(ctx, "set", key, err)
-		store.metrics.RecordCacheSet(ctx, key, false)
+		if store.metrics != nil {
+			store.metrics.RecordCacheError(ctx, "set", key, err)
+			store.metrics.RecordCacheSet(ctx, key, false)
+		}
 	} else {
 		store.Logger.Debug("Successfully cached data",
 			zap.String("cacheKey", key),
 			zap.Duration("expiration", expiration))
-		store.metrics.RecordCacheSet(ctx, key, true)
+		if store.metrics != nil {
+			store.metrics.RecordCacheSet(ctx, key, true)
+		}
 	}
 }
 
@@ -109,15 +127,21 @@ func DeleteFromCache(ctx context.Context, store *CacheStore, key string) {
 
 	start := time.Now()
 	defer func() {
-		store.metrics.RecordCacheOperationLatency(ctx, "delete", time.Since(start))
+		if store.metrics != nil {
+			store.metrics.RecordCacheOperationLatency(ctx, "delete", time.Since(start))
+		}
 	}()
 
 	if err := store.redis.Del(ctx, key).Err(); err != nil {
 		store.Logger.Error("Failed to delete cache", zap.Error(err), zap.String("cacheKey", key))
-		store.metrics.RecordCacheError(ctx, "delete", key, err)
-		store.metrics.RecordCacheDelete(ctx, key, false)
+		if store.metrics != nil {
+			store.metrics.RecordCacheError(ctx, "delete", key, err)
+			store.metrics.RecordCacheDelete(ctx, key, false)
+		}
 	} else {
-		store.metrics.RecordCacheDelete(ctx, key, true)
+		if store.metrics != nil {
+			store.metrics.RecordCacheDelete(ctx, key, true)
+		}
 	}
 }
 
@@ -127,7 +151,9 @@ func (store *CacheStore) ClearExpired(ctx context.Context) (int64, error) {
 
 	start := time.Now()
 	defer func() {
-		store.metrics.RecordCacheOperationLatency(ctx, "clear_expired", time.Since(start))
+		if store.metrics != nil {
+			store.metrics.RecordCacheOperationLatency(ctx, "clear_expired", time.Since(start))
+		}
 	}()
 
 	var scanned int64
@@ -180,7 +206,9 @@ func (store *CacheStore) InvalidateCache(ctx context.Context, pattern string) (i
 
 	start := time.Now()
 	defer func() {
-		store.metrics.RecordCacheOperationLatency(ctx, "invalidate", time.Since(start))
+		if store.metrics != nil {
+			store.metrics.RecordCacheOperationLatency(ctx, "invalidate", time.Since(start))
+		}
 	}()
 
 	var deleted int64

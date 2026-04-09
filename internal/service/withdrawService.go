@@ -941,7 +941,7 @@ func (s *withdrawService) Update(ctx context.Context, request *requests.UpdateWi
 
 	s.logger.Debug("Updating withdraw", zap.Int("withdraw_id", *request.WithdrawID), zap.Any("request", request))
 
-	_, err := s.withdrawRepository.FindById(ctx, *request.WithdrawID)
+	oldWithdraw, err := s.withdrawRepository.FindById(ctx, *request.WithdrawID)
 	if err != nil {
 		status = "error"
 		return errorhandler.HandleError[*db.UpdateWithdrawRow](
@@ -967,7 +967,8 @@ func (s *withdrawService) Update(ctx context.Context, request *requests.UpdateWi
 		)
 	}
 
-	if int(saldo.TotalBalance) < request.WithdrawAmount {
+	amountDelta := request.WithdrawAmount - int(oldWithdraw.WithdrawAmount)
+	if int(saldo.TotalBalance) < amountDelta {
 		status = "error"
 		return errorhandler.HandleError[*db.UpdateWithdrawRow](
 			s.logger,
@@ -975,19 +976,17 @@ func (s *withdrawService) Update(ctx context.Context, request *requests.UpdateWi
 			method,
 			span,
 			zap.String("card_number", request.CardNumber),
-			zap.Int("requested_amount", request.WithdrawAmount),
+			zap.Int("requested_delta", amountDelta),
 			zap.Int32("current_balance", saldo.TotalBalance),
 		)
 	}
 
-	newTotalBalance := int(saldo.TotalBalance) - request.WithdrawAmount
-	updateSaldoData := &requests.UpdateSaldoWithdraw{
-		CardNumber:     saldo.CardNumber,
-		TotalBalance:   newTotalBalance,
-		WithdrawAmount: &request.WithdrawAmount,
-		WithdrawTime:   &request.WithdrawTime,
+	newTotalBalance := int(saldo.TotalBalance) - amountDelta
+	updateSaldoData := &requests.UpdateSaldoBalance{
+		CardNumber:   saldo.CardNumber,
+		TotalBalance: newTotalBalance,
 	}
-	_, err = s.saldoRepository.UpdateSaldoWithdraw(ctx, updateSaldoData)
+	_, err = s.saldoRepository.UpdateSaldoBalance(ctx, updateSaldoData)
 	if err != nil {
 		status = "error"
 		if _, statusErr := s.withdrawRepository.UpdateWithdrawStatus(ctx, &requests.UpdateWithdrawStatus{

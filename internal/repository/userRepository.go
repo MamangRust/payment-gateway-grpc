@@ -91,11 +91,9 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*db.Get
 	res, err := r.db.GetUserByEmail(ctx, email)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, user_errors.ErrUserNotFound
+		if err != nil {
+			return nil, err
 		}
-
-		return nil, user_errors.ErrUserNotFound
 	}
 
 	return res, nil
@@ -105,11 +103,7 @@ func (r *userRepository) FindByEmailWithPassword(ctx context.Context, email stri
 	res, err := r.db.GetUserByEmailWithPassword(ctx, email)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, user_errors.ErrUserNotFound
-		}
-
-		return nil, user_errors.ErrUserNotFound
+		return nil, err
 	}
 
 	return res, nil

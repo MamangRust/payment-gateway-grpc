@@ -7,7 +7,9 @@ import (
 	"MamangRust/paymentgatewaygrpc/pkg/errors"
 	"MamangRust/paymentgatewaygrpc/pkg/errors/card_errors"
 	"context"
+	"fmt"
 	"math"
+	"time"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -1077,10 +1079,20 @@ func (s *cardHandleGrpc) FindByCardNumber(ctx context.Context, req *pb.FindByCar
 }
 
 func (s *cardHandleGrpc) CreateCard(ctx context.Context, req *pb.CreateCardRequest) (*pb.ApiResponseCard, error) {
+	fmt.Println("DEBUG: CreateCard called")
+	if req == nil {
+		return nil, errors.ToGrpcError(card_errors.ErrGrpcValidateCreateCardRequest)
+	}
+
+	expireDate := time.Now().AddDate(1, 0, 0)
+	if req.ExpireDate != nil {
+		expireDate = req.ExpireDate.AsTime()
+	}
+
 	request := requests.CreateCardRequest{
 		UserID:       int(req.UserId),
 		CardType:     req.CardType,
-		ExpireDate:   req.ExpireDate.AsTime(),
+		ExpireDate:   expireDate,
 		CVV:          req.Cvv,
 		CardProvider: req.CardProvider,
 	}
@@ -1092,6 +1104,10 @@ func (s *cardHandleGrpc) CreateCard(ctx context.Context, req *pb.CreateCardReque
 	res, err := s.cardService.CreateCard(ctx, &request)
 	if err != nil {
 		return nil, errors.ToGrpcError(err)
+	}
+
+	if res == nil {
+		return nil, errors.ToGrpcError(card_errors.ErrCardNotFound) // Or suitable error
 	}
 
 	protoCard := &pb.CardResponse{
@@ -1113,11 +1129,20 @@ func (s *cardHandleGrpc) CreateCard(ctx context.Context, req *pb.CreateCardReque
 }
 
 func (s *cardHandleGrpc) UpdateCard(ctx context.Context, req *pb.UpdateCardRequest) (*pb.ApiResponseCard, error) {
+	if req == nil {
+		return nil, errors.ToGrpcError(card_errors.ErrGrpcValidateUpdateCardRequest)
+	}
+
+	expireDate := time.Now().AddDate(1, 0, 0)
+	if req.ExpireDate != nil {
+		expireDate = req.ExpireDate.AsTime()
+	}
+
 	request := requests.UpdateCardRequest{
 		CardID:       int(req.CardId),
 		UserID:       int(req.UserId),
 		CardType:     req.CardType,
-		ExpireDate:   req.ExpireDate.AsTime(),
+		ExpireDate:   expireDate,
 		CVV:          req.Cvv,
 		CardProvider: req.CardProvider,
 	}
@@ -1129,6 +1154,10 @@ func (s *cardHandleGrpc) UpdateCard(ctx context.Context, req *pb.UpdateCardReque
 	res, err := s.cardService.UpdateCard(ctx, &request)
 	if err != nil {
 		return nil, errors.ToGrpcError(err)
+	}
+
+	if res == nil {
+		return nil, errors.ToGrpcError(card_errors.ErrCardNotFound)
 	}
 
 	protoCard := &pb.CardResponse{

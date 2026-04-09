@@ -358,6 +358,14 @@ func (s *userService) UpdateUser(ctx context.Context, request *requests.UpdateUs
 		)
 	}
 
+	if request.FirstName == "" {
+		request.FirstName = existingUser.Firstname
+	}
+
+	if request.LastName == "" {
+		request.LastName = existingUser.Lastname
+	}
+
 	if request.Email != "" && request.Email != existingUser.Email {
 		duplicateUser, _ := s.userRepository.FindByEmail(ctx, request.Email)
 		if duplicateUser != nil {
@@ -370,7 +378,8 @@ func (s *userService) UpdateUser(ctx context.Context, request *requests.UpdateUs
 				zap.String("email", request.Email),
 			)
 		}
-		existingUser.Email = request.Email
+	} else {
+		request.Email = existingUser.Email
 	}
 
 	if request.Password != "" {
@@ -384,7 +393,9 @@ func (s *userService) UpdateUser(ctx context.Context, request *requests.UpdateUs
 				span,
 			)
 		}
-		existingUser.Password = hash
+		request.Password = hash
+	} else {
+		request.Password = existingUser.Password
 	}
 
 	res, err := s.userRepository.UpdateUser(ctx, request)

@@ -487,7 +487,7 @@ func (s *saldoHandleGrpc) RestoreSaldo(ctx context.Context, req *pb.FindByIdSald
 	}, nil
 }
 
-func (s *saldoHandleGrpc) DeleteSaldo(ctx context.Context, req *pb.FindByIdSaldoRequest) (*pb.ApiResponseSaldoDelete, error) {
+func (s *saldoHandleGrpc) DeleteSaldoPermanent(ctx context.Context, req *pb.FindByIdSaldoRequest) (*pb.ApiResponseSaldoDelete, error) {
 	id := int(req.GetSaldoId())
 
 	if id == 0 {

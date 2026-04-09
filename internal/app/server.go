@@ -266,6 +266,32 @@ func (s *Server) initResilience() *middlewares.ResilienceInterceptor {
 }
 
 func (s *Server) createGRPCServer(resilienceManager *middlewares.ResilienceInterceptor) *grpc.Server {
+	accessibleMethods := map[string]bool{
+		"/pb.AuthService/RegisterUser": true,
+		"/pb.AuthService/LoginUser":    true,
+		"/pb.AuthService/RefreshToken": true,
+		"/grpc.health.v1.Health/Check": true,
+	}
+
+	authInterceptor := middlewares.NewAuthInterceptor(s.TokenManager, accessibleMethods)
+
+	roleMap := map[string][]string{
+		"/pb.UserService/FindAll":        {"admin"},
+		"/pb.UserService/Create":         {"admin"},
+		"/pb.UserService/Update":         {"admin"},
+		"/pb.UserService/Delete":         {"admin"},
+		"/pb.RoleService/CreateRole":     {"admin"},
+		"/pb.RoleService/UpdateRole":     {"admin"},
+		"/pb.RoleService/DeleteRole":     {"admin"},
+		"/pb.MerchantService/Create":     {"admin", "merchant"},
+		"/pb.MerchantService/Update":     {"admin", "merchant"},
+		"/pb.MerchantService/Delete":     {"admin", "merchant"},
+		"/pb.SaldoService/Update":        {"admin"},
+		"/pb.TransactionService/FindAll": {"admin"},
+	}
+
+	roleInterceptor := middlewares.NewRoleInterceptor(s.Services.Role, roleMap)
+
 	return grpc.NewServer(
 		grpc.MaxConcurrentStreams(defaultMaxConcurrentConn),
 		grpc.InitialConnWindowSize(defaultWindowSize),
@@ -279,7 +305,10 @@ func (s *Server) createGRPCServer(resilienceManager *middlewares.ResilienceInter
 			PermitWithoutStream: true,
 		}),
 		grpc.ChainUnaryInterceptor(
+			middlewares.SecurityLoggingInterceptor(s.Logger),
 			middlewares.PyroscopeUnaryInterceptor(),
+			authInterceptor.Unary(),
+			roleInterceptor.Unary(),
 			middlewares.TimeoutInterceptor(defaultRequestTimeout),
 			resilienceManager.UnaryInterceptor(),
 		),

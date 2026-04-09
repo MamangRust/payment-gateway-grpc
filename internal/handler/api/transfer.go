@@ -1145,6 +1145,8 @@ func (h *transferHandleApi) UpdateTransfer(c echo.Context) error {
 		return err
 	}
 
+	body.TransferID = &idInt
+
 	if err := body.Validate(); err != nil {
 		h.logger.Debug("Validation Error: ", zap.Error(err))
 

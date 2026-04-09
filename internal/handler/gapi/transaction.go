@@ -854,7 +854,7 @@ func (t *transactionHandleGrpc) FindYearlyAmountsByCardNumber(ctx context.Contex
 	}, nil
 }
 
-func (t *transactionHandleGrpc) FindTransactionByMerchantIdRequest(ctx context.Context, req *pb.FindTransactionByMerchantIdRequest) (*pb.ApiResponseTransactions, error) {
+func (t *transactionHandleGrpc) FindTransactionByMerchantId(ctx context.Context, req *pb.FindTransactionByMerchantIdRequest) (*pb.ApiResponseTransactions, error) {
 	id := int(req.GetMerchantId())
 
 	if id == 0 {
@@ -890,7 +890,14 @@ func (t *transactionHandleGrpc) FindTransactionByMerchantIdRequest(ctx context.C
 }
 
 func (t *transactionHandleGrpc) CreateTransaction(ctx context.Context, request *pb.CreateTransactionRequest) (*pb.ApiResponseTransaction, error) {
-	transactionTime := request.GetTransactionTime().AsTime()
+	if request == nil {
+		return nil, errors.ToGrpcError(transaction_errors.ErrGrpcValidateCreateTransactionRequest)
+	}
+
+	transactionTime := time.Now()
+	if request.TransactionTime != nil {
+		transactionTime = request.TransactionTime.AsTime()
+	}
 	merchantID := int(request.GetMerchantId())
 
 	req := requests.CreateTransactionRequest{
@@ -908,6 +915,10 @@ func (t *transactionHandleGrpc) CreateTransaction(ctx context.Context, request *
 	res, err := t.transactionService.Create(ctx, request.ApiKey, &req)
 	if err != nil {
 		return nil, errors.ToGrpcError(err)
+	}
+
+	if res == nil {
+		return nil, errors.ToGrpcError(transaction_errors.ErrTransactionNotFound)
 	}
 
 	return &pb.ApiResponseTransaction{
@@ -928,13 +939,19 @@ func (t *transactionHandleGrpc) CreateTransaction(ctx context.Context, request *
 }
 
 func (t *transactionHandleGrpc) UpdateTransaction(ctx context.Context, request *pb.UpdateTransactionRequest) (*pb.ApiResponseTransaction, error) {
-	id := int(request.GetTransactionId())
+	if request == nil {
+		return nil, errors.ToGrpcError(transaction_errors.ErrGrpcValidateUpdateTransactionRequest)
+	}
 
+	id := int(request.GetTransactionId())
 	if id == 0 {
 		return nil, transaction_errors.ErrGrpcTransactionInvalidID
 	}
 
-	transactionTime := request.GetTransactionTime().AsTime()
+	transactionTime := time.Now()
+	if request.TransactionTime != nil {
+		transactionTime = request.TransactionTime.AsTime()
+	}
 	merchantID := int(request.GetMerchantId())
 
 	req := requests.UpdateTransactionRequest{
@@ -953,6 +970,10 @@ func (t *transactionHandleGrpc) UpdateTransaction(ctx context.Context, request *
 	res, err := t.transactionService.Update(ctx, request.ApiKey, &req)
 	if err != nil {
 		return nil, errors.ToGrpcError(err)
+	}
+
+	if res == nil {
+		return nil, errors.ToGrpcError(transaction_errors.ErrTransactionNotFound)
 	}
 
 	return &pb.ApiResponseTransaction{
@@ -1034,7 +1055,7 @@ func (t *transactionHandleGrpc) RestoreTransaction(ctx context.Context, request 
 	}, nil
 }
 
-func (t *transactionHandleGrpc) DeleteTransaction(ctx context.Context, request *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransactionDelete, error) {
+func (t *transactionHandleGrpc) DeleteTransactionPermanent(ctx context.Context, request *pb.FindByIdTransactionRequest) (*pb.ApiResponseTransactionDelete, error) {
 	id := int(request.GetTransactionId())
 
 	if id == 0 {
